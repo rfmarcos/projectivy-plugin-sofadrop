@@ -32,18 +32,18 @@ Open them from **Projectivy → Settings → Appearance → Wallpaper → Config
 | Setting | Default | |
 |---|---|---|
 | Update now | — | Also shows the status: how many wallpapers, when they were updated, or the last error. |
-| View wallpapers | — | The current set full screen (◀ ▶ to browse). |
+| View wallpapers | — | The current set full screen (◀ ▶ to browse). **OK** shows that wallpaper in the settings preview (OK again goes back to automatic). |
 | Lists | TMDB trending movies + TV shows | One screen per service: **TMDB**, **Trakt** and **MDBList**, each with its account (QR login) and its lists as checkboxes, plus **Explore lists**. Titles repeated across lists are only used once. |
 | Titles per list | 10 | 5, 10, 15 or 20 per list. |
 | Order | Top of each list | *Top of each list* takes the first usable titles; *Random from the whole list* picks them from up to 100 titles, for more variety on each update. |
 | Filters | 1 year · global hits · no adult | *Maximum age* 6 months, 1, 2 or 5 years or no limit (release date, or last air date for shows); *Global hits only*; *Exclude adult content*; *Apply to* trending & popular lists only or all lists. |
-| Wallpaper details | device language · automatic · 1080p | *Language* of titles, synopsis, logos and labels; *Streaming services*: don't show, automatic country or a chosen country; *Resolution* 1080p (recommended) or 4K. |
+| Wallpaper details | device language · automatic · 1080p | *Language* of titles, synopsis, logos and labels; *Streaming services*: don't show, automatic country or a chosen country; *Synopsis* full (4 lines), short (2 lines) or hidden, so the text stays clear of the launcher rows (the streaming row moves up with it); *Resolution* 1080p (recommended) or 4K. |
 | Update every | 24 hours | 6 h, 12 h, 24 h, 3 days or 7 days. |
 | About | — | Version, support the project (Ko-fi QR), source code and credits. |
 
 In **Lists → Trakt** you also choose what happens with **watched titles**: show normally, show with a *Watched* badge ("✓ Watched", "▶ Watching · 3/8") or hide them (shows in progress are kept and marked).
 
-The left side of the screen renders a **live preview** with the current settings. While the settings differ from the current set, a *Not applied yet* label is shown on the preview: the changes are applied when you leave the settings, or right away with **Update now**.
+The left side of the screen renders a **live preview** with the current settings. While the settings differ from the current set, *Not applied yet* is shown under the preview: the changes are applied when you leave the settings, or right away with **Update now**. With no list selected nothing is regenerated and the current wallpapers are kept.
 
 ### Trakt (optional)
 

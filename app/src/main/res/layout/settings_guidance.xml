@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Left panel of the settings: header, live wallpaper preview (with the pending-changes chip).
+<!-- Left panel of the settings: header, live wallpaper preview and its caption.
      Keeps the leanback guidance ids so GuidanceStylist can fill the texts and icon. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:gravity="center_vertical"
@@ -68,41 +69,43 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:visibility="gone" />
+    </FrameLayout>
+
+    <!-- Caption under the preview, so nothing covers the wallpaper: title on the left, pending state on the right -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
 
         <TextView
             android:id="@+id/preview_label"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_gravity="bottom|end"
-            android:layout_margin="10dp"
-            android:background="@drawable/preview_label"
-            android:paddingStart="12dp"
-            android:paddingTop="4dp"
-            android:paddingEnd="12dp"
-            android:paddingBottom="4dp"
-            android:textColor="#E6FFFFFF"
-            android:textSize="13sp" />
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="#B3FFFFFF"
+            android:textSize="14sp" />
 
-        <!-- Shown while the settings differ from the current set; they apply when leaving the settings -->
         <TextView
             android:id="@+id/pending_notice"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="top|end"
-            android:layout_margin="10dp"
-            android:background="@drawable/pending_notice"
-            android:paddingStart="12dp"
-            android:paddingTop="4dp"
-            android:paddingEnd="12dp"
-            android:paddingBottom="4dp"
+            android:layout_marginStart="16dp"
+            android:drawablePadding="8dp"
+            android:gravity="center_vertical"
             android:text="@string/pending_notice"
-            android:textColor="#FFFFFFFF"
-            android:textSize="13sp"
-            android:visibility="gone" />
-    </FrameLayout>
+            android:textColor="@color/color_accent"
+            android:textSize="14sp"
+            android:visibility="gone"
+            app:drawableStartCompat="@drawable/pending_dot" />
+    </LinearLayout>
 
     <TextView
         android:id="@id/guidance_description"
+        android:visibility="gone"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"

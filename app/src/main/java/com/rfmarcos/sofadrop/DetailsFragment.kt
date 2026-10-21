@@ -20,6 +20,8 @@ class DetailsFragment : BaseSettingsFragment() {
         actions += choice(ID_LANGUAGE, R.drawable.ic_act_language, R.string.setting_language_title, Languages.displayName(Settings.language),
             Languages.OPTIONS.values.toList())
         actions += streamingAction()
+        actions += choice(ID_SYNOPSIS, R.drawable.ic_act_count, R.string.synopsis_title, synopsisLabel(requireContext(), Settings.overviewLines),
+            Settings.OVERVIEW_OPTIONS.map { synopsisLabel(requireContext(), it) })
         actions += choice(ID_RESOLUTION, R.drawable.ic_act_hd, R.string.setting_resolution_title, resolutionLabel(Settings.outputWidth),
             Settings.WIDTH_OPTIONS.map(::resolutionLabel))
     }
@@ -44,6 +46,10 @@ class DetailsFragment : BaseSettingsFragment() {
                 if (index > 0) Settings.regionOverride = if (index == 1) "" else Languages.REGIONS[index - 2]
                 updateDescription(ID_STREAMING, streamingLabel(requireContext()))
             }
+            ID_SYNOPSIS -> {
+                Settings.overviewLines = Settings.OVERVIEW_OPTIONS[index]
+                updateDescription(ID_SYNOPSIS, synopsisLabel(requireContext(), Settings.overviewLines))
+            }
             ID_RESOLUTION -> {
                 Settings.outputWidth = Settings.WIDTH_OPTIONS[index]
                 updateDescription(ID_RESOLUTION, resolutionLabel(Settings.outputWidth))
@@ -58,6 +64,15 @@ class DetailsFragment : BaseSettingsFragment() {
         private const val ID_LANGUAGE = 1L
         private const val ID_STREAMING = 2L
         private const val ID_RESOLUTION = 3L
+        private const val ID_SYNOPSIS = 4L
+
+        fun synopsisLabel(context: Context, lines: Int) = context.getString(
+            when (lines) {
+                0 -> R.string.synopsis_hidden
+                2 -> R.string.synopsis_short
+                else -> R.string.synopsis_full
+            }
+        )
 
         fun streamingLabel(context: Context): String = when {
             !Settings.showProviders -> context.getString(R.string.streaming_none)
@@ -69,10 +84,15 @@ class DetailsFragment : BaseSettingsFragment() {
             context.getString(if (width > 1920) R.string.resolution_2160 else R.string.resolution_1080)
 
         /** "English (US) · streaming in US · 1080p" for the main screen. */
-        fun summary(context: Context): String = listOf(
+        fun summary(context: Context): String = listOfNotNull(
             Languages.displayName(Settings.language),
             if (Settings.showProviders) context.getString(R.string.streaming_summary, Settings.region)
             else context.getString(R.string.streaming_summary_none),
+            when (Settings.overviewLines) {
+                0 -> context.getString(R.string.synopsis_summary_hidden)
+                2 -> context.getString(R.string.synopsis_summary_short)
+                else -> null
+            },
             context.getString(if (Settings.outputWidth > 1920) R.string.resolution_short_2160 else R.string.resolution_short_1080),
         ).joinToString(" · ")
     }

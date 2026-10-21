@@ -24,7 +24,7 @@ class SettingsActivity : FragmentActivity() {
     override fun onPause() {
         super.onPause()
         // Leaving the settings applies what changed instead of waiting for the next scheduled update
-        if (isFinishing && Settings.hasPendingChanges && !Settings.generating) GenerateWallpapersWorker.runNow(this, replace = true)
+        if (isFinishing && Settings.hasPendingChanges && !Settings.generating && Sources.selected().isNotEmpty()) GenerateWallpapersWorker.runNow(this, replace = true)
     }
 
     private fun PackageManager.isApplicationInstalled(packageName: String): Boolean = try {

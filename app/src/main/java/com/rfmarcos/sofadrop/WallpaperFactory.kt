@@ -17,7 +17,7 @@ class WallpaperFactory(context: Context, private val width: Int) {
 
     val client = TmdbClient(Settings.token, context.cacheDir)
     val catalog = TmdbCatalog(client, Settings.language, Settings.region, Settings.showProviders)
-    private val renderer = WallpaperRenderer(context, width, Languages.texts(Settings.language))
+    private val renderer = WallpaperRenderer(context, width, Languages.texts(Settings.language), Settings.overviewLines)
 
     val trakt: TraktClient? = if (Settings.traktConfigured) TraktClient(Settings.traktClientId, Settings.traktClientSecret) else null
     val mdbList: MdbListClient? = MdbListClient.fromSettings()
@@ -44,9 +44,9 @@ class WallpaperFactory(context: Context, private val width: Int) {
     }
 
     /** Wallpaper data of a title, with its watched badge when the user wants it marked. */
-    fun build(ref: TitleRef, plan: ListPlan): WallpaperInfo? {
+    fun build(ref: TitleRef, plan: ListPlan? = null): WallpaperInfo? {
         val info = catalog.build(ref) ?: return null
-        val status = plan.statuses[ref]
+        val status = if (plan != null) plan.statuses[ref] else watched?.status(ref)
         return if (status != null && Settings.watchedMode == Settings.WATCHED_MARK) info.copy(watchStatus = status) else info
     }
 

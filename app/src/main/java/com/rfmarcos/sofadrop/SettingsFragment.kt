@@ -51,7 +51,7 @@ class SettingsFragment : BaseSettingsFragment() {
 
     override fun onCreateGuidance(savedInstanceState: Bundle?): Guidance = Guidance(
         getString(R.string.plugin_name),
-        getString(R.string.plugin_description),
+        "",
         getString(R.string.settings),
         AppCompatResources.getDrawable(requireActivity(), R.mipmap.ic_launcher),
     )
@@ -105,6 +105,10 @@ class SettingsFragment : BaseSettingsFragment() {
     override fun onGuidedActionClicked(action: GuidedAction) {
         when (action.id) {
             ID_GENERATE -> {
+                if (Sources.selected().isEmpty()) {
+                    Toast.makeText(requireContext(), R.string.select_list_first, Toast.LENGTH_SHORT).show()
+                    return
+                }
                 GenerateWallpapersWorker.runNow(requireContext(), replace = true)
                 Toast.makeText(requireContext(), R.string.generation_started, Toast.LENGTH_SHORT).show()
                 refreshStatus()
@@ -156,14 +160,18 @@ class SettingsFragment : BaseSettingsFragment() {
                 notifyActionChanged(findActionPositionById(ID_PREVIEW))
             }
         }
-        pendingNotice?.visibility = if (Settings.hasPendingChanges && !Settings.generating) View.VISIBLE else View.GONE
+        val pending = Settings.hasPendingChanges && !Settings.generating && Sources.selected().isNotEmpty()
+        pendingNotice?.visibility = if (pending) View.VISIBLE else View.GONE
     }
 
     private fun statusText(): String {
         val count = WallpaperStore(requireContext()).current().size
         return when {
             Settings.generating -> getString(R.string.status_generating)
-            Settings.lastError.isNotEmpty() -> getString(R.string.status_error, Settings.lastError)
+            Sources.selected().isEmpty() -> getString(R.string.status_select_list)
+            // A "no lists" error is stale once lists are picked again
+            Settings.lastError.isNotEmpty() && Settings.lastError != getString(R.string.error_no_lists) ->
+                getString(R.string.status_error, Settings.lastError)
             count == 0 -> getString(R.string.status_never)
             Settings.hasPendingChanges -> getString(R.string.status_pending, count)
             else -> getString(
@@ -179,7 +187,8 @@ class SettingsFragment : BaseSettingsFragment() {
     private fun previewKey() = listOf(
         Settings.token.hashCode(), Settings.language, Settings.region, Settings.lists.sorted(),
         Settings.globalHitsOnly, Settings.maxAgeMonths, Settings.excludeAdult, Settings.filterScope, Settings.showProviders, Settings.traktConnected, Settings.mdbLists.size,
-        Settings.tmdbConnected, Settings.selectionMode, Settings.watchedMode,
+        Settings.tmdbConnected, Settings.selectionMode, Settings.watchedMode, Settings.overviewLines, Settings.previewPin,
+        WallpaperStore(requireContext()).current().size,
     ).joinToString("|")
 
     private fun schedulePreview(delay: Long = 700) {
@@ -192,6 +201,10 @@ class SettingsFragment : BaseSettingsFragment() {
         if (cachedPreview?.first == key && previewImage?.drawable != null) return
         if (Settings.token.isBlank()) {
             showPreviewMessage(getString(R.string.preview_no_token))
+            return
+        }
+        if (Sources.selected().isEmpty()) {
+            showPreviewMessage(getString(R.string.error_no_lists))
             return
         }
         val job = ++previewJob
@@ -216,7 +229,8 @@ class SettingsFragment : BaseSettingsFragment() {
 
     private fun showPreview(bitmap: Bitmap, title: String) {
         previewImage?.setImageBitmap(bitmap)
-        previewLabel?.text = getString(R.string.preview_label, title)
+        val pinned = Settings.previewPin.isNotEmpty()
+        previewLabel?.text = getString(if (pinned) R.string.preview_label_pinned else R.string.preview_label, title)
     }
 
     private fun showPreviewMessage(message: String) {
@@ -247,13 +261,28 @@ class SettingsFragment : BaseSettingsFragment() {
         private val SELECTION_MODES = listOf(Settings.SELECTION_ORDER, Settings.SELECTION_RANDOM)
         private const val PREVIEW_WIDTH = 1280
 
+        /** The pinned title while it is still in the current set; a pin left behind by a new set is dropped. */
+        private fun pinnedRef(context: android.content.Context): TitleRef? {
+            val pin = Settings.previewPin.ifEmpty { return null }
+            val stored = WallpaperStore(context).current().firstOrNull { "${it.type}:${it.tmdbId}" == pin }
+            val type = MediaType.entries.firstOrNull { it.path == stored?.type }
+            if (stored == null || type == null) {
+                Settings.previewPin = ""
+                return null
+            }
+            return TitleRef(type, stored.tmdbId)
+        }
+
         /** Last preview (key, image, title), kept while the process lives so reopening is instant. */
         private var cachedPreview: Triple<String, Bitmap, String>? = null
 
-        /** Render one wallpaper of the first selected list that has a usable title. */
+        /** Render the pinned wallpaper, else one of the first selected list that has a usable title. */
         fun renderPreview(context: android.content.Context): Pair<Bitmap, String>? {
             Settings.init(context)
             val factory = WallpaperFactory(context, PREVIEW_WIDTH)
+            pinnedRef(context)?.let { ref ->
+                factory.build(ref)?.let { info -> return factory.render(info) to info.title }
+            }
             for (source in Sources.selected()) {
                 val plan = runCatching { factory.plan(source, 3) }.getOrNull() ?: continue
                 for (ref in plan.usable.take(4)) {

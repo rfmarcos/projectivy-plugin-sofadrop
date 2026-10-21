@@ -17,7 +17,7 @@
     <string name="action_generate_now">Actualizar ahora</string>
     <string name="generation_started">Generando fondos en segundo plano…</string>
     <string name="action_preview">Ver fondos</string>
-    <string name="action_preview_desc">El conjunto actual a pantalla completa</string>
+    <string name="action_preview_desc">El conjunto actual a pantalla completa · OK elige la vista previa</string>
     <string name="preview_empty">Aún no hay fondos. Usa primero «Actualizar ahora».</string>
     <string name="preview_counter">%1$d / %2$d · ◀ ▶</string>
 
@@ -80,6 +80,7 @@
     <string name="mdblist_failed">Error de MDBList: %1$s</string>
 
     <string name="error_no_token">Falta la clave de TMDB</string>
+    <string name="error_no_lists">No hay listas elegidas · se mantienen los fondos actuales</string>
     <string name="error_no_titles">Las listas elegidas no devolvieron títulos</string>
 
     <!-- QR, accounts, selection, watched, explorer -->
@@ -159,7 +160,7 @@
     <string name="about_credits_desc">Este producto usa la API de TMDB pero no está respaldado ni certificado por TMDB. Sofadrop usa Trakt pero no está respaldado ni certificado por Trakt. Listas de MDBList. Fondos para Projectivy Launcher.</string>
     <string name="qr_link_hint">Escanea el código con el móvil</string>
     <string name="setting_details_title">Detalles del fondo</string>
-    <string name="details_description">Cómo se ve cada fondo: idioma de los textos, plataformas de streaming que se muestran y resolución de la imagen.</string>
+    <string name="details_description">Cómo se ve cada fondo: idioma de los textos, plataformas de streaming, longitud de la sinopsis y resolución de la imagen. Una sinopsis más corta evita que las filas del launcher tapen el texto.</string>
     <string name="streaming_title">Plataformas de streaming</string>
     <string name="streaming_none">No mostrar</string>
     <string name="streaming_summary_none">sin plataformas</string>
@@ -179,4 +180,17 @@
         <item quantity="one">%d lista</item>
         <item quantity="other">%d listas</item>
     </plurals>
+    <string name="status_select_list">Elige al menos una lista</string>
+    <string name="select_list_first">Elige antes al menos una lista</string>
+    <string name="synopsis_title">Sinopsis</string>
+    <string name="synopsis_full">Completa (4 líneas)</string>
+    <string name="synopsis_short">Corta (2 líneas)</string>
+    <string name="synopsis_hidden">Oculta</string>
+    <string name="synopsis_summary_short">sinopsis corta</string>
+    <string name="synopsis_summary_hidden">sin sinopsis</string>
+    <string name="preview_label_pinned">Vista previa · %1$s · fijada</string>
+    <string name="preview_hint_pin">OK  Usar en la vista previa</string>
+    <string name="preview_hint_unpin">📌 En la vista previa · OK  Volver a automático</string>
+    <string name="preview_pinned">Se mostrará en la vista previa de los ajustes</string>
+    <string name="preview_unpinned">Vista previa en automático</string>
 </resources>

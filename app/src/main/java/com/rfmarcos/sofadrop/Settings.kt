@@ -47,6 +47,8 @@ object Settings {
     private const val KEY_MDBLIST_EXPIRES = "_mdblist_expires_at"
     private const val KEY_MDBLIST_USER = "_mdblist_user"
     private const val KEY_SELECTION = "selection_mode"
+    private const val KEY_OVERVIEW_LINES = "overview_lines"
+    private const val KEY_PREVIEW_PIN = "_preview_pin"
     private const val KEY_WATCHED = "watched_mode"
     private const val KEY_TMDB_SESSION = "_tmdb_session_id"
     private const val KEY_TMDB_ACCOUNT = "_tmdb_account_id"
@@ -212,6 +214,18 @@ object Settings {
         get() = preferences.getString(KEY_SELECTION, SELECTION_ORDER) ?: SELECTION_ORDER
         set(value) = preferences.edit { putString(KEY_SELECTION, value) }
 
+    /** Synopsis lines on the wallpaper: fewer lines keep the info block clear of the launcher rows. */
+    var overviewLines: Int
+        get() = preferences.getInt(KEY_OVERVIEW_LINES, 4)
+        set(value) = preferences.edit { putInt(KEY_OVERVIEW_LINES, value) }
+
+    val OVERVIEW_OPTIONS = listOf(4, 2, 0)
+
+    /** Wallpaper shown by the settings preview as "type:tmdbId" (e.g. "movie:123"); empty = automatic. */
+    var previewPin: String
+        get() = string(KEY_PREVIEW_PIN)
+        set(value) = preferences.edit { putString(KEY_PREVIEW_PIN, value) }
+
     /** What to do with titles already watched on Trakt: "show", "mark" or "hide". */
     var watchedMode: String
         get() = preferences.getString(KEY_WATCHED, WATCHED_MARK) ?: WATCHED_MARK
@@ -288,7 +302,8 @@ object Settings {
             token.hashCode(), language, region, lists.sorted().joinToString(","), titlesPerList,
             outputWidth, globalHitsOnly, showProviders, selectionMode, if (traktConnected) watchedMode else "",
             maxAgeMonths, excludeAdult, filterScope,
-        ).joinToString("|")
+        // Only when changed, so existing installs don't see a pending change after updating
+        ).plus(listOfNotNull(overviewLines.takeIf { it != 4 })).joinToString("|")
 
     /** True when the current wallpapers were generated with different settings. */
     val hasPendingChanges: Boolean

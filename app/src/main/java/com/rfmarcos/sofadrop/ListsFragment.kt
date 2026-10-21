@@ -54,6 +54,7 @@ class ListsFragment : BaseSettingsFragment() {
         /** "8 lists · TMDB 2 · Trakt 4 · MDBList 2" for the main screen. */
         fun summary(context: Context): String {
             val selected = Sources.selected()
+            if (selected.isEmpty()) return context.getString(R.string.error_no_lists)
             val perProvider = selected.groupingBy { it.provider }.eachCount().entries
                 .joinToString(" · ") { (provider, count) -> "${providerName(context, provider)} $count" }
             return context.getString(R.string.lists_summary, listsCount(context, selected.size), perProvider)

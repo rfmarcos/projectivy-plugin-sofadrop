@@ -23,8 +23,15 @@ class GenerateWallpapersWorker(context: Context, params: WorkerParameters) : Wor
 
     override fun doWork(): Result {
         Settings.init(applicationContext)
-        if (Settings.token.isBlank()) {
-            Settings.lastError = applicationContext.getString(R.string.error_no_token)
+        // Nothing to build from: keep the current wallpapers and say why (runNow already set "generating")
+        val missing = when {
+            Settings.token.isBlank() -> R.string.error_no_token
+            Sources.selected().isEmpty() -> R.string.error_no_lists
+            else -> null
+        }
+        if (missing != null) {
+            Settings.lastError = applicationContext.getString(missing)
+            Settings.generating = false
             return Result.failure()
         }
 

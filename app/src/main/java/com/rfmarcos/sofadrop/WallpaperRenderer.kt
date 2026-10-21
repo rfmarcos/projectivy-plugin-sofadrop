@@ -28,7 +28,12 @@ import kotlin.math.sin
  * Draws a wallpaper with the same layout as TMDB.py. All sizes are defined for a 3840 px wide
  * canvas and scaled to the requested output width.
  */
-class WallpaperRenderer(context: Context, private val width: Int, private val texts: WallpaperTexts) {
+class WallpaperRenderer(
+    context: Context,
+    private val width: Int,
+    private val texts: WallpaperTexts,
+    private val overviewLines: Int = 4,
+) {
 
     private val height = width * 9 / 16
     private val scale = width / 3840f
@@ -226,7 +231,8 @@ class WallpaperRenderer(context: Context, private val width: Int, private val te
     private fun drawOverview(canvas: Canvas, overview: String): Float {
         val paint = textPaint(regular, s(48f), Color.rgb(220, 220, 220))
         var top = s(META_CENTER + 36 + 52)
-        for (line in wrap(overview, paint, s(CONTENT_WIDTH), OVERVIEW_LINES)) {
+        if (overviewLines <= 0) return top // hidden: the streaming row moves up
+        for (line in wrap(overview, paint, s(CONTENT_WIDTH), overviewLines)) {
             canvas.drawText(line, s(MARGIN_LEFT), top - paint.fontMetrics.ascent, paint)
             top += s(66f)
         }
@@ -299,7 +305,6 @@ class WallpaperRenderer(context: Context, private val width: Int, private val te
         private const val LOGO_BOTTOM = 640
         private const val META_CENTER = 725
         private const val PROVIDER_ICON_SIZE = 88
-        private const val OVERVIEW_LINES = 4
 
         private fun font(context: Context, id: Int): Typeface =
             ResourcesCompat.getFont(context, id) ?: Typeface.DEFAULT

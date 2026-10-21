@@ -60,9 +60,9 @@ object Sources {
         return lists
     }
 
-    /** Selected lists that can actually be used (e.g. not a Trakt list after disconnecting). */
+    /** Selected lists that can actually be used (e.g. not a Trakt list after disconnecting); may be empty. */
     fun selected(): List<ListSource> {
         val chosen = Settings.lists
-        return available().filter { it.key in chosen }.ifEmpty { TMDB.take(2) }
+        return available().filter { it.key in chosen }
     }
 }
