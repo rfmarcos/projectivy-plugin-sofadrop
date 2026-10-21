@@ -6,11 +6,17 @@
     android:viewportHeight="108">
     <!-- Three panels (new backdrops) dropping onto a sofa; panels are cut flat above it -->
     <group>
-        <clip-path android:pathData="M0.000,0.000 L108.000,0.000 L108.000,57.827 L33.669,57.827 L26.669,50.827 L0.000,50.827 Z" />
+        <clip-path android:pathData="M0.000,0.000 L108.000,0.000 L108.000,60.166 L33.669,60.166 L26.669,53.166 L0.000,53.166 Z" />
         <path android:pathData="M46.133,24.834 L73.423,34.498 C74.204,34.774 74.613,35.632 74.337,36.412 L61.652,72.233 C61.376,73.013 60.518,73.422 59.737,73.146 L32.447,63.482 C31.666,63.206 31.257,62.348 31.534,61.567 L44.218,25.747 C44.495,24.966 45.352,24.557 46.133,24.834 Z">
             <aapt:attr name="android:fillColor">
                 <gradient android:type="linear" android:startX="44.667" android:startY="24.667" android:endX="54.667" android:endY="57.333"
                     android:startColor="#FB8B2F" android:centerColor="#F23C4C" android:endColor="#A8186E" />
+            </aapt:attr>
+        </path>
+        <path android:pathData="M46.133,24.834 L73.423,34.498 C74.204,34.774 74.613,35.632 74.337,36.412 L61.652,72.233 C61.376,73.013 60.518,73.422 59.737,73.146 L32.447,63.482 C31.666,63.206 31.257,62.348 31.534,61.567 L44.218,25.747 C44.495,24.966 45.352,24.557 46.133,24.834 Z">
+            <aapt:attr name="android:fillColor">
+                <gradient android:type="linear" android:startX="54" android:startY="49.166" android:endX="54" android:endY="60.166"
+                    android:startColor="#002E0B3C" android:endColor="#E62E0B3C" />
             </aapt:attr>
         </path>
         <path android:pathData="M39.792,33.441 L65.860,42.672 C67.855,43.378 68.900,45.569 68.193,47.564 L55.509,83.385 C54.802,85.380 52.611,86.425 50.616,85.718 L24.548,76.487 C22.553,75.781 21.508,73.590 22.214,71.595 L34.899,35.774 C35.606,33.779 37.796,32.734 39.792,33.441 Z">
@@ -25,6 +31,12 @@
                     android:startColor="#FB8B2F" android:centerColor="#F23C4C" android:endColor="#A8186E" />
             </aapt:attr>
         </path>
+        <path android:pathData="M39.013,35.640 L65.081,44.871 C65.861,45.147 66.270,46.005 65.994,46.785 L53.309,82.606 C53.033,83.386 52.175,83.795 51.395,83.519 L25.327,74.288 C24.546,74.012 24.137,73.154 24.414,72.373 L37.098,36.553 C37.375,35.772 38.232,35.363 39.013,35.640 Z">
+            <aapt:attr name="android:fillColor">
+                <gradient android:type="linear" android:startX="54" android:startY="49.166" android:endX="54" android:endY="60.166"
+                    android:startColor="#002E0B3C" android:endColor="#E62E0B3C" />
+            </aapt:attr>
+        </path>
         <path android:pathData="M37.862,44.778 L58.562,52.108 C60.558,52.815 61.602,55.005 60.896,57.001 L48.211,92.821 C47.504,94.817 45.314,95.861 43.319,95.155 L22.618,87.824 C20.623,87.118 19.578,84.927 20.284,82.932 L32.969,47.111 C33.676,45.116 35.866,44.071 37.862,44.778 Z">
             <aapt:attr name="android:fillColor">
                 <gradient android:type="linear" android:startX="0.000" android:startY="0.000" android:endX="108.000" android:endY="108.000"
@@ -35,6 +47,12 @@
             <aapt:attr name="android:fillColor">
                 <gradient android:type="linear" android:startX="44.667" android:startY="24.667" android:endX="54.667" android:endY="57.333"
                     android:startColor="#FB8B2F" android:centerColor="#F23C4C" android:endColor="#A8186E" />
+            </aapt:attr>
+        </path>
+        <path android:pathData="M37.083,46.977 L57.783,54.307 C58.564,54.584 58.973,55.441 58.697,56.222 L46.012,92.042 C45.736,92.823 44.878,93.232 44.097,92.955 L23.397,85.625 C22.616,85.349 22.207,84.491 22.484,83.710 L35.168,47.890 C35.445,47.109 36.302,46.700 37.083,46.977 Z">
+            <aapt:attr name="android:fillColor">
+                <gradient android:type="linear" android:startX="54" android:startY="49.166" android:endX="54" android:endY="60.166"
+                    android:startColor="#002E0B3C" android:endColor="#E62E0B3C" />
             </aapt:attr>
         </path>
     </group>

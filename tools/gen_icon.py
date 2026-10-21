@@ -78,6 +78,9 @@ def sofa_legs():
 SOFA_BACK_PATH = centred_rrect(SOFA_FIT["cx"], SOFA_FIT["back_cy"], SOFA_FIT["back_w"], SOFA_FIT["back_h"], SOFA_FIT["back_r"])
 SOFA_GAP_PATHS = sofa_base(SOFA_FIT["gap"])   # dark margin between the backrest and the arms/base
 SOFA_BASE_PATHS = sofa_base() + sofa_legs()
+CLIP = SOFA_FIT["back_cy"] - SOFA_FIT["back_h"] / 2 - SOFA_FIT["gap"]  # same dark margin as inside the sofa
+FADE_TOP = CLIP - 11                  # cards darken into purple towards the cut, as in the concept
+FADE_COLOR, FADE_ALPHA = "#2E0B3C", 0.9
 
 
 def clip_points():
@@ -152,6 +155,11 @@ def artwork(S):
             img.paste(bg, (0, 0), Image.composite(mask([panel_path(i, GAP)], sc, (S, S)), Image.new("L", (S, S), 0), clip))
         m = Image.composite(mask([panel_path(i)], sc, (S, S)), Image.new("L", (S, S), 0), clip)
         layer = panels.copy(); layer.putalpha(m); img.alpha_composite(layer)
+        shade = Image.new("RGBA", (S, S), hex2rgb(FADE_COLOR) + (0,))
+        ramp = Image.new("L", (S, S), 0); rd = ImageDraw.Draw(ramp)
+        for yy in range(int(FADE_TOP * sc), int(CLIP * sc) + 1):
+            rd.line((0, yy, S, yy), fill=int(255 * FADE_ALPHA * min(max((yy / sc - FADE_TOP) / (CLIP - FADE_TOP), 0), 1)))
+        shade.putalpha(Image.composite(ramp, Image.new("L", (S, S), 0), m)); img.alpha_composite(shade)
     white = Image.new("RGBA", (S, S), hex2rgb(SOFA) + (255,))
     back = white.copy(); back.putalpha(mask([SOFA_BACK_PATH], sc, (S, S))); img.alpha_composite(back)
     if SOFA_GAP_PATHS:
@@ -208,6 +216,11 @@ def vector_xml(foreground):
         if i > 0:  # a margin filled with the tile's own gradient separates it from the panel behind
             body += f'        <path android:pathData="{panel_path(i, GAP)}">\n' + gradient(tile, 0, 0, 108, 108, "            ") + '        </path>\n'
         body += f'        <path android:pathData="{panel_path(i)}">\n' + gradient([PANEL_A, PANEL_M, PANEL_B], *GRAD, "            ") + '        </path>\n'
+        body += (f'        <path android:pathData="{panel_path(i)}">\n'
+                 '            <aapt:attr name="android:fillColor">\n'
+                 f'                <gradient android:type="linear" android:startX="54" android:startY="{FADE_TOP:.3f}" android:endX="54" android:endY="{CLIP:.3f}"\n'
+                 f'                    android:startColor="#00{FADE_COLOR[1:]}" android:endColor="#{round(FADE_ALPHA * 255):02X}{FADE_COLOR[1:]}" />\n'
+                 '            </aapt:attr>\n        </path>\n')
     body += '    </group>\n'
     body += f'    <path android:fillColor="{SOFA}" android:pathData="{SOFA_BACK_PATH}" />\n'
     if SOFA_GAP_PATHS:
