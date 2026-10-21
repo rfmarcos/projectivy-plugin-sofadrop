@@ -4,8 +4,8 @@ Three tilted panels (new backdrops) drop onto a white sofa, on a near-black tile
   python tools/gen_icon.py app/src/main/res build/icon-preview      # write resources + previews
   python tools/gen_icon.py - build/icon-preview                       # previews only
 
-Shapes are measured on the chosen concept in a 642 px tile (= the 72 dp a launcher shows of the
-108 dp adaptive icon), then mapped to the 108 viewport.
+The cards were fitted and the sofa traced on the chosen concept (its tile = the 72 dp a launcher
+shows of the 108 dp adaptive icon).
 """
 import math
 import os
@@ -15,21 +15,9 @@ import sys
 from PIL import Image, ImageDraw, ImageFont
 
 K = 0.5523  # circle bezier constant
-BG_A, BG_B = "#16151E", "#0B0B10"                       # tile (diagonal)
-PANEL_A, PANEL_M, PANEL_B = "#FF9A3C", "#F0306A", "#6E1A72"  # panels: orange -> magenta -> dark purple (fades at the bottom)
+BG_A, BG_B = "#0F0F1F", "#0A0A16"                       # tile (diagonal), the concept's navy black
+PANEL_A, PANEL_M, PANEL_B = "#FB8B2F", "#F23C4C", "#A8186E"  # panels: orange -> red-pink -> magenta (sampled from the concept)
 SOFA = "#FFFFFF"
-
-
-TILE_X0, TILE_W = 4, 632  # the concept's tile inside the measured crop
-
-
-def v(px):
-    """Concept pixel -> viewport unit (the tile is the 72 dp a launcher shows)."""
-    return 18 + (px - TILE_X0) * 72 / TILE_W
-
-
-def u(px):
-    return px * 72 / TILE_W
 
 
 def rrect(x0, y0, x1, y1, r):
@@ -50,43 +38,58 @@ def rotate(d, angle, cx, cy):
     return re.sub(r"(-?\d+\.?\d*),(-?\d+\.?\d*)", turn, d)
 
 
-# --- Geometry, in concept pixels ---
-ANGLE = 20                      # panels slope down to the right
-PANELS = [                      # back to front: top-left corner, width, height (cut at CLIP_Y)
-    ((240, 68), 279, 360),
-    ((170, 172), 272, 330),
-    ((158, 262), 218, 260),
+# --- Geometry (108 viewport; launchers show the central 72) ---
+# Fitted to the concept: 3 rotated rounded cards (each front one cutting an L-shaped gap into the
+# ones behind, all cut flat above the sofa) and a symmetric sofa.
+ANGLE = 19.50
+PANELS = [  # back to front: top-left corner, width (rotation is around that corner)
+    ((44.719, 24.333), 31.951),
+    ((37.599, 35.139), 30.654),
+    ((35.669, 46.476), 24.960),
 ]
-PANEL_R, GAP = 14, 11
-CLIP_Y = 373                    # panels are cut flat just above the sofa
-SOFA_BACK = (178, 393, 455, 500, 22)
-SOFA_BASE = [
-    (133, 452, 197, 530, 30),   # left armrest (rolled)
-    (437, 452, 501, 530, 30),   # right armrest
-    (136, 492, 498, 560, 33),   # seat and base, rounded underneath
-    (182, 552, 202, 588, 7),    # legs
-    (432, 552, 452, 588, 7),
-]
-FADE = (340,)  # panels darken from here down to CLIP_Y
-SOFA_GAP = 13
+PANEL_H, PANEL_R, GAP = 41.000, 1.500, 2.333
+CLIP_CHAMFER = 7                # the front card's bottom-left corner is cut at 45 degrees
+CLIP = 57.827       # cards are cut flat just above the sofa
+GRAD = (44.667, 24.667, 54.667, 57.333)  # cards gradient: orange top-left -> magenta bottom
+
+SOFA_FIT = {"cx": 53.667, "back_cy": 68.333, "back_w": 31.667, "back_h": 13.0, "back_r": 3.333, "arm_dx": 17.375, "arm_cy": 73.583, "arm_w": 6.083, "arm_h": 10.833, "arm_r": 3.333, "arm_ang": 13.0, "base_cy": 76.833, "base_w": 37.167, "base_h": 6.083, "base_r": 2.917, "leg_dx": 14.333, "leg_wt": 2.333, "leg_wb": 1.833, "leg_y0": 80.5, "leg_y1": 83.5, "gap": 1.667}  # symmetric sofa fitted to the concept
+
+
+def centred_rrect(cx, cy, w, h, r, angle=0.0):
+    r = min(r, w / 2, h / 2)
+    return rotate(rrect(cx - w / 2, cy - h / 2, cx + w / 2, cy + h / 2, r), angle, cx, cy)
+
+
+def sofa_base(grow=0.0):
+    f = SOFA_FIT
+    return [centred_rrect(f["cx"] - f["arm_dx"], f["arm_cy"], f["arm_w"] + 2 * grow, f["arm_h"] + 2 * grow, f["arm_r"] + grow, -f["arm_ang"]),
+            centred_rrect(f["cx"] + f["arm_dx"], f["arm_cy"], f["arm_w"] + 2 * grow, f["arm_h"] + 2 * grow, f["arm_r"] + grow, f["arm_ang"]),
+            # base: fully rounded ends, like the concept's curved underside
+            centred_rrect(f["cx"], f["base_cy"], f["base_w"] + 2 * grow, f["base_h"] + 2 * grow, f["base_h"] / 2 + grow)]
+
+
+def sofa_legs():
+    """Short legs with a rounded foot, starting inside the base."""
+    f = SOFA_FIT
+    w, y0, y1 = f["leg_wt"], f["base_cy"] + f["base_h"] / 2 - 2, f["leg_y1"]
+    return [rrect(f["cx"] + side * f["leg_dx"] - w / 2, y0, f["cx"] + side * f["leg_dx"] + w / 2, y1, w / 2) for side in (-1, 1)]
+
+
+SOFA_BACK_PATH = centred_rrect(SOFA_FIT["cx"], SOFA_FIT["back_cy"], SOFA_FIT["back_w"], SOFA_FIT["back_h"], SOFA_FIT["back_r"])
+SOFA_GAP_PATHS = sofa_base(SOFA_FIT["gap"])   # dark margin between the backrest and the arms/base
+SOFA_BASE_PATHS = sofa_base() + sofa_legs()
+
+
+def clip_points():
+    """Cards are cut flat above the sofa, with the front card's bottom-left corner chamfered."""
+    (fx, _), _ = PANELS[-1]
+    x = fx - 9  # just left of where the front card meets the cut
+    return [(0, 0), (108, 0), (108, CLIP), (x + CLIP_CHAMFER, CLIP), (x, CLIP - CLIP_CHAMFER), (0, CLIP - CLIP_CHAMFER)]
 
 
 def panel_path(i, grow=0.0):
-    (x, y), w, h = PANELS[i]
-    return rotate(rrect(v(x) - u(grow), v(y) - u(grow), v(x + w) + u(grow), v(y + h) + u(grow), u(PANEL_R + grow)), ANGLE, v(x), v(y))
-
-
-def box(b, grow=0.0):
-    x0, y0, x1, y1, r = b
-    return rrect(v(x0) - u(grow), v(y0) - u(grow), v(x1) + u(grow), v(y1) + u(grow), u(r + grow))
-
-
-CLIP = v(CLIP_Y)
-SOFA_BACK_PATH = box(SOFA_BACK)
-SOFA_GAP_PATHS = [box(b, SOFA_GAP) for b in SOFA_BASE[:3]]   # separates arms and seat from the backrest
-SOFA_BASE_PATHS = [box(b) for b in SOFA_BASE]
-GRAD = (v(200), v(95), v(480), v(330))                  # panels gradient: orange left, magenta right, purple low
-FADE_COLOR = "#121119"
+    (x, y), w = PANELS[i]
+    return rotate(rrect(x - grow, y - grow, x + w + grow, y + PANEL_H + grow, PANEL_R + grow), ANGLE, x, y)
 
 
 # --- Path flattening (M L C Z only) for the PNG previews ---
@@ -143,20 +146,16 @@ def artwork(S):
     bg = linear((S, S), [BG_A, BG_B], 0, 0, 108, 108).convert("RGBA")
     img = bg.copy()
     panels = linear((S, S), [PANEL_A, PANEL_M, PANEL_B], *GRAD).convert("RGBA")
-    clip = Image.new("L", (S, S), 0); ImageDraw.Draw(clip).rectangle((0, 0, S, CLIP * sc), fill=255)
+    clip = Image.new("L", (S, S), 0); ImageDraw.Draw(clip).polygon([(x * sc, y * sc) for x, y in clip_points()], fill=255)
     for i in range(len(PANELS)):
         if i > 0:  # the margin around a front panel shows the tile over the panel behind
             img.paste(bg, (0, 0), Image.composite(mask([panel_path(i, GAP)], sc, (S, S)), Image.new("L", (S, S), 0), clip))
         m = Image.composite(mask([panel_path(i)], sc, (S, S)), Image.new("L", (S, S), 0), clip)
         layer = panels.copy(); layer.putalpha(m); img.alpha_composite(layer)
-    fade = Image.new("L", (S, S), 0); fd = ImageDraw.Draw(fade)
-    y0, y1 = v(FADE[0]) * sc, CLIP * sc
-    for yy in range(int(y0), int(y1) + 1):
-        fd.line((0, yy, S, yy), fill=int(255 * min(max((yy - y0) / (y1 - y0), 0), 1)))
-    img.paste(Image.new("RGBA", (S, S), hex2rgb(FADE_COLOR) + (255,)), (0, 0), Image.composite(fade, Image.new("L", (S, S), 0), clip))
     white = Image.new("RGBA", (S, S), hex2rgb(SOFA) + (255,))
     back = white.copy(); back.putalpha(mask([SOFA_BACK_PATH], sc, (S, S))); img.alpha_composite(back)
-    img.paste(bg, (0, 0), mask(SOFA_GAP_PATHS, sc, (S, S)))
+    if SOFA_GAP_PATHS:
+        img.paste(bg, (0, 0), mask(SOFA_GAP_PATHS, sc, (S, S)))
     base = white.copy(); base.putalpha(mask(SOFA_BASE_PATHS, sc, (S, S))); img.alpha_composite(base)
     return img
 
@@ -204,20 +203,15 @@ def vector_xml(foreground):
     if not foreground:
         return head + '    <path android:pathData="M0,0h108v108h-108z">\n' + gradient(tile, 0, 0, 108, 108) + '    </path>\n</vector>\n'
     body = '    <!-- Three panels (new backdrops) dropping onto a sofa; panels are cut flat above it -->\n'
-    body += f'    <group>\n        <clip-path android:pathData="M0,0H108V{CLIP:.3f}H0Z" />\n'
+    body += '    <group>\n        <clip-path android:pathData="M' + ' L'.join(f"{x:.3f},{y:.3f}" for x, y in clip_points()) + ' Z" />\n'
     for i in range(len(PANELS)):
         if i > 0:  # a margin filled with the tile's own gradient separates it from the panel behind
             body += f'        <path android:pathData="{panel_path(i, GAP)}">\n' + gradient(tile, 0, 0, 108, 108, "            ") + '        </path>\n'
         body += f'        <path android:pathData="{panel_path(i)}">\n' + gradient([PANEL_A, PANEL_M, PANEL_B], *GRAD, "            ") + '        </path>\n'
-    # Panels darken into the tile just above the sofa
-    body += (f'        <path android:pathData="M0,{v(FADE[0]):.3f}H108V{CLIP:.3f}H0Z">\n'
-             '            <aapt:attr name="android:fillColor">\n'
-             f'                <gradient android:type="linear" android:startX="54" android:startY="{v(FADE[0]):.3f}" android:endX="54" android:endY="{CLIP:.3f}"\n'
-             f'                    android:startColor="#00{FADE_COLOR[1:]}" android:endColor="#FF{FADE_COLOR[1:]}" />\n'
-             '            </aapt:attr>\n        </path>\n')
     body += '    </group>\n'
     body += f'    <path android:fillColor="{SOFA}" android:pathData="{SOFA_BACK_PATH}" />\n'
-    body += '    <path android:pathData="' + ' '.join(SOFA_GAP_PATHS) + '">\n' + gradient(tile, 0, 0, 108, 108) + '    </path>\n'
+    if SOFA_GAP_PATHS:
+        body += '    <path android:pathData="' + ' '.join(SOFA_GAP_PATHS) + '">\n' + gradient(tile, 0, 0, 108, 108) + '    </path>\n'
     body += f'    <path android:fillColor="{SOFA}" android:pathData="' + ' '.join(SOFA_BASE_PATHS) + '" />\n'
     return head + body + '</vector>\n'
 
