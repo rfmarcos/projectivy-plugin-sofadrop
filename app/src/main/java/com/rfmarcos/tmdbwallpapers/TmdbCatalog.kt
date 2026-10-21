@@ -20,7 +20,14 @@ data class WallpaperInfo(
     val backdropPath: String,
     val logoPath: String?,
     val providerLogoPaths: List<String>,
+    val watchStatus: WatchStatus? = null,
 )
+
+/** Why a title of a list is not used. */
+enum class Exclusion { LOCAL_MARKET, TOO_OLD, KEYWORD, WATCHED, NO_IMAGE, DUPLICATE }
+
+/** A title of a list and, when it is filtered out, the reason. */
+data class Candidate(val ref: TitleRef, val exclusion: Exclusion? = null)
 
 /**
  * Title selection and wallpaper data. TMDB lists use the same rules as TMDB.py
@@ -41,32 +48,48 @@ class TmdbCatalog(
     private val today = dateFormat.format(Calendar.getInstance().time)
     private val oneYearAgo = dateFormat.format(Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -365) }.time)
 
-    /** Candidate titles of a list, best first. May return more than [limit] to allow for skipped ones. */
-    fun titles(source: ListSource, limit: Int, trakt: TraktClient?, mdbList: MdbListClient?): List<TitleRef> =
+    /** Candidate titles of a list, best first, including the ones filtered out (with the reason). */
+    fun candidates(source: ListSource, pool: Int, trakt: TraktClient?, mdbList: MdbListClient?): List<Candidate> =
         when (source.provider) {
-            SourceProvider.TMDB -> tmdbTitles(source.key, limit)
-            SourceProvider.TRAKT -> trakt?.titles(source.key, limit).orEmpty()
+            SourceProvider.TMDB -> tmdbCandidates(source.key, pool)
+            SourceProvider.TRAKT -> trakt?.titles(source.key, pool).orEmpty().map { Candidate(it) }
             SourceProvider.MDBLIST -> source.key.removePrefix("mdblist:").toLongOrNull()
-                ?.let { mdbList?.titles(it, limit, client) }.orEmpty()
+                ?.let { mdbList?.titles(it, pool, client) }.orEmpty().map { Candidate(it) }
         }
+
+    /** Title and year of a title in the configured language (for listing a list's contents). */
+    fun summary(ref: TitleRef): Pair<String, String>? {
+        val item = details(ref) ?: return null
+        val title = item.str(if (ref.type == MediaType.MOVIE) "title" else "name") ?: return null
+        return title to item.str(if (ref.type == MediaType.MOVIE) "release_date" else "first_air_date").orEmpty().take(4)
+    }
 
     // --- TMDB lists ---
 
-    private fun tmdbTitles(key: String, limit: Int): List<TitleRef> = when (key) {
-        "tmdb:trending_movies" -> trending(MediaType.MOVIE, limit)
-        "tmdb:trending_tv" -> trending(MediaType.TV, limit)
-        "tmdb:popular_movies" -> simpleList("movie/popular?region=$region", MediaType.MOVIE, limit)
-        "tmdb:popular_tv" -> simpleList("tv/popular", MediaType.TV, limit)
-        "tmdb:now_playing" -> simpleList("movie/now_playing?region=$region", MediaType.MOVIE, limit)
-        "tmdb:upcoming" -> simpleList("movie/upcoming?region=$region", MediaType.MOVIE, limit)
-        "tmdb:top_rated_movies" -> simpleList("movie/top_rated", MediaType.MOVIE, limit)
-        "tmdb:top_rated_tv" -> simpleList("tv/top_rated", MediaType.TV, limit)
-        "tmdb:on_the_air" -> simpleList("tv/on_the_air", MediaType.TV, limit)
-        else -> emptyList()
+    private fun tmdbCandidates(key: String, pool: Int): List<Candidate> {
+        val account = "account/${Settings.tmdbAccountId}"
+        val session = "session_id=${Settings.tmdbSessionId}&sort_by=created_at.desc"
+        return when (key) {
+            "tmdb:trending_movies" -> trending(MediaType.MOVIE, pool)
+            "tmdb:trending_tv" -> trending(MediaType.TV, pool)
+            "tmdb:popular_movies" -> simpleList("movie/popular?region=$region", MediaType.MOVIE, pool)
+            "tmdb:popular_tv" -> simpleList("tv/popular", MediaType.TV, pool)
+            "tmdb:now_playing" -> simpleList("movie/now_playing?region=$region", MediaType.MOVIE, pool)
+            "tmdb:upcoming" -> simpleList("movie/upcoming?region=$region", MediaType.MOVIE, pool)
+            "tmdb:top_rated_movies" -> simpleList("movie/top_rated", MediaType.MOVIE, pool)
+            "tmdb:top_rated_tv" -> simpleList("tv/top_rated", MediaType.TV, pool)
+            "tmdb:on_the_air" -> simpleList("tv/on_the_air", MediaType.TV, pool)
+            // The user's own lists are used as they are
+            "tmdb:watchlist_movies" -> simpleList("$account/watchlist/movies?$session", MediaType.MOVIE, pool, filtered = false)
+            "tmdb:watchlist_tv" -> simpleList("$account/watchlist/tv?$session", MediaType.TV, pool, filtered = false)
+            "tmdb:favorite_movies" -> simpleList("$account/favorite/movies?$session", MediaType.MOVIE, pool, filtered = false)
+            "tmdb:favorite_tv" -> simpleList("$account/favorite/tv?$session", MediaType.TV, pool, filtered = false)
+            else -> emptyList()
+        }
     }
 
     /** Weekly trending + recent popular titles, ranked by weighted rating (same as TMDB.py). */
-    private fun trending(type: MediaType, limit: Int): List<TitleRef> {
+    private fun trending(type: MediaType, pool: Int): List<Candidate> {
         val discover = if (type == MediaType.MOVIE) {
             "discover/movie?sort_by=popularity.desc&language=$language&include_adult=false&page=1" +
                 "&with_release_type=4|5|6&include_video=false&vote_average.gte=1&vote_count.gte=50" +
@@ -76,29 +99,38 @@ class TmdbCatalog(
                 "&vote_average.gte=1&vote_count.gte=50&with_runtime.gte=15&without_genres=99|16" +
                 "&first_air_date.gte=$oneYearAgo&first_air_date.lte=$today"
         }
-        val candidates = linkedMapOf<Int, JsonObject>()
+        val items = linkedMapOf<Int, JsonObject>()
         listOf("trending/${type.path}/week?language=$language", discover).forEach { query ->
             client.get(query)?.objects("results")?.forEach { item ->
-                item.int("id")?.let { candidates.putIfAbsent(it, item) }
+                item.int("id")?.let { items.putIfAbsent(it, item) }
             }
         }
-        return candidates.values
+        return items.values
             .sortedByDescending(::weightedRating)
             .asSequence()
-            .filterNot { isLocalMarket(it) || isTooOld(type, it) || hasExcludedKeyword(type, it) }
-            .mapNotNull { item -> item.int("id")?.let { TitleRef(type, it) } }
-            .take(limit + EXTRA)
-            .toList()
+            .mapNotNull { item -> item.int("id")?.let { Candidate(TitleRef(type, it), exclusion(type, item, checkAge = true)) } }
+            .takeIncluded(pool)
     }
 
-    private fun simpleList(path: String, type: MediaType, limit: Int): List<TitleRef> {
+    private fun simpleList(path: String, type: MediaType, pool: Int, filtered: Boolean = true): List<Candidate> {
         val separator = if ('?' in path) '&' else '?'
-        return (1..2).asSequence()
+        return (1..3).asSequence()
             .flatMap { page -> client.get("$path${separator}language=$language&page=$page")?.objects("results").orEmpty() }
-            .filterNot { isLocalMarket(it) || hasExcludedKeyword(type, it) }
-            .mapNotNull { item -> item.int("id")?.let { TitleRef(type, it) } }
-            .take(limit + EXTRA)
-            .toList()
+            .mapNotNull { item ->
+                item.int("id")?.let { Candidate(TitleRef(type, it), if (filtered) exclusion(type, item, checkAge = false) else null) }
+            }
+            .takeIncluded(pool)
+    }
+
+    /** Keep candidates until [count] of them are usable (filtered ones are kept to explain them). */
+    private fun Sequence<Candidate>.takeIncluded(count: Int): List<Candidate> {
+        val result = mutableListOf<Candidate>()
+        var included = 0
+        for (candidate in this) {
+            result += candidate
+            if (candidate.exclusion == null && ++included >= count) break
+        }
+        return result
     }
 
     /** Bayesian average: few votes pull the score towards a typical TMDB rating. */
@@ -106,6 +138,13 @@ class TmdbCatalog(
         val votes = item.int("vote_count") ?: 0
         val average = item.double("vote_average") ?: 0.0
         return (votes * average + RANKING_MIN_VOTES * RANKING_PRIOR) / (votes + RANKING_MIN_VOTES)
+    }
+
+    private fun exclusion(type: MediaType, item: JsonObject, checkAge: Boolean): Exclusion? = when {
+        isLocalMarket(item) -> Exclusion.LOCAL_MARKET
+        checkAge && isTooOld(type, item) -> Exclusion.TOO_OLD
+        hasExcludedKeyword(type, item) -> Exclusion.KEYWORD
+        else -> null
     }
 
     /** Local-market titles only pass when they are worldwide hits. */
@@ -244,7 +283,6 @@ class TmdbCatalog(
         private const val RANKING_PRIOR = 6.5
         private const val MIN_VOTES_OTHER_LANGUAGES = 1000
         private const val MAX_PROVIDERS = 4
-        private const val EXTRA = 5
         private val EXCLUDED_KEYWORDS = setOf("adult")
 
         private val PROVIDER_VARIANT_SUFFIX = Regex(

@@ -37,6 +37,17 @@ object Settings {
     private const val KEY_TRAKT_CLIENT_SECRET = "trakt_client_secret"
     private const val KEY_MDBLIST_KEY = "mdblist_api_key"
     private const val KEY_MDBLIST_LISTS = "mdblist_lists"
+    private const val KEY_SELECTION = "selection_mode"
+    private const val KEY_WATCHED = "watched_mode"
+    private const val KEY_TMDB_SESSION = "_tmdb_session_id"
+    private const val KEY_TMDB_ACCOUNT = "_tmdb_account_id"
+    private const val KEY_TMDB_USER = "_tmdb_user"
+
+    const val SELECTION_ORDER = "order"
+    const val SELECTION_RANDOM = "random"
+    const val WATCHED_SHOW = "show"
+    const val WATCHED_MARK = "mark"
+    const val WATCHED_HIDE = "hide"
 
     // Internal state, not exported in Projectivy backups
     private const val KEY_LAST_GENERATION = "_last_generation"
@@ -139,6 +150,36 @@ object Settings {
         remove(KEY_TRAKT_ACCESS); remove(KEY_TRAKT_REFRESH); remove(KEY_TRAKT_EXPIRES); remove(KEY_TRAKT_USER)
     }
 
+    // --- TMDB account (optional, adds the user's watchlist / favourites) ---
+
+    var tmdbSessionId: String
+        get() = string(KEY_TMDB_SESSION)
+        set(value) = preferences.edit { putString(KEY_TMDB_SESSION, value) }
+
+    var tmdbAccountId: Int
+        get() = preferences.getInt(KEY_TMDB_ACCOUNT, 0)
+        set(value) = preferences.edit { putInt(KEY_TMDB_ACCOUNT, value) }
+
+    var tmdbUser: String
+        get() = string(KEY_TMDB_USER)
+        set(value) = preferences.edit { putString(KEY_TMDB_USER, value) }
+
+    val tmdbConnected: Boolean get() = tmdbSessionId.isNotBlank() && tmdbAccountId != 0
+
+    fun clearTmdbSession() = preferences.edit { remove(KEY_TMDB_SESSION); remove(KEY_TMDB_ACCOUNT); remove(KEY_TMDB_USER) }
+
+    // --- Selection and watched content ---
+
+    /** "order": first titles of each list; "random": random picks among the best ones. */
+    var selectionMode: String
+        get() = preferences.getString(KEY_SELECTION, SELECTION_ORDER) ?: SELECTION_ORDER
+        set(value) = preferences.edit { putString(KEY_SELECTION, value) }
+
+    /** What to do with titles already watched on Trakt: "show", "mark" or "hide". */
+    var watchedMode: String
+        get() = preferences.getString(KEY_WATCHED, WATCHED_MARK) ?: WATCHED_MARK
+        set(value) = preferences.edit { putString(KEY_WATCHED, value) }
+
     // --- MDBList ---
 
     var mdbListKey: String
@@ -177,7 +218,7 @@ object Settings {
     val signature: String
         get() = listOf(
             token.hashCode(), language, region, lists.sorted().joinToString(","), titlesPerList,
-            outputWidth, globalHitsOnly, showProviders,
+            outputWidth, globalHitsOnly, showProviders, selectionMode, if (traktConnected) watchedMode else "",
         ).joinToString("|")
 
     /** True when the current wallpapers were generated with different settings. */

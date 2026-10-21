@@ -9,6 +9,7 @@ data class ListSource(
     val labelRes: Int = 0,
     val label: String? = null,
     val needsTraktAccount: Boolean = false,
+    val needsTmdbAccount: Boolean = false,
 )
 
 object Sources {
@@ -22,6 +23,10 @@ object Sources {
         ListSource("tmdb:top_rated_movies", SourceProvider.TMDB, R.string.list_tmdb_top_rated_movies),
         ListSource("tmdb:top_rated_tv", SourceProvider.TMDB, R.string.list_tmdb_top_rated_tv),
         ListSource("tmdb:on_the_air", SourceProvider.TMDB, R.string.list_tmdb_on_the_air),
+        ListSource("tmdb:watchlist_movies", SourceProvider.TMDB, R.string.list_tmdb_watchlist_movies, needsTmdbAccount = true),
+        ListSource("tmdb:watchlist_tv", SourceProvider.TMDB, R.string.list_tmdb_watchlist_tv, needsTmdbAccount = true),
+        ListSource("tmdb:favorite_movies", SourceProvider.TMDB, R.string.list_tmdb_favorite_movies, needsTmdbAccount = true),
+        ListSource("tmdb:favorite_tv", SourceProvider.TMDB, R.string.list_tmdb_favorite_tv, needsTmdbAccount = true),
     )
 
     val TRAKT = listOf(
@@ -38,9 +43,12 @@ object Sources {
         ListSource("trakt:watchlist_shows", SourceProvider.TRAKT, R.string.list_trakt_watchlist_shows, needsTraktAccount = true),
     )
 
+    fun label(context: android.content.Context, source: ListSource): String =
+        source.label?.let { context.getString(R.string.list_mdblist, it) } ?: context.getString(source.labelRes)
+
     /** Lists available right now, depending on the configured services. */
     fun available(): List<ListSource> {
-        val lists = TMDB.toMutableList()
+        val lists = TMDB.filter { !it.needsTmdbAccount || Settings.tmdbConnected }.toMutableList()
         if (Settings.traktConfigured) lists += TRAKT.filter { !it.needsTraktAccount || Settings.traktConnected }
         if (Settings.mdbListKey.isNotBlank()) {
             lists += Settings.mdbLists.map { ListSource("mdblist:${it.id}", SourceProvider.MDBLIST, label = it.name) }

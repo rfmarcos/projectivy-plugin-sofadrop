@@ -10,6 +10,8 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.intOrNull
 import okhttp3.Cache
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
@@ -43,6 +45,20 @@ class TmdbClient(token: String, cacheDir: File) {
         if (!isApiKey) builder.header("Authorization", "Bearer $token")
         val body = execute(builder.build(), path) ?: return null
         return json.parseToJsonElement(body.decodeToString()) as? JsonObject
+    }
+
+    /** POST a JSON body; returns the HTTP code and the parsed body (TMDB answers errors in JSON too). */
+    fun post(path: String, body: JsonObject): Pair<Int, JsonObject?> {
+        val separator = if ('?' in path) '&' else '?'
+        val url = if (isApiKey) "$API_URL$path${separator}api_key=$token" else "$API_URL$path"
+        val builder = Request.Builder().url(url)
+            .header("accept", "application/json")
+            .post(body.toString().toRequestBody("application/json".toMediaType()))
+        if (!isApiKey) builder.header("Authorization", "Bearer $token")
+        http.newCall(builder.build()).execute().use { response ->
+            val text = response.body?.string().orEmpty()
+            return response.code to (runCatching { json.parseToJsonElement(text) as? JsonObject }.getOrNull())
+        }
     }
 
     /** Download a TMDB image, e.g. size `original` or `w500`. */

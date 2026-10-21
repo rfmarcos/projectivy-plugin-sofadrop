@@ -171,11 +171,56 @@ class WallpaperRenderer(context: Context, private val width: Int, private val te
                 color = Color.rgb(245, 197, 24)
             })
             drawCentered(canvas, ratingText, x + pad + star * 2 + gap, center, ratingPaint)
-            x += pillWidth + s(34f)
+            x += pillWidth + s(20f)
         }
+
+        info.watchStatus?.let { x = drawWatchBadge(canvas, it, x, center) + s(14f) }
+        if (info.rating > 0 || info.watchStatus != null) x += s(14f)
 
         val meta = listOf(info.year, info.extraInfo, info.genres).filter { it.isNotEmpty() }.joinToString("   ·   ")
         drawCentered(canvas, meta, x, center, textPaint(medium, s(48f), Color.rgb(230, 230, 230)))
+    }
+
+    /** "✓ Watched" (green) or "▶ Watching · 3/8" (blue) pill; returns where it ends. */
+    private fun drawWatchBadge(canvas: Canvas, status: WatchStatus, x: Float, center: Float): Float {
+        val watched = status is WatchStatus.Watched
+        val text = when (status) {
+            is WatchStatus.Watched -> texts.watched
+            is WatchStatus.InProgress -> String.format(texts.watching, status.completed, status.aired)
+        }
+        val textPaint = textPaint(medium, s(44f), Color.WHITE)
+        val pad = s(24f)
+        val icon = s(30f)
+        val gap = s(14f)
+        val height = s(72f)
+        val width = pad + icon + gap + textPaint.measureText(text) + pad
+        val color = if (watched) Color.rgb(46, 160, 87) else Color.rgb(59, 130, 246)
+        canvas.drawRoundRect(
+            RectF(x, center - height / 2, x + width, center + height / 2), height / 2, height / 2,
+            Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = Color.argb(200, Color.red(color), Color.green(color), Color.blue(color)) },
+        )
+        val iconPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = Color.WHITE }
+        val left = x + pad
+        if (watched) {
+            iconPaint.style = Paint.Style.STROKE
+            iconPaint.strokeWidth = s(6f)
+            iconPaint.strokeCap = Paint.Cap.ROUND
+            iconPaint.strokeJoin = Paint.Join.ROUND
+            canvas.drawPath(Path().apply {
+                moveTo(left + icon * 0.08f, center + icon * 0.02f)
+                lineTo(left + icon * 0.38f, center + icon * 0.3f)
+                lineTo(left + icon * 0.95f, center - icon * 0.32f)
+            }, iconPaint)
+        } else {
+            canvas.drawPath(Path().apply {
+                moveTo(left + icon * 0.1f, center - icon * 0.42f)
+                lineTo(left + icon * 0.95f, center)
+                lineTo(left + icon * 0.1f, center + icon * 0.42f)
+                close()
+            }, iconPaint)
+        }
+        drawCentered(canvas, text, left + icon + gap, center, textPaint)
+        return x + width
     }
 
     private fun drawOverview(canvas: Canvas, overview: String): Float {

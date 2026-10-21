@@ -8,6 +8,9 @@ data class WallpaperTexts(
     val nowTrendingOn: String,
     val season: String,
     val seasons: String,
+    val watched: String,
+    /** Format with completed and aired episodes, e.g. "Watching · 3/8". */
+    val watching: String,
 )
 
 object Languages {
@@ -31,12 +34,12 @@ object Languages {
     val MAINSTREAM = setOf("en", "es", "fr", "it", "de", "pt", "ca", "nl", "sv", "da", "no", "pl")
 
     private val TEXTS = mapOf(
-        "en" to WallpaperTexts("Available on", "Now trending on", "Season", "Seasons"),
-        "es" to WallpaperTexts("Disponible en", "En tendencia en", "Temporada", "Temporadas"),
-        "pt" to WallpaperTexts("Disponível em", "Em alta em", "Temporada", "Temporadas"),
-        "fr" to WallpaperTexts("Disponible sur", "Tendance sur", "Saison", "Saisons"),
-        "it" to WallpaperTexts("Disponibile su", "Di tendenza su", "Stagione", "Stagioni"),
-        "de" to WallpaperTexts("Verfügbar auf", "Im Trend auf", "Staffel", "Staffeln"),
+        "en" to WallpaperTexts("Available on", "Now trending on", "Season", "Seasons", "Watched", "Watching · %d/%d"),
+        "es" to WallpaperTexts("Disponible en", "En tendencia en", "Temporada", "Temporadas", "Visto", "Viendo · %d/%d"),
+        "pt" to WallpaperTexts("Disponível em", "Em alta em", "Temporada", "Temporadas", "Assistido", "Assistindo · %d/%d"),
+        "fr" to WallpaperTexts("Disponible sur", "Tendance sur", "Saison", "Saisons", "Vu", "En cours · %d/%d"),
+        "it" to WallpaperTexts("Disponibile su", "Di tendenza su", "Stagione", "Stagioni", "Visto", "In corso · %d/%d"),
+        "de" to WallpaperTexts("Verfügbar auf", "Im Trend auf", "Staffel", "Staffeln", "Gesehen", "Angefangen · %d/%d"),
     )
 
     // TMDB returns some TV-only genres untranslated

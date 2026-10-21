@@ -121,6 +121,29 @@ class TraktClient(private val clientId: String, private val clientSecret: String
         return parseTitles(items, type)
     }
 
+    // --- Watched content ---
+
+    /** TMDB ids of watched movies. */
+    fun watchedMovies(): Set<Int> =
+        (get("sync/watched/movies", auth = true) as? JsonArray).orEmpty().filterIsInstance<JsonObject>()
+            .mapNotNull { it.obj("movie")?.obj("ids")?.int("tmdb") }.toSet()
+
+    /** Shows with at least one watched episode: TMDB id -> Trakt id. */
+    fun watchedShows(): Map<Int, Int> =
+        (get("sync/watched/shows?extended=noseasons", auth = true) as? JsonArray).orEmpty().filterIsInstance<JsonObject>()
+            .mapNotNull { item ->
+                val ids = item.obj("show")?.obj("ids") ?: return@mapNotNull null
+                val tmdb = ids.int("tmdb") ?: return@mapNotNull null
+                val trakt = ids.int("trakt") ?: return@mapNotNull null
+                tmdb to trakt
+            }.toMap()
+
+    /** Episodes (completed, aired) of a show. */
+    fun showProgress(traktId: Int): Pair<Int, Int>? {
+        val progress = get("shows/$traktId/progress/watched", auth = true) as? JsonObject ?: return null
+        return (progress.int("completed") ?: 0) to (progress.int("aired") ?: 0)
+    }
+
     // --- HTTP ---
 
     private fun request(path: String, auth: Boolean) = Request.Builder()

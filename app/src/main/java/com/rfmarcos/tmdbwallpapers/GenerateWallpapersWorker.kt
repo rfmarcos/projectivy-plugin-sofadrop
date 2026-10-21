@@ -59,8 +59,8 @@ class GenerateWallpapersWorker(context: Context, params: WorkerParameters) : Wor
         val stored = mutableListOf<StoredWallpaper>()
 
         for (source in Sources.selected()) {
-            val refs = try {
-                factory.titles(source, perList)
+            val plan = try {
+                factory.plan(source, perList, seen)
             } catch (e: TmdbException) {
                 throw e
             } catch (e: Exception) {
@@ -69,12 +69,12 @@ class GenerateWallpapersWorker(context: Context, params: WorkerParameters) : Wor
                 continue
             }
             var added = 0
-            for (ref in refs) {
+            for (ref in plan.usable) {
                 if (isStopped) return stored
                 if (added >= perList) break
                 if (!seen.add(ref)) continue
                 try {
-                    val info = factory.catalog.build(ref) ?: continue
+                    val info = factory.build(ref, plan) ?: continue
                     val bitmap = factory.render(info)
                     val name = "${info.type.path}-${info.id}.jpg"
                     FileOutputStream(File(generation, name)).use { bitmap.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, it) }

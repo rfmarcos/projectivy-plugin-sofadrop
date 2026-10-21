@@ -68,8 +68,14 @@ class SettingsFragment : BaseSettingsFragment() {
 
         actions += action(ID_LISTS, R.drawable.ic_act_movie, getString(R.string.setting_lists_title), listsDescription())
             .subActions(listSubActions()).build()
+        actions += action(ID_EXPLORE, R.drawable.ic_act_search, getString(R.string.setting_explore_title),
+            getString(R.string.setting_explore_desc)).hasNext(true).build()
         actions += choice(ID_COUNT, R.drawable.ic_act_count, R.string.setting_count_title, Settings.titlesPerList.toString(),
             Settings.COUNT_OPTIONS.map(Int::toString))
+        actions += choice(ID_SELECTION, R.drawable.ic_act_shuffle, R.string.setting_selection_title, selectionLabel(Settings.selectionMode),
+            SELECTION_MODES.map(::selectionLabel))
+        actions += choice(ID_WATCHED, R.drawable.ic_act_visibility, R.string.setting_watched_title, watchedDescription(),
+            WATCHED_MODES.map(::watchedLabel))
         actions += choice(ID_LANGUAGE, R.drawable.ic_act_language, R.string.setting_language_title, Languages.displayName(Settings.language),
             Languages.OPTIONS.values.toList())
         actions += choice(ID_REGION, R.drawable.ic_act_place, R.string.setting_region_title, regionDescription(),
@@ -86,7 +92,11 @@ class SettingsFragment : BaseSettingsFragment() {
             getString(R.string.setting_providers_desc))
             .checkSetId(GuidedAction.CHECKBOX_CHECK_SET_ID).checked(Settings.showProviders).build()
 
+        actions += action(ID_PHONE, R.drawable.ic_act_phone, getString(R.string.setting_phone_title),
+            getString(R.string.setting_phone_desc)).hasNext(true).build()
         actions += editable(ID_TOKEN, R.drawable.ic_act_key, getString(R.string.setting_token_title), Settings.token, tokenDescription())
+        actions += action(ID_TMDB_ACCOUNT, R.drawable.ic_act_account, getString(R.string.setting_tmdb_account_title), tmdbAccountDescription())
+            .subActions(tmdbAccountSubActions()).build()
         actions += action(ID_TRAKT, R.drawable.ic_act_trakt, getString(R.string.setting_trakt_title), traktDescription())
             .hasNext(true).build()
         actions += action(ID_MDBLIST, R.drawable.ic_act_list, getString(R.string.setting_mdblist_title), mdbListDescription())
@@ -101,8 +111,7 @@ class SettingsFragment : BaseSettingsFragment() {
             it.description = listsDescription()
             notifyActionChanged(findActionPositionById(ID_LISTS))
         }
-        updateDescription(ID_TRAKT, traktDescription())
-        updateDescription(ID_MDBLIST, mdbListDescription())
+        refreshAccounts()
         handler.post(statusRefresher)
         schedulePreview(0)
     }
@@ -128,6 +137,9 @@ class SettingsFragment : BaseSettingsFragment() {
             ID_GLOBAL_HITS -> settingChanged { Settings.globalHitsOnly = action.isChecked }
             ID_PROVIDERS -> settingChanged { Settings.showProviders = action.isChecked }
             ID_TRAKT -> add(parentFragmentManager, TraktSettingsFragment())
+            ID_EXPLORE -> add(parentFragmentManager, ListExplorerFragment())
+            ID_PHONE -> add(parentFragmentManager, PhoneSetupFragment())
+            ID_TMDB_ACCOUNT -> if (!Settings.tmdbConnected && Settings.token.isNotBlank()) add(parentFragmentManager, TmdbLoginFragment())
             ID_MDBLIST -> add(parentFragmentManager, MdbListSettingsFragment())
         }
     }
@@ -163,6 +175,23 @@ class SettingsFragment : BaseSettingsFragment() {
             ID_REGION -> settingChanged {
                 Settings.regionOverride = if (index == 0) "" else Languages.REGIONS[index - 1]
                 updateDescription(ID_REGION, regionDescription())
+            }
+            ID_SELECTION -> settingChanged {
+                Settings.selectionMode = SELECTION_MODES[index]
+                updateDescription(ID_SELECTION, selectionLabel(Settings.selectionMode))
+            }
+            ID_WATCHED -> settingChanged {
+                Settings.watchedMode = WATCHED_MODES[index]
+                updateDescription(ID_WATCHED, watchedDescription())
+            }
+            ID_TMDB_ACCOUNT -> {
+                if (Settings.tmdbConnected) {
+                    Settings.clearTmdbSession()
+                    Settings.lists = Settings.lists.filterNot { key -> Sources.TMDB.any { it.key == key && it.needsTmdbAccount } }.toSet()
+                } else {
+                    add(parentFragmentManager, TmdbLoginFragment())
+                }
+                refreshAccounts()
             }
             ID_REFRESH -> {
                 Settings.refreshHours = Settings.REFRESH_OPTIONS[index]
@@ -236,6 +265,7 @@ class SettingsFragment : BaseSettingsFragment() {
     private fun previewKey() = listOf(
         Settings.token.hashCode(), Settings.language, Settings.region, Settings.lists.sorted(),
         Settings.globalHitsOnly, Settings.showProviders, Settings.traktConnected, Settings.mdbLists.size,
+        Settings.tmdbConnected, Settings.selectionMode, Settings.watchedMode,
     ).joinToString("|")
 
     private fun schedulePreview(delay: Long = 700) {
@@ -297,8 +327,51 @@ class SettingsFragment : BaseSettingsFragment() {
         }
     }
 
-    private fun listLabel(source: ListSource) =
-        source.label?.let { getString(R.string.list_mdblist, it) } ?: getString(source.labelRes)
+    private fun listLabel(source: ListSource) = Sources.label(requireContext(), source)
+
+    /** Rows that depend on connected accounts (after login screens or phone setup). */
+    private fun refreshAccounts() {
+        findActionById(ID_LISTS)?.let {
+            it.subActions = listSubActions()
+            it.description = listsDescription()
+            notifyActionChanged(findActionPositionById(ID_LISTS))
+        }
+        findActionById(ID_TMDB_ACCOUNT)?.let {
+            it.subActions = tmdbAccountSubActions()
+            it.description = tmdbAccountDescription()
+            notifyActionChanged(findActionPositionById(ID_TMDB_ACCOUNT))
+        }
+        updateDescription(ID_TOKEN, tokenDescription())
+        findActionById(ID_TOKEN)?.editDescription = Settings.token
+        updateDescription(ID_WATCHED, watchedDescription())
+        updateDescription(ID_TRAKT, traktDescription())
+        updateDescription(ID_MDBLIST, mdbListDescription())
+    }
+
+    private fun tmdbAccountDescription(): String =
+        if (Settings.tmdbConnected) getString(R.string.tmdb_account_connected, Settings.tmdbUser.ifBlank { "TMDB" })
+        else getString(R.string.tmdb_account_desc)
+
+    /** Connected: a "Disconnect" option. Not connected: no sub-actions, a click opens the QR login. */
+    private fun tmdbAccountSubActions(): List<GuidedAction>? =
+        if (!Settings.tmdbConnected) null
+        else listOf(GuidedAction.Builder(requireContext()).id(ID_TMDB_ACCOUNT * SUB_ID_BASE).title(R.string.tmdb_disconnect).build())
+
+    private fun selectionLabel(mode: String) =
+        getString(if (mode == Settings.SELECTION_RANDOM) R.string.selection_random else R.string.selection_order)
+
+    private fun watchedLabel(mode: String) = getString(
+        when (mode) {
+            Settings.WATCHED_HIDE -> R.string.watched_hide
+            Settings.WATCHED_SHOW -> R.string.watched_show
+            else -> R.string.watched_mark
+        }
+    )
+
+    private fun watchedDescription(): String {
+        val label = watchedLabel(Settings.watchedMode)
+        return if (Settings.traktConnected) label else getString(R.string.watched_needs_trakt, label)
+    }
 
     private fun listsDescription(): String {
         val selected = Sources.selected()
@@ -353,6 +426,13 @@ class SettingsFragment : BaseSettingsFragment() {
         private const val ID_TOKEN = 12L
         private const val ID_TRAKT = 13L
         private const val ID_MDBLIST = 14L
+        private const val ID_EXPLORE = 15L
+        private const val ID_SELECTION = 16L
+        private const val ID_WATCHED = 17L
+        private const val ID_PHONE = 18L
+        private const val ID_TMDB_ACCOUNT = 19L
+        private val SELECTION_MODES = listOf(Settings.SELECTION_ORDER, Settings.SELECTION_RANDOM)
+        private val WATCHED_MODES = listOf(Settings.WATCHED_SHOW, Settings.WATCHED_MARK, Settings.WATCHED_HIDE)
         private const val SUB_ID_BASE = 1000L
         private const val PREVIEW_WIDTH = 1280
 
@@ -364,9 +444,9 @@ class SettingsFragment : BaseSettingsFragment() {
             Settings.init(context)
             val factory = WallpaperFactory(context, PREVIEW_WIDTH)
             for (source in Sources.selected()) {
-                val refs = runCatching { factory.titles(source, 3) }.getOrDefault(emptyList())
-                for (ref in refs.take(4)) {
-                    val info = factory.catalog.build(ref) ?: continue
+                val plan = runCatching { factory.plan(source, 3) }.getOrNull() ?: continue
+                for (ref in plan.usable.take(4)) {
+                    val info = factory.build(ref, plan) ?: continue
                     return factory.render(info) to info.title
                 }
             }

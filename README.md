@@ -12,6 +12,9 @@ It is the on-device version of [androidtvbackground-reddit](https://github.com/r
 
 * 🎬 **Lists** (pick several): TMDB trending, popular, in cinemas, upcoming, top rated and on the air; optionally Trakt trending / popular / anticipated / box office, your Trakt recommendations and watchlist, and any MDBList list.
 * 👀 **Live preview** in the settings and a notice when changed settings are waiting for the next update.
+* 📱 **QR codes instead of typing**: set up your keys from the phone, and connect Trakt and your TMDB account by scanning a code.
+* ✅ **Watched content** (with Trakt): mark watched titles ("✓ Watched", "▶ Watching · 3/8") or hide them.
+* 🔎 **Explore lists**: see the titles of each list in order and what happens to each one (used, in reserve, filtered and why).
 * 🖼️ Full-bleed backdrop (textless when available) with gradients that keep the lower half free for the launcher rows.
 * 🏷️ Official logo (dark logos are inverted to stay visible) or a fitted title, ★ rating, year, runtime / seasons, genres and synopsis.
 * 📺 Streaming services available in your country (TMDB Watch Providers, powered by JustWatch). Tiers and channels of the same service are grouped.
@@ -28,12 +31,16 @@ Open them from **Projectivy → Settings → Appearance → Wallpaper → Config
 | TMDB API key or token | — | **Required.** A v3 *API Key* (32 characters, easier to type with a remote) or a v4 *API Read Access Token*. |
 | Lists | TMDB trending movies + TV shows | One or more lists; titles repeated across lists are only used once. |
 | Titles per list | 10 | 5, 10, 15 or 20 per list. |
+| Selection | In list order | *In list order* takes the first usable titles of each list; *Random among the best* picks them at random among the top ones, for more variety on each update. |
+| Watched on Trakt | Mark as watched | *Show as usual*, *Mark as watched* or *Hide watched* (shows in progress are kept and marked). Needs Trakt connected. |
 | Language | device language | Language of titles, synopsis, logos and labels. |
 | Streaming country | from language | Country used for the streaming services. |
 | Update every | 24 hours | 6 h, 12 h, 24 h, 3 days or 7 days. |
 | Resolution | 1080p | 1080p (recommended) or 4K. |
 | Global hits only | On | In TMDB trending/popular lists, skip local-market titles unless they are worldwide hits. Lists you curate (Trakt, MDBList) are used as they are. |
 | Show streaming services | On | |
+| Set up from your phone | — | Shows a QR code that opens a form on the phone (same network) to paste the TMDB / MDBList keys and add MDBList lists. |
+| TMDB account | — | Optional. Connect it with a QR code to use your TMDB watchlist and favourites as lists. |
 | Trakt | — | Optional, see below. |
 | MDBList | — | Optional, see below. |
 
@@ -43,7 +50,9 @@ The left side of the screen renders a **live preview** with the current settings
 
 1. Create an app at [trakt.tv/oauth/applications](https://trakt.tv/oauth/applications/new) with redirect URI `urn:ietf:wg:oauth:2.0:oob`.
 2. In **Settings → Trakt** enter its *Client ID* and *Client Secret*: Trakt's public lists (trending, popular, anticipated, box office) become available.
-3. Choose **Connect account**: the TV shows a code to enter on [trakt.tv/activate](https://trakt.tv/activate). Your recommendations and watchlist then appear in **Lists**.
+3. Choose **Connect account** and scan the QR code (or enter the code on [trakt.tv/activate](https://trakt.tv/activate)). Your recommendations and watchlist then appear in **Lists**, and watched titles can be marked or hidden.
+
+> Why a Client ID / Secret? Trakt only talks to registered apps: the Client ID identifies the app and the secret is needed to finish the login. They belong to the *app*, not to the user, so a published build should ship with them (`trakt.clientId` / `trakt.clientSecret` in `local.properties`) and users only scan the QR code.
 
 ### MDBList (optional)
 

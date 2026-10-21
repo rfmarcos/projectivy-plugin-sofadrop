@@ -32,12 +32,16 @@ leanback = "1.2.0"
 okhttp = "4.12.0" # https://square.github.io/okhttp/changelogs/changelog_4x/
 work = "2.9.1" # https://developer.android.com/jetpack/androidx/releases/work
 
+# QR codes
+zxing = "3.5.3" # https://github.com/zxing/zxing/releases
+
 # Tests
 testRunner = "1.6.2"
 testJunit = "1.2.1"
 junit = "4.13.2"
 
 [libraries]
+zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-test-runner = { group = "androidx.test", name = "runner", version.ref = "testRunner" }
 androidx-test-junit = { group = "androidx.test.ext", name = "junit", version.ref = "testJunit" }

@@ -4,7 +4,15 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 
-/** Shared pipeline for the background generation and the settings preview. */
+/** The titles a list contributes, see [WallpaperFactory.plan]. */
+data class ListPlan(
+    val candidates: List<Candidate>,
+    val usable: List<TitleRef>,
+    val statuses: Map<TitleRef, WatchStatus>,
+    val random: Boolean,
+)
+
+/** Shared pipeline for the background generation, the settings preview and the list explorer. */
 class WallpaperFactory(context: Context, private val width: Int) {
 
     val client = TmdbClient(Settings.token, context.cacheDir)
@@ -14,7 +22,35 @@ class WallpaperFactory(context: Context, private val width: Int) {
     val trakt: TraktClient? = if (Settings.traktConfigured) TraktClient(Settings.traktClientId, Settings.traktClientSecret) else null
     val mdbList: MdbListClient? = Settings.mdbListKey.takeIf { it.isNotBlank() }?.let { MdbListClient(it) }
 
-    fun titles(source: ListSource, limit: Int): List<TitleRef> = catalog.titles(source, limit, trakt, mdbList)
+    /** Trakt history, loaded on first use (null when not needed). */
+    val watched: WatchedContent? by lazy { WatchedContent.load(trakt) }
+
+    /**
+     * Titles of a list with every rule applied: filters, watched content, titles already taken by a
+     * previous list and the selection mode. [ListPlan.usable] is in the order they should be tried.
+     */
+    fun plan(source: ListSource, perList: Int, taken: Set<TitleRef> = emptySet()): ListPlan {
+        val random = Settings.selectionMode == Settings.SELECTION_RANDOM
+        val hideWatched = Settings.watchedMode == Settings.WATCHED_HIDE
+        val pool = if (random) perList * 3 else perList * 2
+        val statuses = mutableMapOf<TitleRef, WatchStatus>()
+        val candidates = catalog.candidates(source, pool, trakt, mdbList).map { candidate ->
+            if (candidate.exclusion != null) return@map candidate
+            if (candidate.ref in taken) return@map candidate.copy(exclusion = Exclusion.DUPLICATE)
+            val status = watched?.status(candidate.ref)?.also { statuses[candidate.ref] = it }
+            if (hideWatched && status is WatchStatus.Watched) candidate.copy(exclusion = Exclusion.WATCHED) else candidate
+        }
+        var usable = candidates.filter { it.exclusion == null }.map { it.ref }
+        if (random) usable = usable.take(pool).shuffled()
+        return ListPlan(candidates, usable, statuses, random)
+    }
+
+    /** Wallpaper data of a title, with its watched badge when the user wants it marked. */
+    fun build(ref: TitleRef, plan: ListPlan): WallpaperInfo? {
+        val info = catalog.build(ref) ?: return null
+        val status = plan.statuses[ref]
+        return if (status != null && Settings.watchedMode == Settings.WATCHED_MARK) info.copy(watchStatus = status) else info
+    }
 
     /** Download the images of [info] and draw the wallpaper. */
     fun render(info: WallpaperInfo): Bitmap {
