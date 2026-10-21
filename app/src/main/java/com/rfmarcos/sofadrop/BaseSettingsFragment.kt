@@ -34,6 +34,19 @@ abstract class BaseSettingsFragment : GuidedStepSupportFragment() {
     protected fun action(id: Long, icon: Int, title: CharSequence, description: CharSequence?) =
         GuidedAction.Builder(requireContext()).id(id).icon(actionIcon(icon)).title(title).description(description)
 
+    /** Checkbox row of a list (no icon: a column of identical icons is only noise). */
+    protected fun checkbox(id: Long, title: CharSequence, description: CharSequence?, checked: Boolean) =
+        GuidedAction.Builder(requireContext()).id(id).title(title).description(description)
+            .checkSetId(GuidedAction.CHECKBOX_CHECK_SET_ID).checked(checked)
+
+    /** Row that expands into single-choice options with ids `id * SUB_ID_BASE + index`. */
+    protected fun choice(id: Long, icon: Int, title: Int, current: String, options: List<String>): GuidedAction {
+        val subActions = options.mapIndexed { index, label ->
+            GuidedAction.Builder(requireContext()).id(id * SUB_ID_BASE + index).title(label).build()
+        }
+        return action(id, icon, getString(title), current).subActions(subActions).build()
+    }
+
     /** Text field edited with the on-screen keyboard; [shown] is what the row displays. */
     protected fun editable(id: Long, icon: Int, title: CharSequence, value: String, shown: CharSequence) =
         action(id, icon, title, shown)
@@ -62,6 +75,8 @@ abstract class BaseSettingsFragment : GuidedStepSupportFragment() {
     }
 
     companion object {
+        /** Sub-action ids are `parent * SUB_ID_BASE + index`. */
+        const val SUB_ID_BASE = 1000L
         private val executor = Executors.newCachedThreadPool()
     }
 }

@@ -18,8 +18,6 @@ class FiltersFragment : BaseSettingsFragment() {
 
     override fun onCreateActions(actions: MutableList<GuidedAction>, savedInstanceState: Bundle?) {
         val context = requireContext()
-        actions += action(ID_SCOPE, R.drawable.ic_act_list, getString(R.string.filters_scope_title), scopeLabel(context, Settings.filterScope))
-            .subActions(SCOPES.mapIndexed { index, scope -> sub(ID_SCOPE, index, scopeLabel(context, scope)) }).build()
         actions += action(ID_AGE, R.drawable.ic_act_schedule, getString(R.string.filters_age_title), ageLabel(context, Settings.maxAgeMonths))
             .subActions(Settings.MAX_AGE_OPTIONS.mapIndexed { index, months -> sub(ID_AGE, index, ageLabel(context, months)) }).build()
         actions += action(ID_GLOBAL_HITS, R.drawable.ic_act_public, getString(R.string.setting_global_hits_title),
@@ -28,6 +26,9 @@ class FiltersFragment : BaseSettingsFragment() {
         actions += action(ID_ADULT, R.drawable.ic_act_block, getString(R.string.filters_adult_title),
             getString(R.string.filters_adult_desc))
             .checkSetId(GuidedAction.CHECKBOX_CHECK_SET_ID).checked(Settings.excludeAdult).build()
+        // Last: it says which lists the filters above apply to
+        actions += action(ID_SCOPE, R.drawable.ic_act_list, getString(R.string.filters_scope_title), scopeLabel(context, Settings.filterScope))
+            .subActions(SCOPES.mapIndexed { index, scope -> sub(ID_SCOPE, index, scopeLabel(context, scope)) }).build()
     }
 
     private fun sub(parent: Long, index: Int, title: String) =
@@ -60,7 +61,6 @@ class FiltersFragment : BaseSettingsFragment() {
         private const val ID_AGE = 2L
         private const val ID_GLOBAL_HITS = 3L
         private const val ID_ADULT = 4L
-        private const val SUB_ID_BASE = 1000L
         private val SCOPES = listOf(Settings.SCOPE_AUTOMATIC, Settings.SCOPE_ALL)
 
         fun scopeLabel(context: Context, scope: String) = context.getString(
@@ -77,7 +77,7 @@ class FiltersFragment : BaseSettingsFragment() {
         fun summary(context: Context): String = listOfNotNull(
             ageLabel(context, Settings.maxAgeMonths),
             context.getString(R.string.setting_global_hits_title).takeIf { Settings.globalHitsOnly },
-            scopeLabel(context, Settings.filterScope),
+            scopeLabel(context, Settings.filterScope).takeIf { Settings.filterScope == Settings.SCOPE_ALL },
         ).joinToString(" · ")
     }
 }

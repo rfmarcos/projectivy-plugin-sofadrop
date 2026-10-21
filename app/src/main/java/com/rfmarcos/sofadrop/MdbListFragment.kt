@@ -12,11 +12,12 @@ class MdbListFragment : BaseSettingsFragment() {
 
     /** Public lists shown as checkboxes: the suggested ones plus any the user typed. */
     private var publicOptions: List<MdbListRef> = emptyList()
+    private var ownOptions: List<MdbListRef> = emptyList()
 
     override fun onCreateGuidance(savedInstanceState: Bundle?) = Guidance(
         getString(R.string.setting_mdblist_title),
         getString(R.string.mdblist_screen_description),
-        getString(R.string.plugin_name),
+        getString(R.string.setting_lists_title),
         AppCompatResources.getDrawable(requireActivity(), R.mipmap.ic_launcher),
     )
 
@@ -28,8 +29,17 @@ class MdbListFragment : BaseSettingsFragment() {
 
     override fun onCreateActions(actions: MutableList<GuidedAction>, savedInstanceState: Bundle?) {
         actions += accountAction()
+        actions += ownActions()
         actions += editable(ID_ADD, R.drawable.ic_act_search, getString(R.string.mdblist_add), "", getString(R.string.mdblist_add_desc))
         actions += publicActions()
+    }
+
+    /** The account's own lists, picked like any other list. */
+    private fun ownActions(): List<GuidedAction> {
+        ownOptions = if (Settings.mdbListAvailable) Settings.mdbLists.filter { it.path.isEmpty() } else emptyList()
+        return ownOptions.mapIndexed { index, list ->
+            checkbox(ID_OWN_BASE + index, list.name, getString(R.string.mdblist_own_list), list.key in Settings.lists).build()
+        }
     }
 
     private fun accountAction(): GuidedAction {
@@ -45,16 +55,13 @@ class MdbListFragment : BaseSettingsFragment() {
         val added = Settings.mdbLists.filter { it.path.isNotEmpty() }
         publicOptions = (MdbListClient.SUGGESTED + added).distinctBy { it.key }
         return publicOptions.mapIndexed { index, list ->
-            action(ID_PUBLIC_BASE + index, R.drawable.ic_act_list, list.name, list.path)
-                .checkSetId(GuidedAction.CHECKBOX_CHECK_SET_ID)
-                .checked(added.any { it.key == list.key })
-                .build()
+            checkbox(ID_PUBLIC_BASE + index, list.name, list.path, added.any { it.key == list.key }).build()
         }
     }
 
     private fun refreshRows() {
         if (!isAdded) return
-        actions = listOf(accountAction(), findActionById(ID_ADD)!!) + publicActions()
+        actions = listOf(accountAction()) + ownActions() + findActionById(ID_ADD)!! + publicActions()
     }
 
     override fun onGuidedActionClicked(action: GuidedAction) {
@@ -62,6 +69,10 @@ class MdbListFragment : BaseSettingsFragment() {
             action.id == ID_ACCOUNT -> if (!Settings.mdbListAvailable) {
                 if (Settings.mdbListLoginAvailable) MdbListLoginDialog().show(childFragmentManager, "MdbListLoginDialog")
                 else Toast.makeText(requireContext(), R.string.mdblist_unavailable, Toast.LENGTH_LONG).show()
+            }
+            action.id >= ID_OWN_BASE -> {
+                val key = ownOptions.getOrNull((action.id - ID_OWN_BASE).toInt())?.key ?: return
+                Settings.lists = if (action.isChecked) Settings.lists + key else Settings.lists - key
             }
             action.id >= ID_PUBLIC_BASE -> {
                 val list = publicOptions.getOrNull((action.id - ID_PUBLIC_BASE).toInt()) ?: return
@@ -98,7 +109,7 @@ class MdbListFragment : BaseSettingsFragment() {
         if (action.id % SUB_ID_BASE == 0L) {
             background({ MdbListClient.fromSettings()?.userLists().orEmpty() }) { result ->
                 result.onSuccess { lists -> Settings.mdbLists = (lists + Settings.mdbLists).distinctBy { it.key } }
-                updateDescription(ID_ACCOUNT, accountDescription())
+                refreshRows()
             }
         } else {
             // Disconnect: drop the account's lists, keep the public ones
@@ -115,8 +126,8 @@ class MdbListFragment : BaseSettingsFragment() {
     private fun accountDescription(): String {
         val own = Settings.mdbLists.count { it.path.isEmpty() }
         return when {
-            Settings.mdbListConnected -> getString(R.string.mdblist_connected, Settings.mdbListUser.ifBlank { "MDBList" }, own)
-            Settings.mdbListKey.isNotBlank() -> getString(R.string.mdblist_key_mode, own)
+            Settings.mdbListConnected -> getString(R.string.mdblist_connected, Settings.mdbListUser.ifBlank { "MDBList" }, ListsFragment.listsCount(requireContext(), own))
+            Settings.mdbListKey.isNotBlank() -> getString(R.string.mdblist_key_mode, ListsFragment.listsCount(requireContext(), own))
             Settings.mdbListLoginAvailable -> getString(R.string.mdblist_account_hint)
             else -> getString(R.string.mdblist_unavailable)
         }
@@ -126,14 +137,14 @@ class MdbListFragment : BaseSettingsFragment() {
         private const val ID_ACCOUNT = 1L
         private const val ID_ADD = 2L
         private const val ID_PUBLIC_BASE = 100L
-        private const val SUB_ID_BASE = 1000L
+        private const val ID_OWN_BASE = 500L
 
         /** One-line summary for the main settings screen. */
         fun summary(context: Context): String {
             val available = Sources.available().count { it.provider == SourceProvider.MDBLIST }
             return when {
-                Settings.mdbListConnected -> context.getString(R.string.mdblist_connected, Settings.mdbListUser.ifBlank { "MDBList" }, available)
-                available > 0 -> context.getString(R.string.mdblist_configured, available)
+                Settings.mdbListConnected -> context.getString(R.string.mdblist_connected, Settings.mdbListUser.ifBlank { "MDBList" }, ListsFragment.listsCount(context, available))
+                available > 0 -> ListsFragment.listsCount(context, available)
                 else -> context.getString(R.string.mdblist_summary_empty)
             }
         }

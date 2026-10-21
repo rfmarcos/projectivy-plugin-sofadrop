@@ -31,35 +31,32 @@ Open them from **Projectivy → Settings → Appearance → Wallpaper → Config
 
 | Setting | Default | |
 |---|---|---|
-| Lists | TMDB trending movies + TV shows | One or more lists; titles repeated across lists are only used once. |
+| Update now | — | Also shows the status: how many wallpapers, when they were updated, or the last error. |
+| View wallpapers | — | The current set full screen (◀ ▶ to browse). |
+| Lists | TMDB trending movies + TV shows | One screen per service: **TMDB**, **Trakt** and **MDBList**, each with its account (QR login) and its lists as checkboxes, plus **Explore lists**. Titles repeated across lists are only used once. |
 | Titles per list | 10 | 5, 10, 15 or 20 per list. |
-| Selection | In list order | *In list order* takes the first usable titles of each list; *Random* picks them from the whole list (up to 100 titles), for more variety on each update. |
-| Watched on Trakt | Mark as watched | *Show as usual*, *Mark as watched* or *Hide watched* (shows in progress are kept and marked). Needs Trakt connected. |
-| Language | device language | Language of titles, synopsis, logos and labels. |
-| Streaming country | from language | Country used for the streaming services. |
+| Order | Top of each list | *Top of each list* takes the first usable titles; *Random from the whole list* picks them from up to 100 titles, for more variety on each update. |
+| Filters | 1 year · global hits · no adult | *Maximum age* 6 months, 1, 2 or 5 years or no limit (release date, or last air date for shows); *Global hits only*; *Exclude adult content*; *Apply to* trending & popular lists only or all lists. |
+| Wallpaper details | device language · automatic · 1080p | *Language* of titles, synopsis, logos and labels; *Streaming services*: don't show, automatic country or a chosen country; *Resolution* 1080p (recommended) or 4K. |
 | Update every | 24 hours | 6 h, 12 h, 24 h, 3 days or 7 days. |
-| Resolution | 1080p | 1080p (recommended) or 4K. |
-| Filters | 1 year · global hits · no adult | *Apply to* automatic lists only or all lists; *Maximum age* 6 months, 1, 2 or 5 years or no limit (release date, or last air date for shows); *Global hits only*; *Exclude adult content*. |
-| Show streaming services | On | |
-| TMDB account | — | Optional. Connect it with a QR code to use your TMDB watchlist and favourites as lists. |
-| Trakt | — | Optional, see below. |
-| MDBList | — | Optional. Tick suggested public lists or type `user/list` (no account needed), and connect your account with a QR code for your own lists. |
 | About | — | Version, support the project (Ko-fi QR), source code and credits. |
 
-The left side of the screen renders a **live preview** with the current settings. Changed settings are **not applied immediately**: a notice tells you they will be applied in the next scheduled update, or you can choose **Update now**. The screen also shows the status of the last update and a full-screen view of the current set (◀ ▶ to browse).
+In **Lists → Trakt** you also choose what happens with **watched titles**: show normally, show with a *Watched* badge ("✓ Watched", "▶ Watching · 3/8") or hide them (shows in progress are kept and marked).
+
+The left side of the screen renders a **live preview** with the current settings. While the settings differ from the current set, a *Not applied yet* label is shown on the preview: the changes are applied when you leave the settings, or right away with **Update now**.
 
 ### Trakt (optional)
 
-Choose **Trakt** and scan the QR code (or enter the code on [trakt.tv/activate](https://trakt.tv/activate)). Trakt's public lists (trending, popular, anticipated, box office), your recommendations and your watchlist then appear in **Lists**, and watched titles can be marked or hidden.
+Choose **Lists → Trakt → Your Trakt account** and scan the QR code (or enter the code on [trakt.tv/activate](https://trakt.tv/activate)). Trakt's public lists (trending, popular, anticipated, box office), your recommendations and your watchlist can then be ticked, and watched titles can be marked or hidden.
 
 > Why a Client ID? Trakt only talks to registered apps. The Client ID belongs to the *app*, not to the user, so a published build ships with it (`trakt.clientId` in `local.properties`) and users only scan the QR code. New Trakt apps get no secret: the device login uses PKCE.
 
 ### MDBList (optional)
 
-Choose **MDBList** to open its screen:
+Choose **Lists → MDBList**:
 
 * **Public lists, no account needed**: tick one of the suggested lists (Netflix, HBO, IMDb Top 250…) or choose **Add a public list** and type `user/list` or the list URL (e.g. `https://mdblist.com/lists/hdlists/crazy-plot-twists`). They are read from the list's public JSON export.
-* **Your account** (optional): scan the QR code to approve the app on mdblist.com and your own lists (including private ones) are loaded. Use **Reload my lists** after creating new ones.
+* **Your account** (optional): scan the QR code to approve the app on mdblist.com and your own lists (including private ones) are loaded. Tick them like any other list, and use **Reload my lists** after creating new ones.
 
 ### App credentials (for builds you publish)
 
@@ -133,7 +130,7 @@ app/src/main/java/com/rfmarcos/sofadrop/
   WallpaperFactory.kt          # download + render pipeline (generation and preview)
   WallpaperRenderer.kt         # Canvas rendering of the wallpaper
   WallpaperStore.kt            # Generated files, index and content:// URIs
-  SettingsFragment.kt (+ Trakt / MDBList screens) / PreviewActivity.kt
+  SettingsFragment.kt (main) / ListsFragment.kt, ProviderListsFragment.kt, MdbListFragment.kt (lists) / DetailsFragment.kt / PreviewActivity.kt
 ```
 
 ## 🧾 Credits

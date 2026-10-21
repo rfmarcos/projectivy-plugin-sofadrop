@@ -16,9 +16,8 @@ import androidx.leanback.widget.GuidanceStylist
 import androidx.leanback.widget.GuidanceStylist.Guidance
 import androidx.leanback.widget.GuidedAction
 
+/** Main settings: what to do now, where titles come from, and how often. Details live in sub-screens. */
 class SettingsFragment : BaseSettingsFragment() {
-
-    private var listOptions: List<ListSource> = emptyList()
 
     // Live preview
     private var previewImage: ImageView? = null
@@ -58,67 +57,37 @@ class SettingsFragment : BaseSettingsFragment() {
     )
 
     override fun onCreateActions(actions: MutableList<GuidedAction>, savedInstanceState: Bundle?) {
-        Settings.init(requireContext())
+        val context = requireContext()
+        Settings.init(context)
 
-        actions += action(ID_STATUS, R.drawable.ic_act_status, getString(R.string.status_title), statusText())
-            .multilineDescription(true).focusable(false).build()
-        actions += action(ID_GENERATE, R.drawable.ic_act_refresh, getString(R.string.action_generate_now), generateDescription()).build()
+        // "Update now" also carries the status, so there is a single place to look
+        actions += action(ID_GENERATE, R.drawable.ic_act_refresh, getString(R.string.action_generate_now), statusText())
+            .multilineDescription(true).build()
         actions += action(ID_PREVIEW, R.drawable.ic_act_preview, getString(R.string.action_preview), getString(R.string.action_preview_desc))
-            .enabled(WallpaperStore(requireContext()).current().isNotEmpty()).build()
-
-        actions += action(ID_LISTS, R.drawable.ic_act_movie, getString(R.string.setting_lists_title), listsDescription())
-            .subActions(listSubActions()).build()
-        actions += action(ID_EXPLORE, R.drawable.ic_act_search, getString(R.string.setting_explore_title),
-            getString(R.string.setting_explore_desc)).hasNext(true).build()
+            .enabled(WallpaperStore(context).current().isNotEmpty()).build()
+        actions += action(ID_LISTS, R.drawable.ic_act_movie, getString(R.string.setting_lists_title), ListsFragment.summary(context))
+            .hasNext(true).build()
         actions += choice(ID_COUNT, R.drawable.ic_act_count, R.string.setting_count_title, Settings.titlesPerList.toString(),
             Settings.COUNT_OPTIONS.map(Int::toString))
         actions += choice(ID_SELECTION, R.drawable.ic_act_shuffle, R.string.setting_selection_title, selectionLabel(Settings.selectionMode),
             SELECTION_MODES.map(::selectionLabel))
-        actions += choice(ID_WATCHED, R.drawable.ic_act_visibility, R.string.setting_watched_title, watchedDescription(),
-            WATCHED_MODES.map(::watchedLabel))
-        actions += choice(ID_LANGUAGE, R.drawable.ic_act_language, R.string.setting_language_title, Languages.displayName(Settings.language),
-            Languages.OPTIONS.values.toList())
-        actions += choice(ID_REGION, R.drawable.ic_act_place, R.string.setting_region_title, regionDescription(),
-            listOf(getString(R.string.region_auto, Languages.regionOf(Settings.language))) +
-                Languages.REGIONS.map { "${Languages.countryName(it)} ($it)" })
+        actions += action(ID_FILTERS, R.drawable.ic_act_filter, getString(R.string.setting_filters_title), FiltersFragment.summary(context))
+            .hasNext(true).build()
+        actions += action(ID_DETAILS, R.drawable.ic_act_tv, getString(R.string.setting_details_title), DetailsFragment.summary(context))
+            .hasNext(true).build()
         actions += choice(ID_REFRESH, R.drawable.ic_act_schedule, R.string.setting_refresh_title, refreshLabel(Settings.refreshHours),
             Settings.REFRESH_OPTIONS.map(::refreshLabel))
-        actions += choice(ID_RESOLUTION, R.drawable.ic_act_hd, R.string.setting_resolution_title, resolutionLabel(Settings.outputWidth),
-            Settings.WIDTH_OPTIONS.map(::resolutionLabel))
-        actions += action(ID_FILTERS, R.drawable.ic_act_filter, getString(R.string.setting_filters_title),
-            FiltersFragment.summary(requireContext())).build()
-        actions += action(ID_PROVIDERS, R.drawable.ic_act_tv, getString(R.string.setting_providers_title),
-            getString(R.string.setting_providers_desc))
-            .checkSetId(GuidedAction.CHECKBOX_CHECK_SET_ID).checked(Settings.showProviders).build()
-
-        // Accounts: connected by scanning a QR code, nothing to type on the TV
-        actions += action(ID_TRAKT, R.drawable.ic_act_trakt, getString(R.string.setting_trakt_title), traktDescription())
-            .subActions(traktSubActions()).build()
-        actions += action(ID_MDBLIST, R.drawable.ic_act_list, getString(R.string.setting_mdblist_title), mdbListDescription())
-            .hasNext(true).build()
-        actions += action(ID_TMDB_ACCOUNT, R.drawable.ic_act_account, getString(R.string.setting_tmdb_account_title), tmdbAccountDescription())
-            .subActions(tmdbAccountSubActions()).build()
-
         actions += action(ID_ABOUT, R.drawable.ic_act_info, getString(R.string.setting_about_title),
-            getString(R.string.setting_about_desc, BuildConfig.VERSION_NAME)).build()
+            getString(R.string.setting_about_desc, BuildConfig.VERSION_NAME)).hasNext(true).build()
     }
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        // A QR dialog was closed: an account may have been connected or keys saved from the phone
-        parentFragmentManager.setFragmentResultListener(QrDialog.RESULT_KEY, this) { _, _ ->
-            refreshAccounts()
-            refreshStatus()
-            schedulePreview()
-        }
-    }
-
-    private fun showDialog(dialog: QrDialog) = dialog.show(parentFragmentManager, dialog.javaClass.simpleName)
 
     override fun onResume() {
         super.onResume()
-        refreshAccounts()
-        updateDescription(ID_FILTERS, FiltersFragment.summary(requireContext()))
+        // Sub-screens may have changed lists, filters or details
+        val context = requireContext()
+        updateDescription(ID_LISTS, ListsFragment.summary(context))
+        updateDescription(ID_FILTERS, FiltersFragment.summary(context))
+        updateDescription(ID_DETAILS, DetailsFragment.summary(context))
         handler.post(statusRefresher)
         schedulePreview(0)
     }
@@ -141,69 +110,28 @@ class SettingsFragment : BaseSettingsFragment() {
                 refreshStatus()
             }
             ID_PREVIEW -> startActivity(Intent(requireContext(), PreviewActivity::class.java))
+            ID_LISTS -> add(parentFragmentManager, ListsFragment())
             ID_FILTERS -> add(parentFragmentManager, FiltersFragment())
+            ID_DETAILS -> add(parentFragmentManager, DetailsFragment())
             ID_ABOUT -> add(parentFragmentManager, AboutFragment())
-            ID_PROVIDERS -> settingChanged { Settings.showProviders = action.isChecked }
-            ID_EXPLORE -> add(parentFragmentManager, ListExplorerFragment())
-            // Connected accounts expand into their options; otherwise a click opens the QR login
-            ID_TRAKT -> if (!Settings.traktConnected) {
-                if (Settings.traktLoginAvailable) showDialog(TraktLoginDialog())
-                else Toast.makeText(requireContext(), R.string.trakt_unavailable, Toast.LENGTH_LONG).show()
-            }
-            ID_MDBLIST -> add(parentFragmentManager, MdbListFragment())
-            ID_TMDB_ACCOUNT -> if (!Settings.tmdbConnected && Settings.token.isNotBlank()) showDialog(TmdbLoginDialog())
         }
     }
 
     override fun onSubGuidedActionClicked(action: GuidedAction): Boolean {
-        val parent = action.id / SUB_ID_BASE
         val index = (action.id % SUB_ID_BASE).toInt()
-        when (parent) {
-            ID_LISTS -> {
-                val key = listOptions.getOrNull(index)?.key ?: return false
-                settingChanged { Settings.lists = if (action.isChecked) Settings.lists + key else Settings.lists - key }
-                updateDescription(ID_LISTS, listsDescription())
-                return false // keep the list open to pick several
-            }
+        when (action.id / SUB_ID_BASE) {
             ID_COUNT -> settingChanged {
                 Settings.titlesPerList = Settings.COUNT_OPTIONS[index]
                 updateDescription(ID_COUNT, Settings.titlesPerList.toString())
-            }
-            ID_LANGUAGE -> settingChanged {
-                Settings.language = Languages.OPTIONS.keys.elementAt(index)
-                updateDescription(ID_LANGUAGE, Languages.displayName(Settings.language))
-                updateDescription(ID_REGION, regionDescription())
-            }
-            ID_REGION -> settingChanged {
-                Settings.regionOverride = if (index == 0) "" else Languages.REGIONS[index - 1]
-                updateDescription(ID_REGION, regionDescription())
             }
             ID_SELECTION -> settingChanged {
                 Settings.selectionMode = SELECTION_MODES[index]
                 updateDescription(ID_SELECTION, selectionLabel(Settings.selectionMode))
             }
-            ID_WATCHED -> settingChanged {
-                Settings.watchedMode = WATCHED_MODES[index]
-                updateDescription(ID_WATCHED, watchedDescription())
-            }
-            ID_TMDB_ACCOUNT -> settingChanged {
-                Settings.clearTmdbSession()
-                Settings.lists = Settings.lists.filterNot { key -> Sources.TMDB.any { it.key == key && it.needsTmdbAccount } }.toSet()
-                refreshAccounts()
-            }
-            ID_TRAKT -> settingChanged {
-                Settings.clearTraktSession()
-                Settings.lists = Settings.lists.filterNot { key -> Sources.TRAKT.any { it.key == key && it.needsTraktAccount } }.toSet()
-                refreshAccounts()
-            }
             ID_REFRESH -> {
                 Settings.refreshHours = Settings.REFRESH_OPTIONS[index]
                 updateDescription(ID_REFRESH, refreshLabel(Settings.refreshHours))
                 refreshStatus()
-            }
-            ID_RESOLUTION -> settingChanged {
-                Settings.outputWidth = Settings.WIDTH_OPTIONS[index]
-                updateDescription(ID_RESOLUTION, resolutionLabel(Settings.outputWidth))
             }
         }
         return true
@@ -220,8 +148,7 @@ class SettingsFragment : BaseSettingsFragment() {
 
     private fun refreshStatus() {
         if (!isAdded) return
-        updateDescription(ID_STATUS, statusText())
-        updateDescription(ID_GENERATE, generateDescription())
+        updateDescription(ID_GENERATE, statusText())
         findActionById(ID_PREVIEW)?.let {
             val enabled = WallpaperStore(requireContext()).current().isNotEmpty()
             if (it.isEnabled != enabled) {
@@ -229,19 +156,7 @@ class SettingsFragment : BaseSettingsFragment() {
                 notifyActionChanged(findActionPositionById(ID_PREVIEW))
             }
         }
-        pendingNotice?.let { notice ->
-            val pending = Settings.hasPendingChanges && !Settings.generating
-            notice.visibility = if (pending) View.VISIBLE else View.GONE
-            if (pending) notice.text = getString(R.string.pending_notice, nextUpdateText())
-        }
-    }
-
-    private fun nextUpdateText(): CharSequence {
-        val now = System.currentTimeMillis()
-        val next = Settings.nextScheduledUpdate
-        return if (next <= now + 60_000) getString(R.string.next_update_soon)
-        else DateUtils.getRelativeTimeSpanString(next, now, DateUtils.MINUTE_IN_MILLIS).toString()
-            .replaceFirstChar { it.lowercase() } // used mid-sentence ("in 5 hours")
+        pendingNotice?.visibility = if (Settings.hasPendingChanges && !Settings.generating) View.VISIBLE else View.GONE
     }
 
     private fun statusText(): String {
@@ -257,10 +172,6 @@ class SettingsFragment : BaseSettingsFragment() {
             )
         }
     }
-
-    private fun generateDescription() = getString(
-        if (Settings.hasPendingChanges) R.string.action_generate_now_pending else R.string.action_generate_now_desc
-    )
 
     // --- Live preview ---
 
@@ -315,127 +226,25 @@ class SettingsFragment : BaseSettingsFragment() {
         previewLabel?.text = message
     }
 
-    // --- Descriptions ---
-
-    private fun listSubActions(): List<GuidedAction> {
-        listOptions = Sources.available()
-        val selected = Settings.lists
-        return listOptions.mapIndexed { index, source ->
-            GuidedAction.Builder(requireContext())
-                .id(ID_LISTS * SUB_ID_BASE + index)
-                .title(listLabel(source))
-                .checkSetId(GuidedAction.CHECKBOX_CHECK_SET_ID)
-                .checked(source.key in selected)
-                .build()
-        }
-    }
-
-    private fun listLabel(source: ListSource) = Sources.label(requireContext(), source)
-
-    /** Rows that depend on connected accounts (after login screens or phone setup). */
-    private fun refreshAccounts() {
-        findActionById(ID_LISTS)?.let {
-            it.subActions = listSubActions()
-            it.description = listsDescription()
-            notifyActionChanged(findActionPositionById(ID_LISTS))
-        }
-        findActionById(ID_TMDB_ACCOUNT)?.let {
-            it.subActions = tmdbAccountSubActions()
-            it.description = tmdbAccountDescription()
-            notifyActionChanged(findActionPositionById(ID_TMDB_ACCOUNT))
-        }
-        findActionById(ID_TRAKT)?.let {
-            it.subActions = traktSubActions()
-            it.description = traktDescription()
-            notifyActionChanged(findActionPositionById(ID_TRAKT))
-        }
-        updateDescription(ID_MDBLIST, mdbListDescription())
-        updateDescription(ID_WATCHED, watchedDescription())
-    }
-
-    private fun traktSubActions(): List<GuidedAction>? =
-        if (!Settings.traktConnected) null
-        else listOf(GuidedAction.Builder(requireContext()).id(ID_TRAKT * SUB_ID_BASE).title(R.string.tmdb_disconnect).build())
-
-    private fun tmdbAccountDescription(): String =
-        if (Settings.tmdbConnected) getString(R.string.tmdb_account_connected, Settings.tmdbUser.ifBlank { "TMDB" })
-        else getString(R.string.tmdb_account_desc)
-
-    /** Connected: a "Disconnect" option. Not connected: no sub-actions, a click opens the QR login. */
-    private fun tmdbAccountSubActions(): List<GuidedAction>? =
-        if (!Settings.tmdbConnected) null
-        else listOf(GuidedAction.Builder(requireContext()).id(ID_TMDB_ACCOUNT * SUB_ID_BASE).title(R.string.tmdb_disconnect).build())
+    // --- Labels ---
 
     private fun selectionLabel(mode: String) =
         getString(if (mode == Settings.SELECTION_RANDOM) R.string.selection_random else R.string.selection_order)
 
-    private fun watchedLabel(mode: String) = getString(
-        when (mode) {
-            Settings.WATCHED_HIDE -> R.string.watched_hide
-            Settings.WATCHED_SHOW -> R.string.watched_show
-            else -> R.string.watched_mark
-        }
-    )
-
-    private fun watchedDescription(): String {
-        val label = watchedLabel(Settings.watchedMode)
-        return if (Settings.traktConnected) label else getString(R.string.watched_needs_trakt, label)
-    }
-
-    private fun listsDescription(): String {
-        val selected = Sources.selected()
-        return getString(R.string.lists_selected, selected.size, selected.joinToString(", ") { listLabel(it) })
-    }
-
-    private fun choice(id: Long, icon: Int, title: Int, current: String, options: List<String>): GuidedAction {
-        val subActions = options.mapIndexed { index, label ->
-            GuidedAction.Builder(requireContext()).id(id * SUB_ID_BASE + index).title(label).build()
-        }
-        return action(id, icon, getString(title), current).subActions(subActions).build()
-    }
-
-    private fun traktDescription(): String = when {
-        Settings.traktConnected -> getString(R.string.trakt_connected, Settings.traktUser.ifBlank { "Trakt" })
-        Settings.traktLoginAvailable -> getString(R.string.account_connect_hint)
-        else -> getString(R.string.trakt_unavailable)
-    }
-
-    private fun mdbListDescription(): String = MdbListFragment.summary(requireContext())
-
-    private fun regionDescription(): String {
-        val override = Settings.regionOverride
-        return if (override.isEmpty()) getString(R.string.region_auto, Languages.regionOf(Settings.language))
-        else "${Languages.countryName(override)} ($override)"
-    }
-
     private fun refreshLabel(hours: Int) =
         if (hours < 48) getString(R.string.refresh_hours, hours) else getString(R.string.refresh_days, hours / 24)
 
-    private fun resolutionLabel(width: Int) =
-        getString(if (width > 1920) R.string.resolution_2160 else R.string.resolution_1080)
-
     companion object {
-        private const val ID_STATUS = 1L
         private const val ID_GENERATE = 2L
         private const val ID_PREVIEW = 3L
         private const val ID_LISTS = 4L
         private const val ID_COUNT = 5L
-        private const val ID_LANGUAGE = 6L
-        private const val ID_REGION = 7L
         private const val ID_REFRESH = 8L
-        private const val ID_RESOLUTION = 9L
         private const val ID_FILTERS = 10L
-        private const val ID_PROVIDERS = 11L
-        private const val ID_TRAKT = 13L
-        private const val ID_MDBLIST = 14L
-        private const val ID_EXPLORE = 15L
         private const val ID_SELECTION = 16L
-        private const val ID_WATCHED = 17L
         private const val ID_ABOUT = 18L
-        private const val ID_TMDB_ACCOUNT = 19L
+        private const val ID_DETAILS = 20L
         private val SELECTION_MODES = listOf(Settings.SELECTION_ORDER, Settings.SELECTION_RANDOM)
-        private val WATCHED_MODES = listOf(Settings.WATCHED_SHOW, Settings.WATCHED_MARK, Settings.WATCHED_HIDE)
-        private const val SUB_ID_BASE = 1000L
         private const val PREVIEW_WIDTH = 1280
 
         /** Last preview (key, image, title), kept while the process lives so reopening is instant. */

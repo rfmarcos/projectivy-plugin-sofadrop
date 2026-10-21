@@ -297,9 +297,6 @@ object Settings {
     val refreshIntervalMillis: Long
         get() = refreshHours * 3_600_000L
 
-    val nextScheduledUpdate: Long
-        get() = lastGeneration + refreshIntervalMillis
-
     // --- Projectivy backup (getPreferences / setPreferences) ---
 
     fun export(): String = buildJsonObject {

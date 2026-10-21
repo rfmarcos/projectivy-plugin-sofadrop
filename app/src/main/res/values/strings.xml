@@ -9,37 +9,31 @@
     <string name="cancel">Cancel</string>
 
     <!-- Status -->
-    <string name="status_title">Status</string>
-    <string name="status_never">No wallpapers generated yet</string>
+    <string name="status_never">No wallpapers yet · choose to create them</string>
     <string name="status_ok">%1$d wallpapers · updated %2$s</string>
     <string name="status_generating">Generating wallpapers…</string>
     <string name="status_error">Last update failed: %1$s</string>
-    <string name="status_pending">%1$d wallpapers · changes pending</string>
-    <string name="next_update_soon">soon</string>
-    <string name="pending_notice">Settings changed. They will be applied in the next update (%1$s), or choose \"Update now\" to apply them right away.</string>
+    <string name="status_pending">%1$d wallpapers · changes not applied yet</string>
+    <string name="pending_notice">Not applied yet · applies when you exit</string>
 
     <!-- Actions -->
     <string name="action_generate_now">Update now</string>
-    <string name="action_generate_now_desc">Generate a new set of wallpapers</string>
-    <string name="action_generate_now_pending">Apply the pending changes now</string>
     <string name="generation_started">Generating wallpapers in the background…</string>
-    <string name="action_preview">Wallpapers</string>
-    <string name="action_preview_desc">See the current set full screen</string>
+    <string name="action_preview">View wallpapers</string>
+    <string name="action_preview_desc">The current set, full screen</string>
     <string name="preview_empty">No wallpapers yet. Use \"Update now\" first.</string>
     <string name="preview_counter">%1$d / %2$d · ◀ ▶</string>
 
     <!-- Live preview -->
     <string name="preview_label">Preview · %1$s</string>
     <string name="preview_loading">Generating preview…</string>
-    <string name="preview_no_token">Enter your TMDB key to see a preview</string>
+    <string name="preview_no_token">No TMDB key in this build</string>
     <string name="preview_no_titles">The selected lists have no titles</string>
     <string name="preview_error">Preview unavailable: %1$s</string>
 
     <!-- Settings -->
     <string name="setting_lists_title">Lists</string>
-    <string name="lists_selected">%1$d selected · %2$s</string>
     <string name="setting_language_title">Language</string>
-    <string name="setting_region_title">Streaming country</string>
     <string name="region_auto">Automatic (%1$s)</string>
     <string name="setting_count_title">Titles per list</string>
     <string name="setting_refresh_title">Update every</string>
@@ -50,8 +44,6 @@
     <string name="resolution_2160">4K (slower, more storage)</string>
     <string name="setting_global_hits_title">Global hits only</string>
     <string name="setting_global_hits_desc">In TMDB trending and popular lists, hide titles only popular in a local market</string>
-    <string name="setting_providers_title">Show streaming services</string>
-    <string name="setting_providers_desc">Where to watch each title in the selected country</string>
 
     <!-- Lists -->
     <string name="list_tmdb_trending_movies">TMDB · Trending movies</string>
@@ -78,18 +70,6 @@
 
     <!-- Trakt -->
     <string name="setting_trakt_title">Trakt</string>
-    <string name="trakt_not_configured">Optional. Add your Trakt app to use its lists</string>
-    <string name="trakt_public_only">Public lists available · account not connected</string>
-    <string name="trakt_connected">Connected as %1$s</string>
-    <string name="trakt_description">Adds Trakt\'s trending, popular, anticipated and box office lists. Connect your account for your recommendations and watchlist.\n\nNeeds an app from trakt.tv/oauth/applications.</string>
-    <string name="trakt_client_id">Client ID</string>
-    <string name="trakt_client_secret">Client Secret</string>
-    <string name="trakt_connect">Connect account</string>
-    <string name="trakt_connect_desc">Shows a code to enter on trakt.tv/activate</string>
-    <string name="trakt_need_credentials">Enter the Client ID and Client Secret first</string>
-    <string name="trakt_disconnect">Disconnect</string>
-    <string name="trakt_login_title">Code: %1$s</string>
-    <string name="trakt_login_waiting">Waiting for approval…</string>
     <string name="trakt_login_ok">Trakt connected as %1$s</string>
     <string name="trakt_login_failed">Could not connect to Trakt (%1$s)</string>
     <string name="trakt_login_expired">The code expired, try again</string>
@@ -97,12 +77,7 @@
 
     <!-- MDBList -->
     <string name="setting_mdblist_title">MDBList</string>
-    <string name="mdblist_not_configured">Optional. Add your MDBList API key to use its lists</string>
-    <string name="mdblist_configured">%1$d lists available</string>
-    <string name="mdblist_description">Use any MDBList list as a source. Your own lists are loaded with your API key (mdblist.com → Preferences → API), and you can also add public lists.</string>
-    <string name="mdblist_key">API key</string>
     <string name="mdblist_refresh">Reload my lists</string>
-    <string name="mdblist_refresh_desc">%1$d lists loaded</string>
     <string name="mdblist_add">Add a public list</string>
     <string name="mdblist_add_desc">Type user/list or the list URL</string>
     <string name="mdblist_screen_description">Add any public MDBList list, no account needed: tick a suggested one or type user/list (or its URL). Connect your account to also load your own lists.</string>
@@ -118,28 +93,24 @@
     <string name="error_no_titles">The selected lists returned no titles</string>
 
     <!-- QR, accounts, selection, watched, explorer -->
-    <string name="trakt_login_description">Or open %1$s on any device and enter the code. This screen closes by itself once you approve it.</string>
     <string name="close">Close</string>
-    <string name="trakt_login_scan">Scan to connect Trakt</string>
     <string name="setting_tmdb_account_title">TMDB account</string>
-    <string name="tmdb_account_desc">Optional. Connect it to use your watchlist and favourites</string>
     <string name="tmdb_account_connected">Connected as %1$s</string>
     <string name="tmdb_disconnect">Disconnect</string>
-    <string name="tmdb_login_scan">Scan to connect TMDB</string>
     <string name="tmdb_login_ok">TMDB connected as %1$s</string>
     <string name="tmdb_login_failed">Could not connect to TMDB (%1$s)</string>
     <string name="list_tmdb_watchlist_movies">TMDB · Your watchlist (movies)</string>
     <string name="list_tmdb_watchlist_tv">TMDB · Your watchlist (TV shows)</string>
     <string name="list_tmdb_favorite_movies">TMDB · Your favourite movies</string>
     <string name="list_tmdb_favorite_tv">TMDB · Your favourite TV shows</string>
-    <string name="setting_selection_title">Selection</string>
-    <string name="selection_order">In list order</string>
-    <string name="selection_random">Random (from the whole list)</string>
-    <string name="setting_watched_title">Watched on Trakt</string>
-    <string name="watched_show">Show as usual</string>
-    <string name="watched_mark">Mark as watched</string>
-    <string name="watched_hide">Hide watched</string>
-    <string name="watched_needs_trakt">%1$s · needs Trakt connected</string>
+    <string name="setting_selection_title">Order</string>
+    <string name="selection_order">Top of each list</string>
+    <string name="selection_random">Random from the whole list</string>
+    <string name="setting_watched_title">Watched titles</string>
+    <string name="watched_show">Show normally</string>
+    <string name="watched_mark">Show with a Watched badge</string>
+    <string name="watched_hide">Hide</string>
+    <string name="watched_needs_trakt">%1$s · connect your account first</string>
     <string name="setting_explore_title">Explore lists</string>
     <string name="setting_explore_desc">See which titles each list brings</string>
     <string name="explore_description">Pick a list to see its titles in order and what happens to each one.</string>
@@ -147,11 +118,11 @@
     <string name="explore_not_selected">Not selected</string>
     <string name="explore_loading">Loading…</string>
     <string name="explore_used">Used</string>
-    <string name="explore_reserve">In reserve: used if one above cannot be</string>
+    <string name="explore_reserve">Backup: used if one above can\'t be</string>
     <string name="explore_random">Can be picked (random selection)</string>
     <string name="explore_watched">watched</string>
     <string name="explore_watching">watching %1$d/%2$d</string>
-    <string name="explore_summary">%1$d titles · the first %2$d usable ones are used</string>
+    <string name="explore_summary">%1$d titles · the top %2$d usable ones are used</string>
     <string name="explore_summary_random">%1$d titles · %2$d are picked at random among the usable ones</string>
     <string name="exclusion_local_market">Skipped: only popular in a local market</string>
     <string name="exclusion_too_old">Skipped: older than the age limit</string>
@@ -164,16 +135,15 @@
     <string name="qr_expires">The code expires in %1$dm %2$02ds</string>
     <string name="qr_instructions_code">Scan the QR code, or go to %1$s and enter this code:</string>
     <string name="mdblist_login_ok">MDBList connected as %1$s</string>
-    <string name="mdblist_connected">Connected as %1$s · %2$d lists</string>
-    <string name="mdblist_key_mode">API key · %1$d lists</string>
-    <string name="account_connect_hint">Optional. Scan a QR code to connect</string>
+    <string name="mdblist_connected">Connected as %1$s · %2$s</string>
+    <string name="mdblist_key_mode">API key · %1$s</string>
     <string name="trakt_unavailable">Not available in this build (missing the app\'s Trakt credentials)</string>
     <!-- Filters -->
     <string name="setting_filters_title">Filters</string>
-    <string name="filters_description">Titles skipped when building wallpapers. Your own lists (Trakt, MDBList, TMDB account) are kept as they are unless you apply the filters to all lists.</string>
+    <string name="filters_description">Skip titles you don\'t want. Your own lists (watchlists, favourites, MDBList) are left as they are unless you choose all lists.</string>
     <string name="filters_scope_title">Apply to</string>
-    <string name="filters_scope_automatic">Automatic lists only</string>
-    <string name="filters_scope_all">All lists</string>
+    <string name="filters_scope_automatic">Trending &amp; popular lists only</string>
+    <string name="filters_scope_all">All lists, including yours</string>
     <string name="filters_age_title">Maximum age</string>
     <string name="filters_age_none">No limit</string>
     <string name="filters_age_months">%1$d months</string>
@@ -198,4 +168,27 @@
     <string name="about_credits">Credits</string>
     <string name="about_credits_desc">This product uses the TMDB API but is not endorsed or certified by TMDB. Sofadrop uses Trakt but is not endorsed or certified by Trakt. Lists from MDBList. Wallpapers for Projectivy Launcher.</string>
     <string name="qr_link_hint">Scan the code with your phone</string>
+    <string name="setting_details_title">Wallpaper details</string>
+    <string name="details_description">How each wallpaper looks: language of the texts, streaming services shown and image resolution.</string>
+    <string name="streaming_title">Streaming services</string>
+    <string name="streaming_none">Don\'t show</string>
+    <string name="streaming_summary_none">no streaming services</string>
+    <string name="streaming_summary">streaming in %1$s</string>
+    <string name="lists_hub_description">Pick the lists the wallpapers come from. A title in several lists is only used once.</string>
+    <string name="lists_summary">%1$s · %2$s</string>
+    <string name="provider_summary_connected">%1$d selected · connected as %2$s</string>
+    <string name="provider_summary_disconnected">%1$d selected · account not connected</string>
+    <string name="account_title_tmdb">Your TMDB account</string>
+    <string name="account_title_trakt">Your Trakt account</string>
+    <string name="account_not_connected">Not connected · scan a QR code</string>
+    <string name="tmdb_lists_description">Lists from TMDB. Connect your TMDB account to also use your watchlist and favourites.</string>
+    <string name="trakt_lists_description">Lists from Trakt. Connect your account for your recommendations and watchlist, and to mark or hide what you\'ve watched.</string>
+    <string name="list_needs_account">Connect your account to use it</string>
+    <string name="mdblist_own_list">Your list</string>
+    <string name="resolution_short_1080" translatable="false">1080p</string>
+    <string name="resolution_short_2160" translatable="false">4K</string>
+    <plurals name="lists_count">
+        <item quantity="one">%d list</item>
+        <item quantity="other">%d lists</item>
+    </plurals>
 </resources>

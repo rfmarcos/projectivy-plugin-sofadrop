@@ -16,7 +16,8 @@ class AboutFragment : BaseSettingsFragment() {
     )
 
     override fun onCreateActions(actions: MutableList<GuidedAction>, savedInstanceState: Bundle?) {
-        actions += action(ID_VERSION, R.drawable.ic_act_status, getString(R.string.about_version), BuildConfig.VERSION_NAME).build()
+        actions += action(ID_VERSION, R.drawable.ic_act_status, getString(R.string.about_version), BuildConfig.VERSION_NAME)
+            .focusable(false).build()
         if (BuildConfig.SUPPORT_URL.isNotBlank()) {
             actions += action(ID_SUPPORT, R.drawable.ic_act_heart, getString(R.string.about_support), getString(R.string.about_support_desc)).build()
         }
