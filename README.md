@@ -13,7 +13,7 @@ It is the on-device version of [androidtvbackground-reddit](https://github.com/r
 
 ## ✨ Features
 
-* 🎬 **Lists** (pick several): TMDB trending, popular, in cinemas, upcoming, top rated and on the air; optionally Trakt trending / popular / anticipated / box office, your Trakt recommendations and watchlist, and any MDBList list.
+* 🎬 **Lists** (pick several): TMDB trending, popular, in cinemas, upcoming, top rated and on the air; optionally Trakt trending / popular / anticipated / box office, your Trakt recommendations and watchlist, and any public MDBList list (no account needed) or your own.
 * 👀 **Live preview** in the settings and a notice when changed settings are waiting for the next update.
 * 📱 **Nothing to type on the TV**: Trakt, MDBList and your TMDB account are connected by scanning a QR code with the phone.
 * ✅ **Watched content** (with Trakt): mark watched titles ("✓ Watched", "▶ Watching · 3/8") or hide them.
@@ -43,7 +43,7 @@ Open them from **Projectivy → Settings → Appearance → Wallpaper → Config
 | Show streaming services | On | |
 | TMDB account | — | Optional. Connect it with a QR code to use your TMDB watchlist and favourites as lists. |
 | Trakt | — | Optional, see below. |
-| MDBList | — | Optional. Connect your account with a QR code. |
+| MDBList | — | Optional. Tick suggested public lists or type `user/list` (no account needed), and connect your account with a QR code for your own lists. |
 | About | — | Version, support the project (Ko-fi QR), source code and credits. |
 
 The left side of the screen renders a **live preview** with the current settings. Changed settings are **not applied immediately**: a notice tells you they will be applied in the next scheduled update, or you can choose **Update now**. The screen also shows the status of the last update and a full-screen view of the current set (◀ ▶ to browse).
@@ -56,7 +56,10 @@ Choose **Trakt** and scan the QR code (or enter the code on [trakt.tv/activate](
 
 ### MDBList (optional)
 
-Choose **MDBList** and scan the QR code to approve the app on mdblist.com: your lists are loaded automatically. To use someone else's list, add it to your account on mdblist.com and choose **MDBList → Reload my lists**.
+Choose **MDBList** to open its screen:
+
+* **Public lists, no account needed**: tick one of the suggested lists (Netflix, HBO, IMDb Top 250…) or choose **Add a public list** and type `user/list` or the list URL (e.g. `https://mdblist.com/lists/hdlists/crazy-plot-twists`). They are read from the list's public JSON export.
+* **Your account** (optional): scan the QR code to approve the app on mdblist.com and your own lists (including private ones) are loaded. Use **Reload my lists** after creating new ones.
 
 ### App credentials (for builds you publish)
 

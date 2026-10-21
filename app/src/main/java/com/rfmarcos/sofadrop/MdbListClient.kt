@@ -1,5 +1,6 @@
 package com.rfmarcos.sofadrop
 
+import androidx.core.text.HtmlCompat
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -28,18 +29,6 @@ class MdbListClient(private val apiKey: String = "", private val accessToken: St
 
     /** Account name, shown in the settings. */
     fun username(): String? = (get("user") as? JsonObject)?.let { it.str("username") ?: it.str("name") }
-
-    /** Resolve a public list from "user/list" or a https://mdblist.com/lists/user/list URL. */
-    fun findList(reference: String): MdbListRef? {
-        val path = reference.trim().trimEnd('/')
-            .substringAfter("mdblist.com/lists/", reference.trim().trimEnd('/'))
-            .split('/').filter { it.isNotBlank() }
-        if (path.size < 2) return null
-        val response = get("lists/${path[0]}/${path[1]}")
-        val list = (response as? JsonArray)?.firstOrNull() as? JsonObject ?: response as? JsonObject ?: return null
-        val id = list.int("id")?.toLong() ?: return null
-        return MdbListRef(id, list.str("name") ?: path[1])
-    }
 
     /** Titles of a list; items without a TMDB id are resolved from their IMDb id. */
     fun titles(listId: Long, limit: Int, tmdb: TmdbClient): List<TitleRef> {
@@ -121,7 +110,7 @@ class MdbListClient(private val apiKey: String = "", private val accessToken: St
                 save(body)
                 val client = MdbListClient(accessToken = Settings.mdbListAccessToken)
                 Settings.mdbListUser = runCatching { client.username() }.getOrNull().orEmpty()
-                runCatching { Settings.mdbLists = (client.userLists() + Settings.mdbLists).distinctBy { it.id } }
+                runCatching { Settings.mdbLists = (client.userLists() + Settings.mdbLists).distinctBy { it.key } }
                 return Poll.Connected
             }
             return when (val error = body?.str("error")) {
@@ -162,6 +151,9 @@ class MdbListClient(private val apiKey: String = "", private val accessToken: St
 
     companion object {
         private const val API_URL = "https://api.mdblist.com/"
+        private const val SITE_URL = "https://mdblist.com/lists/"
+        private val PATH_PART = Regex("[A-Za-z0-9_.-]+")
+        private val TITLE = Regex("<title>([^<]*)</title>")
 
         private val http = OkHttpClient.Builder()
             .connectTimeout(15, TimeUnit.SECONDS)
@@ -176,6 +168,55 @@ class MdbListClient(private val apiKey: String = "", private val accessToken: St
             }
             Settings.mdbListKey.isNotBlank() -> MdbListClient(apiKey = Settings.mdbListKey)
             else -> null
+        }
+
+        /** Popular public lists offered in the MDBList screen (from mdblist.com/toplists). */
+        val SUGGESTED = listOf(
+            MdbListRef(0, "Top Movies of the Week", "garycrawfordgc/top-movies-of-the-week"),
+            MdbListRef(0, "IMDb Moviemeter (Top 100)", "linaspurinis/imdb-moviemeter-top-100"),
+            MdbListRef(0, "Latest Streaming Movies", "snoak/latest-movies-digital-release"),
+            MdbListRef(0, "Netflix Movies", "garycrawfordgc/netflix-movies"),
+            MdbListRef(0, "Netflix Shows", "garycrawfordgc/netflix-shows"),
+            MdbListRef(0, "HBO Shows", "garycrawfordgc/hbo-shows"),
+            MdbListRef(0, "Disney+ Shows", "garycrawfordgc/disney-shows"),
+            MdbListRef(0, "Trending Anime Shows", "snoak/trending-anime-shows"),
+            MdbListRef(0, "Top 250 Movies (IMDb)", "snoak/imdb-top-250-movies"),
+            MdbListRef(0, "Top 250 Shows (IMDb)", "snoak/imdb-top-250-shows"),
+        )
+
+        /** "user/slug" of a public list from "user/slug" or a https://mdblist.com/lists/user/slug URL. */
+        fun publicPath(reference: String): String? {
+            val trimmed = reference.trim().trimEnd('/')
+            val parts = trimmed.substringAfter("mdblist.com/lists/", trimmed).split('/').filter { it.isNotBlank() }
+            return if (parts.size == 2 && parts.all { it.matches(PATH_PART) }) parts.joinToString("/") else null
+        }
+
+        /** Find a public list (no account or key needed); null when it does not exist or is private. */
+        fun findPublicList(reference: String): MdbListRef? {
+            val path = publicPath(reference) ?: return null
+            if (fetchPublic(path, 1) == null) return null
+            // The page title reads "<name>, a list by <user> - mdblist.com"
+            val name = runCatching {
+                http.newCall(Request.Builder().url("$SITE_URL$path").build()).execute().use { it.body?.string() }
+                    ?.let { TITLE.find(it)?.groupValues?.get(1) }?.let { HtmlCompat.fromHtml(it, 0).toString() }?.substringBefore(", a list by ")?.trim()
+            }.getOrNull()
+            return MdbListRef(0, name?.takeIf { it.isNotEmpty() } ?: path.substringAfter('/').replace('-', ' '), path)
+        }
+
+        /** Titles of a public list from its JSON export; its ids are TMDB ids. */
+        fun publicTitles(path: String, limit: Int): List<TitleRef> =
+            fetchPublic(path, limit).orEmpty().filterIsInstance<JsonObject>().mapNotNull { item ->
+                val type = if (item.str("mediatype") == "show") MediaType.TV else MediaType.MOVIE
+                item.int("id")?.let { TitleRef(type, it) }
+            }
+
+        private fun fetchPublic(path: String, limit: Int): JsonArray? {
+            val url = "$SITE_URL$path/json".toHttpUrl().newBuilder().addQueryParameter("limit", limit.toString()).build()
+            http.newCall(Request.Builder().url(url).build()).execute().use { response ->
+                if (response.code == 404) return null
+                if (!response.isSuccessful) throw IOException("MDBList HTTP ${response.code} for $path")
+                return response.body?.string()?.let { Json.parseToJsonElement(it) as? JsonArray }
+            }
         }
 
         /** Items come grouped as `{ "movies": [...], "shows": [...] }`. */

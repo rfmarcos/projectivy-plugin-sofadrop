@@ -69,4 +69,15 @@ class ParsingTest {
         assertEquals(1.0, TmdbCatalog.similarity("Silo", "SILO"), 0.0)
         assertTrue(TmdbCatalog.similarity("La Odisea", "The Odyssey") < 0.9)
     }
+
+    @Test
+    fun mdbListPublicPath() {
+        assertEquals("snoak/imdb-top-250-movies", MdbListClient.publicPath(" snoak/imdb-top-250-movies "))
+        assertEquals("snoak/imdb-top-250-movies", MdbListClient.publicPath("https://mdblist.com/lists/snoak/imdb-top-250-movies/"))
+        assertNull(MdbListClient.publicPath("snoak"))
+        assertNull(MdbListClient.publicPath("https://mdblist.com/lists/snoak/list/extra"))
+        assertNull(MdbListClient.publicPath("user/list?x=1"))
+        assertEquals("mdblist:snoak/x", MdbListRef(0, "X", "snoak/x").key)
+        assertEquals("mdblist:42", MdbListRef(42, "Mine").key)
+    }
 }

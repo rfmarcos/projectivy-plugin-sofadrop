@@ -54,9 +54,9 @@ object Sources {
     fun available(): List<ListSource> {
         val lists = TMDB.filter { !it.needsTmdbAccount || Settings.tmdbConnected }.toMutableList()
         if (Settings.traktConfigured) lists += TRAKT.filter { !it.needsTraktAccount || Settings.traktConnected }
-        if (Settings.mdbListAvailable) {
-            lists += Settings.mdbLists.map { ListSource("mdblist:${it.id}", SourceProvider.MDBLIST, label = it.name) }
-        }
+        // Public lists need no account; the account's own lists only while it is connected
+        lists += Settings.mdbLists.filter { it.path.isNotEmpty() || Settings.mdbListAvailable }
+            .map { ListSource(it.key, SourceProvider.MDBLIST, label = it.name) }
         return lists
     }
 

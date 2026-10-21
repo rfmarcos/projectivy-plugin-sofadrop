@@ -105,6 +105,10 @@
     <string name="mdblist_refresh_desc">%1$d lists loaded</string>
     <string name="mdblist_add">Add a public list</string>
     <string name="mdblist_add_desc">Type user/list or the list URL</string>
+    <string name="mdblist_screen_description">Add any public MDBList list, no account needed: tick a suggested one or type user/list (or its URL). Connect your account to also load your own lists.</string>
+    <string name="mdblist_account_title">Your MDBList account</string>
+    <string name="mdblist_account_hint">Optional. Scan a QR code to load your own lists</string>
+    <string name="mdblist_summary_empty">Optional. Add public lists or connect your account</string>
     <string name="mdblist_added">Added: %1$s</string>
     <string name="mdblist_not_found">List not found</string>
     <string name="mdblist_failed">MDBList error: %1$s</string>

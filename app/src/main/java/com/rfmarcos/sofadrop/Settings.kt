@@ -18,9 +18,11 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
 import java.util.Locale
 
-/** A list the user picked on MDBList. */
+/** An MDBList list: one of the account's (by [id]) or a public one added by its "user/slug" [path]. */
 @Serializable
-data class MdbListRef(val id: Long, val name: String)
+data class MdbListRef(val id: Long, val name: String, val path: String = "") {
+    val key: String get() = "mdblist:" + path.ifEmpty { id.toString() }
+}
 
 /** User preferences plus a few internal values describing the last generation. */
 object Settings {
@@ -252,7 +254,7 @@ object Settings {
         get() = string(KEY_MDBLIST_KEY, BuildConfig.DEFAULT_MDBLIST_KEY)
         set(value) = preferences.edit { putString(KEY_MDBLIST_KEY, value.trim()) }
 
-    /** Lists available on the user's MDBList account (refreshed from the settings screen). */
+    /** The account's MDBList lists (refreshed from the settings screen) plus the public lists added by the user. */
     var mdbLists: List<MdbListRef>
         get() = try {
             json.decodeFromString<List<MdbListRef>>(preferences.getString(KEY_MDBLIST_LISTS, null) ?: "[]")

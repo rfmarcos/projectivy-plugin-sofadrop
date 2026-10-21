@@ -96,6 +96,10 @@
     <string name="mdblist_refresh_desc">%1$d listas cargadas</string>
     <string name="mdblist_add">Añadir una lista pública</string>
     <string name="mdblist_add_desc">Escribe usuario/lista o la URL de la lista</string>
+    <string name="mdblist_screen_description">Añade cualquier lista pública de MDBList sin cuenta: marca una sugerida o escribe usuario/lista (o su URL). Conecta tu cuenta para cargar también tus propias listas.</string>
+    <string name="mdblist_account_title">Tu cuenta de MDBList</string>
+    <string name="mdblist_account_hint">Opcional. Escanea un QR para cargar tus listas</string>
+    <string name="mdblist_summary_empty">Opcional. Añade listas públicas o conecta tu cuenta</string>
     <string name="mdblist_added">Añadida: %1$s</string>
     <string name="mdblist_not_found">No se encontró la lista</string>
     <string name="mdblist_failed">Error de MDBList: %1$s</string>

@@ -60,8 +60,10 @@ class TmdbCatalog(
         var refs = when (source.provider) {
             SourceProvider.TMDB -> tmdbRefs(source.key, fetch)
             SourceProvider.TRAKT -> trakt?.titles(source.key, fetch).orEmpty()
-            SourceProvider.MDBLIST -> source.key.removePrefix("mdblist:").toLongOrNull()
-                ?.let { mdbList?.titles(it, fetch, client) }.orEmpty()
+            SourceProvider.MDBLIST -> source.key.removePrefix("mdblist:").let { list ->
+                if ('/' in list) MdbListClient.publicTitles(list, fetch)
+                else list.toLongOrNull()?.let { mdbList?.titles(it, fetch, client) }.orEmpty()
+            }
         }.distinct()
         if (shuffle) refs = refs.shuffled()
         val filtered = Settings.filterScope == Settings.SCOPE_ALL || source.automatic
