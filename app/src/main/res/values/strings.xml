@@ -223,4 +223,6 @@
         <item quantity="one">%d wallpaper</item>
         <item quantity="other">%d wallpapers</item>
     </plurals>
+    <string name="show_source_title">Show list source</string>
+    <string name="show_source_desc">“Trending · TMDB”, “Your watchlist · Trakt”… at the bottom of each wallpaper</string>
 </resources>

@@ -211,4 +211,6 @@
         <item quantity="one">%d fondo</item>
         <item quantity="other">%d fondos</item>
     </plurals>
+    <string name="show_source_title">Mostrar la lista de origen</string>
+    <string name="show_source_desc">«Tendencias · TMDB», «Tu lista · Trakt»… al pie de cada fondo</string>
 </resources>

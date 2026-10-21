@@ -22,6 +22,8 @@ class DetailsFragment : BaseSettingsFragment() {
         actions += streamingAction()
         actions += choice(ID_SYNOPSIS, R.drawable.ic_act_count, R.string.synopsis_title, synopsisLabel(requireContext(), Settings.overviewLines),
             Settings.OVERVIEW_OPTIONS.map { synopsisLabel(requireContext(), it) })
+        actions += action(ID_SOURCE, R.drawable.ic_act_list, getString(R.string.show_source_title), getString(R.string.show_source_desc))
+            .checkSetId(GuidedAction.CHECKBOX_CHECK_SET_ID).checked(Settings.showSource).build()
         actions += choice(ID_RESOLUTION, R.drawable.ic_act_hd, R.string.setting_resolution_title, resolutionLabel(Settings.outputWidth),
             Settings.WIDTH_OPTIONS.map(::resolutionLabel))
     }
@@ -30,6 +32,10 @@ class DetailsFragment : BaseSettingsFragment() {
     private fun streamingAction() = choice(ID_STREAMING, R.drawable.ic_act_tv, R.string.streaming_title, streamingLabel(requireContext()),
         listOf(getString(R.string.streaming_none), getString(R.string.region_auto, Languages.regionOf(Settings.language))) +
             Languages.REGIONS.map { "${Languages.countryName(it)} ($it)" })
+
+    override fun onGuidedActionClicked(action: GuidedAction) {
+        if (action.id == ID_SOURCE) Settings.showSource = action.isChecked
+    }
 
     override fun onSubGuidedActionClicked(action: GuidedAction): Boolean {
         val index = (action.id % SUB_ID_BASE).toInt()
@@ -65,6 +71,7 @@ class DetailsFragment : BaseSettingsFragment() {
         private const val ID_STREAMING = 2L
         private const val ID_RESOLUTION = 3L
         private const val ID_SYNOPSIS = 4L
+        private const val ID_SOURCE = 5L
 
         fun synopsisLabel(context: Context, lines: Int) = context.getString(
             when (lines) {

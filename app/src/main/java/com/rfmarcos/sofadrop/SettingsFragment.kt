@@ -189,7 +189,7 @@ class SettingsFragment : BaseSettingsFragment() {
     private fun previewKey() = listOf(
         Settings.token.hashCode(), Settings.language, Settings.region, Settings.lists.sorted(),
         Settings.globalHitsOnly, Settings.maxAgeMonths, Settings.excludeAdult, Settings.filterScope, Settings.showProviders, Settings.traktConnected, Settings.mdbLists.size,
-        Settings.tmdbConnected, Settings.selectionMode, Settings.watchedMode, Settings.overviewLines, Settings.previewPin,
+        Settings.tmdbConnected, Settings.selectionMode, Settings.watchedMode, Settings.overviewLines, Settings.showSource, Settings.previewPin,
         WallpaperStore(requireContext()).current().size,
     ).joinToString("|")
 

@@ -48,6 +48,7 @@ object Settings {
     private const val KEY_MDBLIST_USER = "_mdblist_user"
     private const val KEY_SELECTION = "selection_mode"
     private const val KEY_OVERVIEW_LINES = "overview_lines"
+    private const val KEY_SHOW_SOURCE = "show_source"
     private const val KEY_PROGRESS = "_generation_progress"
     private const val KEY_PREVIEW_PIN = "_preview_pin"
     private const val KEY_WATCHED = "watched_mode"
@@ -257,6 +258,11 @@ object Settings {
 
     val OVERVIEW_OPTIONS = listOf(4, 2, 0)
 
+    /** Footer line naming the list each title came from ("Trending · TMDB"). */
+    var showSource: Boolean
+        get() = preferences.getBoolean(KEY_SHOW_SOURCE, true)
+        set(value) = preferences.edit { putBoolean(KEY_SHOW_SOURCE, value) }
+
     /** Wallpaper shown by the settings preview as "type:tmdbId" (e.g. "movie:123"); empty = automatic. */
     var previewPin: String
         get() = string(KEY_PREVIEW_PIN)
@@ -347,7 +353,7 @@ object Settings {
             outputWidth, globalHitsOnly, showProviders, selectionMode, if (trackerConnected) watchedMode else "",
             maxAgeMonths, excludeAdult, filterScope,
         // Only when changed, so existing installs don't see a pending change after updating
-        ).plus(listOfNotNull(overviewLines.takeIf { it != 4 })).joinToString("|")
+        ).plus(listOfNotNull(overviewLines.takeIf { it != 4 }, "nosource".takeIf { !showSource })).joinToString("|")
 
     /** True when the current wallpapers were generated with different settings. */
     val hasPendingChanges: Boolean

@@ -38,7 +38,7 @@ Open them from **Projectivy → Settings → Appearance → Wallpaper → Config
 | Titles per list | 10 | 5, 10, 15 or 20 per list. |
 | Order | Top of each list | *Top of each list* takes the first usable titles; *Random from the whole list* picks them from up to 100 titles, for more variety on each update. |
 | Filters | 1 year · global hits · no adult | *Maximum age* 6 months, 1, 2 or 5 years or no limit (release date, or last air date for shows); *Global hits only*; *Exclude adult content*; *Watched titles*; *Apply to* trending & popular lists only or all lists. |
-| Wallpaper details | device language · automatic · 1080p | *Language* of titles, synopsis, logos and labels; *Streaming services*: don't show, automatic country or a chosen country; *Synopsis* full (4 lines), short (2 lines) or hidden, so the text stays clear of the launcher rows (the streaming row moves up with it); *Resolution* 1080p (recommended) or 4K. |
+| Wallpaper details | device language · automatic · 1080p | *Language* of titles, synopsis, logos and labels; *Streaming services*: don't show, automatic country or a chosen country; *Synopsis* full (4 lines), short (2 lines) or hidden, so the text stays clear of the launcher rows (the streaming row moves up with it); *Show list source* (the "Trending · TMDB" line); *Resolution* 1080p (recommended) or 4K. |
 | Update every | 24 hours | 6 h, 12 h, 24 h, 3 days or 7 days. |
 | About | — | Version, support the project (Ko-fi QR), source code and credits. |
 
