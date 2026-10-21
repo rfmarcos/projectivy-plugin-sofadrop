@@ -80,7 +80,10 @@ object Settings {
     private const val KEY_SIMKL_EXPIRES = "_simkl_expires_at"
     private const val KEY_SIMKL_USER = "_simkl_user"
 
-    val COUNT_OPTIONS = listOf(5, 10, 15, 20)
+    val COUNT_OPTIONS = listOf(5, 10, 20, 50, 100)
+
+    /** "All": lists are read up to this many titles (TMDB pages, Trakt/Simkl/MDBList limits). */
+    const val COUNT_ALL = 100
     val REFRESH_OPTIONS = listOf(6, 12, 24, 72, 168)
     val WIDTH_OPTIONS = listOf(1920, 3840)
     val DEFAULT_LISTS = setOf("tmdb:trending_movies", "tmdb:trending_tv")

@@ -67,10 +67,6 @@ class SettingsFragment : BaseSettingsFragment() {
             .enabled(WallpaperStore(context).current().isNotEmpty()).build()
         actions += action(ID_LISTS, R.drawable.ic_act_movie, getString(R.string.setting_lists_title), ListsFragment.summary(context))
             .hasNext(true).build()
-        actions += choice(ID_COUNT, R.drawable.ic_act_count, R.string.setting_count_title, Settings.titlesPerList.toString(),
-            Settings.COUNT_OPTIONS.map(Int::toString))
-        actions += choice(ID_SELECTION, R.drawable.ic_act_shuffle, R.string.setting_selection_title, selectionLabel(Settings.selectionMode),
-            SELECTION_MODES.map(::selectionLabel))
         actions += action(ID_FILTERS, R.drawable.ic_act_filter, getString(R.string.setting_filters_title), FiltersFragment.summary(context))
             .hasNext(true).build()
         actions += action(ID_DETAILS, R.drawable.ic_act_tv, getString(R.string.setting_details_title), DetailsFragment.summary(context))
@@ -124,14 +120,6 @@ class SettingsFragment : BaseSettingsFragment() {
     override fun onSubGuidedActionClicked(action: GuidedAction): Boolean {
         val index = (action.id % SUB_ID_BASE).toInt()
         when (action.id / SUB_ID_BASE) {
-            ID_COUNT -> settingChanged {
-                Settings.titlesPerList = Settings.COUNT_OPTIONS[index]
-                updateDescription(ID_COUNT, Settings.titlesPerList.toString())
-            }
-            ID_SELECTION -> settingChanged {
-                Settings.selectionMode = SELECTION_MODES[index]
-                updateDescription(ID_SELECTION, selectionLabel(Settings.selectionMode))
-            }
             ID_REFRESH -> {
                 Settings.refreshHours = Settings.REFRESH_OPTIONS[index]
                 updateDescription(ID_REFRESH, refreshLabel(Settings.refreshHours))
@@ -244,9 +232,6 @@ class SettingsFragment : BaseSettingsFragment() {
 
     // --- Labels ---
 
-    private fun selectionLabel(mode: String) =
-        getString(if (mode == Settings.SELECTION_RANDOM) R.string.selection_random else R.string.selection_order)
-
     private fun refreshLabel(hours: Int) =
         if (hours < 48) getString(R.string.refresh_hours, hours) else getString(R.string.refresh_days, hours / 24)
 
@@ -254,13 +239,10 @@ class SettingsFragment : BaseSettingsFragment() {
         private const val ID_GENERATE = 2L
         private const val ID_PREVIEW = 3L
         private const val ID_LISTS = 4L
-        private const val ID_COUNT = 5L
         private const val ID_REFRESH = 8L
         private const val ID_FILTERS = 10L
-        private const val ID_SELECTION = 16L
         private const val ID_ABOUT = 18L
         private const val ID_DETAILS = 20L
-        private val SELECTION_MODES = listOf(Settings.SELECTION_ORDER, Settings.SELECTION_RANDOM)
         private const val PREVIEW_WIDTH = 1280
 
         /** The pinned title while it is still in the current set; a pin left behind by a new set is dropped. */

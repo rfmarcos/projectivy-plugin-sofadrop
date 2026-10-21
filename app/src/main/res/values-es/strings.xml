@@ -102,10 +102,8 @@
     <string name="watched_mark">Mostrar con la marca Visto</string>
     <string name="watched_hide">Ocultar</string>
     <string name="setting_explore_title">Explorar listas</string>
-    <string name="setting_explore_desc">Ver qué títulos trae cada lista</string>
-    <string name="explore_description">Elige una lista para ver sus títulos en orden y qué pasa con cada uno.</string>
-    <string name="explore_selected">Elegida</string>
-    <string name="explore_not_selected">No elegida</string>
+    <string name="setting_explore_desc">Ver qué títulos trae cada lista elegida</string>
+    <string name="explore_description">Elige una de tus listas para ver sus títulos en orden y qué pasa con cada uno.</string>
     <string name="explore_loading">Cargando…</string>
     <string name="explore_used">Se usa</string>
     <string name="explore_reserve">Reserva: se usa si alguno de arriba no se puede</string>
@@ -159,12 +157,10 @@
     <string name="about_credits_desc">Este producto usa la API de TMDB pero no está respaldado ni certificado por TMDB. Sofadrop usa Trakt pero no está respaldado ni certificado por Trakt. Listas e historial de Simkl (simkl.com). Los nombres y logotipos de Trakt, Simkl y MDBList pertenecen a sus propietarios. Listas de MDBList. Fondos para Projectivy Launcher.</string>
     <string name="qr_link_hint">Escanea el código con el móvil</string>
     <string name="setting_details_title">Detalles del fondo</string>
-    <string name="details_description">Cómo se ve cada fondo: idioma de los textos, plataformas de streaming, longitud de la sinopsis y resolución de la imagen. Una sinopsis más corta evita que las filas del launcher tapen el texto.</string>
-    <string name="streaming_title">Plataformas de streaming</string>
-    <string name="streaming_none">No mostrar</string>
+    <string name="details_description">Cómo se ve cada fondo: idioma, longitud de la sinopsis, qué muestra el pie (la lista de origen, las plataformas) y resolución. Una sinopsis más corta evita que las filas del launcher tapen el texto.</string>
     <string name="streaming_summary_none">sin plataformas</string>
     <string name="streaming_summary">plataformas de %1$s</string>
-    <string name="lists_hub_description">Elige de qué listas salen los fondos. Un título que está en varias listas solo se usa una vez.</string>
+    <string name="lists_hub_description">Cuántos títulos coger de cada lista y en qué orden, y después las listas. Un título que está en varias listas solo se usa una vez.</string>
     <string name="lists_summary">%1$s · %2$s</string>
     <string name="provider_summary_connected">%1$d elegidas · conectado como %2$s</string>
     <string name="provider_summary_disconnected">%1$d elegidas · cuenta sin conectar</string>
@@ -211,6 +207,16 @@
         <item quantity="one">%d fondo</item>
         <item quantity="other">%d fondos</item>
     </plurals>
-    <string name="show_source_title">Mostrar la lista de origen</string>
-    <string name="show_source_desc">«Tendencias · TMDB», «Tu lista · Trakt»… al pie de cada fondo</string>
+    <string name="titles_all">Todos (hasta %1$d)</string>
+    <string name="titles_total">%1$s · unos %2$d fondos</string>
+    <string name="titles_total_all">%1$s · hasta %2$d fondos · la primera actualización puede tardar</string>
+    <string name="footer_title">Pie</string>
+    <string name="footer_none">Nada</string>
+    <string name="footer_source">Lista de origen</string>
+    <string name="footer_streaming">Plataformas de streaming</string>
+    <string name="footer_both">Lista de origen y plataformas</string>
+    <string name="streaming_country_title">País de las plataformas</string>
+    <string name="streaming_country_disabled">Solo se usa si el pie muestra las plataformas</string>
+    <string name="explore_empty_title">No hay listas elegidas</string>
+    <string name="explore_empty_desc">Elige listas de TMDB, Trakt, Simkl o MDBList</string>
 </resources>

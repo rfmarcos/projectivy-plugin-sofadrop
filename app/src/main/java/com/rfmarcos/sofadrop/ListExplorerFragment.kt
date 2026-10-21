@@ -5,8 +5,12 @@ import androidx.appcompat.content.res.AppCompatResources
 import androidx.leanback.widget.GuidanceStylist.Guidance
 import androidx.leanback.widget.GuidedAction
 
-/** Pick a list to see what it contains. */
+/** Pick a selected list to see what it contains. */
 class ListExplorerFragment : BaseSettingsFragment() {
+
+    private companion object {
+        const val EMPTY = -1L
+    }
 
     private var lists: List<ListSource> = emptyList()
 
@@ -18,20 +22,19 @@ class ListExplorerFragment : BaseSettingsFragment() {
     )
 
     override fun onCreateActions(actions: MutableList<GuidedAction>, savedInstanceState: Bundle?) {
-        val selected = Settings.lists
-        // Selected lists first
-        lists = Sources.available().sortedByDescending { it.key in selected }
+        // Only selected lists: duplicates (and so what a list really brings) depend on the others
+        lists = Sources.selected()
+        if (lists.isEmpty()) {
+            actions += action(EMPTY, R.drawable.ic_act_info, getString(R.string.explore_empty_title), getString(R.string.explore_empty_desc))
+                .focusable(false).build()
+        }
         lists.forEachIndexed { index, source ->
-            actions += action(
-                index.toLong(),
-                if (source.key in selected) R.drawable.ic_act_check else R.drawable.ic_act_list,
-                Sources.label(requireContext(), source),
-                getString(if (source.key in selected) R.string.explore_selected else R.string.explore_not_selected),
-            ).hasNext(true).build()
+            actions += action(index.toLong(), R.drawable.ic_act_list, Sources.label(requireContext(), source), null).hasNext(true).build()
         }
     }
 
     override fun onGuidedActionClicked(action: GuidedAction) {
+        if (action.id == EMPTY) return
         val source = lists.getOrNull(action.id.toInt()) ?: return
         add(parentFragmentManager, ListContentsFragment.newInstance(source.key))
     }

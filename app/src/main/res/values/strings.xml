@@ -112,10 +112,8 @@
     <string name="watched_mark">Show with a Watched badge</string>
     <string name="watched_hide">Hide</string>
     <string name="setting_explore_title">Explore lists</string>
-    <string name="setting_explore_desc">See which titles each list brings</string>
-    <string name="explore_description">Pick a list to see its titles in order and what happens to each one.</string>
-    <string name="explore_selected">Selected</string>
-    <string name="explore_not_selected">Not selected</string>
+    <string name="setting_explore_desc">See which titles each selected list brings</string>
+    <string name="explore_description">Pick one of your selected lists to see its titles in order and what happens to each one.</string>
     <string name="explore_loading">Loading…</string>
     <string name="explore_used">Used</string>
     <string name="explore_reserve">Backup: used if one above can\'t be</string>
@@ -169,12 +167,10 @@
     <string name="about_credits_desc">This product uses the TMDB API but is not endorsed or certified by TMDB. Sofadrop uses Trakt but is not endorsed or certified by Trakt. Lists and watch history from Simkl (simkl.com). Trakt, Simkl and MDBList names and logos belong to their owners. Lists from MDBList. Wallpapers for Projectivy Launcher.</string>
     <string name="qr_link_hint">Scan the code with your phone</string>
     <string name="setting_details_title">Wallpaper details</string>
-    <string name="details_description">How each wallpaper looks: language of the texts, streaming services, synopsis length and image resolution. A shorter synopsis keeps the text clear of the launcher rows.</string>
-    <string name="streaming_title">Streaming services</string>
-    <string name="streaming_none">Don\'t show</string>
+    <string name="details_description">How each wallpaper looks: language, synopsis length, what the footer shows (the list it came from, the streaming services) and image resolution. A shorter synopsis keeps the text clear of the launcher rows.</string>
     <string name="streaming_summary_none">no streaming services</string>
     <string name="streaming_summary">streaming in %1$s</string>
-    <string name="lists_hub_description">Pick the lists the wallpapers come from. A title in several lists is only used once.</string>
+    <string name="lists_hub_description">How many titles to take from each list and in what order, then the lists themselves. A title in several lists is only used once.</string>
     <string name="lists_summary">%1$s · %2$s</string>
     <string name="provider_summary_connected">%1$d selected · connected as %2$s</string>
     <string name="provider_summary_disconnected">%1$d selected · account not connected</string>
@@ -223,6 +219,16 @@
         <item quantity="one">%d wallpaper</item>
         <item quantity="other">%d wallpapers</item>
     </plurals>
-    <string name="show_source_title">Show list source</string>
-    <string name="show_source_desc">“Trending · TMDB”, “Your watchlist · Trakt”… at the bottom of each wallpaper</string>
+    <string name="titles_all">All (up to %1$d)</string>
+    <string name="titles_total">%1$s · about %2$d wallpapers</string>
+    <string name="titles_total_all">%1$s · up to %2$d wallpapers · the first update may take a while</string>
+    <string name="footer_title">Footer</string>
+    <string name="footer_none">Nothing</string>
+    <string name="footer_source">List source</string>
+    <string name="footer_streaming">Streaming services</string>
+    <string name="footer_both">List source and streaming</string>
+    <string name="streaming_country_title">Streaming country</string>
+    <string name="streaming_country_disabled">Only used when the footer shows streaming services</string>
+    <string name="explore_empty_title">No lists selected</string>
+    <string name="explore_empty_desc">Pick lists from TMDB, Trakt, Simkl or MDBList</string>
 </resources>

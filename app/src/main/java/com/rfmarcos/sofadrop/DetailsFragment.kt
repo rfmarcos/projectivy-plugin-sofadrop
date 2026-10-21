@@ -6,7 +6,7 @@ import androidx.appcompat.content.res.AppCompatResources
 import androidx.leanback.widget.GuidanceStylist.Guidance
 import androidx.leanback.widget.GuidedAction
 
-/** How each wallpaper looks: language, streaming services (and their country) and resolution. */
+/** How each wallpaper looks: language, synopsis, footer (list source / streaming services) and resolution. */
 class DetailsFragment : BaseSettingsFragment() {
 
     override fun onCreateGuidance(savedInstanceState: Bundle?) = Guidance(
@@ -17,24 +17,30 @@ class DetailsFragment : BaseSettingsFragment() {
     )
 
     override fun onCreateActions(actions: MutableList<GuidedAction>, savedInstanceState: Bundle?) {
+        val context = requireContext()
         actions += choice(ID_LANGUAGE, R.drawable.ic_act_language, R.string.setting_language_title, Languages.displayName(Settings.language),
             Languages.OPTIONS.values.toList())
-        actions += streamingAction()
-        actions += choice(ID_SYNOPSIS, R.drawable.ic_act_count, R.string.synopsis_title, synopsisLabel(requireContext(), Settings.overviewLines),
-            Settings.OVERVIEW_OPTIONS.map { synopsisLabel(requireContext(), it) })
-        actions += action(ID_SOURCE, R.drawable.ic_act_list, getString(R.string.show_source_title), getString(R.string.show_source_desc))
-            .checkSetId(GuidedAction.CHECKBOX_CHECK_SET_ID).checked(Settings.showSource).build()
-        actions += choice(ID_RESOLUTION, R.drawable.ic_act_hd, R.string.setting_resolution_title, resolutionLabel(Settings.outputWidth),
-            Settings.WIDTH_OPTIONS.map(::resolutionLabel))
+        actions += choice(ID_SYNOPSIS, R.drawable.ic_act_count, R.string.synopsis_title, synopsisLabel(context, Settings.overviewLines),
+            Settings.OVERVIEW_OPTIONS.map { synopsisLabel(context, it) })
+        actions += choice(ID_FOOTER, R.drawable.ic_act_list, R.string.footer_title, footerLabel(context, footerIndex()),
+            (0..3).map { footerLabel(context, it) })
+        actions += countryAction()
+        actions += choice(ID_RESOLUTION, R.drawable.ic_act_hd, R.string.setting_resolution_title, resolutionLabel(context, Settings.outputWidth),
+            Settings.WIDTH_OPTIONS.map { resolutionLabel(context, it) })
     }
 
-    /** "Don't show", "Automatic (US)" and every country: hiding the services and their country are one choice. */
-    private fun streamingAction() = choice(ID_STREAMING, R.drawable.ic_act_tv, R.string.streaming_title, streamingLabel(requireContext()),
-        listOf(getString(R.string.streaming_none), getString(R.string.region_auto, Languages.regionOf(Settings.language))) +
-            Languages.REGIONS.map { "${Languages.countryName(it)} ($it)" })
+    /** Country of the streaming services; only meaningful while the footer shows them (kept visible so rows don't jump). */
+    private fun countryAction(): GuidedAction {
+        val action = choice(ID_COUNTRY, R.drawable.ic_act_tv, R.string.streaming_country_title,
+            if (Settings.showProviders) countryLabel(requireContext()) else getString(R.string.streaming_country_disabled),
+            listOf(getString(R.string.region_auto, Languages.regionOf(Settings.language))) + Languages.REGIONS.map { "${Languages.countryName(it)} ($it)" })
+        action.isEnabled = Settings.showProviders
+        return action
+    }
 
-    override fun onGuidedActionClicked(action: GuidedAction) {
-        if (action.id == ID_SOURCE) Settings.showSource = action.isChecked
+    private fun replaceCountryRow() {
+        val position = findActionPositionById(ID_COUNTRY)
+        actions = actions.toMutableList().also { it[position] = countryAction() }
     }
 
     override fun onSubGuidedActionClicked(action: GuidedAction): Boolean {
@@ -43,35 +49,48 @@ class DetailsFragment : BaseSettingsFragment() {
             ID_LANGUAGE -> {
                 Settings.language = Languages.OPTIONS.keys.elementAt(index)
                 updateDescription(ID_LANGUAGE, Languages.displayName(Settings.language))
-                // "Automatic (XX)" follows the language
-                val position = findActionPositionById(ID_STREAMING)
-                actions = actions.toMutableList().also { it[position] = streamingAction() }
-            }
-            ID_STREAMING -> {
-                Settings.showProviders = index > 0
-                if (index > 0) Settings.regionOverride = if (index == 1) "" else Languages.REGIONS[index - 2]
-                updateDescription(ID_STREAMING, streamingLabel(requireContext()))
+                replaceCountryRow() // "Automatic (XX)" follows the language
             }
             ID_SYNOPSIS -> {
                 Settings.overviewLines = Settings.OVERVIEW_OPTIONS[index]
                 updateDescription(ID_SYNOPSIS, synopsisLabel(requireContext(), Settings.overviewLines))
             }
+            ID_FOOTER -> {
+                Settings.showSource = index == 1 || index == 3
+                Settings.showProviders = index >= 2
+                updateDescription(ID_FOOTER, footerLabel(requireContext(), index))
+                replaceCountryRow()
+            }
+            ID_COUNTRY -> {
+                Settings.regionOverride = if (index == 0) "" else Languages.REGIONS[index - 1]
+                updateDescription(ID_COUNTRY, countryLabel(requireContext()))
+            }
             ID_RESOLUTION -> {
                 Settings.outputWidth = Settings.WIDTH_OPTIONS[index]
-                updateDescription(ID_RESOLUTION, resolutionLabel(Settings.outputWidth))
+                updateDescription(ID_RESOLUTION, resolutionLabel(requireContext(), Settings.outputWidth))
             }
         }
         return true
     }
 
-    private fun resolutionLabel(width: Int) = resolutionLabel(requireContext(), width)
-
     companion object {
         private const val ID_LANGUAGE = 1L
-        private const val ID_STREAMING = 2L
+        private const val ID_COUNTRY = 2L
         private const val ID_RESOLUTION = 3L
         private const val ID_SYNOPSIS = 4L
-        private const val ID_SOURCE = 5L
+        private const val ID_FOOTER = 5L
+
+        /** 0 nothing, 1 list source, 2 streaming services, 3 both. */
+        private fun footerIndex() = (if (Settings.showSource) 1 else 0) + (if (Settings.showProviders) 2 else 0)
+
+        fun footerLabel(context: Context, index: Int) = context.getString(
+            when (index) {
+                1 -> R.string.footer_source
+                2 -> R.string.footer_streaming
+                3 -> R.string.footer_both
+                else -> R.string.footer_none
+            }
+        )
 
         fun synopsisLabel(context: Context, lines: Int) = context.getString(
             when (lines) {
@@ -81,25 +100,23 @@ class DetailsFragment : BaseSettingsFragment() {
             }
         )
 
-        fun streamingLabel(context: Context): String = when {
-            !Settings.showProviders -> context.getString(R.string.streaming_none)
-            Settings.regionOverride.isEmpty() -> context.getString(R.string.region_auto, Languages.regionOf(Settings.language))
-            else -> "${Languages.countryName(Settings.regionOverride)} (${Settings.regionOverride})"
-        }
+        fun countryLabel(context: Context): String =
+            if (Settings.regionOverride.isEmpty()) context.getString(R.string.region_auto, Languages.regionOf(Settings.language))
+            else "${Languages.countryName(Settings.regionOverride)} (${Settings.regionOverride})"
 
         fun resolutionLabel(context: Context, width: Int) =
             context.getString(if (width > 1920) R.string.resolution_2160 else R.string.resolution_1080)
 
-        /** "English (US) · streaming in US · 1080p" for the main screen. */
+        /** "English (US) · short synopsis · streaming in US · 1080p" for the main screen. */
         fun summary(context: Context): String = listOfNotNull(
             Languages.displayName(Settings.language),
-            if (Settings.showProviders) context.getString(R.string.streaming_summary, Settings.region)
-            else context.getString(R.string.streaming_summary_none),
             when (Settings.overviewLines) {
                 0 -> context.getString(R.string.synopsis_summary_hidden)
                 2 -> context.getString(R.string.synopsis_summary_short)
                 else -> null
             },
+            if (Settings.showProviders) context.getString(R.string.streaming_summary, Settings.region)
+            else context.getString(R.string.streaming_summary_none),
             context.getString(if (Settings.outputWidth > 1920) R.string.resolution_short_2160 else R.string.resolution_short_1080),
         ).joinToString(" · ")
     }
