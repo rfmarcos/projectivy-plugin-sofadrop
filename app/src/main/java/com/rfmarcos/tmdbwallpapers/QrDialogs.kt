@@ -276,29 +276,25 @@ class TmdbLoginDialog : QrDialog() {
     }
 }
 
-/** QR to a temporary local web page where the phone can paste keys or add public lists. */
-class PhoneSetupDialog : QrDialog() {
-    override val titleRes = R.string.setting_phone_title
+/** Static QR code to open a link on the phone (support page, source code…). */
+class LinkQrDialog : QrDialog() {
+    override val titleRes get() = requireArguments().getInt(ARG_TITLE)
     override val iconRes = R.drawable.ic_act_phone
     override val buttonRes = R.string.close
 
-    private var server: PhoneSetupServer? = null
-
     override fun start() {
-        val setup = PhoneSetupServer(requireContext().applicationContext) { changed ->
-            view?.post { setStatus(getString(R.string.phone_saved_toast, changed.joinToString(", ")), working = false) }
-        }
-        server = setup
-        background({ setup.start() }) { result ->
-            val url = result.getOrNull() ?: return@background finish(getString(R.string.phone_no_network))
-            showQr(url, getString(R.string.phone_scan_desc_short), null, url.substringBefore("?"), null)
-            setStatus(getString(R.string.phone_waiting))
-        }
+        val url = requireArguments().getString(ARG_URL).orEmpty()
+        showQr(url, getString(requireArguments().getInt(ARG_TEXT)), null, url.removePrefix("https://"), null)
+        setStatus(getString(R.string.qr_link_hint), working = false)
     }
 
-    override fun onStop() {
-        server?.stop()
-        server = null
-        super.onStop()
+    companion object {
+        private const val ARG_URL = "url"
+        private const val ARG_TITLE = "title"
+        private const val ARG_TEXT = "text"
+
+        fun newInstance(url: String, title: Int, text: Int) = LinkQrDialog().apply {
+            arguments = bundleOf(ARG_URL to url, ARG_TITLE to title, ARG_TEXT to text)
+        }
     }
 }

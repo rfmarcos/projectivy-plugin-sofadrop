@@ -32,6 +32,9 @@ object Settings {
     private const val KEY_REFRESH_HOURS = "refresh_hours"
     private const val KEY_WIDTH = "output_width"
     private const val KEY_GLOBAL_HITS = "global_hits_only"
+    private const val KEY_MAX_AGE = "max_age_months"
+    private const val KEY_EXCLUDE_ADULT = "exclude_adult"
+    private const val KEY_FILTER_SCOPE = "filter_scope"
     private const val KEY_PROVIDERS = "show_providers"
     private const val KEY_TRAKT_CLIENT_ID = "trakt_client_id"
     private const val KEY_TRAKT_CLIENT_SECRET = "trakt_client_secret"
@@ -49,6 +52,10 @@ object Settings {
 
     const val SELECTION_ORDER = "order"
     const val SELECTION_RANDOM = "random"
+    const val SCOPE_AUTOMATIC = "automatic"
+    const val SCOPE_ALL = "all"
+    /** Months; 0 means no limit. */
+    val MAX_AGE_OPTIONS = listOf(6, 12, 24, 60, 0)
     const val WATCHED_SHOW = "show"
     const val WATCHED_MARK = "mark"
     const val WATCHED_HIDE = "hide"
@@ -120,6 +127,22 @@ object Settings {
     var globalHitsOnly: Boolean
         get() = preferences.getBoolean(KEY_GLOBAL_HITS, true)
         set(value) = preferences.edit { putBoolean(KEY_GLOBAL_HITS, value) }
+
+    // --- Filters ---
+
+    /** Skip titles released (or, for TV, last aired) longer ago than this; 0 = no limit. */
+    var maxAgeMonths: Int
+        get() = preferences.getInt(KEY_MAX_AGE, 12)
+        set(value) = preferences.edit { putInt(KEY_MAX_AGE, value) }
+
+    var excludeAdult: Boolean
+        get() = preferences.getBoolean(KEY_EXCLUDE_ADULT, true)
+        set(value) = preferences.edit { putBoolean(KEY_EXCLUDE_ADULT, value) }
+
+    /** "automatic": only trending/popular-like lists; "all": also the user's own lists. */
+    var filterScope: String
+        get() = preferences.getString(KEY_FILTER_SCOPE, SCOPE_AUTOMATIC) ?: SCOPE_AUTOMATIC
+        set(value) = preferences.edit { putString(KEY_FILTER_SCOPE, value) }
 
     var showProviders: Boolean
         get() = preferences.getBoolean(KEY_PROVIDERS, true)
@@ -217,6 +240,9 @@ object Settings {
     /** MDBList can be used with a connected account or with an API key. */
     val mdbListAvailable: Boolean get() = mdbListConnected || mdbListKey.isNotBlank()
 
+    /** The QR login needs the app's MDBList client id. */
+    val mdbListLoginAvailable: Boolean get() = mdbListClientId.isNotBlank()
+
     fun clearMdbListSession() = preferences.edit {
         remove(KEY_MDBLIST_ACCESS); remove(KEY_MDBLIST_REFRESH); remove(KEY_MDBLIST_EXPIRES); remove(KEY_MDBLIST_USER)
     }
@@ -259,6 +285,7 @@ object Settings {
         get() = listOf(
             token.hashCode(), language, region, lists.sorted().joinToString(","), titlesPerList,
             outputWidth, globalHitsOnly, showProviders, selectionMode, if (traktConnected) watchedMode else "",
+            maxAgeMonths, excludeAdult, filterScope,
         ).joinToString("|")
 
     /** True when the current wallpapers were generated with different settings. */

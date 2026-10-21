@@ -12,13 +12,13 @@ It is the on-device version of [androidtvbackground-reddit](https://github.com/r
 
 * 🎬 **Lists** (pick several): TMDB trending, popular, in cinemas, upcoming, top rated and on the air; optionally Trakt trending / popular / anticipated / box office, your Trakt recommendations and watchlist, and any MDBList list.
 * 👀 **Live preview** in the settings and a notice when changed settings are waiting for the next update.
-* 📱 **Nothing to type on the TV**: Trakt, MDBList and your TMDB account are connected by scanning a QR code; your own keys (optional) can be pasted from the phone.
+* 📱 **Nothing to type on the TV**: Trakt, MDBList and your TMDB account are connected by scanning a QR code with the phone.
 * ✅ **Watched content** (with Trakt): mark watched titles ("✓ Watched", "▶ Watching · 3/8") or hide them.
 * 🔎 **Explore lists**: see the titles of each list in order and what happens to each one (used, in reserve, filtered and why).
 * 🖼️ Full-bleed backdrop (textless when available) with gradients that keep the lower half free for the launcher rows.
 * 🏷️ Official logo (dark logos are inverted to stay visible) or a fitted title, ★ rating, year, runtime / seasons, genres and synopsis.
 * 📺 Streaming services available in your country (TMDB Watch Providers, powered by JustWatch). Tiers and channels of the same service are grouped.
-* 🎯 *Global hits only*: in TMDB trending/popular lists, titles only popular in a local market are skipped unless they are worldwide hits (≥ 1000 TMDB votes).
+* 🎯 **Filters**: maximum age (6 months to no limit), *global hits only* (skip titles only popular in a local market unless they are worldwide hits, ≥ 1000 TMDB votes) and adult content. By default they apply only to the automatic TMDB / Trakt lists, so lists you curate are used as they are.
 * 🌍 Wallpaper languages: English (US/UK), Spanish (Spain/Mexico), Portuguese (Brazil/Portugal), French, Italian and German.
 * ⏱️ Refreshes in the background with WorkManager and tells Projectivy when new wallpapers are ready.
 
@@ -28,35 +28,32 @@ Open them from **Projectivy → Settings → Appearance → Wallpaper → Config
 
 | Setting | Default | |
 |---|---|---|
-| TMDB key | built in | The app's own TMDB key is used by default; you can use your own (v3 *API Key* or v4 *Read Access Token*) from **Set up from your phone**. |
 | Lists | TMDB trending movies + TV shows | One or more lists; titles repeated across lists are only used once. |
 | Titles per list | 10 | 5, 10, 15 or 20 per list. |
-| Selection | In list order | *In list order* takes the first usable titles of each list; *Random among the best* picks them at random among the top ones, for more variety on each update. |
+| Selection | In list order | *In list order* takes the first usable titles of each list; *Random* picks them from the whole list (up to 100 titles), for more variety on each update. |
 | Watched on Trakt | Mark as watched | *Show as usual*, *Mark as watched* or *Hide watched* (shows in progress are kept and marked). Needs Trakt connected. |
 | Language | device language | Language of titles, synopsis, logos and labels. |
 | Streaming country | from language | Country used for the streaming services. |
 | Update every | 24 hours | 6 h, 12 h, 24 h, 3 days or 7 days. |
 | Resolution | 1080p | 1080p (recommended) or 4K. |
-| Global hits only | On | In TMDB trending/popular lists, skip local-market titles unless they are worldwide hits. Lists you curate (Trakt, MDBList) are used as they are. |
+| Filters | 1 year · global hits · no adult | *Apply to* automatic lists only or all lists; *Maximum age* 6 months, 1, 2 or 5 years or no limit (release date, or last air date for shows); *Global hits only*; *Exclude adult content*. |
 | Show streaming services | On | |
-| Set up from your phone | — | QR code that opens a form on the phone (same network) to paste your own TMDB / MDBList keys and add public MDBList lists. |
 | TMDB account | — | Optional. Connect it with a QR code to use your TMDB watchlist and favourites as lists. |
 | Trakt | — | Optional, see below. |
-| MDBList | — | Optional. Connect your account with a QR code (or use an API key from the phone). |
+| MDBList | — | Optional. Connect your account with a QR code. |
+| About | — | Version, support the project (Ko-fi QR), source code and credits. |
 
 The left side of the screen renders a **live preview** with the current settings. Changed settings are **not applied immediately**: a notice tells you they will be applied in the next scheduled update, or you can choose **Update now**. The screen also shows the status of the last update and a full-screen view of the current set (◀ ▶ to browse).
 
 ### Trakt (optional)
 
-1. Create an app at [trakt.tv/oauth/applications](https://trakt.tv/oauth/applications/new) with redirect URI `urn:ietf:wg:oauth:2.0:oob`.
-2. In **Settings → Trakt** enter its *Client ID* and *Client Secret*: Trakt's public lists (trending, popular, anticipated, box office) become available.
-3. Choose **Connect account** and scan the QR code (or enter the code on [trakt.tv/activate](https://trakt.tv/activate)). Your recommendations and watchlist then appear in **Lists**, and watched titles can be marked or hidden.
+Choose **Trakt** and scan the QR code (or enter the code on [trakt.tv/activate](https://trakt.tv/activate)). Trakt's public lists (trending, popular, anticipated, box office), your recommendations and your watchlist then appear in **Lists**, and watched titles can be marked or hidden.
 
 > Why a Client ID / Secret? Trakt only talks to registered apps: the Client ID identifies the app and the secret is needed to finish the login. They belong to the *app*, not to the user, so a published build should ship with them (`trakt.clientId` / `trakt.clientSecret` in `local.properties`) and users only scan the QR code.
 
 ### MDBList (optional)
 
-Choose **MDBList** and scan the QR code to approve the app on mdblist.com: your lists are loaded automatically. Public lists can be added from **Set up from your phone** (`user/list` or the list URL).
+Choose **MDBList** and scan the QR code to approve the app on mdblist.com: your lists are loaded automatically. To use someone else's list, add it to your account on mdblist.com and choose **MDBList → Reload my lists**.
 
 ### App credentials (for builds you publish)
 
@@ -67,6 +64,7 @@ Users never type keys: the app ships with its own credentials, set in `local.pro
 | `tmdb.appKey` | themoviedb.org → Settings → API | Built-in TMDB key. TMDB limits requests roughly per client IP (~40 req/s), so each TV counts on its own. |
 | `trakt.clientId` / `trakt.clientSecret` | [trakt.tv/oauth/applications](https://trakt.tv/oauth/applications/new), redirect URI `urn:ietf:wg:oauth:2.0:oob` | Trakt device login (QR). |
 | `mdblist.clientId` | [mdblist.com/developer](https://mdblist.com/developer/), *Device Code App* (no secret, no redirect URI) | MDBList device login (QR). |
+| `support.url` / `source.url` | e.g. your Ko-fi page and the GitHub repository | Shown as QR codes in **About** (hidden when empty). |
 
 How often the wallpaper *changes on screen* is configured in Projectivy itself; the plugin decides how often the *set of wallpapers* is regenerated.
 

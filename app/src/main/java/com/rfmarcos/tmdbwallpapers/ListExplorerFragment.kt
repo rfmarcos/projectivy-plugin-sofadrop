@@ -97,7 +97,7 @@ class ListContentsFragment : BaseSettingsFragment() {
         when (exclusion) {
             Exclusion.LOCAL_MARKET -> R.string.exclusion_local_market
             Exclusion.TOO_OLD -> R.string.exclusion_too_old
-            Exclusion.KEYWORD -> R.string.exclusion_keyword
+            Exclusion.ADULT -> R.string.exclusion_adult
             Exclusion.WATCHED -> R.string.exclusion_watched
             Exclusion.NO_IMAGE -> R.string.exclusion_no_image
             Exclusion.DUPLICATE -> R.string.exclusion_duplicate

@@ -10,7 +10,11 @@ data class ListSource(
     val label: String? = null,
     val needsTraktAccount: Boolean = false,
     val needsTmdbAccount: Boolean = false,
-)
+) {
+    /** Lists built automatically by a service (trending, popular…), as opposed to the user's own lists. */
+    val automatic: Boolean
+        get() = provider != SourceProvider.MDBLIST && !needsTraktAccount && !needsTmdbAccount
+}
 
 object Sources {
     val TMDB = listOf(

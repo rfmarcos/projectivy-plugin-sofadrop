@@ -16,7 +16,7 @@ data class ListPlan(
 class WallpaperFactory(context: Context, private val width: Int) {
 
     val client = TmdbClient(Settings.token, context.cacheDir)
-    val catalog = TmdbCatalog(client, Settings.language, Settings.region, Settings.globalHitsOnly, Settings.showProviders)
+    val catalog = TmdbCatalog(client, Settings.language, Settings.region, Settings.showProviders)
     private val renderer = WallpaperRenderer(context, width, Languages.texts(Settings.language))
 
     val trakt: TraktClient? = if (Settings.traktConfigured) TraktClient(Settings.traktClientId, Settings.traktClientSecret) else null
@@ -32,16 +32,14 @@ class WallpaperFactory(context: Context, private val width: Int) {
     fun plan(source: ListSource, perList: Int, taken: Set<TitleRef> = emptySet()): ListPlan {
         val random = Settings.selectionMode == Settings.SELECTION_RANDOM
         val hideWatched = Settings.watchedMode == Settings.WATCHED_HIDE
-        val pool = if (random) perList * 3 else perList * 2
         val statuses = mutableMapOf<TitleRef, WatchStatus>()
-        val candidates = catalog.candidates(source, pool, trakt, mdbList).map { candidate ->
+        val candidates = catalog.candidates(source, perList * 2, trakt, mdbList, shuffle = random).map { candidate ->
             if (candidate.exclusion != null) return@map candidate
             if (candidate.ref in taken) return@map candidate.copy(exclusion = Exclusion.DUPLICATE)
             val status = watched?.status(candidate.ref)?.also { statuses[candidate.ref] = it }
             if (hideWatched && status is WatchStatus.Watched) candidate.copy(exclusion = Exclusion.WATCHED) else candidate
         }
-        var usable = candidates.filter { it.exclusion == null }.map { it.ref }
-        if (random) usable = usable.take(pool).shuffled()
+        val usable = candidates.filter { it.exclusion == null }.map { it.ref }
         return ListPlan(candidates, usable, statuses, random)
     }
 

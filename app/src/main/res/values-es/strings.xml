@@ -30,10 +30,6 @@
     <string name="preview_no_token">Introduce tu clave de TMDB para ver la vista previa</string>
     <string name="preview_no_titles">Las listas elegidas no tienen títulos</string>
     <string name="preview_error">Vista previa no disponible: %1$s</string>
-
-    <string name="setting_token_title">Clave de TMDB</string>
-    <string name="setting_token_missing">Obligatorio. Consíguelo en themoviedb.org → Ajustes → API</string>
-    <string name="setting_token_set">Configurado (…%1$s)</string>
     <string name="setting_lists_title">Listas</string>
     <string name="lists_selected">%1$d elegidas · %2$s</string>
     <string name="setting_language_title">Idioma</string>
@@ -110,21 +106,6 @@
     <!-- QR, accounts, selection, watched, explorer -->
     <string name="trakt_login_description">O abre %1$s en cualquier dispositivo e introduce el código. Esta pantalla se cierra sola cuando lo apruebes.</string>
     <string name="close">Cerrar</string>
-    <string name="setting_phone_title">Configurar desde el móvil</string>
-    <string name="setting_phone_desc">Escanea un QR y escribe tus claves desde el móvil</string>
-    <string name="phone_scan">Escanea con el móvil</string>
-    <string name="phone_scan_desc">El móvil tiene que estar en la misma red que la tele (o abre %1$s). La página solo funciona mientras esta pantalla esté abierta.</string>
-    <string name="phone_no_network">La tele no está conectada a una red local</string>
-    <string name="phone_saved_toast">Guardado desde el móvil: %1$s</string>
-    <string name="phone_title">TMDB Wallpapers</string>
-    <string name="phone_intro">Rellena solo lo que quieras cambiar y guarda. La tele se actualiza al momento.</string>
-    <string name="phone_current">Actual: %1$s</string>
-    <string name="phone_mdblist_key">Clave de API de MDBList</string>
-    <string name="phone_trakt_advanced">App de Trakt (avanzado)</string>
-    <string name="phone_save">Guardar</string>
-    <string name="phone_saved">Guardado ✓</string>
-    <string name="phone_saved_desc">Actualizado: %1$s. Ya puedes cerrar esta página.</string>
-    <string name="phone_invalid">Este enlace ha caducado. Vuelve a escanear el QR de la tele.</string>
     <string name="trakt_login_scan">Escanea para conectar Trakt</string>
     <string name="setting_tmdb_account_title">Cuenta de TMDB</string>
     <string name="tmdb_account_desc">Opcional. Conéctala para usar tu watchlist y tus favoritos</string>
@@ -139,7 +120,7 @@
     <string name="list_tmdb_favorite_tv">TMDB · Tus series favoritas</string>
     <string name="setting_selection_title">Selección</string>
     <string name="selection_order">En el orden de la lista</string>
-    <string name="selection_random">Aleatoria entre las mejores</string>
+    <string name="selection_random">Aleatoria (de toda la lista)</string>
     <string name="setting_watched_title">Visto en Trakt</string>
     <string name="watched_show">Mostrar como siempre</string>
     <string name="watched_mark">Marcar como visto</string>
@@ -159,8 +140,7 @@
     <string name="explore_summary">%1$d títulos · se usan los %2$d primeros válidos</string>
     <string name="explore_summary_random">%1$d títulos · se eligen %2$d al azar entre los válidos</string>
     <string name="exclusion_local_market">Descartado: solo popular en un mercado local</string>
-    <string name="exclusion_too_old">Descartado: de hace más de un año</string>
-    <string name="exclusion_keyword">Descartado: palabra clave excluida</string>
+    <string name="exclusion_too_old">Descartado: supera la antigüedad máxima</string>
     <string name="exclusion_watched">Oculto: ya lo has visto</string>
     <string name="exclusion_no_image">Descartado: sin imagen</string>
     <string name="exclusion_duplicate">Ya lo usa otra lista</string>
@@ -172,11 +152,36 @@
     <string name="mdblist_login_ok">MDBList conectado como %1$s</string>
     <string name="mdblist_connected">Conectado como %1$s · %2$d listas</string>
     <string name="mdblist_key_mode">Clave de API · %1$d listas</string>
-    <string name="mdblist_phone_hint">Opcional. Añade tu clave de API desde el móvil</string>
     <string name="account_connect_hint">Opcional. Escanea un QR para conectar</string>
     <string name="trakt_unavailable">No disponible en esta compilación (faltan las credenciales de Trakt de la app)</string>
-    <string name="tmdb_key_builtin">Clave integrada · usa la tuya desde el móvil</string>
-    <string name="tmdb_key_own">Tu clave (…%1$s) · cámbiala desde el móvil</string>
-    <string name="phone_scan_desc_short">Escanéalo con el móvil (en la misma red Wi-Fi que la tele) para pegar tus propias claves o añadir listas de MDBList.</string>
-    <string name="phone_waiting">Esperando al móvil…</string>
+    <!-- Filtros -->
+    <string name="setting_filters_title">Filtros</string>
+    <string name="filters_description">Títulos que se descartan al crear los fondos. Tus propias listas (Trakt, MDBList, cuenta de TMDB) se respetan tal cual salvo que apliques los filtros a todas.</string>
+    <string name="filters_scope_title">Aplicar a</string>
+    <string name="filters_scope_automatic">Solo listas automáticas</string>
+    <string name="filters_scope_all">Todas las listas</string>
+    <string name="filters_age_title">Antigüedad máxima</string>
+    <string name="filters_age_none">Sin límite</string>
+    <string name="filters_age_months">%1$d meses</string>
+    <plurals name="filters_age_years">
+        <item quantity="one">%1$d año</item>
+        <item quantity="other">%1$d años</item>
+    </plurals>
+    <string name="filters_adult_title">Excluir contenido adulto</string>
+    <string name="filters_adult_desc">Descarta los títulos marcados como adultos en TMDB</string>
+    <string name="exclusion_adult">Descartado: contenido adulto</string>
+    <string name="mdblist_unavailable">No disponible en esta versión</string>
+
+    <!-- Acerca de -->
+    <string name="setting_about_title">Acerca de</string>
+    <string name="setting_about_desc">Versión %1$s · apoyar el proyecto, código y créditos</string>
+    <string name="about_version">Versión</string>
+    <string name="about_support">Apoyar el proyecto</string>
+    <string name="about_support_desc">Si te gusta el plugin, puedes invitarme a un café en Ko-fi</string>
+    <string name="about_support_scan">Escanéalo con el móvil para abrir la página de Ko-fi. ¡Gracias!</string>
+    <string name="about_source">Código fuente</string>
+    <string name="about_source_scan">Escanéalo con el móvil para abrir la página del proyecto.</string>
+    <string name="about_credits">Créditos</string>
+    <string name="about_credits_desc">Este producto usa la API de TMDB pero no está respaldado ni certificado por TMDB. Listas de Trakt y MDBList. Fondos para Projectivy Launcher.</string>
+    <string name="qr_link_hint">Escanea el código con el móvil</string>
 </resources>

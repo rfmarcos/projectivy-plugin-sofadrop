@@ -36,9 +36,6 @@
     <string name="preview_error">Preview unavailable: %1$s</string>
 
     <!-- Settings -->
-    <string name="setting_token_title">TMDB key</string>
-    <string name="setting_token_missing">Required. Get it at themoviedb.org → Settings → API</string>
-    <string name="setting_token_set">Configured (…%1$s)</string>
     <string name="setting_lists_title">Lists</string>
     <string name="lists_selected">%1$d selected · %2$s</string>
     <string name="setting_language_title">Language</string>
@@ -119,21 +116,6 @@
     <!-- QR, accounts, selection, watched, explorer -->
     <string name="trakt_login_description">Or open %1$s on any device and enter the code. This screen closes by itself once you approve it.</string>
     <string name="close">Close</string>
-    <string name="setting_phone_title">Set up from your phone</string>
-    <string name="setting_phone_desc">Scan a QR code and enter your keys from the phone</string>
-    <string name="phone_scan">Scan with your phone</string>
-    <string name="phone_scan_desc">Your phone must be on the same network as the TV (or open %1$s). The page only works while this screen is open.</string>
-    <string name="phone_no_network">The TV is not connected to a local network</string>
-    <string name="phone_saved_toast">Saved from the phone: %1$s</string>
-    <string name="phone_title">TMDB Wallpapers</string>
-    <string name="phone_intro">Fill in only what you want to change and save. The TV is updated right away.</string>
-    <string name="phone_current">Current: %1$s</string>
-    <string name="phone_mdblist_key">MDBList API key</string>
-    <string name="phone_trakt_advanced">Trakt app (advanced)</string>
-    <string name="phone_save">Save</string>
-    <string name="phone_saved">Saved ✓</string>
-    <string name="phone_saved_desc">Updated: %1$s. You can close this page.</string>
-    <string name="phone_invalid">This link has expired. Scan the QR code on the TV again.</string>
     <string name="trakt_login_scan">Scan to connect Trakt</string>
     <string name="setting_tmdb_account_title">TMDB account</string>
     <string name="tmdb_account_desc">Optional. Connect it to use your watchlist and favourites</string>
@@ -148,7 +130,7 @@
     <string name="list_tmdb_favorite_tv">TMDB · Your favourite TV shows</string>
     <string name="setting_selection_title">Selection</string>
     <string name="selection_order">In list order</string>
-    <string name="selection_random">Random among the best</string>
+    <string name="selection_random">Random (from the whole list)</string>
     <string name="setting_watched_title">Watched on Trakt</string>
     <string name="watched_show">Show as usual</string>
     <string name="watched_mark">Mark as watched</string>
@@ -168,8 +150,7 @@
     <string name="explore_summary">%1$d titles · the first %2$d usable ones are used</string>
     <string name="explore_summary_random">%1$d titles · %2$d are picked at random among the usable ones</string>
     <string name="exclusion_local_market">Skipped: only popular in a local market</string>
-    <string name="exclusion_too_old">Skipped: more than a year old</string>
-    <string name="exclusion_keyword">Skipped: excluded keyword</string>
+    <string name="exclusion_too_old">Skipped: older than the age limit</string>
     <string name="exclusion_watched">Hidden: already watched</string>
     <string name="exclusion_no_image">Skipped: no image</string>
     <string name="exclusion_duplicate">Already used by another list</string>
@@ -181,11 +162,36 @@
     <string name="mdblist_login_ok">MDBList connected as %1$s</string>
     <string name="mdblist_connected">Connected as %1$s · %2$d lists</string>
     <string name="mdblist_key_mode">API key · %1$d lists</string>
-    <string name="mdblist_phone_hint">Optional. Add your API key from the phone</string>
     <string name="account_connect_hint">Optional. Scan a QR code to connect</string>
     <string name="trakt_unavailable">Not available in this build (missing the app\'s Trakt credentials)</string>
-    <string name="tmdb_key_builtin">Built-in key · use your own from the phone</string>
-    <string name="tmdb_key_own">Your key (…%1$s) · change it from the phone</string>
-    <string name="phone_scan_desc_short">Scan it with your phone (same Wi-Fi network as the TV) to paste your own keys or add MDBList lists.</string>
-    <string name="phone_waiting">Waiting for the phone…</string>
+    <!-- Filters -->
+    <string name="setting_filters_title">Filters</string>
+    <string name="filters_description">Titles skipped when building wallpapers. Your own lists (Trakt, MDBList, TMDB account) are kept as they are unless you apply the filters to all lists.</string>
+    <string name="filters_scope_title">Apply to</string>
+    <string name="filters_scope_automatic">Automatic lists only</string>
+    <string name="filters_scope_all">All lists</string>
+    <string name="filters_age_title">Maximum age</string>
+    <string name="filters_age_none">No limit</string>
+    <string name="filters_age_months">%1$d months</string>
+    <plurals name="filters_age_years">
+        <item quantity="one">%1$d year</item>
+        <item quantity="other">%1$d years</item>
+    </plurals>
+    <string name="filters_adult_title">Exclude adult content</string>
+    <string name="filters_adult_desc">Skip titles marked as adult on TMDB</string>
+    <string name="exclusion_adult">Skipped: adult content</string>
+    <string name="mdblist_unavailable">Not available in this version</string>
+
+    <!-- About -->
+    <string name="setting_about_title">About</string>
+    <string name="setting_about_desc">Version %1$s · support, source code and credits</string>
+    <string name="about_version">Version</string>
+    <string name="about_support">Support the project</string>
+    <string name="about_support_desc">If you like the plugin, you can buy me a coffee on Ko-fi</string>
+    <string name="about_support_scan">Scan it with your phone to open the Ko-fi page. Thank you!</string>
+    <string name="about_source">Source code</string>
+    <string name="about_source_scan">Scan it with your phone to open the project page.</string>
+    <string name="about_credits">Credits</string>
+    <string name="about_credits_desc">This product uses the TMDB API but is not endorsed or certified by TMDB. Lists from Trakt and MDBList. Wallpapers for Projectivy Launcher.</string>
+    <string name="qr_link_hint">Scan the code with your phone</string>
 </resources>
