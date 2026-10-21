@@ -55,11 +55,12 @@ class TmdbCatalog(
      * (with the reason). Filters apply to automatic lists, or to every list if the user chose so.
      * With [shuffle] the whole list is shuffled first (random selection).
      */
-    fun candidates(source: ListSource, pool: Int, trakt: TraktClient?, mdbList: MdbListClient?, shuffle: Boolean = false): List<Candidate> {
+    fun candidates(source: ListSource, pool: Int, trakt: TraktClient?, simkl: SimklClient?, mdbList: MdbListClient?, shuffle: Boolean = false): List<Candidate> {
         val fetch = if (shuffle) RANDOM_POOL else pool + 5
         var refs = when (source.provider) {
             SourceProvider.TMDB -> tmdbRefs(source.key, fetch)
             SourceProvider.TRAKT -> trakt?.titles(source.key, fetch).orEmpty()
+            SourceProvider.SIMKL -> simkl?.titles(source.key, fetch).orEmpty()
             SourceProvider.MDBLIST -> source.key.removePrefix("mdblist:").let { list ->
                 if ('/' in list) MdbListClient.publicTitles(list, fetch)
                 else list.toLongOrNull()?.let { mdbList?.titles(it, fetch, client) }.orEmpty()
@@ -68,7 +69,7 @@ class TmdbCatalog(
         if (shuffle) refs = refs.shuffled()
         val filtered = Settings.filterScope == Settings.SCOPE_ALL || source.automatic
         return refs.asSequence()
-            .map { Candidate(it, if (filtered) exclusion(it) else null) }
+            .map { Candidate(it, if (filtered) exclusion(it, source.localMarketFilter) else null) }
             .takeIncluded(pool)
     }
 
@@ -153,10 +154,10 @@ class TmdbCatalog(
 
     // --- Filters (from the TMDB details of each title) ---
 
-    private fun exclusion(ref: TitleRef): Exclusion? {
+    private fun exclusion(ref: TitleRef, localMarketFilter: Boolean = true): Exclusion? {
         val item = details(ref) ?: return null
         return when {
-            isLocalMarket(item) -> Exclusion.LOCAL_MARKET
+            localMarketFilter && isLocalMarket(item) -> Exclusion.LOCAL_MARKET
             isTooOld(ref.type, item) -> Exclusion.TOO_OLD
             Settings.excludeAdult && isAdult(ref, item) -> Exclusion.ADULT
             else -> null

@@ -26,6 +26,9 @@ class FiltersFragment : BaseSettingsFragment() {
         actions += action(ID_ADULT, R.drawable.ic_act_block, getString(R.string.filters_adult_title),
             getString(R.string.filters_adult_desc))
             .checkSetId(GuidedAction.CHECKBOX_CHECK_SET_ID).checked(Settings.excludeAdult).build()
+        actions += action(ID_WATCHED, R.drawable.ic_act_visibility, getString(R.string.setting_watched_title), watchedDescription(context))
+            .subActions(WATCHED_MODES.mapIndexed { index, mode -> sub(ID_WATCHED, index, watchedLabel(context, mode)) })
+            .enabled(Settings.trackerConnected).build()
         // Last: it says which lists the filters above apply to
         actions += action(ID_SCOPE, R.drawable.ic_act_list, getString(R.string.filters_scope_title), scopeLabel(context, Settings.filterScope))
             .subActions(SCOPES.mapIndexed { index, scope -> sub(ID_SCOPE, index, scopeLabel(context, scope)) }).build()
@@ -48,6 +51,10 @@ class FiltersFragment : BaseSettingsFragment() {
                 Settings.filterScope = SCOPES[index]
                 updateDescription(ID_SCOPE, scopeLabel(requireContext(), Settings.filterScope))
             }
+            ID_WATCHED -> {
+                Settings.watchedMode = WATCHED_MODES[index]
+                updateDescription(ID_WATCHED, watchedDescription(requireContext()))
+            }
             ID_AGE -> {
                 Settings.maxAgeMonths = Settings.MAX_AGE_OPTIONS[index]
                 updateDescription(ID_AGE, ageLabel(requireContext(), Settings.maxAgeMonths))
@@ -61,6 +68,26 @@ class FiltersFragment : BaseSettingsFragment() {
         private const val ID_AGE = 2L
         private const val ID_GLOBAL_HITS = 3L
         private const val ID_ADULT = 4L
+        private const val ID_WATCHED = 5L
+        private val WATCHED_MODES = listOf(Settings.WATCHED_SHOW, Settings.WATCHED_MARK, Settings.WATCHED_HIDE)
+
+        fun watchedLabel(context: Context, mode: String) = context.getString(
+            when (mode) {
+                Settings.WATCHED_HIDE -> R.string.watched_hide
+                Settings.WATCHED_SHOW -> R.string.watched_show
+                else -> R.string.watched_mark
+            }
+        )
+
+        /** "Show with a Watched badge · from Trakt + Simkl"; disabled text when no tracker is connected. */
+        fun watchedDescription(context: Context): String {
+            val trackers = listOfNotNull(
+                context.getString(R.string.setting_trakt_title).takeIf { Settings.traktConnected },
+                context.getString(R.string.setting_simkl_title).takeIf { Settings.simklConnected },
+            )
+            if (trackers.isEmpty()) return context.getString(R.string.watched_no_tracker)
+            return context.getString(R.string.watched_from, watchedLabel(context, Settings.watchedMode), trackers.joinToString(" + "))
+        }
         private val SCOPES = listOf(Settings.SCOPE_AUTOMATIC, Settings.SCOPE_ALL)
 
         fun scopeLabel(context: Context, scope: String) = context.getString(
@@ -77,6 +104,7 @@ class FiltersFragment : BaseSettingsFragment() {
         fun summary(context: Context): String = listOfNotNull(
             ageLabel(context, Settings.maxAgeMonths),
             context.getString(R.string.setting_global_hits_title).takeIf { Settings.globalHitsOnly },
+            context.getString(R.string.watched_summary_hidden).takeIf { Settings.trackerConnected && Settings.watchedMode == Settings.WATCHED_HIDE },
             scopeLabel(context, Settings.filterScope).takeIf { Settings.filterScope == Settings.SCOPE_ALL },
         ).joinToString(" · ")
     }

@@ -111,7 +111,6 @@
     <string name="watched_show">Show normally</string>
     <string name="watched_mark">Show with a Watched badge</string>
     <string name="watched_hide">Hide</string>
-    <string name="watched_needs_trakt">%1$s · connect your account first</string>
     <string name="setting_explore_title">Explore lists</string>
     <string name="setting_explore_desc">See which titles each list brings</string>
     <string name="explore_description">Pick a list to see its titles in order and what happens to each one.</string>
@@ -167,7 +166,7 @@
     <string name="about_source">Source code</string>
     <string name="about_source_scan">Scan it with your phone to open the project page.</string>
     <string name="about_credits">Credits</string>
-    <string name="about_credits_desc">This product uses the TMDB API but is not endorsed or certified by TMDB. Sofadrop uses Trakt but is not endorsed or certified by Trakt. Lists from MDBList. Wallpapers for Projectivy Launcher.</string>
+    <string name="about_credits_desc">This product uses the TMDB API but is not endorsed or certified by TMDB. Sofadrop uses Trakt but is not endorsed or certified by Trakt. Lists and watch history from Simkl (simkl.com). Lists from MDBList. Wallpapers for Projectivy Launcher.</string>
     <string name="qr_link_hint">Scan the code with your phone</string>
     <string name="setting_details_title">Wallpaper details</string>
     <string name="details_description">How each wallpaper looks: language of the texts, streaming services, synopsis length and image resolution. A shorter synopsis keeps the text clear of the launcher rows.</string>
@@ -183,7 +182,7 @@
     <string name="account_title_trakt">Your Trakt account</string>
     <string name="account_not_connected">Not connected · scan a QR code</string>
     <string name="tmdb_lists_description">Lists from TMDB. Connect your TMDB account to also use your watchlist and favourites.</string>
-    <string name="trakt_lists_description">Lists from Trakt. Connect your account for your recommendations and watchlist, and to mark or hide what you\'ve watched.</string>
+    <string name="trakt_lists_description">Lists from Trakt. Connect your account for your recommendations and watchlist; its history also powers Watched titles (in Filters).</string>
     <string name="list_needs_account">Connect your account to use it</string>
     <string name="mdblist_own_list">Your list</string>
     <string name="resolution_short_1080" translatable="false">1080p</string>
@@ -205,4 +204,18 @@
     <string name="preview_hint_unpin">📌 In preview · OK  Back to automatic</string>
     <string name="preview_pinned">Shown in the settings preview</string>
     <string name="preview_unpinned">Preview back to automatic</string>
+    <string name="setting_simkl_title">Simkl</string>
+    <string name="account_title_simkl">Your Simkl account</string>
+    <string name="account_unavailable">Not available in this build</string>
+    <string name="list_simkl_trending_anime">Simkl · Trending anime</string>
+    <string name="list_simkl_trending_movies">Simkl · Trending movies</string>
+    <string name="list_simkl_trending_shows">Simkl · Trending shows</string>
+    <string name="list_simkl_plantowatch">Simkl · Plan to watch</string>
+    <string name="list_simkl_watching">Simkl · Watching</string>
+    <string name="simkl_lists_description">Lists from Simkl, the tracker for TV, movies and anime. Connect your account for your Plan to watch and Watching lists; its history also powers Watched titles (in Filters).</string>
+    <string name="simkl_login_ok">Simkl connected as %1$s</string>
+    <string name="simkl_failed">Simkl error: %1$s</string>
+    <string name="watched_from">%1$s · from %2$s</string>
+    <string name="watched_no_tracker">Connect Trakt or Simkl in Lists to use this</string>
+    <string name="watched_summary_hidden">watched hidden</string>
 </resources>

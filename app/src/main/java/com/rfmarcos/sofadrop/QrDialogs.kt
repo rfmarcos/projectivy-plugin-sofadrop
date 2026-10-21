@@ -243,6 +243,57 @@ class MdbListLoginDialog : QrDialog() {
     }
 }
 
+/** Simkl device flow (AUTH V2 app registered on simkl.com/settings/developer). */
+class SimklLoginDialog : QrDialog() {
+    override val titleRes = R.string.setting_simkl_title
+    override val iconRes = R.drawable.ic_act_check
+
+    override fun start() {
+        val client = SimklClient(Settings.simklClientId)
+        background({ client.requestDeviceCode() }) { result ->
+            result.onSuccess { code ->
+                showQr(
+                    code.verificationUriComplete,
+                    getString(R.string.qr_instructions_code, code.verificationUri.removePrefix("https://")),
+                    code.userCode, code.verificationUri, code.expiresIn,
+                )
+                poll(client, code)
+            }.onFailure { finish(getString(R.string.simkl_failed, it.message)) }
+        }
+    }
+
+    private fun poll(client: SimklClient, code: SimklClient.DeviceCode) {
+        background({
+            val deadline = System.currentTimeMillis() + code.expiresIn * 1000L
+            var interval = code.interval * 1000L
+            var outcome: SimklClient.Poll = SimklClient.Poll.Pending
+            while (active && System.currentTimeMillis() < deadline) {
+                Thread.sleep(interval)
+                outcome = client.poll(code)
+                when (outcome) {
+                    SimklClient.Poll.Pending -> continue
+                    SimklClient.Poll.SlowDown -> interval += 5000
+                    else -> break
+                }
+            }
+            outcome
+        }) { result ->
+            when (val outcome = result.getOrNull()) {
+                SimklClient.Poll.Connected -> finish(getString(R.string.simkl_login_ok, Settings.simklUser.ifBlank { "Simkl" }))
+                is SimklClient.Poll.Failed -> finish(
+                    when (outcome.error) {
+                        "expired_token" -> getString(R.string.trakt_login_expired)
+                        "access_denied" -> getString(R.string.trakt_login_denied)
+                        else -> getString(R.string.simkl_failed, outcome.error)
+                    }
+                )
+                null -> finish(getString(R.string.simkl_failed, result.exceptionOrNull()?.message))
+                else -> if (active) finish(getString(R.string.trakt_login_expired))
+            }
+        }
+    }
+}
+
 /** TMDB account: the QR opens the page where the user approves a request token. */
 class TmdbLoginDialog : QrDialog() {
     override val titleRes = R.string.setting_tmdb_account_title

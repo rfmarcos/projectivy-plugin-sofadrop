@@ -46,6 +46,7 @@ android {
         buildConfigField("String", "DEFAULT_TRAKT_CLIENT_ID", "\"${localProperty("trakt.clientId")}\"")
         buildConfigField("String", "DEFAULT_TRAKT_CLIENT_SECRET", "\"${localProperty("trakt.clientSecret")}\"")
         buildConfigField("String", "MDBLIST_CLIENT_ID", "\"${localProperty("mdblist.clientId")}\"")
+        buildConfigField("String", "SIMKL_CLIENT_ID", "\"${localProperty("simkl.clientId")}\"")
         buildConfigField("String", "TMDB_APP_KEY", "\"${localProperty("tmdb.appKey")}\"")
         // Links shown in "About" (hidden when empty)
         buildConfigField("String", "SUPPORT_URL", "\"${localProperty("support.url")}\"")

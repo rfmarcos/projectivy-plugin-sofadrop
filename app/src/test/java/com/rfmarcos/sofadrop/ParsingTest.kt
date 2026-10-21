@@ -80,4 +80,20 @@ class ParsingTest {
         assertEquals("mdblist:snoak/x", MdbListRef(0, "X", "snoak/x").key)
         assertEquals("mdblist:42", MdbListRef(42, "Mine").key)
     }
+
+    @Test
+    fun simklLibrary() {
+        // Shape from the Simkl OpenAPI example: shows carry a TMDB id, this anime does not
+        val body = Json.parseToJsonElement("""
+            {"movies": [{"status": "plantowatch", "added_to_watchlist_at": "2026-01-02T00:00:00Z",
+                         "movie": {"title": "Dune", "ids": {"simkl": 1, "tmdb": "438631"}}}],
+             "shows": [{"status": "watching", "watched_episodes_count": 3, "total_episodes_count": 10, "not_aired_episodes_count": 2,
+                        "show": {"title": "Charmed", "ids": {"simkl": 297, "tmdb": "1981"}}}],
+             "anime": [{"status": "completed", "anime_type": "tv", "show": {"title": "Cowboy Bebop", "ids": {"simkl": 37089, "mal": "1"}}}]}
+        """).let { it as JsonObject }
+        val items = SimklClient.parseLibrary(body)
+        assertEquals(listOf(TitleRef(MediaType.MOVIE, 438631), TitleRef(MediaType.TV, 1981)), items.map { it.ref })
+        assertEquals(3, items[1].watched)
+        assertEquals(8, items[1].total) // aired episodes only
+    }
 }

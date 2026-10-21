@@ -22,6 +22,8 @@ class ListsFragment : BaseSettingsFragment() {
             .hasNext(true).build()
         actions += action(ID_TRAKT, R.drawable.ic_act_trakt, getString(R.string.setting_trakt_title),
             ProviderListsFragment.summary(context, SourceProvider.TRAKT)).hasNext(true).build()
+        actions += action(ID_SIMKL, R.drawable.ic_act_check, getString(R.string.setting_simkl_title),
+            ProviderListsFragment.summary(context, SourceProvider.SIMKL)).hasNext(true).build()
         actions += action(ID_MDBLIST, R.drawable.ic_act_list, getString(R.string.setting_mdblist_title), MdbListFragment.summary(context))
             .hasNext(true).build()
         actions += action(ID_EXPLORE, R.drawable.ic_act_search, getString(R.string.setting_explore_title),
@@ -33,6 +35,7 @@ class ListsFragment : BaseSettingsFragment() {
         val context = requireContext()
         updateDescription(ID_TMDB, ProviderListsFragment.summary(context, SourceProvider.TMDB))
         updateDescription(ID_TRAKT, ProviderListsFragment.summary(context, SourceProvider.TRAKT))
+        updateDescription(ID_SIMKL, ProviderListsFragment.summary(context, SourceProvider.SIMKL))
         updateDescription(ID_MDBLIST, MdbListFragment.summary(context))
     }
 
@@ -40,6 +43,7 @@ class ListsFragment : BaseSettingsFragment() {
         when (action.id) {
             ID_TMDB -> add(parentFragmentManager, ProviderListsFragment.newInstance(SourceProvider.TMDB))
             ID_TRAKT -> add(parentFragmentManager, ProviderListsFragment.newInstance(SourceProvider.TRAKT))
+            ID_SIMKL -> add(parentFragmentManager, ProviderListsFragment.newInstance(SourceProvider.SIMKL))
             ID_MDBLIST -> add(parentFragmentManager, MdbListFragment())
             ID_EXPLORE -> add(parentFragmentManager, ListExplorerFragment())
         }
@@ -50,6 +54,7 @@ class ListsFragment : BaseSettingsFragment() {
         private const val ID_TRAKT = 2L
         private const val ID_MDBLIST = 3L
         private const val ID_EXPLORE = 4L
+        private const val ID_SIMKL = 5L
 
         /** "8 lists · TMDB 2 · Trakt 4 · MDBList 2" for the main screen. */
         fun summary(context: Context): String {
@@ -66,6 +71,7 @@ class ListsFragment : BaseSettingsFragment() {
         fun providerName(context: Context, provider: SourceProvider) = when (provider) {
             SourceProvider.TMDB -> "TMDB"
             SourceProvider.TRAKT -> context.getString(R.string.setting_trakt_title)
+            SourceProvider.SIMKL -> context.getString(R.string.setting_simkl_title)
             SourceProvider.MDBLIST -> context.getString(R.string.setting_mdblist_title)
         }
     }

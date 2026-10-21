@@ -73,6 +73,10 @@ object Settings {
     private const val KEY_TRAKT_REFRESH = "_trakt_refresh_token"
     private const val KEY_TRAKT_EXPIRES = "_trakt_expires_at"
     private const val KEY_TRAKT_USER = "_trakt_user"
+    private const val KEY_SIMKL_ACCESS = "_simkl_access_token"
+    private const val KEY_SIMKL_REFRESH = "_simkl_refresh_token"
+    private const val KEY_SIMKL_EXPIRES = "_simkl_expires_at"
+    private const val KEY_SIMKL_USER = "_simkl_user"
 
     val COUNT_OPTIONS = listOf(5, 10, 15, 20)
     val REFRESH_OPTIONS = listOf(6, 12, 24, 72, 168)
@@ -189,6 +193,37 @@ object Settings {
         remove(KEY_TRAKT_ACCESS); remove(KEY_TRAKT_REFRESH); remove(KEY_TRAKT_EXPIRES); remove(KEY_TRAKT_USER)
     }
 
+    // --- Simkl (trending needs nothing; the account is connected with a QR code) ---
+
+    val simklClientId: String get() = BuildConfig.SIMKL_CLIENT_ID
+
+    val simklLoginAvailable: Boolean get() = simklClientId.isNotBlank()
+
+    var simklAccessToken: String
+        get() = string(KEY_SIMKL_ACCESS)
+        set(value) = preferences.edit { putString(KEY_SIMKL_ACCESS, value) }
+
+    var simklRefreshToken: String
+        get() = string(KEY_SIMKL_REFRESH)
+        set(value) = preferences.edit { putString(KEY_SIMKL_REFRESH, value) }
+
+    var simklExpiresAt: Long
+        get() = preferences.getLong(KEY_SIMKL_EXPIRES, 0L)
+        set(value) = preferences.edit { putLong(KEY_SIMKL_EXPIRES, value) }
+
+    var simklUser: String
+        get() = string(KEY_SIMKL_USER)
+        set(value) = preferences.edit { putString(KEY_SIMKL_USER, value) }
+
+    val simklConnected: Boolean get() = simklLoginAvailable && simklAccessToken.isNotBlank()
+
+    fun clearSimklSession() = preferences.edit {
+        remove(KEY_SIMKL_ACCESS); remove(KEY_SIMKL_REFRESH); remove(KEY_SIMKL_EXPIRES); remove(KEY_SIMKL_USER)
+    }
+
+    /** Watched titles can be marked or hidden when at least one tracker is connected. */
+    val trackerConnected: Boolean get() = traktConnected || simklConnected
+
     // --- TMDB account (optional, adds the user's watchlist / favourites) ---
 
     var tmdbSessionId: String
@@ -300,7 +335,7 @@ object Settings {
     val signature: String
         get() = listOf(
             token.hashCode(), language, region, lists.sorted().joinToString(","), titlesPerList,
-            outputWidth, globalHitsOnly, showProviders, selectionMode, if (traktConnected) watchedMode else "",
+            outputWidth, globalHitsOnly, showProviders, selectionMode, if (trackerConnected) watchedMode else "",
             maxAgeMonths, excludeAdult, filterScope,
         // Only when changed, so existing installs don't see a pending change after updating
         ).plus(listOfNotNull(overviewLines.takeIf { it != 4 })).joinToString("|")

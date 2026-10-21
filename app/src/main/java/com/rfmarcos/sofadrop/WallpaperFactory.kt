@@ -20,10 +20,11 @@ class WallpaperFactory(context: Context, private val width: Int) {
     private val renderer = WallpaperRenderer(context, width, Languages.texts(Settings.language), Settings.overviewLines)
 
     val trakt: TraktClient? = if (Settings.traktConfigured) TraktClient(Settings.traktClientId, Settings.traktClientSecret) else null
+    val simkl = SimklClient(Settings.simklClientId, client)
     val mdbList: MdbListClient? = MdbListClient.fromSettings()
 
-    /** Trakt history, loaded on first use (null when not needed). */
-    val watched: WatchedContent? by lazy { WatchedContent.load(trakt) }
+    /** Trakt and Simkl history, loaded on first use (null when not needed). */
+    val watched: WatchedContent? by lazy { WatchedContent.load(trakt, simkl) }
 
     /**
      * Titles of a list with every rule applied: filters, watched content, titles already taken by a
@@ -33,7 +34,7 @@ class WallpaperFactory(context: Context, private val width: Int) {
         val random = Settings.selectionMode == Settings.SELECTION_RANDOM
         val hideWatched = Settings.watchedMode == Settings.WATCHED_HIDE
         val statuses = mutableMapOf<TitleRef, WatchStatus>()
-        val candidates = catalog.candidates(source, perList * 2, trakt, mdbList, shuffle = random).map { candidate ->
+        val candidates = catalog.candidates(source, perList * 2, trakt, simkl, mdbList, shuffle = random).map { candidate ->
             if (candidate.exclusion != null) return@map candidate
             if (candidate.ref in taken) return@map candidate.copy(exclusion = Exclusion.DUPLICATE)
             val status = watched?.status(candidate.ref)?.also { statuses[candidate.ref] = it }

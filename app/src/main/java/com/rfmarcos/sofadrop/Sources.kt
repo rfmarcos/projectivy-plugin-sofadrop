@@ -1,6 +1,6 @@
 package com.rfmarcos.sofadrop
 
-enum class SourceProvider { TMDB, TRAKT, MDBLIST }
+enum class SourceProvider { TMDB, TRAKT, SIMKL, MDBLIST }
 
 /** A list the user can pick as a source of titles. */
 data class ListSource(
@@ -10,10 +10,15 @@ data class ListSource(
     val label: String? = null,
     val needsTraktAccount: Boolean = false,
     val needsTmdbAccount: Boolean = false,
+    val needsSimklAccount: Boolean = false,
+    /** False for lists that are niche on purpose (anime), where "global hits only" would empty them. */
+    val localMarketFilter: Boolean = true,
 ) {
     /** Lists built automatically by a service (trending, popular…), as opposed to the user's own lists. */
     val automatic: Boolean
-        get() = provider != SourceProvider.MDBLIST && !needsTraktAccount && !needsTmdbAccount
+        get() = provider != SourceProvider.MDBLIST && !needsAccount
+
+    val needsAccount: Boolean get() = needsTraktAccount || needsTmdbAccount || needsSimklAccount
 }
 
 object Sources {
@@ -47,6 +52,14 @@ object Sources {
         ListSource("trakt:watchlist_shows", SourceProvider.TRAKT, R.string.list_trakt_watchlist_shows, needsTraktAccount = true),
     )
 
+    val SIMKL = listOf(
+        ListSource("simkl:trending_anime", SourceProvider.SIMKL, R.string.list_simkl_trending_anime, localMarketFilter = false),
+        ListSource("simkl:trending_movies", SourceProvider.SIMKL, R.string.list_simkl_trending_movies),
+        ListSource("simkl:trending_shows", SourceProvider.SIMKL, R.string.list_simkl_trending_shows),
+        ListSource("simkl:plantowatch", SourceProvider.SIMKL, R.string.list_simkl_plantowatch, needsSimklAccount = true),
+        ListSource("simkl:watching", SourceProvider.SIMKL, R.string.list_simkl_watching, needsSimklAccount = true),
+    )
+
     fun label(context: android.content.Context, source: ListSource): String =
         source.label?.let { context.getString(R.string.list_mdblist, it) } ?: context.getString(source.labelRes)
 
@@ -54,6 +67,7 @@ object Sources {
     fun available(): List<ListSource> {
         val lists = TMDB.filter { !it.needsTmdbAccount || Settings.tmdbConnected }.toMutableList()
         if (Settings.traktConfigured) lists += TRAKT.filter { !it.needsTraktAccount || Settings.traktConnected }
+        lists += SIMKL.filter { !it.needsSimklAccount || Settings.simklConnected }
         // Public lists need no account; the account's own lists only while it is connected
         lists += Settings.mdbLists.filter { it.path.isNotEmpty() || Settings.mdbListAvailable }
             .map { ListSource(it.key, SourceProvider.MDBLIST, label = it.name) }

@@ -3,7 +3,7 @@
 **Movie & TV backdrops for Projectivy Launcher.**
 
 
-A wallpaper provider plugin for [Projectivy Launcher](https://github.com/spocky/miproja1) (Android TV) that generates wallpapers of **movies and TV shows directly on your TV** from the lists you choose (TMDB, plus optionally Trakt and MDBList), and lets you configure everything from inside the launcher with a live preview.
+A wallpaper provider plugin for [Projectivy Launcher](https://github.com/spocky/miproja1) (Android TV) that generates wallpapers of **movies and TV shows directly on your TV** from the lists you choose (TMDB, plus optionally Trakt, Simkl and MDBList), and lets you configure everything from inside the launcher with a live preview.
 
 > ⚠️ Projectivy marks third-party wallpaper plugins as a **Premium** feature (the built-in Reddit source is free).
 
@@ -13,10 +13,10 @@ It is the on-device version of [androidtvbackground-reddit](https://github.com/r
 
 ## ✨ Features
 
-* 🎬 **Lists** (pick several): TMDB trending, popular, in cinemas, upcoming, top rated and on the air; optionally Trakt trending / popular / anticipated / box office, your Trakt recommendations and watchlist, and any public MDBList list (no account needed) or your own.
+* 🎬 **Lists** (pick several): TMDB trending, popular, in cinemas, upcoming, top rated and on the air; optionally Trakt trending / popular / anticipated / box office, your Trakt recommendations and watchlist, Simkl trending anime / movies / shows and your Plan to watch and Watching lists, and any public MDBList list (no account needed) or your own.
 * 👀 **Live preview** in the settings and a notice when changed settings are waiting for the next update.
-* 📱 **Nothing to type on the TV**: Trakt, MDBList and your TMDB account are connected by scanning a QR code with the phone.
-* ✅ **Watched content** (with Trakt): mark watched titles ("✓ Watched", "▶ Watching · 3/8") or hide them.
+* 📱 **Nothing to type on the TV**: Trakt, Simkl, MDBList and your TMDB account are connected by scanning a QR code with the phone.
+* ✅ **Watched content** (with Trakt and/or Simkl): mark watched titles ("✓ Watched", "▶ Watching · 3/8") or hide them.
 * 🔎 **Explore lists**: see the titles of each list in order and what happens to each one (used, in reserve, filtered and why).
 * 🖼️ Full-bleed backdrop (textless when available) with gradients that keep the lower half free for the launcher rows.
 * 🏷️ Official logo (dark logos are inverted to stay visible) or a fitted title, ★ rating, year, runtime / seasons, genres and synopsis.
@@ -33,15 +33,15 @@ Open them from **Projectivy → Settings → Appearance → Wallpaper → Config
 |---|---|---|
 | Update now | — | Also shows the status: how many wallpapers, when they were updated, or the last error. |
 | View wallpapers | — | The current set full screen (◀ ▶ to browse). **OK** shows that wallpaper in the settings preview (OK again goes back to automatic). |
-| Lists | TMDB trending movies + TV shows | One screen per service: **TMDB**, **Trakt** and **MDBList**, each with its account (QR login) and its lists as checkboxes, plus **Explore lists**. Titles repeated across lists are only used once. |
+| Lists | TMDB trending movies + TV shows | One screen per service: **TMDB**, **Trakt**, **Simkl** and **MDBList**, each with its account (QR login) and its lists as checkboxes, plus **Explore lists**. Titles repeated across lists are only used once. |
 | Titles per list | 10 | 5, 10, 15 or 20 per list. |
 | Order | Top of each list | *Top of each list* takes the first usable titles; *Random from the whole list* picks them from up to 100 titles, for more variety on each update. |
-| Filters | 1 year · global hits · no adult | *Maximum age* 6 months, 1, 2 or 5 years or no limit (release date, or last air date for shows); *Global hits only*; *Exclude adult content*; *Apply to* trending & popular lists only or all lists. |
+| Filters | 1 year · global hits · no adult | *Maximum age* 6 months, 1, 2 or 5 years or no limit (release date, or last air date for shows); *Global hits only*; *Exclude adult content*; *Watched titles*; *Apply to* trending & popular lists only or all lists. |
 | Wallpaper details | device language · automatic · 1080p | *Language* of titles, synopsis, logos and labels; *Streaming services*: don't show, automatic country or a chosen country; *Synopsis* full (4 lines), short (2 lines) or hidden, so the text stays clear of the launcher rows (the streaming row moves up with it); *Resolution* 1080p (recommended) or 4K. |
 | Update every | 24 hours | 6 h, 12 h, 24 h, 3 days or 7 days. |
 | About | — | Version, support the project (Ko-fi QR), source code and credits. |
 
-In **Lists → Trakt** you also choose what happens with **watched titles**: show normally, show with a *Watched* badge ("✓ Watched", "▶ Watching · 3/8") or hide them (shows in progress are kept and marked).
+In **Filters → Watched titles** you choose what happens with titles you have watched on **Trakt and/or Simkl** (a title counts as watched if either says so): show normally, show with a *Watched* badge ("✓ Watched", "▶ Watching · 3/8") or hide them (shows in progress are kept and marked).
 
 The left side of the screen renders a **live preview** with the current settings. While the settings differ from the current set, *Not applied yet* is shown under the preview: the changes are applied when you leave the settings, or right away with **Update now**. With no list selected nothing is regenerated and the current wallpapers are kept.
 
@@ -50,6 +50,10 @@ The left side of the screen renders a **live preview** with the current settings
 Choose **Lists → Trakt → Your Trakt account** and scan the QR code (or enter the code on [trakt.tv/activate](https://trakt.tv/activate)). Trakt's public lists (trending, popular, anticipated, box office), your recommendations and your watchlist can then be ticked, and watched titles can be marked or hidden.
 
 > Why a Client ID? Trakt only talks to registered apps. The Client ID belongs to the *app*, not to the user, so a published build ships with it (`trakt.clientId` in `local.properties`) and users only scan the QR code. New Trakt apps get no secret: the device login uses PKCE.
+
+### Simkl (optional)
+
+**Lists → Simkl** offers Simkl's weekly **trending anime, movies and shows** with no account (anime ignores *Global hits only*, which would leave it almost empty). Choose **Your Simkl account** and scan the QR code to add your **Plan to watch** and **Watching** lists; your Simkl history also feeds *Watched titles*. Anime series are matched through their IMDb id, because Simkl links anime seasons to TMDB season ids.
 
 ### MDBList (optional)
 
@@ -66,6 +70,7 @@ Users never type keys: the app ships with its own credentials, set in `local.pro
 |---|---|---|
 | `tmdb.appKey` | themoviedb.org → Settings → API | Built-in TMDB key. TMDB limits requests roughly per client IP (~40 req/s), so each TV counts on its own. |
 | `trakt.clientId` (+ `trakt.clientSecret` only for apps created before Oct 2026) | [trakt.tv/oauth/applications](https://trakt.tv/oauth/applications/new), redirect URI `https://github.com/rfmarcos/projectivy-plugin-sofadrop` (never opened: the login uses the device code flow, but the token refresh must send the registered URI) | Trakt device login (QR). |
+| `simkl.clientId` | [simkl.com/settings/developer](https://simkl.com/settings/developer/), an **AUTH V2** app for devices (not *Server apps & services*: no secret is shipped) | Simkl device login (QR). Trending lists work without it. |
 | `mdblist.clientId` | [mdblist.com/developer](https://mdblist.com/developer/), *Device Code App* (no secret, no redirect URI) | MDBList device login (QR). |
 | `support.url` / `source.url` | e.g. your Ko-fi page and the GitHub repository | Shown as QR codes in **About** (hidden when empty). |
 
@@ -126,7 +131,7 @@ app/src/main/java/com/rfmarcos/sofadrop/
   WallpaperProviderService.kt  # Service called by Projectivy
   GenerateWallpapersWorker.kt  # Background generation + scheduling
   TmdbClient.kt / TmdbCatalog.kt  # TMDB API, TMDB lists and wallpaper data
-  TraktClient.kt / MdbListClient.kt / Sources.kt  # optional list providers
+  TraktClient.kt / SimklClient.kt / MdbListClient.kt / Sources.kt  # optional list providers
   WallpaperFactory.kt          # download + render pipeline (generation and preview)
   WallpaperRenderer.kt         # Canvas rendering of the wallpaper
   WallpaperStore.kt            # Generated files, index and content:// URIs
@@ -137,6 +142,7 @@ app/src/main/java/com/rfmarcos/sofadrop/
 
 * Based on the official [Projectivy wallpaper provider template](https://github.com/spocky/projectivy-plugin-wallpaper-provider) by spocky (Apache 2.0).
 * Movie and TV data, images and logos from [TMDB](https://www.themoviedb.org/). *This product uses the TMDB API but is not endorsed or certified by TMDB.*
+* Lists and watch history from [Simkl](https://simkl.com/).
 * Streaming availability from TMDB Watch Providers, powered by [JustWatch](https://www.justwatch.com/).
 * [Roboto](https://github.com/googlefonts/roboto) font (Apache 2.0) and Material Icons (Apache 2.0).
 
