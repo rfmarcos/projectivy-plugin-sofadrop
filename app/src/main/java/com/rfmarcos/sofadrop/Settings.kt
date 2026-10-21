@@ -161,7 +161,7 @@ object Settings {
     val traktConfigured: Boolean get() = traktClientId.isNotBlank()
 
     /** The QR login needs the app's client id and secret. */
-    val traktLoginAvailable: Boolean get() = traktClientId.isNotBlank() && traktClientSecret.isNotBlank()
+    val traktLoginAvailable: Boolean get() = traktClientId.isNotBlank()
 
     var traktAccessToken: String
         get() = string(KEY_TRAKT_ACCESS)

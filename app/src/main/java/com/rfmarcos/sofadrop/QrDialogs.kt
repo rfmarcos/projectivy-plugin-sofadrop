@@ -167,7 +167,7 @@ class TraktLoginDialog : QrDialog() {
             var outcome: TraktClient.Poll = TraktClient.Poll.Pending
             while (active && System.currentTimeMillis() < deadline) {
                 Thread.sleep(interval)
-                outcome = client.pollDeviceToken(code.deviceCode)
+                outcome = client.pollDeviceToken(code)
                 when (outcome) {
                     TraktClient.Poll.Pending -> continue
                     TraktClient.Poll.SlowDown -> interval += 1000

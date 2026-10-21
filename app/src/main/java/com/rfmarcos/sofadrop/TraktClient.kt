@@ -10,7 +10,10 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import android.util.Base64
 import java.io.IOException
+import java.security.MessageDigest
+import java.security.SecureRandom
 import java.util.concurrent.TimeUnit
 
 /** A title found on an external list, resolved to TMDB. */
@@ -19,10 +22,14 @@ data class TitleRef(val type: MediaType, val tmdbId: Int)
 /**
  * Trakt API v2 (https://trakt.docs.apiary.io). Public lists only need the app's client id;
  * personal lists (recommendations, watchlist) need the user to connect with the device flow.
+ * Apps created since October 2026 get no client secret: the device flow uses PKCE instead.
  */
 class TraktClient(private val clientId: String, private val clientSecret: String) {
 
-    data class DeviceCode(val deviceCode: String, val userCode: String, val verificationUrl: String, val expiresIn: Int, val interval: Int)
+    data class DeviceCode(
+        val deviceCode: String, val userCode: String, val verificationUrl: String, val expiresIn: Int, val interval: Int,
+        val codeVerifier: String,
+    )
 
     sealed class Poll {
         data object Pending : Poll()
@@ -41,7 +48,13 @@ class TraktClient(private val clientId: String, private val clientSecret: String
     // --- Device authentication ---
 
     fun requestDeviceCode(): DeviceCode {
-        val response = post("oauth/device/code", buildJsonObject { put("client_id", clientId) })
+        val verifier = Base64.encodeToString(ByteArray(32).also(SecureRandom()::nextBytes), PKCE_BASE64)
+        val challenge = Base64.encodeToString(MessageDigest.getInstance("SHA-256").digest(verifier.toByteArray()), PKCE_BASE64)
+        val response = post("oauth/device/code", buildJsonObject {
+            put("client_id", clientId)
+            put("code_challenge", challenge)
+            put("code_challenge_method", "S256")
+        })
         val body = response.second as? JsonObject ?: throw IOException("Trakt device code failed (${response.first})")
         return DeviceCode(
             deviceCode = body.str("device_code") ?: throw IOException("Missing device_code"),
@@ -49,15 +62,17 @@ class TraktClient(private val clientId: String, private val clientSecret: String
             verificationUrl = body.str("verification_url") ?: "https://trakt.tv/activate",
             expiresIn = body.int("expires_in") ?: 600,
             interval = body.int("interval") ?: 5,
+            codeVerifier = verifier,
         )
     }
 
     /** Poll once for the token. 400 = still pending, 429 = polling too fast, others are final. */
-    fun pollDeviceToken(deviceCode: String): Poll {
+    fun pollDeviceToken(device: DeviceCode): Poll {
         val (code, body) = post("oauth/device/token", buildJsonObject {
-            put("code", deviceCode)
+            put("code", device.deviceCode)
             put("client_id", clientId)
-            put("client_secret", clientSecret)
+            put("code_verifier", device.codeVerifier)
+            if (clientSecret.isNotBlank()) put("client_secret", clientSecret)
         })
         return when (code) {
             200 -> {
@@ -78,7 +93,7 @@ class TraktClient(private val clientId: String, private val clientSecret: String
         val (code, body) = post("oauth/token", buildJsonObject {
             put("refresh_token", Settings.traktRefreshToken)
             put("client_id", clientId)
-            put("client_secret", clientSecret)
+            if (clientSecret.isNotBlank()) put("client_secret", clientSecret)
             put("redirect_uri", REDIRECT_URI)
             put("grant_type", "refresh_token")
         })
@@ -180,6 +195,7 @@ class TraktClient(private val clientId: String, private val clientSecret: String
     companion object {
         private const val API_URL = "https://api.trakt.tv/"
         private const val USER_AGENT = "Sofadrop/1.0"
+        private const val PKCE_BASE64 = Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP
         // Never opened (device flow), but the token refresh must send the URI registered for the Trakt app
         const val REDIRECT_URI = "https://github.com/rfmarcos/projectivy-plugin-sofadrop"
 

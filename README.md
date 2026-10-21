@@ -52,7 +52,7 @@ The left side of the screen renders a **live preview** with the current settings
 
 Choose **Trakt** and scan the QR code (or enter the code on [trakt.tv/activate](https://trakt.tv/activate)). Trakt's public lists (trending, popular, anticipated, box office), your recommendations and your watchlist then appear in **Lists**, and watched titles can be marked or hidden.
 
-> Why a Client ID / Secret? Trakt only talks to registered apps: the Client ID identifies the app and the secret is needed to finish the login. They belong to the *app*, not to the user, so a published build should ship with them (`trakt.clientId` / `trakt.clientSecret` in `local.properties`) and users only scan the QR code.
+> Why a Client ID? Trakt only talks to registered apps. The Client ID belongs to the *app*, not to the user, so a published build ships with it (`trakt.clientId` in `local.properties`) and users only scan the QR code. New Trakt apps get no secret: the device login uses PKCE.
 
 ### MDBList (optional)
 
@@ -65,7 +65,7 @@ Users never type keys: the app ships with its own credentials, set in `local.pro
 | Property | Where to get it | |
 |---|---|---|
 | `tmdb.appKey` | themoviedb.org → Settings → API | Built-in TMDB key. TMDB limits requests roughly per client IP (~40 req/s), so each TV counts on its own. |
-| `trakt.clientId` / `trakt.clientSecret` | [trakt.tv/oauth/applications](https://trakt.tv/oauth/applications/new), redirect URI `https://github.com/rfmarcos/projectivy-plugin-sofadrop` (never opened: the login uses the device code flow, but the token refresh must send the registered URI) | Trakt device login (QR). |
+| `trakt.clientId` (+ `trakt.clientSecret` only for apps created before Oct 2026) | [trakt.tv/oauth/applications](https://trakt.tv/oauth/applications/new), redirect URI `https://github.com/rfmarcos/projectivy-plugin-sofadrop` (never opened: the login uses the device code flow, but the token refresh must send the registered URI) | Trakt device login (QR). |
 | `mdblist.clientId` | [mdblist.com/developer](https://mdblist.com/developer/), *Device Code App* (no secret, no redirect URI) | MDBList device login (QR). |
 | `support.url` / `source.url` | e.g. your Ko-fi page and the GitHub repository | Shown as QR codes in **About** (hidden when empty). |
 
