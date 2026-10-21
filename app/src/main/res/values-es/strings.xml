@@ -1,0 +1,46 @@
+<resources>
+    <string name="plugin_name">TMDB Wallpapers</string>
+    <string name="plugin_description">Fondos de pantalla de las películas y series en tendencia de TMDB, generados en este dispositivo.</string>
+
+    <string name="projectivy_not_installed">Atención: este plugin necesita Projectivy Launcher, que no parece estar instalado.</string>
+    <string name="settings">Ajustes</string>
+
+    <string name="status_title">Estado</string>
+    <string name="status_never">Todavía no se han generado fondos</string>
+    <string name="status_ok">%1$d fondos · actualizado %2$s</string>
+    <string name="status_generating">Generando fondos…</string>
+    <string name="status_error">La última actualización falló: %1$s</string>
+
+    <string name="action_generate_now">Actualizar ahora</string>
+    <string name="action_generate_now_desc">Generar un nuevo conjunto de fondos</string>
+    <string name="generation_started">Generando fondos en segundo plano…</string>
+    <string name="action_preview">Vista previa</string>
+    <string name="action_preview_desc">Ver los fondos generados</string>
+    <string name="preview_empty">Aún no hay fondos. Usa primero \"Actualizar ahora\".</string>
+    <string name="preview_counter">%1$d / %2$d · ◀ ▶</string>
+
+    <string name="setting_token_title">Clave o token de la API de TMDB</string>
+    <string name="setting_token_missing">Obligatorio. Consíguelo en themoviedb.org → Ajustes → API</string>
+    <string name="setting_token_set">Configurado (…%1$s)</string>
+    <string name="setting_language_title">Idioma</string>
+    <string name="setting_region_title">País de las plataformas</string>
+    <string name="region_auto">Automático (%1$s)</string>
+    <string name="setting_content_title">Contenido</string>
+    <string name="content_both">Películas y series</string>
+    <string name="content_movies">Solo películas</string>
+    <string name="content_tv">Solo series</string>
+    <string name="setting_count_title">Títulos por tipo</string>
+    <string name="setting_refresh_title">Actualizar cada</string>
+    <string name="refresh_hours">%1$d horas</string>
+    <string name="refresh_days">%1$d días</string>
+    <string name="setting_resolution_title">Resolución</string>
+    <string name="resolution_1080">1080p (recomendado)</string>
+    <string name="resolution_2160">4K (más lento, ocupa más)</string>
+    <string name="setting_global_hits_title">Solo éxitos globales</string>
+    <string name="setting_global_hits_desc">Oculta títulos populares solo en un mercado local salvo que sean éxitos mundiales</string>
+    <string name="setting_providers_title">Mostrar plataformas</string>
+    <string name="setting_providers_desc">Dónde ver cada título en el país seleccionado</string>
+
+    <string name="error_no_token">Falta la clave de TMDB</string>
+    <string name="error_no_titles">TMDB no devolvió títulos</string>
+</resources>

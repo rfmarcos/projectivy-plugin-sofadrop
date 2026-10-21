@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Projectivy asks for the list again after this time; the plugin decides when to regenerate -->
+    <integer name="items_cache_duration_millis">3600000</integer>
+</resources>

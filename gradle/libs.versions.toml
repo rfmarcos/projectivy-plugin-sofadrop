@@ -1,0 +1,65 @@
+[versions]
+# SDK
+appId = "com.rfmarcos.tmdbwallpapers"
+compileSdk = "36"
+minSdk = "23"
+targetSdk = "36"
+versionCode = "1"
+versionName = "1.0.0"
+
+# Kotlin
+kotlin = "2.3.21"  # https://github.com/JetBrains/kotlin/releases
+
+# Android Gradle Plugin
+agp = "9.2.0"
+
+# Core AndroidX
+core = "1.16.0" # https://developer.android.com/jetpack/androidx/releases/core
+appcompat = "1.7.0" # https://developer.android.com/jetpack/androidx/releases/appcompat
+preference = "1.2.1" # https://developer.android.com/jetpack/androidx/releases/preference
+annotation = "1.10.0" # https://developer.android.com/jetpack/androidx/releases/annotation
+
+# Material
+material = "1.12.0" # https://github.com/material-components/material-components-android/releases
+
+# Kotlinx
+serializationJson = "1.11.0" # https://github.com/Kotlin/kotlinx.serialization/releases
+
+# Leanback
+leanback = "1.2.0"
+
+# Networking / background work
+okhttp = "4.12.0" # https://square.github.io/okhttp/changelogs/changelog_4x/
+work = "2.9.1" # https://developer.android.com/jetpack/androidx/releases/work
+
+# Tests
+testRunner = "1.6.2"
+testJunit = "1.2.1"
+
+[libraries]
+androidx-test-runner = { group = "androidx.test", name = "runner", version.ref = "testRunner" }
+androidx-test-junit = { group = "androidx.test.ext", name = "junit", version.ref = "testJunit" }
+okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
+androidx-work-runtime = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "work" }
+androidx-leanback = { module = "androidx.leanback:leanback", version.ref = "leanback" }
+androidx-preference-ktx = { module = "androidx.preference:preference-ktx", version.ref = "preference" }
+kotlin-bom = { group = "org.jetbrains.kotlin", name = "kotlin-bom", version.ref = "kotlin" }
+
+# Kotlinx
+kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serializationJson" }
+
+# Core AndroidX
+androidx-core = { group = "androidx.core", name = "core", version.ref = "core" }
+androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+androidx-annotation = { group = "androidx.annotation", name = "annotation", version.ref = "annotation" }
+
+# Material
+google-material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+android-library = { id = "com.android.library", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+kotlin-parcelize = { id = "org.jetbrains.kotlin.plugin.parcelize", version.ref = "kotlin" }
+

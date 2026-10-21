@@ -1,0 +1,51 @@
+<resources>
+    <string name="plugin_name">TMDB Wallpapers</string>
+    <string name="plugin_description">Wallpapers of trending movies and TV shows from TMDB, generated on this device.</string>
+    <string name="plugin_uuid" translatable="false">53c89202-003a-4f53-ac4f-5ac555751a74</string>
+
+    <string name="projectivy_not_installed">Warning, this plugin requires Projectivy Launcher which does not seem to be installed.</string>
+    <string name="settings">Settings</string>
+
+    <!-- Status -->
+    <string name="status_title">Status</string>
+    <string name="status_never">No wallpapers generated yet</string>
+    <string name="status_ok">%1$d wallpapers · updated %2$s</string>
+    <string name="status_generating">Generating wallpapers…</string>
+    <string name="status_error">Last update failed: %1$s</string>
+
+    <!-- Actions -->
+    <string name="action_generate_now">Update now</string>
+    <string name="action_generate_now_desc">Generate a new set of wallpapers</string>
+    <string name="generation_started">Generating wallpapers in the background…</string>
+    <string name="action_preview">Preview</string>
+    <string name="action_preview_desc">See the generated wallpapers</string>
+    <string name="preview_empty">No wallpapers yet. Use \"Update now\" first.</string>
+    <string name="preview_counter">%1$d / %2$d · ◀ ▶</string>
+
+    <!-- Settings -->
+    <string name="setting_token_title">TMDB API key or token</string>
+    <string name="setting_token_missing">Required. Get it at themoviedb.org → Settings → API</string>
+    <string name="setting_token_set">Configured (…%1$s)</string>
+    <string name="setting_language_title">Language</string>
+    <string name="setting_region_title">Streaming country</string>
+    <string name="region_auto">Automatic (%1$s)</string>
+    <string name="setting_content_title">Content</string>
+    <string name="content_both">Movies and TV shows</string>
+    <string name="content_movies">Movies only</string>
+    <string name="content_tv">TV shows only</string>
+    <string name="setting_count_title">Titles per type</string>
+    <string name="setting_refresh_title">Update every</string>
+    <string name="refresh_hours">%1$d hours</string>
+    <string name="refresh_days">%1$d days</string>
+    <string name="setting_resolution_title">Resolution</string>
+    <string name="resolution_1080">1080p (recommended)</string>
+    <string name="resolution_2160">4K (slower, more storage)</string>
+    <string name="setting_global_hits_title">Global hits only</string>
+    <string name="setting_global_hits_desc">Hide titles only popular in a local market unless they are worldwide hits</string>
+    <string name="setting_providers_title">Show streaming services</string>
+    <string name="setting_providers_desc">Where to watch each title in the selected country</string>
+
+    <!-- Errors -->
+    <string name="error_no_token">TMDB key missing</string>
+    <string name="error_no_titles">TMDB returned no titles</string>
+</resources>
