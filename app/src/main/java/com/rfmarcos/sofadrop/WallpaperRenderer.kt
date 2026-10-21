@@ -17,6 +17,8 @@ import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.Shader
 import android.graphics.Typeface
+import android.graphics.drawable.Drawable
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.res.ResourcesCompat
 import kotlin.math.cos
 import kotlin.math.max
@@ -43,6 +45,10 @@ class WallpaperRenderer(
     private val medium: Typeface = font(context, R.font.roboto_medium)
     private val bold: Typeface = font(context, R.font.roboto_bold)
     private val tmdbLogo: Bitmap = BitmapFactory.decodeResource(context.resources, R.drawable.tmdb_logo)
+    // Official logos for dark backgrounds, drawn unaltered (Trakt's branding rules forbid recolouring)
+    private val traktLogo: Drawable = AppCompatResources.getDrawable(context, R.drawable.logo_trakt)!!
+    private val simklLogo: Bitmap = BitmapFactory.decodeResource(context.resources, R.drawable.logo_simkl)
+    private val mdbListLogo: Bitmap = BitmapFactory.decodeResource(context.resources, R.drawable.logo_mdblist)
 
     private fun s(value: Float) = value * scale
     private fun s(value: Int) = value * scale
@@ -258,19 +264,28 @@ class WallpaperRenderer(
         val text = "$label  ·  "
         drawCentered(canvas, text, s(MARGIN_LEFT), center, labelPaint)
         val x = s(MARGIN_LEFT) + labelPaint.measureText(text)
-        if (info.sourceProvider == SourceProvider.TMDB) {
-            val h = s(if (primary) 46f else 37f)
-            val w = tmdbLogo.width * h / tmdbLogo.height
-            canvas.drawBitmap(tmdbLogo, null, RectF(x, center - h / 2, x + w, center + h / 2), Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG).apply {
-                alpha = if (primary) 255 else 200
-            })
-        } else {
-            val name = when (info.sourceProvider) {
-                SourceProvider.TRAKT -> "Trakt"
-                SourceProvider.SIMKL -> "Simkl"
-                else -> "MDBList"
+        val h = s(if (primary) 46f else 37f)
+        val bitmapPaint = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
+        fun drawBitmap(bitmap: Bitmap, height: Float, left: Float): Float {
+            val w = bitmap.width * height / bitmap.height
+            canvas.drawBitmap(bitmap, null, RectF(left, center - height / 2, left + w, center + height / 2), bitmapPaint)
+            return left + w
+        }
+        when (info.sourceProvider) {
+            SourceProvider.TRAKT -> {
+                // The full logo's mark is taller than its letters: size it on the mark
+                val height = h * 1.25f
+                val w = height * traktLogo.intrinsicWidth / traktLogo.intrinsicHeight
+                traktLogo.setBounds(x.roundToInt(), (center - height / 2).roundToInt(), (x + w).roundToInt(), (center + height / 2).roundToInt())
+                traktLogo.draw(canvas)
             }
-            drawCentered(canvas, name, x, center, textPaint(medium, s(size), Color.rgb(grey, grey, grey)))
+            SourceProvider.SIMKL -> drawBitmap(simklLogo, h * 0.8f, x)
+            // MDBList has no wordmark: its app icon followed by the name
+            SourceProvider.MDBLIST -> {
+                val end = drawBitmap(mdbListLogo, h * 1.15f, x)
+                drawCentered(canvas, "MDBList", end + s(14f), center, textPaint(medium, s(size), Color.WHITE))
+            }
+            else -> drawBitmap(tmdbLogo, h, x)
         }
     }
 

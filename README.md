@@ -21,7 +21,7 @@ It is the on-device version of [androidtvbackground-reddit](https://github.com/r
 * 🖼️ Full-bleed backdrop (textless when available) with gradients that keep the lower half free for the launcher rows.
 * 🏷️ Official logo (dark logos are inverted to stay visible) or a fitted title, ★ rating, year, runtime / seasons, genres and synopsis.
 * 📺 Streaming services available in your country (TMDB Watch Providers, powered by JustWatch). Tiers and channels of the same service are grouped.
-* 🔖 The list each title comes from at the bottom ("Trending · TMDB", "Trending anime · Simkl", "Your watchlist · Trakt", "Netflix Movies · MDBList"), dimmed under the streaming services when there are any.
+* 🔖 The list each title comes from at the bottom ("Trending · TMDB", "Trending anime · Simkl", "Your watchlist · Trakt", "Netflix Movies · MDBList", with each service's logo), dimmed under the streaming services when there are any.
 * 🎯 **Filters**: maximum age (6 months to no limit), *global hits only* (skip titles only popular in a local market unless they are worldwide hits, ≥ 1000 TMDB votes) and adult content. By default they apply only to the automatic TMDB / Trakt lists, so lists you curate are used as they are.
 * 🌍 Wallpaper languages: English (US/UK), Spanish (Spain/Mexico), Portuguese (Brazil/Portugal), French, Italian and German.
 * ⏱️ Refreshes in the background with WorkManager and tells Projectivy when new wallpapers are ready.
@@ -144,6 +144,7 @@ app/src/main/java/com/rfmarcos/sofadrop/
 * Based on the official [Projectivy wallpaper provider template](https://github.com/spocky/projectivy-plugin-wallpaper-provider) by spocky (Apache 2.0).
 * Movie and TV data, images and logos from [TMDB](https://www.themoviedb.org/). *This product uses the TMDB API but is not endorsed or certified by TMDB.*
 * Lists and watch history from [Simkl](https://simkl.com/).
+* The Trakt logo is the official dark-background logo from [trakt.tv/branding](https://trakt.tv/branding), used unaltered; the Simkl and MDBList logos come from their own sites. All names and logos belong to their owners.
 * Streaming availability from TMDB Watch Providers, powered by [JustWatch](https://www.justwatch.com/).
 * [Roboto](https://github.com/googlefonts/roboto) font (Apache 2.0) and Material Icons (Apache 2.0).
 

@@ -156,7 +156,7 @@
     <string name="about_source">Código fuente</string>
     <string name="about_source_scan">Escanéalo con el móvil para abrir la página del proyecto.</string>
     <string name="about_credits">Créditos</string>
-    <string name="about_credits_desc">Este producto usa la API de TMDB pero no está respaldado ni certificado por TMDB. Sofadrop usa Trakt pero no está respaldado ni certificado por Trakt. Listas e historial de Simkl (simkl.com). Listas de MDBList. Fondos para Projectivy Launcher.</string>
+    <string name="about_credits_desc">Este producto usa la API de TMDB pero no está respaldado ni certificado por TMDB. Sofadrop usa Trakt pero no está respaldado ni certificado por Trakt. Listas e historial de Simkl (simkl.com). Los nombres y logotipos de Trakt, Simkl y MDBList pertenecen a sus propietarios. Listas de MDBList. Fondos para Projectivy Launcher.</string>
     <string name="qr_link_hint">Escanea el código con el móvil</string>
     <string name="setting_details_title">Detalles del fondo</string>
     <string name="details_description">Cómo se ve cada fondo: idioma de los textos, plataformas de streaming, longitud de la sinopsis y resolución de la imagen. Una sinopsis más corta evita que las filas del launcher tapen el texto.</string>
