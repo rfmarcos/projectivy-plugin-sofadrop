@@ -65,7 +65,7 @@ Users never type keys: the app ships with its own credentials, set in `local.pro
 | Property | Where to get it | |
 |---|---|---|
 | `tmdb.appKey` | themoviedb.org → Settings → API | Built-in TMDB key. TMDB limits requests roughly per client IP (~40 req/s), so each TV counts on its own. |
-| `trakt.clientId` / `trakt.clientSecret` | [trakt.tv/oauth/applications](https://trakt.tv/oauth/applications/new), redirect URI `urn:ietf:wg:oauth:2.0:oob` | Trakt device login (QR). |
+| `trakt.clientId` / `trakt.clientSecret` | [trakt.tv/oauth/applications](https://trakt.tv/oauth/applications/new), redirect URI `https://github.com/rfmarcos/projectivy-plugin-sofadrop` (never opened: the login uses the device code flow, but the token refresh must send the registered URI) | Trakt device login (QR). |
 | `mdblist.clientId` | [mdblist.com/developer](https://mdblist.com/developer/), *Device Code App* (no secret, no redirect URI) | MDBList device login (QR). |
 | `support.url` / `source.url` | e.g. your Ko-fi page and the GitHub repository | Shown as QR codes in **About** (hidden when empty). |
 

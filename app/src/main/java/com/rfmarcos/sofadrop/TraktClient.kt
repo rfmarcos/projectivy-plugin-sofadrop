@@ -79,7 +79,7 @@ class TraktClient(private val clientId: String, private val clientSecret: String
             put("refresh_token", Settings.traktRefreshToken)
             put("client_id", clientId)
             put("client_secret", clientSecret)
-            put("redirect_uri", "urn:ietf:wg:oauth:2.0:oob")
+            put("redirect_uri", REDIRECT_URI)
             put("grant_type", "refresh_token")
         })
         if (code == 200) saveTokens(body as JsonObject)
@@ -180,6 +180,8 @@ class TraktClient(private val clientId: String, private val clientSecret: String
     companion object {
         private const val API_URL = "https://api.trakt.tv/"
         private const val USER_AGENT = "Sofadrop/1.0"
+        // Never opened (device flow), but the token refresh must send the URI registered for the Trakt app
+        const val REDIRECT_URI = "https://github.com/rfmarcos/projectivy-plugin-sofadrop"
 
         /** Items are either `{ "movie": {...} }` / `{ "show": {...} }` or the object itself. */
         fun parseTitles(items: JsonArray, type: MediaType): List<TitleRef> =
