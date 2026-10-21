@@ -20,7 +20,7 @@ class WallpaperFactory(context: Context, private val width: Int) {
     private val renderer = WallpaperRenderer(context, width, Languages.texts(Settings.language))
 
     val trakt: TraktClient? = if (Settings.traktConfigured) TraktClient(Settings.traktClientId, Settings.traktClientSecret) else null
-    val mdbList: MdbListClient? = Settings.mdbListKey.takeIf { it.isNotBlank() }?.let { MdbListClient(it) }
+    val mdbList: MdbListClient? = MdbListClient.fromSettings()
 
     /** Trakt history, loaded on first use (null when not needed). */
     val watched: WatchedContent? by lazy { WatchedContent.load(trakt) }

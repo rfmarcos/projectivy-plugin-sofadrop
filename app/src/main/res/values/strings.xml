@@ -36,7 +36,7 @@
     <string name="preview_error">Preview unavailable: %1$s</string>
 
     <!-- Settings -->
-    <string name="setting_token_title">TMDB API key or token</string>
+    <string name="setting_token_title">TMDB key</string>
     <string name="setting_token_missing">Required. Get it at themoviedb.org → Settings → API</string>
     <string name="setting_token_set">Configured (…%1$s)</string>
     <string name="setting_lists_title">Lists</string>
@@ -140,7 +140,6 @@
     <string name="tmdb_account_connected">Connected as %1$s</string>
     <string name="tmdb_disconnect">Disconnect</string>
     <string name="tmdb_login_scan">Scan to connect TMDB</string>
-    <string name="tmdb_login_description">Approve the access on the page that opens (log in to TMDB if needed). This screen closes by itself.</string>
     <string name="tmdb_login_ok">TMDB connected as %1$s</string>
     <string name="tmdb_login_failed">Could not connect to TMDB (%1$s)</string>
     <string name="list_tmdb_watchlist_movies">TMDB · Your watchlist (movies)</string>
@@ -174,4 +173,19 @@
     <string name="exclusion_watched">Hidden: already watched</string>
     <string name="exclusion_no_image">Skipped: no image</string>
     <string name="exclusion_duplicate">Already used by another list</string>
+    <string name="tmdb_login_description">Scan the QR code and approve the access on themoviedb.org (log in if needed).</string>
+    <string name="qr_preparing">Preparing…</string>
+    <string name="qr_waiting">Waiting for approval…</string>
+    <string name="qr_expires">The code expires in %1$dm %2$02ds</string>
+    <string name="qr_instructions_code">Scan the QR code, or go to %1$s and enter this code:</string>
+    <string name="mdblist_login_ok">MDBList connected as %1$s</string>
+    <string name="mdblist_connected">Connected as %1$s · %2$d lists</string>
+    <string name="mdblist_key_mode">API key · %1$d lists</string>
+    <string name="mdblist_phone_hint">Optional. Add your API key from the phone</string>
+    <string name="account_connect_hint">Optional. Scan a QR code to connect</string>
+    <string name="trakt_unavailable">Not available in this build (missing the app\'s Trakt credentials)</string>
+    <string name="tmdb_key_builtin">Built-in key · use your own from the phone</string>
+    <string name="tmdb_key_own">Your key (…%1$s) · change it from the phone</string>
+    <string name="phone_scan_desc_short">Scan it with your phone (same Wi-Fi network as the TV) to paste your own keys or add MDBList lists.</string>
+    <string name="phone_waiting">Waiting for the phone…</string>
 </resources>

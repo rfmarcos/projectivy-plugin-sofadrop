@@ -50,7 +50,7 @@ object Sources {
     fun available(): List<ListSource> {
         val lists = TMDB.filter { !it.needsTmdbAccount || Settings.tmdbConnected }.toMutableList()
         if (Settings.traktConfigured) lists += TRAKT.filter { !it.needsTraktAccount || Settings.traktConnected }
-        if (Settings.mdbListKey.isNotBlank()) {
+        if (Settings.mdbListAvailable) {
             lists += Settings.mdbLists.map { ListSource("mdblist:${it.id}", SourceProvider.MDBLIST, label = it.name) }
         }
         return lists

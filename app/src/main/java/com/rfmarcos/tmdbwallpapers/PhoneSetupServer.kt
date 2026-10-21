@@ -92,11 +92,11 @@ class PhoneSetupServer(private val context: Context, private val onSaved: (List<
         form["tmdb"]?.takeIf { it.isNotBlank() }?.let { Settings.token = it; changed += "TMDB" }
         form["mdblist"]?.takeIf { it.isNotBlank() }?.let {
             Settings.mdbListKey = it
-            runCatching { Settings.mdbLists = (MdbListClient(it).userLists() + Settings.mdbLists).distinctBy { list -> list.id } }
+            runCatching { Settings.mdbLists = (MdbListClient(apiKey = it).userLists() + Settings.mdbLists).distinctBy { list -> list.id } }
             changed += "MDBList"
         }
-        form["mdblist_list"]?.takeIf { it.isNotBlank() && Settings.mdbListKey.isNotBlank() }?.let { reference ->
-            runCatching { MdbListClient(Settings.mdbListKey).findList(reference) }.getOrNull()?.let { list ->
+        form["mdblist_list"]?.takeIf { it.isNotBlank() }?.let { reference ->
+            runCatching { MdbListClient.fromSettings()?.findList(reference) }.getOrNull()?.let { list ->
                 Settings.mdbLists = (Settings.mdbLists + list).distinctBy { it.id }
                 Settings.lists = Settings.lists + "mdblist:${list.id}"
                 changed += list.name

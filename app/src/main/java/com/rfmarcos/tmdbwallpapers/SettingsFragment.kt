@@ -92,25 +92,32 @@ class SettingsFragment : BaseSettingsFragment() {
             getString(R.string.setting_providers_desc))
             .checkSetId(GuidedAction.CHECKBOX_CHECK_SET_ID).checked(Settings.showProviders).build()
 
-        actions += action(ID_PHONE, R.drawable.ic_act_phone, getString(R.string.setting_phone_title),
-            getString(R.string.setting_phone_desc)).hasNext(true).build()
-        actions += editable(ID_TOKEN, R.drawable.ic_act_key, getString(R.string.setting_token_title), Settings.token, tokenDescription())
+        // Accounts: connected by scanning a QR code, nothing to type on the TV
+        actions += action(ID_TRAKT, R.drawable.ic_act_trakt, getString(R.string.setting_trakt_title), traktDescription())
+            .subActions(traktSubActions()).build()
+        actions += action(ID_MDBLIST, R.drawable.ic_act_list, getString(R.string.setting_mdblist_title), mdbListDescription())
+            .subActions(mdbListSubActions()).build()
         actions += action(ID_TMDB_ACCOUNT, R.drawable.ic_act_account, getString(R.string.setting_tmdb_account_title), tmdbAccountDescription())
             .subActions(tmdbAccountSubActions()).build()
-        actions += action(ID_TRAKT, R.drawable.ic_act_trakt, getString(R.string.setting_trakt_title), traktDescription())
-            .hasNext(true).build()
-        actions += action(ID_MDBLIST, R.drawable.ic_act_list, getString(R.string.setting_mdblist_title), mdbListDescription())
-            .hasNext(true).build()
+        actions += action(ID_TOKEN, R.drawable.ic_act_key, getString(R.string.setting_token_title), tokenDescription()).build()
+        actions += action(ID_PHONE, R.drawable.ic_act_phone, getString(R.string.setting_phone_title),
+            getString(R.string.setting_phone_desc)).build()
     }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        // A QR dialog was closed: an account may have been connected or keys saved from the phone
+        parentFragmentManager.setFragmentResultListener(QrDialog.RESULT_KEY, this) { _, _ ->
+            refreshAccounts()
+            refreshStatus()
+            schedulePreview()
+        }
+    }
+
+    private fun showDialog(dialog: QrDialog) = dialog.show(parentFragmentManager, dialog.javaClass.simpleName)
 
     override fun onResume() {
         super.onResume()
-        // Trakt / MDBList may have changed in their own screens
-        findActionById(ID_LISTS)?.let {
-            it.subActions = listSubActions()
-            it.description = listsDescription()
-            notifyActionChanged(findActionPositionById(ID_LISTS))
-        }
         refreshAccounts()
         handler.post(statusRefresher)
         schedulePreview(0)
@@ -136,21 +143,18 @@ class SettingsFragment : BaseSettingsFragment() {
             ID_PREVIEW -> startActivity(Intent(requireContext(), PreviewActivity::class.java))
             ID_GLOBAL_HITS -> settingChanged { Settings.globalHitsOnly = action.isChecked }
             ID_PROVIDERS -> settingChanged { Settings.showProviders = action.isChecked }
-            ID_TRAKT -> add(parentFragmentManager, TraktSettingsFragment())
             ID_EXPLORE -> add(parentFragmentManager, ListExplorerFragment())
-            ID_PHONE -> add(parentFragmentManager, PhoneSetupFragment())
-            ID_TMDB_ACCOUNT -> if (!Settings.tmdbConnected && Settings.token.isNotBlank()) add(parentFragmentManager, TmdbLoginFragment())
-            ID_MDBLIST -> add(parentFragmentManager, MdbListSettingsFragment())
+            // Connected accounts expand into their options; otherwise a click opens the QR login
+            ID_TRAKT -> if (!Settings.traktConnected) {
+                if (Settings.traktLoginAvailable) showDialog(TraktLoginDialog())
+                else Toast.makeText(requireContext(), R.string.trakt_unavailable, Toast.LENGTH_LONG).show()
+            }
+            ID_MDBLIST -> if (!Settings.mdbListAvailable) {
+                showDialog(if (Settings.mdbListClientId.isNotBlank()) MdbListLoginDialog() else PhoneSetupDialog())
+            }
+            ID_TMDB_ACCOUNT -> if (!Settings.tmdbConnected && Settings.token.isNotBlank()) showDialog(TmdbLoginDialog())
+            ID_TOKEN, ID_PHONE -> showDialog(PhoneSetupDialog())
         }
-    }
-
-    override fun onGuidedActionEditedAndProceed(action: GuidedAction): Long {
-        if (action.id == ID_TOKEN) {
-            settingChanged { Settings.token = action.editDescription?.toString().orEmpty() }
-            action.editDescription = Settings.token
-            updateDescription(ID_TOKEN, tokenDescription())
-        }
-        return GuidedAction.ACTION_ID_CURRENT
     }
 
     override fun onSubGuidedActionClicked(action: GuidedAction): Boolean {
@@ -184,14 +188,32 @@ class SettingsFragment : BaseSettingsFragment() {
                 Settings.watchedMode = WATCHED_MODES[index]
                 updateDescription(ID_WATCHED, watchedDescription())
             }
-            ID_TMDB_ACCOUNT -> {
-                if (Settings.tmdbConnected) {
-                    Settings.clearTmdbSession()
-                    Settings.lists = Settings.lists.filterNot { key -> Sources.TMDB.any { it.key == key && it.needsTmdbAccount } }.toSet()
-                } else {
-                    add(parentFragmentManager, TmdbLoginFragment())
-                }
+            ID_TMDB_ACCOUNT -> settingChanged {
+                Settings.clearTmdbSession()
+                Settings.lists = Settings.lists.filterNot { key -> Sources.TMDB.any { it.key == key && it.needsTmdbAccount } }.toSet()
                 refreshAccounts()
+            }
+            ID_TRAKT -> settingChanged {
+                Settings.clearTraktSession()
+                Settings.lists = Settings.lists.filterNot { key -> Sources.TRAKT.any { it.key == key && it.needsTraktAccount } }.toSet()
+                refreshAccounts()
+            }
+            ID_MDBLIST -> {
+                if (index == 0) {
+                    // Reload the account's lists
+                    background({ MdbListClient.fromSettings()?.userLists().orEmpty() }) { result ->
+                        result.onSuccess { lists ->
+                            Settings.mdbLists = (lists + Settings.mdbLists).distinctBy { it.id }
+                            refreshAccounts()
+                        }
+                    }
+                } else settingChanged {
+                    Settings.clearMdbListSession()
+                    Settings.mdbListKey = ""
+                    Settings.mdbLists = emptyList()
+                    Settings.lists = Settings.lists.filterNot { it.startsWith("mdblist:") }.toSet()
+                    refreshAccounts()
+                }
             }
             ID_REFRESH -> {
                 Settings.refreshHours = Settings.REFRESH_OPTIONS[index]
@@ -341,12 +363,30 @@ class SettingsFragment : BaseSettingsFragment() {
             it.description = tmdbAccountDescription()
             notifyActionChanged(findActionPositionById(ID_TMDB_ACCOUNT))
         }
+        findActionById(ID_TRAKT)?.let {
+            it.subActions = traktSubActions()
+            it.description = traktDescription()
+            notifyActionChanged(findActionPositionById(ID_TRAKT))
+        }
+        findActionById(ID_MDBLIST)?.let {
+            it.subActions = mdbListSubActions()
+            it.description = mdbListDescription()
+            notifyActionChanged(findActionPositionById(ID_MDBLIST))
+        }
         updateDescription(ID_TOKEN, tokenDescription())
-        findActionById(ID_TOKEN)?.editDescription = Settings.token
         updateDescription(ID_WATCHED, watchedDescription())
-        updateDescription(ID_TRAKT, traktDescription())
-        updateDescription(ID_MDBLIST, mdbListDescription())
     }
+
+    private fun traktSubActions(): List<GuidedAction>? =
+        if (!Settings.traktConnected) null
+        else listOf(GuidedAction.Builder(requireContext()).id(ID_TRAKT * SUB_ID_BASE).title(R.string.tmdb_disconnect).build())
+
+    private fun mdbListSubActions(): List<GuidedAction>? =
+        if (!Settings.mdbListAvailable) null
+        else listOf(
+            GuidedAction.Builder(requireContext()).id(ID_MDBLIST * SUB_ID_BASE).title(R.string.mdblist_refresh).build(),
+            GuidedAction.Builder(requireContext()).id(ID_MDBLIST * SUB_ID_BASE + 1).title(R.string.tmdb_disconnect).build(),
+        )
 
     private fun tmdbAccountDescription(): String =
         if (Settings.tmdbConnected) getString(R.string.tmdb_account_connected, Settings.tmdbUser.ifBlank { "TMDB" })
@@ -385,19 +425,24 @@ class SettingsFragment : BaseSettingsFragment() {
         return action(id, icon, getString(title), current).subActions(subActions).build()
     }
 
-    private fun tokenDescription(): String =
-        if (Settings.token.isBlank()) getString(R.string.setting_token_missing)
-        else getString(R.string.setting_token_set, Settings.token.takeLast(4))
+    private fun tokenDescription(): String = when {
+        Settings.token.isBlank() -> getString(R.string.setting_token_missing)
+        Settings.tokenIsBuiltIn -> getString(R.string.tmdb_key_builtin)
+        else -> getString(R.string.tmdb_key_own, Settings.token.takeLast(4))
+    }
 
     private fun traktDescription(): String = when {
         Settings.traktConnected -> getString(R.string.trakt_connected, Settings.traktUser.ifBlank { "Trakt" })
-        Settings.traktConfigured -> getString(R.string.trakt_public_only)
-        else -> getString(R.string.trakt_not_configured)
+        Settings.traktLoginAvailable -> getString(R.string.account_connect_hint)
+        else -> getString(R.string.trakt_unavailable)
     }
 
-    private fun mdbListDescription(): String =
-        if (Settings.mdbListKey.isBlank()) getString(R.string.mdblist_not_configured)
-        else getString(R.string.mdblist_configured, Settings.mdbLists.size)
+    private fun mdbListDescription(): String = when {
+        Settings.mdbListConnected -> getString(R.string.mdblist_connected, Settings.mdbListUser.ifBlank { "MDBList" }, Settings.mdbLists.size)
+        Settings.mdbListKey.isNotBlank() -> getString(R.string.mdblist_key_mode, Settings.mdbLists.size)
+        Settings.mdbListClientId.isNotBlank() -> getString(R.string.account_connect_hint)
+        else -> getString(R.string.mdblist_phone_hint)
+    }
 
     private fun regionDescription(): String {
         val override = Settings.regionOverride

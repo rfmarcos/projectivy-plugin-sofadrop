@@ -14,7 +14,8 @@ kotlin {
 
 // Local, never committed settings (local.properties):
 //  - tmdb.token / mdblist.key: personal keys baked into *debug* builds only
-//  - trakt.clientId / trakt.clientSecret: the app's Trakt credentials (all builds)
+//  - trakt.clientId / trakt.clientSecret / mdblist.clientId / tmdb.appKey: the *app's* credentials,
+//    included in every build so users only scan QR codes (nothing to type on the TV)
 //  - release.storeFile / release.storePassword / release.keyAlias / release.keyPassword: release signing
 val localProperties = Properties().apply {
     val file = rootProject.file("local.properties")
@@ -44,6 +45,8 @@ android {
 
         buildConfigField("String", "DEFAULT_TRAKT_CLIENT_ID", "\"${localProperty("trakt.clientId")}\"")
         buildConfigField("String", "DEFAULT_TRAKT_CLIENT_SECRET", "\"${localProperty("trakt.clientSecret")}\"")
+        buildConfigField("String", "MDBLIST_CLIENT_ID", "\"${localProperty("mdblist.clientId")}\"")
+        buildConfigField("String", "TMDB_APP_KEY", "\"${localProperty("tmdb.appKey")}\"")
     }
 
     signingConfigs {

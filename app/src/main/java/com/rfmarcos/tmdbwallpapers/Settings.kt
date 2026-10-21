@@ -37,6 +37,10 @@ object Settings {
     private const val KEY_TRAKT_CLIENT_SECRET = "trakt_client_secret"
     private const val KEY_MDBLIST_KEY = "mdblist_api_key"
     private const val KEY_MDBLIST_LISTS = "mdblist_lists"
+    private const val KEY_MDBLIST_ACCESS = "_mdblist_access_token"
+    private const val KEY_MDBLIST_REFRESH = "_mdblist_refresh_token"
+    private const val KEY_MDBLIST_EXPIRES = "_mdblist_expires_at"
+    private const val KEY_MDBLIST_USER = "_mdblist_user"
     private const val KEY_SELECTION = "selection_mode"
     private const val KEY_WATCHED = "watched_mode"
     private const val KEY_TMDB_SESSION = "_tmdb_session_id"
@@ -75,9 +79,14 @@ object Settings {
 
     private fun string(key: String, default: String = "") = preferences.getString(key, null)?.trim().orEmpty().ifEmpty { default }
 
+    /** The user's own TMDB key (set from the phone), else the personal debug key, else the app's built-in key. */
     var token: String
-        get() = string(KEY_TOKEN, BuildConfig.DEFAULT_TMDB_TOKEN)
+        get() = string(KEY_TOKEN, BuildConfig.DEFAULT_TMDB_TOKEN.ifEmpty { BuildConfig.TMDB_APP_KEY })
         set(value) = preferences.edit { putString(KEY_TOKEN, value.trim()) }
+
+    /** True when the TMDB key in use is the one built into the app. */
+    val tokenIsBuiltIn: Boolean
+        get() = string(KEY_TOKEN).isEmpty() && BuildConfig.DEFAULT_TMDB_TOKEN.isEmpty() && BuildConfig.TMDB_APP_KEY.isNotEmpty()
 
     var language: String
         get() = preferences.getString(KEY_LANGUAGE, null) ?: Languages.defaultFor(Locale.getDefault())
@@ -127,6 +136,9 @@ object Settings {
         set(value) = preferences.edit { putString(KEY_TRAKT_CLIENT_SECRET, value.trim()) }
 
     val traktConfigured: Boolean get() = traktClientId.isNotBlank()
+
+    /** The QR login needs the app's client id and secret. */
+    val traktLoginAvailable: Boolean get() = traktClientId.isNotBlank() && traktClientSecret.isNotBlank()
 
     var traktAccessToken: String
         get() = string(KEY_TRAKT_ACCESS)
@@ -180,7 +192,35 @@ object Settings {
         get() = preferences.getString(KEY_WATCHED, WATCHED_MARK) ?: WATCHED_MARK
         set(value) = preferences.edit { putString(KEY_WATCHED, value) }
 
-    // --- MDBList ---
+    // --- MDBList (account connected with a QR code, or an API key set from the phone) ---
+
+    val mdbListClientId: String get() = BuildConfig.MDBLIST_CLIENT_ID
+
+    var mdbListAccessToken: String
+        get() = string(KEY_MDBLIST_ACCESS)
+        set(value) = preferences.edit { putString(KEY_MDBLIST_ACCESS, value) }
+
+    var mdbListRefreshToken: String
+        get() = string(KEY_MDBLIST_REFRESH)
+        set(value) = preferences.edit { putString(KEY_MDBLIST_REFRESH, value) }
+
+    var mdbListExpiresAt: Long
+        get() = preferences.getLong(KEY_MDBLIST_EXPIRES, 0L)
+        set(value) = preferences.edit { putLong(KEY_MDBLIST_EXPIRES, value) }
+
+    var mdbListUser: String
+        get() = string(KEY_MDBLIST_USER)
+        set(value) = preferences.edit { putString(KEY_MDBLIST_USER, value) }
+
+    val mdbListConnected: Boolean get() = mdbListAccessToken.isNotBlank()
+
+    /** MDBList can be used with a connected account or with an API key. */
+    val mdbListAvailable: Boolean get() = mdbListConnected || mdbListKey.isNotBlank()
+
+    fun clearMdbListSession() = preferences.edit {
+        remove(KEY_MDBLIST_ACCESS); remove(KEY_MDBLIST_REFRESH); remove(KEY_MDBLIST_EXPIRES); remove(KEY_MDBLIST_USER)
+    }
+
 
     var mdbListKey: String
         get() = string(KEY_MDBLIST_KEY, BuildConfig.DEFAULT_MDBLIST_KEY)
