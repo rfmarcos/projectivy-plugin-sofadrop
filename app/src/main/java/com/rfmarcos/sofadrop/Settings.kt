@@ -48,6 +48,7 @@ object Settings {
     private const val KEY_MDBLIST_USER = "_mdblist_user"
     private const val KEY_SELECTION = "selection_mode"
     private const val KEY_OVERVIEW_LINES = "overview_lines"
+    private const val KEY_PROGRESS = "_generation_progress"
     private const val KEY_PREVIEW_PIN = "_preview_pin"
     private const val KEY_WATCHED = "watched_mode"
     private const val KEY_TMDB_SESSION = "_tmdb_session_id"
@@ -330,6 +331,14 @@ object Settings {
     var generating: Boolean
         get() = preferences.getBoolean(KEY_GENERATING, false)
         set(value) = preferences.edit { putBoolean(KEY_GENERATING, value) }
+
+    /** While generating: wallpapers made, current list and number of lists. */
+    var generationProgress: Triple<Int, Int, Int>?
+        get() = preferences.getString(KEY_PROGRESS, null)?.split('|')?.mapNotNull { it.toIntOrNull() }
+            ?.takeIf { it.size == 3 }?.let { Triple(it[0], it[1], it[2]) }
+        set(value) = preferences.edit {
+            if (value == null) remove(KEY_PROGRESS) else putString(KEY_PROGRESS, "${value.first}|${value.second}|${value.third}")
+        }
 
     /** Everything that changes the generated wallpapers (except the refresh interval). */
     val signature: String

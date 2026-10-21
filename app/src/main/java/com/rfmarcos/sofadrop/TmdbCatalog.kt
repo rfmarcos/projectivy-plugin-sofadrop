@@ -21,6 +21,9 @@ data class WallpaperInfo(
     val logoPath: String?,
     val providerLogoPaths: List<String>,
     val watchStatus: WatchStatus? = null,
+    /** List the title was taken from, for the footer ("Trending · TMDB"). */
+    val sourceLabel: String? = null,
+    val sourceProvider: SourceProvider? = null,
 )
 
 /** Why a title of a list is not used. */

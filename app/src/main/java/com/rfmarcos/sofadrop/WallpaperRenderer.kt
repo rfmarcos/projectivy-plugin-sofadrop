@@ -73,7 +73,7 @@ class WallpaperRenderer(
         if (logo != null) drawLogo(layerCanvas, logo) else drawTitle(layerCanvas, info.title)
         drawMetadata(layerCanvas, info)
         val overviewBottom = drawOverview(layerCanvas, info.overview)
-        drawProviders(layerCanvas, overviewBottom + s(40), providerLogos)
+        drawFooter(layerCanvas, overviewBottom + s(40), providerLogos, info)
 
         val offset = IntArray(2)
         val shadow = layer.extractAlpha(
@@ -239,21 +239,50 @@ class WallpaperRenderer(
         return top
     }
 
+    /** "Available on [icons]" when there are streaming services, then (dimmer) the list it came from. */
+    private fun drawFooter(canvas: Canvas, top: Float, providerLogos: List<Bitmap>, info: WallpaperInfo) {
+        if (providerLogos.isEmpty()) {
+            drawSource(canvas, top + s(PROVIDER_ICON_SIZE) / 2, info, primary = true)
+            return
+        }
+        drawProviders(canvas, top, providerLogos)
+        drawSource(canvas, top + s(PROVIDER_ICON_SIZE) + s(52f), info, primary = false)
+    }
+
+    /** "Trending · [TMDB logo]", "Your watchlist · Trakt", "Netflix Movies · MDBList". */
+    private fun drawSource(canvas: Canvas, center: Float, info: WallpaperInfo, primary: Boolean) {
+        val label = info.sourceLabel ?: return
+        val grey = if (primary) 205 else 165
+        val size = if (primary) 50f else 40f
+        val labelPaint = textPaint(light, s(size), Color.rgb(grey, grey, grey))
+        val text = "$label  ·  "
+        drawCentered(canvas, text, s(MARGIN_LEFT), center, labelPaint)
+        val x = s(MARGIN_LEFT) + labelPaint.measureText(text)
+        if (info.sourceProvider == SourceProvider.TMDB) {
+            val h = s(if (primary) 46f else 37f)
+            val w = tmdbLogo.width * h / tmdbLogo.height
+            canvas.drawBitmap(tmdbLogo, null, RectF(x, center - h / 2, x + w, center + h / 2), Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG).apply {
+                alpha = if (primary) 255 else 200
+            })
+        } else {
+            val name = when (info.sourceProvider) {
+                SourceProvider.TRAKT -> "Trakt"
+                SourceProvider.SIMKL -> "Simkl"
+                else -> "MDBList"
+            }
+            drawCentered(canvas, name, x, center, textPaint(medium, s(size), Color.rgb(grey, grey, grey)))
+        }
+    }
+
     private fun drawProviders(canvas: Canvas, top: Float, providerLogos: List<Bitmap>) {
         val iconSize = s(PROVIDER_ICON_SIZE)
         val center = top + iconSize / 2
-        val label = if (providerLogos.isNotEmpty()) texts.availableOn else texts.nowTrendingOn
+        val label = texts.availableOn
         val labelPaint = textPaint(light, s(50f), Color.rgb(205, 205, 205))
         drawCentered(canvas, label, s(MARGIN_LEFT), center, labelPaint)
         var x = s(MARGIN_LEFT) + labelPaint.measureText(label) + s(32f)
 
         val paint = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
-        if (providerLogos.isEmpty()) {
-            val h = s(46f)
-            val w = tmdbLogo.width * h / tmdbLogo.height
-            canvas.drawBitmap(tmdbLogo, null, RectF(x, center - h / 2, x + w, center + h / 2), paint)
-            return
-        }
         for (logo in providerLogos.take(4)) {
             val rounded = roundedSquare(logo, iconSize.roundToInt(), s(20f))
             canvas.drawBitmap(rounded, x, center - iconSize / 2, paint)

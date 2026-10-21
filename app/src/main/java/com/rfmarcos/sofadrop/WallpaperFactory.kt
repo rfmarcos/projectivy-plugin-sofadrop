@@ -10,6 +10,7 @@ data class ListPlan(
     val usable: List<TitleRef>,
     val statuses: Map<TitleRef, WatchStatus>,
     val random: Boolean,
+    val source: ListSource,
 )
 
 /** Shared pipeline for the background generation, the settings preview and the list explorer. */
@@ -41,12 +42,15 @@ class WallpaperFactory(context: Context, private val width: Int) {
             if (hideWatched && status is WatchStatus.Watched) candidate.copy(exclusion = Exclusion.WATCHED) else candidate
         }
         val usable = candidates.filter { it.exclusion == null }.map { it.ref }
-        return ListPlan(candidates, usable, statuses, random)
+        return ListPlan(candidates, usable, statuses, random, source)
     }
 
-    /** Wallpaper data of a title, with its watched badge when the user wants it marked. */
-    fun build(ref: TitleRef, plan: ListPlan? = null): WallpaperInfo? {
-        val info = catalog.build(ref) ?: return null
+    /** Wallpaper data of a title, with its source list and its watched badge when the user wants it marked. */
+    fun build(ref: TitleRef, plan: ListPlan? = null, source: ListSource? = plan?.source): WallpaperInfo? {
+        val info = catalog.build(ref)?.let { info ->
+            if (source == null) info
+            else info.copy(sourceLabel = Languages.sourceLabel(Settings.language, source), sourceProvider = source.provider)
+        } ?: return null
         val status = if (plan != null) plan.statuses[ref] else watched?.status(ref)
         return if (status != null && Settings.watchedMode == Settings.WATCHED_MARK) info.copy(watchStatus = status) else info
     }

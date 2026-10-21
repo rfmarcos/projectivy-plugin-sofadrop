@@ -218,4 +218,9 @@
     <string name="watched_from">%1$s · from %2$s</string>
     <string name="watched_no_tracker">Connect Trakt or Simkl in Lists to use this</string>
     <string name="watched_summary_hidden">watched hidden</string>
+    <string name="status_progress">Generating · %1$s · list %2$d of %3$d</string>
+    <plurals name="wallpapers_count">
+        <item quantity="one">%d wallpaper</item>
+        <item quantity="other">%d wallpapers</item>
+    </plurals>
 </resources>

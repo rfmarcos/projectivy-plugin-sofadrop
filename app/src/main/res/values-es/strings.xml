@@ -206,4 +206,9 @@
     <string name="watched_from">%1$s · de %2$s</string>
     <string name="watched_no_tracker">Conecta Trakt o Simkl en Listas para usarlo</string>
     <string name="watched_summary_hidden">vistos ocultos</string>
+    <string name="status_progress">Generando · %1$s · lista %2$d de %3$d</string>
+    <plurals name="wallpapers_count">
+        <item quantity="one">%d fondo</item>
+        <item quantity="other">%d fondos</item>
+    </plurals>
 </resources>

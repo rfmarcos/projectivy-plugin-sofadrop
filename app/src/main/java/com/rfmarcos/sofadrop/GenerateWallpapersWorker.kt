@@ -56,6 +56,7 @@ class GenerateWallpapersWorker(context: Context, params: WorkerParameters) : Wor
             if (e !is TmdbException && runAttemptCount < 2) Result.retry() else Result.failure()
         } finally {
             Settings.generating = false
+            Settings.generationProgress = null
         }
     }
 
@@ -65,7 +66,9 @@ class GenerateWallpapersWorker(context: Context, params: WorkerParameters) : Wor
         val seen = mutableSetOf<TitleRef>()
         val stored = mutableListOf<StoredWallpaper>()
 
-        for (source in Sources.selected()) {
+        val sources = Sources.selected()
+        for ((index, source) in sources.withIndex()) {
+            Settings.generationProgress = Triple(stored.size, index + 1, sources.size)
             val plan = try {
                 factory.plan(source, perList, seen)
             } catch (e: TmdbException) {
@@ -86,8 +89,9 @@ class GenerateWallpapersWorker(context: Context, params: WorkerParameters) : Wor
                     val name = "${info.type.path}-${info.id}.jpg"
                     FileOutputStream(File(generation, name)).use { bitmap.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, it) }
                     bitmap.recycle()
-                    stored += StoredWallpaper(name, info.title, info.type.path, info.id)
+                    stored += StoredWallpaper(name, info.title, info.type.path, info.id, source.key)
                     added++
+                    Settings.generationProgress = Triple(stored.size, index + 1, sources.size)
                 } catch (e: TmdbException) {
                     throw e
                 } catch (e: Exception) {

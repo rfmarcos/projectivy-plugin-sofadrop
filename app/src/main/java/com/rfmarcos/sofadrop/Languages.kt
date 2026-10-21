@@ -5,7 +5,6 @@ import java.util.Locale
 /** Texts drawn on the wallpaper, in the wallpaper language (not the device one). */
 data class WallpaperTexts(
     val availableOn: String,
-    val nowTrendingOn: String,
     val season: String,
     val seasons: String,
     val watched: String,
@@ -34,13 +33,47 @@ object Languages {
     val MAINSTREAM = setOf("en", "es", "fr", "it", "de", "pt", "ca", "nl", "sv", "da", "no", "pl")
 
     private val TEXTS = mapOf(
-        "en" to WallpaperTexts("Available on", "Now trending on", "Season", "Seasons", "Watched", "Watching · %d/%d"),
-        "es" to WallpaperTexts("Disponible en", "En tendencia en", "Temporada", "Temporadas", "Visto", "Viendo · %d/%d"),
-        "pt" to WallpaperTexts("Disponível em", "Em alta em", "Temporada", "Temporadas", "Assistido", "Assistindo · %d/%d"),
-        "fr" to WallpaperTexts("Disponible sur", "Tendance sur", "Saison", "Saisons", "Vu", "En cours · %d/%d"),
-        "it" to WallpaperTexts("Disponibile su", "Di tendenza su", "Stagione", "Stagioni", "Visto", "In corso · %d/%d"),
-        "de" to WallpaperTexts("Verfügbar auf", "Im Trend auf", "Staffel", "Staffeln", "Gesehen", "Angefangen · %d/%d"),
+        "en" to WallpaperTexts("Available on", "Season", "Seasons", "Watched", "Watching · %d/%d"),
+        "es" to WallpaperTexts("Disponible en", "Temporada", "Temporadas", "Visto", "Viendo · %d/%d"),
+        "pt" to WallpaperTexts("Disponível em", "Temporada", "Temporadas", "Assistido", "Assistindo · %d/%d"),
+        "fr" to WallpaperTexts("Disponible sur", "Saison", "Saisons", "Vu", "En cours · %d/%d"),
+        "it" to WallpaperTexts("Disponibile su", "Stagione", "Stagioni", "Visto", "In corso · %d/%d"),
+        "de" to WallpaperTexts("Verfügbar auf", "Staffel", "Staffeln", "Gesehen", "Angefangen · %d/%d"),
     )
+
+    /** Short list names for the wallpaper footer ("Trending · TMDB"), by kind of list. */
+    private val SOURCE_LABELS = mapOf(
+        "en" to listOf("Trending", "Popular", "Top rated", "In cinemas", "Coming soon", "On the air", "Most anticipated",
+            "Box office", "Picked for you", "Your watchlist", "Your favourites", "Trending anime", "Plan to watch", "Watching"),
+        "es" to listOf("Tendencias", "Populares", "Mejor valoradas", "En cines", "Próximamente", "En emisión", "Más esperadas",
+            "Taquilla", "Elegidas para ti", "Tu lista", "Tus favoritas", "Anime en tendencia", "Para ver", "Viendo"),
+        "pt" to listOf("Em alta", "Populares", "Mais bem avaliados", "Nos cinemas", "Em breve", "No ar", "Mais aguardados",
+            "Bilheteria", "Escolhidos para você", "Sua lista", "Seus favoritos", "Animes em alta", "Para assistir", "Assistindo"),
+        "fr" to listOf("Tendances", "Populaires", "Les mieux notés", "Au cinéma", "Prochainement", "En diffusion", "Les plus attendus",
+            "Box-office", "Pour vous", "Votre liste", "Vos favoris", "Animés tendance", "À voir", "En cours"),
+        "it" to listOf("Di tendenza", "Popolari", "I più votati", "Al cinema", "Prossimamente", "In onda", "I più attesi",
+            "Botteghino", "Scelti per te", "La tua lista", "I tuoi preferiti", "Anime di tendenza", "Da vedere", "In corso"),
+        "de" to listOf("Im Trend", "Beliebt", "Bestbewertet", "Im Kino", "Demnächst", "Läuft gerade", "Meisterwartet",
+            "Kinokassen", "Für dich", "Deine Merkliste", "Deine Favoriten", "Anime im Trend", "Geplant", "Angefangen"),
+    )
+
+    /** Same order as each [SOURCE_LABELS] list; matched against the list key without its provider. */
+    private val SOURCE_KINDS = listOf(
+        "trending", "popular", "top_rated", "now_playing", "upcoming", "on_the_air", "anticipated",
+        "boxoffice", "recommended", "watchlist", "favorite", "trending_anime", "plantowatch", "watching",
+    )
+
+    /** "Trending", "Your watchlist", or an MDBList list's own name, in the wallpaper language. */
+    fun sourceLabel(language: String, source: ListSource): String {
+        if (source.provider == SourceProvider.MDBLIST) {
+            val name = source.label.orEmpty()
+            return if (name.length > 28) name.take(27).trimEnd() + "…" else name
+        }
+        val key = source.key.substringAfter(':')
+        // Longest match first, so "trending_anime" wins over "trending"
+        val kind = SOURCE_KINDS.withIndex().filter { key.startsWith(it.value) }.maxByOrNull { it.value.length }?.index ?: 0
+        return (SOURCE_LABELS[code(language)] ?: SOURCE_LABELS.getValue("en"))[kind]
+    }
 
     // TMDB returns some TV-only genres untranslated
     private val TV_GENRE_TRANSLATIONS = mapOf(

@@ -167,7 +167,9 @@ class SettingsFragment : BaseSettingsFragment() {
     private fun statusText(): String {
         val count = WallpaperStore(requireContext()).current().size
         return when {
-            Settings.generating -> getString(R.string.status_generating)
+            Settings.generating -> Settings.generationProgress?.let { (done, list, lists) ->
+                getString(R.string.status_progress, resources.getQuantityString(R.plurals.wallpapers_count, done, done), list, lists)
+            } ?: getString(R.string.status_generating)
             Sources.selected().isEmpty() -> getString(R.string.status_select_list)
             // A "no lists" error is stale once lists are picked again
             Settings.lastError.isNotEmpty() && Settings.lastError != getString(R.string.error_no_lists) ->
@@ -262,7 +264,7 @@ class SettingsFragment : BaseSettingsFragment() {
         private const val PREVIEW_WIDTH = 1280
 
         /** The pinned title while it is still in the current set; a pin left behind by a new set is dropped. */
-        private fun pinnedRef(context: android.content.Context): TitleRef? {
+        private fun pinnedRef(context: android.content.Context): Pair<TitleRef, String>? {
             val pin = Settings.previewPin.ifEmpty { return null }
             val stored = WallpaperStore(context).current().firstOrNull { "${it.type}:${it.tmdbId}" == pin }
             val type = MediaType.entries.firstOrNull { it.path == stored?.type }
@@ -270,7 +272,7 @@ class SettingsFragment : BaseSettingsFragment() {
                 Settings.previewPin = ""
                 return null
             }
-            return TitleRef(type, stored.tmdbId)
+            return TitleRef(type, stored.tmdbId) to stored.source
         }
 
         /** Last preview (key, image, title), kept while the process lives so reopening is instant. */
@@ -280,8 +282,9 @@ class SettingsFragment : BaseSettingsFragment() {
         fun renderPreview(context: android.content.Context): Pair<Bitmap, String>? {
             Settings.init(context)
             val factory = WallpaperFactory(context, PREVIEW_WIDTH)
-            pinnedRef(context)?.let { ref ->
-                factory.build(ref)?.let { info -> return factory.render(info) to info.title }
+            pinnedRef(context)?.let { (ref, sourceKey) ->
+                val source = Sources.available().firstOrNull { it.key == sourceKey }
+                factory.build(ref, source = source)?.let { info -> return factory.render(info) to info.title }
             }
             for (source in Sources.selected()) {
                 val plan = runCatching { factory.plan(source, 3) }.getOrNull() ?: continue

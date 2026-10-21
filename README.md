@@ -21,6 +21,7 @@ It is the on-device version of [androidtvbackground-reddit](https://github.com/r
 * 🖼️ Full-bleed backdrop (textless when available) with gradients that keep the lower half free for the launcher rows.
 * 🏷️ Official logo (dark logos are inverted to stay visible) or a fitted title, ★ rating, year, runtime / seasons, genres and synopsis.
 * 📺 Streaming services available in your country (TMDB Watch Providers, powered by JustWatch). Tiers and channels of the same service are grouped.
+* 🔖 The list each title comes from at the bottom ("Trending · TMDB", "Trending anime · Simkl", "Your watchlist · Trakt", "Netflix Movies · MDBList"), dimmed under the streaming services when there are any.
 * 🎯 **Filters**: maximum age (6 months to no limit), *global hits only* (skip titles only popular in a local market unless they are worldwide hits, ≥ 1000 TMDB votes) and adult content. By default they apply only to the automatic TMDB / Trakt lists, so lists you curate are used as they are.
 * 🌍 Wallpaper languages: English (US/UK), Spanish (Spain/Mexico), Portuguese (Brazil/Portugal), French, Italian and German.
 * ⏱️ Refreshes in the background with WorkManager and tells Projectivy when new wallpapers are ready.
@@ -31,7 +32,7 @@ Open them from **Projectivy → Settings → Appearance → Wallpaper → Config
 
 | Setting | Default | |
 |---|---|---|
-| Update now | — | Also shows the status: how many wallpapers, when they were updated, or the last error. |
+| Update now | — | Also shows the status: how many wallpapers, when they were updated, the last error, or the progress while generating ("Generating · 12 wallpapers · list 2 of 5"). |
 | View wallpapers | — | The current set full screen (◀ ▶ to browse). **OK** shows that wallpaper in the settings preview (OK again goes back to automatic). |
 | Lists | TMDB trending movies + TV shows | One screen per service: **TMDB**, **Trakt**, **Simkl** and **MDBList**, each with its account (QR login) and its lists as checkboxes, plus **Explore lists**. Titles repeated across lists are only used once. |
 | Titles per list | 10 | 5, 10, 15 or 20 per list. |

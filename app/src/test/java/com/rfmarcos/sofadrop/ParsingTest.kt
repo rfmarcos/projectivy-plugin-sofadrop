@@ -96,4 +96,15 @@ class ParsingTest {
         assertEquals(3, items[1].watched)
         assertEquals(8, items[1].total) // aired episodes only
     }
+
+    @Test
+    fun wallpaperSourceLabels() {
+        fun source(key: String) = (Sources.TMDB + Sources.TRAKT + Sources.SIMKL).first { it.key == key }
+        assertEquals("Anime en tendencia", Languages.sourceLabel("es-ES", source("simkl:trending_anime")))
+        assertEquals("Trending", Languages.sourceLabel("en-US", source("simkl:trending_movies")))
+        assertEquals("Your watchlist", Languages.sourceLabel("en-GB", source("trakt:watchlist_shows")))
+        assertEquals("Im Kino", Languages.sourceLabel("de-DE", source("tmdb:now_playing")))
+        val mdb = ListSource("mdblist:a/b", SourceProvider.MDBLIST, label = "A very long MDBList list name for tests")
+        assertEquals("A very long MDBList list na…", Languages.sourceLabel("en-US", mdb))
+    }
 }
