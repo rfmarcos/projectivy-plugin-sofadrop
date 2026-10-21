@@ -1,0 +1,63 @@
+<!-- A screen showing a landscape (wallpaper) with a "trending" star badge -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Screen content: sky -->
+    <path android:pathData="M31,35h46a4,4 0,0 1,4 4v28a4,4 0,0 1,-4 4h-46a4,4 0,0 1,-4 -4v-28a4,4 0,0 1,4 -4z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="54"
+                android:startY="35"
+                android:endX="54"
+                android:endY="71">
+                <item android:offset="0" android:color="#FF1E3A5F" />
+                <item android:offset="1" android:color="#FF0E7490" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Sun -->
+    <path
+        android:fillColor="#FFFFC857"
+        android:pathData="M64,45m-4,0a4,4 0,1 1,8 0a4,4 0,1 1,-8 0" />
+
+    <!-- Mountains -->
+    <path android:pathData="M27,66L41,51L50,60L58,52L81,70.5L80,71H31a4,4 0,0 1,-4 -4z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="27"
+                android:startY="51"
+                android:endX="81"
+                android:endY="71">
+                <item android:offset="0" android:color="#FF22D3EE" />
+                <item android:offset="1" android:color="#FF3B82F6" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Screen frame -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="3.5"
+        android:pathData="M31,35h46a4,4 0,0 1,4 4v28a4,4 0,0 1,-4 4h-46a4,4 0,0 1,-4 -4v-28a4,4 0,0 1,4 -4z" />
+
+    <!-- Stand -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M45,75h18a1.75,1.75 0,0 1,0 3.5h-18a1.75,1.75 0,0 1,0 -3.5z" />
+
+    <!-- Trending star badge -->
+    <path
+        android:fillColor="#FF111827"
+        android:pathData="M78,35m-10,0a10,10 0,1 1,20 0a10,10 0,1 1,-20 0" />
+    <path
+        android:fillColor="#FFFFC857"
+        android:pathData="M78,28.5l1.9,4.2l4.6,0.4l-3.5,3l1.1,4.5l-4.1,-2.4l-4.1,2.4l1.1,-4.5l-3.5,-3l4.6,-0.4z" />
+</vector>

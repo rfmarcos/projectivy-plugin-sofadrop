@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Dark background with soft colour glows, in the spirit of Projectivy's own settings -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape>
+            <solid android:color="#FF07090E" />
+        </shape>
+    </item>
+    <item>
+        <shape>
+            <gradient
+                android:type="radial"
+                android:centerX="0.78"
+                android:centerY="0.05"
+                android:gradientRadius="70%p"
+                android:startColor="#5C1B3A6B"
+                android:endColor="#0007090E" />
+        </shape>
+    </item>
+    <item>
+        <shape>
+            <gradient
+                android:type="radial"
+                android:centerX="0.65"
+                android:centerY="1.0"
+                android:gradientRadius="75%p"
+                android:startColor="#553B1D5E"
+                android:endColor="#0007090E" />
+        </shape>
+    </item>
+    <item>
+        <shape>
+            <gradient
+                android:type="radial"
+                android:centerX="0.1"
+                android:centerY="0.35"
+                android:gradientRadius="55%p"
+                android:startColor="#330E7490"
+                android:endColor="#0007090E" />
+        </shape>
+    </item>
+</layer-list>

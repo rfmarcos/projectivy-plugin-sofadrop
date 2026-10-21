@@ -77,8 +77,8 @@ release.keyPassword=...
 ### How refreshing works
 
 * A periodic **WorkManager** job (Android JobScheduler) regenerates the set every *Update every* hours. The app does not need to stay open: Android wakes it up when the job is due, and the job survives reboots. Only *Force stop* cancels it until the plugin is opened again.
-* Projectivy asks the plugin for its list every hour; if the set is older than the interval (or the settings changed) the plugin regenerates it right away as a safety net.
-* After each generation the plugin broadcasts `WALLPAPER_PROVIDER_UPDATED` so Projectivy reloads the new set.
+* Projectivy asks the plugin for its list every 30 minutes (a cheap call: the plugin only returns the files it already has). That is when a newly generated set shows up, and if the set is older than the interval (or the settings changed) the plugin regenerates it right away as a safety net.
+* After each generation the plugin also broadcasts `WALLPAPER_PROVIDER_UPDATED`. Tested with Projectivy 4.72 on a Chromecast with Google TV, this does not trigger an immediate reload, so new wallpapers appear at Projectivy's next request (≤ 30 min).
 
 ### Project structure
 

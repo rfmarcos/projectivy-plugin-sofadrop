@@ -20,7 +20,7 @@
         android:allowBackup="true"
         android:label="@string/plugin_name"
         android:supportsRtl="true"
-        android:icon="@drawable/ic_launcher"
+        android:icon="@mipmap/ic_launcher"
         android:banner="@drawable/ic_banner"
         android:theme="@style/Theme.TmdbWallpapers">
 
@@ -45,7 +45,7 @@
             android:name=".WallpaperProviderService"
             android:exported="true"
             android:label="@string/plugin_name"
-            android:icon="@drawable/ic_launcher"
+            android:icon="@mipmap/ic_launcher"
             android:banner="@drawable/ic_banner"
             tools:ignore="ExportedService">
 
@@ -72,7 +72,7 @@
                 android:name="settingsActivity"
                 android:value=".SettingsActivity" />
 
-            <!-- Projectivy asks again every hour; the plugin itself decides when to regenerate -->
+            <!-- Projectivy asks again every 30 minutes; the plugin itself decides when to regenerate -->
             <meta-data
                 android:name="itemsCacheDurationMillis"
                 android:value="@integer/items_cache_duration_millis" />

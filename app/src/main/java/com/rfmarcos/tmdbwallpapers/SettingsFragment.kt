@@ -1,6 +1,9 @@
 package com.rfmarcos.tmdbwallpapers
 
 import android.content.Intent
+import android.graphics.drawable.Drawable
+import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.LayerDrawable
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -8,6 +11,7 @@ import android.text.InputType
 import android.text.format.DateUtils
 import android.widget.Toast
 import androidx.appcompat.content.res.AppCompatResources
+import androidx.core.content.ContextCompat
 import androidx.leanback.app.GuidedStepSupportFragment
 import androidx.leanback.widget.GuidanceStylist.Guidance
 import androidx.leanback.widget.GuidedAction
@@ -26,11 +30,13 @@ class SettingsFragment : GuidedStepSupportFragment() {
         }
     }
 
+    override fun onProvideTheme(): Int = R.style.Theme_TmdbWallpapers_GuidedStep
+
     override fun onCreateGuidance(savedInstanceState: Bundle?): Guidance = Guidance(
         getString(R.string.plugin_name),
         "v${BuildConfig.VERSION_NAME}\n\n${getString(R.string.plugin_description)}",
         getString(R.string.settings),
-        AppCompatResources.getDrawable(requireActivity(), R.drawable.ic_plugin),
+        AppCompatResources.getDrawable(requireActivity(), R.mipmap.ic_launcher),
     )
 
     override fun onCreateActions(actions: MutableList<GuidedAction>, savedInstanceState: Bundle?) {
@@ -38,47 +44,52 @@ class SettingsFragment : GuidedStepSupportFragment() {
         val context = requireContext()
 
         actions += GuidedAction.Builder(context).id(ID_STATUS)
-            .title(R.string.status_title).description(statusText())
+            .title(R.string.status_title).description(statusText()).icon(actionIcon(R.drawable.ic_act_status))
             .multilineDescription(true).focusable(false).build()
 
         actions += GuidedAction.Builder(context).id(ID_GENERATE)
-            .title(R.string.action_generate_now).description(R.string.action_generate_now_desc).build()
+            .title(R.string.action_generate_now).description(R.string.action_generate_now_desc)
+            .icon(actionIcon(R.drawable.ic_act_refresh)).build()
 
         actions += GuidedAction.Builder(context).id(ID_PREVIEW)
             .title(R.string.action_preview).description(R.string.action_preview_desc)
+            .icon(actionIcon(R.drawable.ic_act_preview))
             .enabled(WallpaperStore(context).current().isNotEmpty()).build()
 
         actions += GuidedAction.Builder(context).id(ID_TOKEN)
             .title(R.string.setting_token_title).description(tokenDescription())
+            .icon(actionIcon(R.drawable.ic_act_key))
             .editDescription(Settings.token).descriptionEditable(true)
             .descriptionEditInputType(InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD)
             .build()
 
-        actions += choice(ID_LANGUAGE, R.string.setting_language_title, Languages.displayName(Settings.language),
+        actions += choice(ID_LANGUAGE, R.drawable.ic_act_language, R.string.setting_language_title, Languages.displayName(Settings.language),
             Languages.OPTIONS.values.toList())
 
-        actions += choice(ID_REGION, R.string.setting_region_title, regionDescription(),
+        actions += choice(ID_REGION, R.drawable.ic_act_place, R.string.setting_region_title, regionDescription(),
             listOf(getString(R.string.region_auto, Languages.regionOf(Settings.language))) +
                 Languages.REGIONS.map { "${Languages.countryName(it)} ($it)" })
 
-        actions += choice(ID_CONTENT, R.string.setting_content_title, contentLabel(Settings.content),
+        actions += choice(ID_CONTENT, R.drawable.ic_act_movie, R.string.setting_content_title, contentLabel(Settings.content),
             ContentType.entries.map(::contentLabel))
 
-        actions += choice(ID_COUNT, R.string.setting_count_title, Settings.titlesPerType.toString(),
+        actions += choice(ID_COUNT, R.drawable.ic_act_count, R.string.setting_count_title, Settings.titlesPerType.toString(),
             Settings.COUNT_OPTIONS.map(Int::toString))
 
-        actions += choice(ID_REFRESH, R.string.setting_refresh_title, refreshLabel(Settings.refreshHours),
+        actions += choice(ID_REFRESH, R.drawable.ic_act_schedule, R.string.setting_refresh_title, refreshLabel(Settings.refreshHours),
             Settings.REFRESH_OPTIONS.map(::refreshLabel))
 
-        actions += choice(ID_RESOLUTION, R.string.setting_resolution_title, resolutionLabel(Settings.outputWidth),
+        actions += choice(ID_RESOLUTION, R.drawable.ic_act_hd, R.string.setting_resolution_title, resolutionLabel(Settings.outputWidth),
             Settings.WIDTH_OPTIONS.map(::resolutionLabel))
 
         actions += GuidedAction.Builder(context).id(ID_GLOBAL_HITS)
             .title(R.string.setting_global_hits_title).description(R.string.setting_global_hits_desc)
+            .icon(actionIcon(R.drawable.ic_act_public))
             .checkSetId(GuidedAction.CHECKBOX_CHECK_SET_ID).checked(Settings.globalHitsOnly).build()
 
         actions += GuidedAction.Builder(context).id(ID_PROVIDERS)
             .title(R.string.setting_providers_title).description(R.string.setting_providers_desc)
+            .icon(actionIcon(R.drawable.ic_act_tv))
             .checkSetId(GuidedAction.CHECKBOX_CHECK_SET_ID).checked(Settings.showProviders).build()
     }
 
@@ -151,12 +162,24 @@ class SettingsFragment : GuidedStepSupportFragment() {
 
     // --- Helpers ---
 
-    private fun choice(id: Long, title: Int, current: String, options: List<String>): GuidedAction {
+    /** Setting icon inside a translucent circle, like Projectivy's settings. */
+    private fun actionIcon(iconRes: Int): Drawable {
+        val context = requireContext()
+        val circle = GradientDrawable().apply {
+            shape = GradientDrawable.OVAL
+            setColor(ContextCompat.getColor(context, R.color.action_icon_background))
+        }
+        val icon = AppCompatResources.getDrawable(context, iconRes)!!
+        val inset = (resources.displayMetrics.density * 11).toInt()
+        return LayerDrawable(arrayOf(circle, icon)).apply { setLayerInset(1, inset, inset, inset, inset) }
+    }
+
+    private fun choice(id: Long, icon: Int, title: Int, current: String, options: List<String>): GuidedAction {
         val subActions = options.mapIndexed { index, label ->
             GuidedAction.Builder(requireContext()).id(id * SUB_ID_BASE + index).title(label).build()
         }
         return GuidedAction.Builder(requireContext()).id(id).title(title).description(current)
-            .subActions(subActions).build()
+            .icon(actionIcon(icon)).subActions(subActions).build()
     }
 
     private fun updateDescription(id: Long, description: CharSequence) {
