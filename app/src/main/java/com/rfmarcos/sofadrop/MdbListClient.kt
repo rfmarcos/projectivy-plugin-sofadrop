@@ -1,4 +1,4 @@
-package com.rfmarcos.tmdbwallpapers
+package com.rfmarcos.sofadrop
 
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray

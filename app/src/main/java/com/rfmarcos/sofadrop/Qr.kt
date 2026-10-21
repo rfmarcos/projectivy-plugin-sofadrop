@@ -1,4 +1,4 @@
-package com.rfmarcos.tmdbwallpapers
+package com.rfmarcos.sofadrop
 
 import android.graphics.Bitmap
 import android.graphics.Color

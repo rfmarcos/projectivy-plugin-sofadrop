@@ -1,4 +1,4 @@
-package com.rfmarcos.tmdbwallpapers
+package com.rfmarcos.sofadrop
 
 enum class SourceProvider { TMDB, TRAKT, MDBLIST }
 

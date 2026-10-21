@@ -1,4 +1,4 @@
-package com.rfmarcos.tmdbwallpapers
+package com.rfmarcos.sofadrop
 
 import android.app.Dialog
 import android.os.Bundle
@@ -46,7 +46,7 @@ abstract class QrDialog : DialogFragment() {
     protected abstract fun start()
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog =
-        Dialog(requireContext(), R.style.Theme_TmdbWallpapers_QrDialog)
+        Dialog(requireContext(), R.style.Theme_Sofadrop_QrDialog)
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         val view = inflater.inflate(R.layout.qr_dialog, container, false)

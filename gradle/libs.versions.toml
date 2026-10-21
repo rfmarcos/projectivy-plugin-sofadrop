@@ -1,6 +1,6 @@
 [versions]
 # SDK
-appId = "com.rfmarcos.tmdbwallpapers"
+appId = "com.rfmarcos.sofadrop"
 compileSdk = "36"
 minSdk = "26"
 targetSdk = "36"

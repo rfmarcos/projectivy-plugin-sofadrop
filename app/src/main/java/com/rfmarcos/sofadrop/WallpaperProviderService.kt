@@ -1,4 +1,4 @@
-package com.rfmarcos.tmdbwallpapers
+package com.rfmarcos.sofadrop
 
 import android.app.Service
 import android.content.Intent
@@ -65,7 +65,7 @@ class WallpaperProviderService : Service() {
     }
 
     companion object {
-        private const val TAG = "TmdbWallpapersService"
+        private const val TAG = "SofadropService"
         private const val PROJECTIVY_PACKAGE = "com.spocky.projengmenu"
     }
 }

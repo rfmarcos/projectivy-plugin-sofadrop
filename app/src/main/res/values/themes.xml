@@ -1,6 +1,6 @@
 <resources>
 
-    <style name="Theme.TmdbWallpapers" parent="@style/Theme.Leanback">
+    <style name="Theme.Sofadrop" parent="@style/Theme.Leanback">
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowContentOverlay">@null</item>
@@ -16,33 +16,33 @@
     </style>
 
     <!-- Settings screen styled like Projectivy's own settings -->
-    <style name="Theme.TmdbWallpapers.GuidedStep" parent="@style/Theme.Leanback.GuidedStep">
+    <style name="Theme.Sofadrop.GuidedStep" parent="@style/Theme.Leanback.GuidedStep">
         <item name="guidedStepBackground">@drawable/settings_background</item>
         <item name="guidedActionsBackground">@color/settings_actions_background</item>
         <item name="guidedActionsBackgroundDark">@color/settings_actions_background_dark</item>
         <item name="guidedActionsElevation">0dp</item>
         <item name="guidedActionsShadowWidth">0dp</item>
         <item name="guidedActionsSelectorDrawable">@drawable/settings_item_selector</item>
-        <item name="guidedActionItemIconStyle">@style/Widget.TmdbWallpapers.ActionIcon</item>
-        <item name="guidanceTitleStyle">@style/Widget.TmdbWallpapers.GuidanceTitle</item>
-        <item name="guidanceIconStyle">@style/Widget.TmdbWallpapers.GuidanceIcon</item>
+        <item name="guidedActionItemIconStyle">@style/Widget.Sofadrop.ActionIcon</item>
+        <item name="guidanceTitleStyle">@style/Widget.Sofadrop.GuidanceTitle</item>
+        <item name="guidanceIconStyle">@style/Widget.Sofadrop.GuidanceIcon</item>
     </style>
 
-    <style name="Widget.TmdbWallpapers.ActionIcon" parent="@style/Widget.Leanback.GuidedActionItemIconStyle">
+    <style name="Widget.Sofadrop.ActionIcon" parent="@style/Widget.Leanback.GuidedActionItemIconStyle">
         <item name="android:layout_width">44dp</item>
         <item name="android:layout_height">44dp</item>
         <item name="android:layout_marginEnd">20dp</item>
     </style>
 
-    <style name="Widget.TmdbWallpapers.GuidanceTitle" parent="@style/Widget.Leanback.GuidanceTitleStyle">
+    <style name="Widget.Sofadrop.GuidanceTitle" parent="@style/Widget.Leanback.GuidanceTitleStyle">
         <item name="android:textColor">@color/color_accent</item>
     </style>
 
-    <style name="Widget.TmdbWallpapers.GuidanceIcon" parent="@style/Widget.Leanback.GuidanceIconStyle">
+    <style name="Widget.Sofadrop.GuidanceIcon" parent="@style/Widget.Leanback.GuidanceIconStyle">
         <item name="android:layout_width">120dp</item>
     </style>
 
-    <style name="Theme.TmdbWallpapers.QrDialog" parent="@style/Theme.AppCompat.Dialog">
+    <style name="Theme.Sofadrop.QrDialog" parent="@style/Theme.AppCompat.Dialog">
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:windowIsFloating">false</item>
         <item name="android:windowNoTitle">true</item>
@@ -51,7 +51,7 @@
         <item name="android:windowFullscreen">true</item>
     </style>
 
-    <style name="Theme.TmdbWallpapers.Preview" parent="@style/Theme.AppCompat.NoActionBar">
+    <style name="Theme.Sofadrop.Preview" parent="@style/Theme.AppCompat.NoActionBar">
         <item name="android:windowBackground">@android:color/black</item>
         <item name="android:windowFullscreen">true</item>
     </style>

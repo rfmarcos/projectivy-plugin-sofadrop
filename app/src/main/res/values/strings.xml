@@ -1,7 +1,7 @@
 <resources>
-    <string name="plugin_name">TMDB Wallpapers</string>
+    <string name="plugin_name">Sofadrop</string>
     <string name="plugin_description">Wallpapers of movies and TV shows from TMDB, Trakt or MDBList lists, generated on this device.</string>
-    <string name="plugin_uuid" translatable="false">53c89202-003a-4f53-ac4f-5ac555751a74</string>
+    <string name="plugin_uuid" translatable="false">9b151d4e-9849-4ae0-8495-3347b7c47150</string>
 
     <string name="projectivy_not_installed">Warning, this plugin requires Projectivy Launcher which does not seem to be installed.</string>
     <string name="settings">Settings</string>
@@ -192,6 +192,6 @@
     <string name="about_source">Source code</string>
     <string name="about_source_scan">Scan it with your phone to open the project page.</string>
     <string name="about_credits">Credits</string>
-    <string name="about_credits_desc">This product uses the TMDB API but is not endorsed or certified by TMDB. Lists from Trakt and MDBList. Wallpapers for Projectivy Launcher.</string>
+    <string name="about_credits_desc">This product uses the TMDB API but is not endorsed or certified by TMDB. Sofadrop uses Trakt but is not endorsed or certified by Trakt. Lists from MDBList. Wallpapers for Projectivy Launcher.</string>
     <string name="qr_link_hint">Scan the code with your phone</string>
 </resources>

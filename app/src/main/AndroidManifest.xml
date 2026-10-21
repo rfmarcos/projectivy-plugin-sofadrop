@@ -22,7 +22,7 @@
         android:supportsRtl="true"
         android:icon="@mipmap/ic_launcher"
         android:banner="@drawable/ic_banner"
-        android:theme="@style/Theme.TmdbWallpapers">
+        android:theme="@style/Theme.Sofadrop">
 
         <activity
             android:name=".SettingsActivity"
@@ -39,7 +39,7 @@
         <activity
             android:name=".PreviewActivity"
             android:exported="false"
-            android:theme="@style/Theme.TmdbWallpapers.Preview" />
+            android:theme="@style/Theme.Sofadrop.Preview" />
 
         <service
             android:name=".WallpaperProviderService"

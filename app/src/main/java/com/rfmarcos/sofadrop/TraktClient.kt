@@ -1,4 +1,4 @@
-package com.rfmarcos.tmdbwallpapers
+package com.rfmarcos.sofadrop
 
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -179,7 +179,7 @@ class TraktClient(private val clientId: String, private val clientSecret: String
 
     companion object {
         private const val API_URL = "https://api.trakt.tv/"
-        private const val USER_AGENT = "ProjectivyTmdbWallpapers/1.0"
+        private const val USER_AGENT = "Sofadrop/1.0"
 
         /** Items are either `{ "movie": {...} }` / `{ "show": {...} }` or the object itself. */
         fun parseTitles(items: JsonArray, type: MediaType): List<TitleRef> =

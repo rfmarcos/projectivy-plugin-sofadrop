@@ -16,6 +16,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Projectivy TMDB Wallpapers"
+rootProject.name = "Sofadrop"
 include(":app")
 include(":api")

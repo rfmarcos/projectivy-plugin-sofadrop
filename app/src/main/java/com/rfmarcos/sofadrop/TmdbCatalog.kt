@@ -1,4 +1,4 @@
-package com.rfmarcos.tmdbwallpapers
+package com.rfmarcos.sofadrop
 
 import kotlinx.serialization.json.JsonObject
 import java.text.SimpleDateFormat

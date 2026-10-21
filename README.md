@@ -1,4 +1,7 @@
-# Projectivy Plugin: TMDB Wallpapers
+# Sofadrop
+
+**Movie & TV backdrops for Projectivy Launcher.**
+
 
 A wallpaper provider plugin for [Projectivy Launcher](https://github.com/spocky/miproja1) (Android TV) that generates wallpapers of **movies and TV shows directly on your TV** from the lists you choose (TMDB, plus optionally Trakt and MDBList), and lets you configure everything from inside the launcher with a live preview.
 
@@ -24,7 +27,7 @@ It is the on-device version of [androidtvbackground-reddit](https://github.com/r
 
 ## ⚙️ Settings
 
-Open them from **Projectivy → Settings → Appearance → Wallpaper → Configure** (with *TMDB Wallpapers* selected as the launcher wallpaper), or from the plugin icon in the apps list.
+Open them from **Projectivy → Settings → Appearance → Wallpaper → Configure** (with *Sofadrop* selected as the launcher wallpaper), or from the plugin icon in the apps list.
 
 | Setting | Default | |
 |---|---|---|
@@ -72,7 +75,7 @@ How often the wallpaper *changes on screen* is configured in Projectivy itself; 
 
 1. Download the APK from the [releases](../../releases) (or build it, see below).
 2. Install it on your Android TV (e.g. with *Downloader*, *Send Files to TV* or `adb install`).
-3. In Projectivy go to **Settings → Appearance → Wallpaper → Launcher wallpaper** and pick **🔌 TMDB Wallpapers** (at the end of the list).
+3. In Projectivy go to **Settings → Appearance → Wallpaper → Launcher wallpaper** and pick **🔌 Sofadrop** (at the end of the list).
 4. Open **Configure**, enter your TMDB key and choose **Update now**.
 
 ### 🔑 Getting a TMDB key
@@ -119,7 +122,7 @@ release.keyPassword=...
 
 ```
 api/                     # Projectivy plugin API (AIDL), unchanged from the official template
-app/src/main/java/com/rfmarcos/tmdbwallpapers/
+app/src/main/java/com/rfmarcos/sofadrop/
   WallpaperProviderService.kt  # Service called by Projectivy
   GenerateWallpapersWorker.kt  # Background generation + scheduling
   TmdbClient.kt / TmdbCatalog.kt  # TMDB API, TMDB lists and wallpaper data

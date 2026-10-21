@@ -1,4 +1,4 @@
-package com.rfmarcos.tmdbwallpapers
+package com.rfmarcos.sofadrop
 
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
@@ -17,7 +17,7 @@ abstract class BaseSettingsFragment : GuidedStepSupportFragment() {
 
     protected val handler = Handler(Looper.getMainLooper())
 
-    override fun onProvideTheme(): Int = R.style.Theme_TmdbWallpapers_GuidedStep
+    override fun onProvideTheme(): Int = R.style.Theme_Sofadrop_GuidedStep
 
     /** Setting icon inside a translucent circle. */
     protected fun actionIcon(iconRes: Int): Drawable {

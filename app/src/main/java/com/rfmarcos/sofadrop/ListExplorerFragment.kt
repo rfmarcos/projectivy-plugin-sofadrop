@@ -1,4 +1,4 @@
-package com.rfmarcos.tmdbwallpapers
+package com.rfmarcos.sofadrop
 
 import android.os.Bundle
 import androidx.appcompat.content.res.AppCompatResources

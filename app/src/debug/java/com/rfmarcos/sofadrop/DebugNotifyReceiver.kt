@@ -1,4 +1,4 @@
-package com.rfmarcos.tmdbwallpapers
+package com.rfmarcos.sofadrop
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -10,7 +10,7 @@ import tv.projectivy.plugin.wallpaperprovider.api.WallpaperProviderContract
  * Debug builds only: lets adb ask the plugin to send the update broadcast to Projectivy
  * with a custom provider id / reason, to check what Projectivy reacts to.
  *
- * adb shell am broadcast -n com.rfmarcos.tmdbwallpapers/.DebugNotifyReceiver --es id <id> --ei reason <1|2>
+ * adb shell am broadcast -n com.rfmarcos.sofadrop/.DebugNotifyReceiver --es id <id> --ei reason <1|2>
  */
 class DebugNotifyReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
