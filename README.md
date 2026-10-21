@@ -1,6 +1,6 @@
 # Projectivy Plugin: TMDB Wallpapers
 
-A wallpaper provider plugin for [Projectivy Launcher](https://github.com/spocky/miproja1) (Android TV) that generates wallpapers of **trending movies and TV shows from TMDB directly on your TV**, and lets you configure everything from inside the launcher: language, streaming country, content, how often to refresh, resolution…
+A wallpaper provider plugin for [Projectivy Launcher](https://github.com/spocky/miproja1) (Android TV) that generates wallpapers of **movies and TV shows directly on your TV** from the lists you choose (TMDB, plus optionally Trakt and MDBList), and lets you configure everything from inside the launcher with a live preview.
 
 > ⚠️ Projectivy marks third-party wallpaper plugins as a **Premium** feature (the built-in Reddit source is free).
 
@@ -10,11 +10,12 @@ It is the on-device version of [androidtvbackground-reddit](https://github.com/r
 
 ## ✨ Features
 
-* 🎬 Weekly trending + popular titles from TMDB (released or aired in the last 12 months).
+* 🎬 **Lists** (pick several): TMDB trending, popular, in cinemas, upcoming, top rated and on the air; optionally Trakt trending / popular / anticipated / box office, your Trakt recommendations and watchlist, and any MDBList list.
+* 👀 **Live preview** in the settings and a notice when changed settings are waiting for the next update.
 * 🖼️ Full-bleed backdrop (textless when available) with gradients that keep the lower half free for the launcher rows.
 * 🏷️ Official logo (dark logos are inverted to stay visible) or a fitted title, ★ rating, year, runtime / seasons, genres and synopsis.
 * 📺 Streaming services available in your country (TMDB Watch Providers, powered by JustWatch). Tiers and channels of the same service are grouped.
-* 🎯 *Global hits only*: titles only popular in a local market are skipped unless they are worldwide hits (≥ 1000 TMDB votes).
+* 🎯 *Global hits only*: in TMDB trending/popular lists, titles only popular in a local market are skipped unless they are worldwide hits (≥ 1000 TMDB votes).
 * 🌍 Wallpaper languages: English (US/UK), Spanish (Spain/Mexico), Portuguese (Brazil/Portugal), French, Italian and German.
 * ⏱️ Refreshes in the background with WorkManager and tells Projectivy when new wallpapers are ready.
 
@@ -25,16 +26,28 @@ Open them from **Projectivy → Settings → Appearance → Wallpaper → Config
 | Setting | Default | |
 |---|---|---|
 | TMDB API key or token | — | **Required.** A v3 *API Key* (32 characters, easier to type with a remote) or a v4 *API Read Access Token*. |
+| Lists | TMDB trending movies + TV shows | One or more lists; titles repeated across lists are only used once. |
+| Titles per list | 10 | 5, 10, 15 or 20 per list. |
 | Language | device language | Language of titles, synopsis, logos and labels. |
 | Streaming country | from language | Country used for the streaming services. |
-| Content | Movies and TV shows | Movies, TV shows or both. |
-| Titles per type | 10 | 5, 10, 15 or 20 per type. |
 | Update every | 24 hours | 6 h, 12 h, 24 h, 3 days or 7 days. |
 | Resolution | 1080p | 1080p (recommended) or 4K. |
-| Global hits only | On | Skip local-market titles unless they are worldwide hits. |
+| Global hits only | On | In TMDB trending/popular lists, skip local-market titles unless they are worldwide hits. Lists you curate (Trakt, MDBList) are used as they are. |
 | Show streaming services | On | |
+| Trakt | — | Optional, see below. |
+| MDBList | — | Optional, see below. |
 
-The screen also shows the status of the last update, an **Update now** button and a full-screen **Preview** (◀ ▶ to browse).
+The left side of the screen renders a **live preview** with the current settings. Changed settings are **not applied immediately**: a notice tells you they will be applied in the next scheduled update, or you can choose **Update now**. The screen also shows the status of the last update and a full-screen view of the current set (◀ ▶ to browse).
+
+### Trakt (optional)
+
+1. Create an app at [trakt.tv/oauth/applications](https://trakt.tv/oauth/applications/new) with redirect URI `urn:ietf:wg:oauth:2.0:oob`.
+2. In **Settings → Trakt** enter its *Client ID* and *Client Secret*: Trakt's public lists (trending, popular, anticipated, box office) become available.
+3. Choose **Connect account**: the TV shows a code to enter on [trakt.tv/activate](https://trakt.tv/activate). Your recommendations and watchlist then appear in **Lists**.
+
+### MDBList (optional)
+
+Enter your API key (mdblist.com → Preferences → API) in **Settings → MDBList**. Your own lists are loaded automatically, and you can add public lists by typing `user/list` or the list URL.
 
 How often the wallpaper *changes on screen* is configured in Projectivy itself; the plugin decides how often the *set of wallpapers* is regenerated.
 
@@ -57,13 +70,18 @@ Requirements: Android SDK (API 36) and JDK 17+ (the one bundled with Android Stu
 ./gradlew :app:assembleDebug
 ```
 
-For personal builds you can bake a default TMDB key into the APK by adding it to `local.properties` (never commit it):
+For personal builds you can bake default keys into the APK by adding them to `local.properties` (never commit it):
 
 ```properties
 tmdb.token=YOUR_TMDB_KEY_OR_TOKEN
+mdblist.key=YOUR_MDBLIST_KEY           # optional
+trakt.clientId=YOUR_TRAKT_CLIENT_ID     # optional
+trakt.clientSecret=YOUR_TRAKT_SECRET    # optional
 ```
 
-The key is only included in **debug** builds; release builds never contain it.
+The TMDB and MDBList keys are only included in **debug** builds; release builds never contain them. The Trakt client id/secret identify the *app* (not a user) and are included in every build.
+
+Instrumented tests (`connectedDebugAndroidTest`) uninstall the app when they finish, so point them at an emulator, e.g. `ANDROID_SERIAL=emulator-5554 ./gradlew :app:connectedDebugAndroidTest`.
 
 To build a signed release (`./gradlew :app:assembleRelease`), point `local.properties` to your keystore:
 
@@ -87,10 +105,12 @@ api/                     # Projectivy plugin API (AIDL), unchanged from the offi
 app/src/main/java/com/rfmarcos/tmdbwallpapers/
   WallpaperProviderService.kt  # Service called by Projectivy
   GenerateWallpapersWorker.kt  # Background generation + scheduling
-  TmdbClient.kt / TmdbCatalog.kt  # TMDB API and title selection
+  TmdbClient.kt / TmdbCatalog.kt  # TMDB API, TMDB lists and wallpaper data
+  TraktClient.kt / MdbListClient.kt / Sources.kt  # optional list providers
+  WallpaperFactory.kt          # download + render pipeline (generation and preview)
   WallpaperRenderer.kt         # Canvas rendering of the wallpaper
   WallpaperStore.kt            # Generated files, index and content:// URIs
-  SettingsActivity.kt / SettingsFragment.kt / PreviewActivity.kt
+  SettingsFragment.kt (+ Trakt / MDBList screens) / PreviewActivity.kt
 ```
 
 ## 🧾 Credits

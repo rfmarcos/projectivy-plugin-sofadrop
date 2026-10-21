@@ -1,0 +1,56 @@
+package com.rfmarcos.tmdbwallpapers
+
+enum class SourceProvider { TMDB, TRAKT, MDBLIST }
+
+/** A list the user can pick as a source of titles. */
+data class ListSource(
+    val key: String,
+    val provider: SourceProvider,
+    val labelRes: Int = 0,
+    val label: String? = null,
+    val needsTraktAccount: Boolean = false,
+)
+
+object Sources {
+    val TMDB = listOf(
+        ListSource("tmdb:trending_movies", SourceProvider.TMDB, R.string.list_tmdb_trending_movies),
+        ListSource("tmdb:trending_tv", SourceProvider.TMDB, R.string.list_tmdb_trending_tv),
+        ListSource("tmdb:popular_movies", SourceProvider.TMDB, R.string.list_tmdb_popular_movies),
+        ListSource("tmdb:popular_tv", SourceProvider.TMDB, R.string.list_tmdb_popular_tv),
+        ListSource("tmdb:now_playing", SourceProvider.TMDB, R.string.list_tmdb_now_playing),
+        ListSource("tmdb:upcoming", SourceProvider.TMDB, R.string.list_tmdb_upcoming),
+        ListSource("tmdb:top_rated_movies", SourceProvider.TMDB, R.string.list_tmdb_top_rated_movies),
+        ListSource("tmdb:top_rated_tv", SourceProvider.TMDB, R.string.list_tmdb_top_rated_tv),
+        ListSource("tmdb:on_the_air", SourceProvider.TMDB, R.string.list_tmdb_on_the_air),
+    )
+
+    val TRAKT = listOf(
+        ListSource("trakt:trending_movies", SourceProvider.TRAKT, R.string.list_trakt_trending_movies),
+        ListSource("trakt:trending_shows", SourceProvider.TRAKT, R.string.list_trakt_trending_shows),
+        ListSource("trakt:popular_movies", SourceProvider.TRAKT, R.string.list_trakt_popular_movies),
+        ListSource("trakt:popular_shows", SourceProvider.TRAKT, R.string.list_trakt_popular_shows),
+        ListSource("trakt:anticipated_movies", SourceProvider.TRAKT, R.string.list_trakt_anticipated_movies),
+        ListSource("trakt:anticipated_shows", SourceProvider.TRAKT, R.string.list_trakt_anticipated_shows),
+        ListSource("trakt:boxoffice", SourceProvider.TRAKT, R.string.list_trakt_boxoffice),
+        ListSource("trakt:recommended_movies", SourceProvider.TRAKT, R.string.list_trakt_recommended_movies, needsTraktAccount = true),
+        ListSource("trakt:recommended_shows", SourceProvider.TRAKT, R.string.list_trakt_recommended_shows, needsTraktAccount = true),
+        ListSource("trakt:watchlist_movies", SourceProvider.TRAKT, R.string.list_trakt_watchlist_movies, needsTraktAccount = true),
+        ListSource("trakt:watchlist_shows", SourceProvider.TRAKT, R.string.list_trakt_watchlist_shows, needsTraktAccount = true),
+    )
+
+    /** Lists available right now, depending on the configured services. */
+    fun available(): List<ListSource> {
+        val lists = TMDB.toMutableList()
+        if (Settings.traktConfigured) lists += TRAKT.filter { !it.needsTraktAccount || Settings.traktConnected }
+        if (Settings.mdbListKey.isNotBlank()) {
+            lists += Settings.mdbLists.map { ListSource("mdblist:${it.id}", SourceProvider.MDBLIST, label = it.name) }
+        }
+        return lists
+    }
+
+    /** Selected lists that can actually be used (e.g. not a Trakt list after disconnecting). */
+    fun selected(): List<ListSource> {
+        val chosen = Settings.lists
+        return available().filter { it.key in chosen }.ifEmpty { TMDB.take(2) }
+    }
+}

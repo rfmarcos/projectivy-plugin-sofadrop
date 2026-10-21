@@ -28,15 +28,16 @@ class WallpaperProviderService : Service() {
             // Never block Projectivy: return what we have and refresh in the background if needed
             val store = WallpaperStore(this@WallpaperProviderService)
             val current = store.current()
+            // Settings changes wait for the next scheduled update (or "Update now"): only an empty
+            // or expired set is regenerated from here, as a safety net for the periodic job
             val stale = System.currentTimeMillis() - Settings.lastGeneration > Settings.refreshIntervalMillis
-            val settingsChanged = Settings.lastSignature != Settings.signature
-            if (current.isEmpty() || stale || settingsChanged) {
+            if (current.isEmpty() || stale) {
                 GenerateWallpapersWorker.runNow(this@WallpaperProviderService)
             }
             GenerateWallpapersWorker.schedule(this@WallpaperProviderService)
 
             val callers = callerPackages()
-            Log.i(TAG, "getWallpapers from $callers: ${current.size} wallpapers, stale=$stale, settingsChanged=$settingsChanged")
+            Log.i(TAG, "getWallpapers from $callers: ${current.size} wallpapers, stale=$stale, pendingChanges=${Settings.hasPendingChanges}")
             return current.mapNotNull { wallpaper ->
                 val uri = store.uriOf(wallpaper, callers) ?: return@mapNotNull null
                 Wallpaper(

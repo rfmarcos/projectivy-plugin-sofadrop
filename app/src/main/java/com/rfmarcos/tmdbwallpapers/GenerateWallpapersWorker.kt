@@ -3,7 +3,6 @@ package com.rfmarcos.tmdbwallpapers
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.util.Log
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -24,8 +23,7 @@ class GenerateWallpapersWorker(context: Context, params: WorkerParameters) : Wor
 
     override fun doWork(): Result {
         Settings.init(applicationContext)
-        val token = Settings.token
-        if (token.isBlank()) {
+        if (Settings.token.isBlank()) {
             Settings.lastError = applicationContext.getString(R.string.error_no_token)
             return Result.failure()
         }
@@ -35,7 +33,7 @@ class GenerateWallpapersWorker(context: Context, params: WorkerParameters) : Wor
         val generation = store.newGeneration()
         Settings.generating = true
         return try {
-            val stored = generate(token, generation)
+            val stored = generate(generation)
             if (stored.isEmpty()) throw TmdbException(applicationContext.getString(R.string.error_no_titles))
             store.publish(generation, stored)
             Settings.lastGeneration = System.currentTimeMillis()
@@ -54,77 +52,44 @@ class GenerateWallpapersWorker(context: Context, params: WorkerParameters) : Wor
         }
     }
 
-    private fun generate(token: String, generation: File): List<StoredWallpaper> {
-        val language = Settings.language
-        val client = TmdbClient(token, applicationContext.cacheDir)
-        val catalog = TmdbCatalog(client, language, Settings.region, Settings.globalHitsOnly, Settings.showProviders)
-        val width = Settings.outputWidth
-        val renderer = WallpaperRenderer(applicationContext, width, Languages.texts(language))
-        val count = Settings.titlesPerType
-
-        val types = when (Settings.content) {
-            ContentType.BOTH -> listOf(MediaType.MOVIE, MediaType.TV)
-            ContentType.MOVIES -> listOf(MediaType.MOVIE)
-            ContentType.TV -> listOf(MediaType.TV)
-        }
-
+    private fun generate(generation: File): List<StoredWallpaper> {
+        val factory = WallpaperFactory(applicationContext, Settings.outputWidth)
+        val perList = Settings.titlesPerList
+        val seen = mutableSetOf<TitleRef>()
         val stored = mutableListOf<StoredWallpaper>()
-        for (type in types) {
-            for (info in catalog.select(type, count)) {
+
+        for (source in Sources.selected()) {
+            val refs = try {
+                factory.titles(source, perList)
+            } catch (e: TmdbException) {
+                throw e
+            } catch (e: Exception) {
+                // One failing service (e.g. Trakt down) must not stop the others
+                Log.w(TAG, "Could not read list ${source.key}", e)
+                continue
+            }
+            var added = 0
+            for (ref in refs) {
                 if (isStopped) return stored
+                if (added >= perList) break
+                if (!seen.add(ref)) continue
                 try {
-                    stored += renderOne(client, renderer, info, width, generation)
+                    val info = factory.catalog.build(ref) ?: continue
+                    val bitmap = factory.render(info)
+                    val name = "${info.type.path}-${info.id}.jpg"
+                    FileOutputStream(File(generation, name)).use { bitmap.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, it) }
+                    bitmap.recycle()
+                    stored += StoredWallpaper(name, info.title, info.type.path, info.id)
+                    added++
                 } catch (e: TmdbException) {
                     throw e
                 } catch (e: Exception) {
-                    Log.w(TAG, "Could not render ${info.title}", e)
+                    Log.w(TAG, "Could not render ${ref.type.path}/${ref.tmdbId}", e)
                 }
             }
+            Log.i(TAG, "${source.key}: $added wallpapers")
         }
         return stored
-    }
-
-    private fun renderOne(
-        client: TmdbClient,
-        renderer: WallpaperRenderer,
-        info: WallpaperInfo,
-        width: Int,
-        generation: File,
-    ): StoredWallpaper {
-        val backdropBytes = client.image(info.backdropPath) ?: error("No backdrop")
-        val backdrop = decode(backdropBytes, width) ?: error("Invalid backdrop")
-
-        val logo = info.logoPath
-            ?.let { client.image(it, if (width > 1920) "original" else "w500") }
-            ?.let { decode(it, 0) }
-            ?.let { WallpaperRenderer.brightenDarkLogo(WallpaperRenderer.trimTransparent(it)) }
-
-        val providers = info.providerLogoPaths.mapNotNull { path -> client.image(path, "w154")?.let { decode(it, 0) } }
-
-        val bitmap = renderer.render(info, backdrop, logo, providers)
-        val name = "${info.type.path}-${info.id}.jpg"
-        FileOutputStream(File(generation, name)).use { bitmap.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, it) }
-
-        bitmap.recycle()
-        backdrop.recycle()
-        logo?.recycle()
-        providers.forEach { it.recycle() }
-        return StoredWallpaper(name, info.title, info.type.path, info.id)
-    }
-
-    /** Decode an image, subsampling large backdrops close to the target width to save memory. */
-    private fun decode(bytes: ByteArray, targetWidth: Int): Bitmap? {
-        val options = BitmapFactory.Options()
-        if (targetWidth > 0) {
-            options.inJustDecodeBounds = true
-            BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)
-            var sample = 1
-            while (options.outWidth / (sample * 2) >= targetWidth) sample *= 2
-            options.inJustDecodeBounds = false
-            options.inSampleSize = sample
-        }
-        options.inPreferredConfig = Bitmap.Config.ARGB_8888
-        return BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)
     }
 
     companion object {

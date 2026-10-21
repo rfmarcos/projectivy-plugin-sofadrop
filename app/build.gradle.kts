@@ -13,13 +13,16 @@ kotlin {
 }
 
 // Local, never committed settings (local.properties):
-//  - tmdb.token: default TMDB key baked into *debug* builds only
+//  - tmdb.token / mdblist.key: personal keys baked into *debug* builds only
+//  - trakt.clientId / trakt.clientSecret: the app's Trakt credentials (all builds)
 //  - release.storeFile / release.storePassword / release.keyAlias / release.keyPassword: release signing
 val localProperties = Properties().apply {
     val file = rootProject.file("local.properties")
     if (file.exists()) file.inputStream().use { load(it) }
 }
-val defaultTmdbToken: String = localProperties.getProperty("tmdb.token", "")
+fun localProperty(name: String) = localProperties.getProperty(name, "").replace("\"", "").trim()
+val defaultTmdbToken = localProperty("tmdb.token")
+val defaultMdbListKey = localProperty("mdblist.key")
 
 android {
     namespace = libs.versions.appId.get()
@@ -38,6 +41,9 @@ android {
         versionName = libs.versions.versionName.get()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "DEFAULT_TRAKT_CLIENT_ID", "\"${localProperty("trakt.clientId")}\"")
+        buildConfigField("String", "DEFAULT_TRAKT_CLIENT_SECRET", "\"${localProperty("trakt.clientSecret")}\"")
     }
 
     signingConfigs {
@@ -57,11 +63,13 @@ android {
 
     buildTypes {
         getByName("debug") {
-            buildConfigField("String", "DEFAULT_TMDB_TOKEN", "\"${defaultTmdbToken.replace("\"", "")}\"")
+            buildConfigField("String", "DEFAULT_TMDB_TOKEN", "\"$defaultTmdbToken\"")
+            buildConfigField("String", "DEFAULT_MDBLIST_KEY", "\"$defaultMdbListKey\"")
         }
         getByName("release") {
-            // Published APKs never contain a TMDB key: every user enters their own
+            // Published APKs never contain personal keys: every user enters their own
             buildConfigField("String", "DEFAULT_TMDB_TOKEN", "\"\"")
+            buildConfigField("String", "DEFAULT_MDBLIST_KEY", "\"\"")
             signingConfigs.findByName("release")?.let { signingConfig = it }
             isShrinkResources = true
             isMinifyEnabled = true
@@ -84,6 +92,7 @@ dependencies {
     implementation(libs.androidx.work.runtime)
     implementation(project(":api"))
 
+    testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.junit)
 }

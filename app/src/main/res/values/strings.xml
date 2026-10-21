@@ -1,10 +1,12 @@
 <resources>
     <string name="plugin_name">TMDB Wallpapers</string>
-    <string name="plugin_description">Wallpapers of trending movies and TV shows from TMDB, generated on this device.</string>
+    <string name="plugin_description">Wallpapers of movies and TV shows from TMDB, Trakt or MDBList lists, generated on this device.</string>
     <string name="plugin_uuid" translatable="false">53c89202-003a-4f53-ac4f-5ac555751a74</string>
 
     <string name="projectivy_not_installed">Warning, this plugin requires Projectivy Launcher which does not seem to be installed.</string>
     <string name="settings">Settings</string>
+    <string name="not_set">Not set</string>
+    <string name="cancel">Cancel</string>
 
     <!-- Status -->
     <string name="status_title">Status</string>
@@ -12,28 +14,37 @@
     <string name="status_ok">%1$d wallpapers · updated %2$s</string>
     <string name="status_generating">Generating wallpapers…</string>
     <string name="status_error">Last update failed: %1$s</string>
+    <string name="status_pending">%1$d wallpapers · changes pending</string>
+    <string name="next_update_soon">soon</string>
+    <string name="pending_notice">Settings changed. They will be applied in the next update (%1$s), or choose \"Update now\" to apply them right away.</string>
 
     <!-- Actions -->
     <string name="action_generate_now">Update now</string>
     <string name="action_generate_now_desc">Generate a new set of wallpapers</string>
+    <string name="action_generate_now_pending">Apply the pending changes now</string>
     <string name="generation_started">Generating wallpapers in the background…</string>
-    <string name="action_preview">Preview</string>
-    <string name="action_preview_desc">See the generated wallpapers</string>
+    <string name="action_preview">Wallpapers</string>
+    <string name="action_preview_desc">See the current set full screen</string>
     <string name="preview_empty">No wallpapers yet. Use \"Update now\" first.</string>
     <string name="preview_counter">%1$d / %2$d · ◀ ▶</string>
+
+    <!-- Live preview -->
+    <string name="preview_label">Preview · %1$s</string>
+    <string name="preview_loading">Generating preview…</string>
+    <string name="preview_no_token">Enter your TMDB key to see a preview</string>
+    <string name="preview_no_titles">The selected lists have no titles</string>
+    <string name="preview_error">Preview unavailable: %1$s</string>
 
     <!-- Settings -->
     <string name="setting_token_title">TMDB API key or token</string>
     <string name="setting_token_missing">Required. Get it at themoviedb.org → Settings → API</string>
     <string name="setting_token_set">Configured (…%1$s)</string>
+    <string name="setting_lists_title">Lists</string>
+    <string name="lists_selected">%1$d selected · %2$s</string>
     <string name="setting_language_title">Language</string>
     <string name="setting_region_title">Streaming country</string>
     <string name="region_auto">Automatic (%1$s)</string>
-    <string name="setting_content_title">Content</string>
-    <string name="content_both">Movies and TV shows</string>
-    <string name="content_movies">Movies only</string>
-    <string name="content_tv">TV shows only</string>
-    <string name="setting_count_title">Titles per type</string>
+    <string name="setting_count_title">Titles per list</string>
     <string name="setting_refresh_title">Update every</string>
     <string name="refresh_hours">%1$d hours</string>
     <string name="refresh_days">%1$d days</string>
@@ -41,11 +52,68 @@
     <string name="resolution_1080">1080p (recommended)</string>
     <string name="resolution_2160">4K (slower, more storage)</string>
     <string name="setting_global_hits_title">Global hits only</string>
-    <string name="setting_global_hits_desc">Hide titles only popular in a local market unless they are worldwide hits</string>
+    <string name="setting_global_hits_desc">In TMDB trending and popular lists, hide titles only popular in a local market</string>
     <string name="setting_providers_title">Show streaming services</string>
     <string name="setting_providers_desc">Where to watch each title in the selected country</string>
 
+    <!-- Lists -->
+    <string name="list_tmdb_trending_movies">TMDB · Trending movies</string>
+    <string name="list_tmdb_trending_tv">TMDB · Trending TV shows</string>
+    <string name="list_tmdb_popular_movies">TMDB · Popular movies</string>
+    <string name="list_tmdb_popular_tv">TMDB · Popular TV shows</string>
+    <string name="list_tmdb_now_playing">TMDB · In cinemas</string>
+    <string name="list_tmdb_upcoming">TMDB · Upcoming movies</string>
+    <string name="list_tmdb_top_rated_movies">TMDB · Top rated movies</string>
+    <string name="list_tmdb_top_rated_tv">TMDB · Top rated TV shows</string>
+    <string name="list_tmdb_on_the_air">TMDB · TV shows on the air</string>
+    <string name="list_trakt_trending_movies">Trakt · Trending movies</string>
+    <string name="list_trakt_trending_shows">Trakt · Trending shows</string>
+    <string name="list_trakt_popular_movies">Trakt · Popular movies</string>
+    <string name="list_trakt_popular_shows">Trakt · Popular shows</string>
+    <string name="list_trakt_anticipated_movies">Trakt · Most anticipated movies</string>
+    <string name="list_trakt_anticipated_shows">Trakt · Most anticipated shows</string>
+    <string name="list_trakt_boxoffice">Trakt · Box office</string>
+    <string name="list_trakt_recommended_movies">Trakt · Recommended movies for you</string>
+    <string name="list_trakt_recommended_shows">Trakt · Recommended shows for you</string>
+    <string name="list_trakt_watchlist_movies">Trakt · Your watchlist (movies)</string>
+    <string name="list_trakt_watchlist_shows">Trakt · Your watchlist (shows)</string>
+    <string name="list_mdblist">MDBList · %1$s</string>
+
+    <!-- Trakt -->
+    <string name="setting_trakt_title">Trakt</string>
+    <string name="trakt_not_configured">Optional. Add your Trakt app to use its lists</string>
+    <string name="trakt_public_only">Public lists available · account not connected</string>
+    <string name="trakt_connected">Connected as %1$s</string>
+    <string name="trakt_description">Adds Trakt\'s trending, popular, anticipated and box office lists. Connect your account for your recommendations and watchlist.\n\nNeeds an app from trakt.tv/oauth/applications.</string>
+    <string name="trakt_client_id">Client ID</string>
+    <string name="trakt_client_secret">Client Secret</string>
+    <string name="trakt_connect">Connect account</string>
+    <string name="trakt_connect_desc">Shows a code to enter on trakt.tv/activate</string>
+    <string name="trakt_need_credentials">Enter the Client ID and Client Secret first</string>
+    <string name="trakt_disconnect">Disconnect</string>
+    <string name="trakt_login_title">Code: %1$s</string>
+    <string name="trakt_login_description">On your phone or computer open %1$s and enter the code. This screen closes by itself once you approve it.</string>
+    <string name="trakt_login_waiting">Waiting for approval…</string>
+    <string name="trakt_login_ok">Trakt connected as %1$s</string>
+    <string name="trakt_login_failed">Could not connect to Trakt (%1$s)</string>
+    <string name="trakt_login_expired">The code expired, try again</string>
+    <string name="trakt_login_denied">Access was denied on Trakt</string>
+
+    <!-- MDBList -->
+    <string name="setting_mdblist_title">MDBList</string>
+    <string name="mdblist_not_configured">Optional. Add your MDBList API key to use its lists</string>
+    <string name="mdblist_configured">%1$d lists available</string>
+    <string name="mdblist_description">Use any MDBList list as a source. Your own lists are loaded with your API key (mdblist.com → Preferences → API), and you can also add public lists.</string>
+    <string name="mdblist_key">API key</string>
+    <string name="mdblist_refresh">Reload my lists</string>
+    <string name="mdblist_refresh_desc">%1$d lists loaded</string>
+    <string name="mdblist_add">Add a public list</string>
+    <string name="mdblist_add_desc">Type user/list or the list URL</string>
+    <string name="mdblist_added">Added: %1$s</string>
+    <string name="mdblist_not_found">List not found</string>
+    <string name="mdblist_failed">MDBList error: %1$s</string>
+
     <!-- Errors -->
     <string name="error_no_token">TMDB key missing</string>
-    <string name="error_no_titles">TMDB returned no titles</string>
+    <string name="error_no_titles">The selected lists returned no titles</string>
 </resources>

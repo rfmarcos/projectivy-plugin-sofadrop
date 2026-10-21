@@ -1,35 +1,45 @@
 <resources>
     <string name="plugin_name">TMDB Wallpapers</string>
-    <string name="plugin_description">Fondos de pantalla de las películas y series en tendencia de TMDB, generados en este dispositivo.</string>
+    <string name="plugin_description">Fondos de pantalla de películas y series de listas de TMDB, Trakt o MDBList, generados en este dispositivo.</string>
 
     <string name="projectivy_not_installed">Atención: este plugin necesita Projectivy Launcher, que no parece estar instalado.</string>
     <string name="settings">Ajustes</string>
+    <string name="not_set">Sin configurar</string>
+    <string name="cancel">Cancelar</string>
 
     <string name="status_title">Estado</string>
     <string name="status_never">Todavía no se han generado fondos</string>
     <string name="status_ok">%1$d fondos · actualizado %2$s</string>
     <string name="status_generating">Generando fondos…</string>
     <string name="status_error">La última actualización falló: %1$s</string>
+    <string name="status_pending">%1$d fondos · cambios pendientes</string>
+    <string name="next_update_soon">en breve</string>
+    <string name="pending_notice">Has cambiado los ajustes. Se aplicarán en la próxima actualización (%1$s), o elige «Actualizar ahora» para aplicarlos ya.</string>
 
     <string name="action_generate_now">Actualizar ahora</string>
     <string name="action_generate_now_desc">Generar un nuevo conjunto de fondos</string>
+    <string name="action_generate_now_pending">Aplicar ahora los cambios pendientes</string>
     <string name="generation_started">Generando fondos en segundo plano…</string>
-    <string name="action_preview">Vista previa</string>
-    <string name="action_preview_desc">Ver los fondos generados</string>
-    <string name="preview_empty">Aún no hay fondos. Usa primero \"Actualizar ahora\".</string>
+    <string name="action_preview">Fondos</string>
+    <string name="action_preview_desc">Ver el conjunto actual a pantalla completa</string>
+    <string name="preview_empty">Aún no hay fondos. Usa primero «Actualizar ahora».</string>
     <string name="preview_counter">%1$d / %2$d · ◀ ▶</string>
+
+    <string name="preview_label">Vista previa · %1$s</string>
+    <string name="preview_loading">Generando vista previa…</string>
+    <string name="preview_no_token">Introduce tu clave de TMDB para ver la vista previa</string>
+    <string name="preview_no_titles">Las listas elegidas no tienen títulos</string>
+    <string name="preview_error">Vista previa no disponible: %1$s</string>
 
     <string name="setting_token_title">Clave o token de la API de TMDB</string>
     <string name="setting_token_missing">Obligatorio. Consíguelo en themoviedb.org → Ajustes → API</string>
     <string name="setting_token_set">Configurado (…%1$s)</string>
+    <string name="setting_lists_title">Listas</string>
+    <string name="lists_selected">%1$d elegidas · %2$s</string>
     <string name="setting_language_title">Idioma</string>
     <string name="setting_region_title">País de las plataformas</string>
     <string name="region_auto">Automático (%1$s)</string>
-    <string name="setting_content_title">Contenido</string>
-    <string name="content_both">Películas y series</string>
-    <string name="content_movies">Solo películas</string>
-    <string name="content_tv">Solo series</string>
-    <string name="setting_count_title">Títulos por tipo</string>
+    <string name="setting_count_title">Títulos por lista</string>
     <string name="setting_refresh_title">Actualizar cada</string>
     <string name="refresh_hours">%1$d horas</string>
     <string name="refresh_days">%1$d días</string>
@@ -37,10 +47,64 @@
     <string name="resolution_1080">1080p (recomendado)</string>
     <string name="resolution_2160">4K (más lento, ocupa más)</string>
     <string name="setting_global_hits_title">Solo éxitos globales</string>
-    <string name="setting_global_hits_desc">Oculta títulos populares solo en un mercado local salvo que sean éxitos mundiales</string>
+    <string name="setting_global_hits_desc">En las listas de tendencias y populares de TMDB, oculta títulos populares solo en un mercado local</string>
     <string name="setting_providers_title">Mostrar plataformas</string>
     <string name="setting_providers_desc">Dónde ver cada título en el país seleccionado</string>
 
+    <string name="list_tmdb_trending_movies">TMDB · Películas en tendencia</string>
+    <string name="list_tmdb_trending_tv">TMDB · Series en tendencia</string>
+    <string name="list_tmdb_popular_movies">TMDB · Películas populares</string>
+    <string name="list_tmdb_popular_tv">TMDB · Series populares</string>
+    <string name="list_tmdb_now_playing">TMDB · En cines</string>
+    <string name="list_tmdb_upcoming">TMDB · Próximos estrenos</string>
+    <string name="list_tmdb_top_rated_movies">TMDB · Películas mejor valoradas</string>
+    <string name="list_tmdb_top_rated_tv">TMDB · Series mejor valoradas</string>
+    <string name="list_tmdb_on_the_air">TMDB · Series en emisión</string>
+    <string name="list_trakt_trending_movies">Trakt · Películas en tendencia</string>
+    <string name="list_trakt_trending_shows">Trakt · Series en tendencia</string>
+    <string name="list_trakt_popular_movies">Trakt · Películas populares</string>
+    <string name="list_trakt_popular_shows">Trakt · Series populares</string>
+    <string name="list_trakt_anticipated_movies">Trakt · Películas más esperadas</string>
+    <string name="list_trakt_anticipated_shows">Trakt · Series más esperadas</string>
+    <string name="list_trakt_boxoffice">Trakt · Taquilla</string>
+    <string name="list_trakt_recommended_movies">Trakt · Películas recomendadas para ti</string>
+    <string name="list_trakt_recommended_shows">Trakt · Series recomendadas para ti</string>
+    <string name="list_trakt_watchlist_movies">Trakt · Tu watchlist (películas)</string>
+    <string name="list_trakt_watchlist_shows">Trakt · Tu watchlist (series)</string>
+    <string name="list_mdblist">MDBList · %1$s</string>
+
+    <string name="setting_trakt_title">Trakt</string>
+    <string name="trakt_not_configured">Opcional. Añade tu app de Trakt para usar sus listas</string>
+    <string name="trakt_public_only">Listas públicas disponibles · cuenta sin conectar</string>
+    <string name="trakt_connected">Conectado como %1$s</string>
+    <string name="trakt_description">Añade las listas de tendencias, populares, más esperadas y taquilla de Trakt. Conecta tu cuenta para tus recomendaciones y tu watchlist.\n\nNecesita una app de trakt.tv/oauth/applications.</string>
+    <string name="trakt_client_id">Client ID</string>
+    <string name="trakt_client_secret">Client Secret</string>
+    <string name="trakt_connect">Conectar cuenta</string>
+    <string name="trakt_connect_desc">Muestra un código para introducir en trakt.tv/activate</string>
+    <string name="trakt_need_credentials">Introduce primero el Client ID y el Client Secret</string>
+    <string name="trakt_disconnect">Desconectar</string>
+    <string name="trakt_login_title">Código: %1$s</string>
+    <string name="trakt_login_description">Desde el móvil o el ordenador abre %1$s e introduce el código. Esta pantalla se cierra sola cuando lo apruebes.</string>
+    <string name="trakt_login_waiting">Esperando la aprobación…</string>
+    <string name="trakt_login_ok">Trakt conectado como %1$s</string>
+    <string name="trakt_login_failed">No se pudo conectar con Trakt (%1$s)</string>
+    <string name="trakt_login_expired">El código ha caducado, inténtalo de nuevo</string>
+    <string name="trakt_login_denied">Se denegó el acceso en Trakt</string>
+
+    <string name="setting_mdblist_title">MDBList</string>
+    <string name="mdblist_not_configured">Opcional. Añade tu clave de MDBList para usar sus listas</string>
+    <string name="mdblist_configured">%1$d listas disponibles</string>
+    <string name="mdblist_description">Usa cualquier lista de MDBList como fuente. Tus listas se cargan con tu clave de API (mdblist.com → Preferences → API) y también puedes añadir listas públicas.</string>
+    <string name="mdblist_key">Clave de API</string>
+    <string name="mdblist_refresh">Recargar mis listas</string>
+    <string name="mdblist_refresh_desc">%1$d listas cargadas</string>
+    <string name="mdblist_add">Añadir una lista pública</string>
+    <string name="mdblist_add_desc">Escribe usuario/lista o la URL de la lista</string>
+    <string name="mdblist_added">Añadida: %1$s</string>
+    <string name="mdblist_not_found">No se encontró la lista</string>
+    <string name="mdblist_failed">Error de MDBList: %1$s</string>
+
     <string name="error_no_token">Falta la clave de TMDB</string>
-    <string name="error_no_titles">TMDB no devolvió títulos</string>
+    <string name="error_no_titles">Las listas elegidas no devolvieron títulos</string>
 </resources>

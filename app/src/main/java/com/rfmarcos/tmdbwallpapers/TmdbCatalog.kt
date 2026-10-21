@@ -1,6 +1,5 @@
 package com.rfmarcos.tmdbwallpapers
 
-import android.util.Log
 import kotlinx.serialization.json.JsonObject
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -23,7 +22,10 @@ data class WallpaperInfo(
     val providerLogoPaths: List<String>,
 )
 
-/** Port of the title selection in TMDB.py (androidtvbackground-reddit). */
+/**
+ * Title selection and wallpaper data. TMDB lists use the same rules as TMDB.py
+ * (androidtvbackground-reddit); every wallpaper is built from TMDB details whatever list it comes from.
+ */
 class TmdbCatalog(
     private val client: TmdbClient,
     private val language: String,
@@ -33,15 +35,38 @@ class TmdbCatalog(
 ) {
     private val languageCode = Languages.code(language)
     private val texts = Languages.texts(language)
-    private val genres = mutableMapOf<MediaType, Map<Int, String>>()
-    private val tvDetails = mutableMapOf<Int, JsonObject>()
+    private val details = mutableMapOf<TitleRef, JsonObject>()
 
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
     private val today = dateFormat.format(Calendar.getInstance().time)
     private val oneYearAgo = dateFormat.format(Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -365) }.time)
 
-    fun select(type: MediaType, limit: Int): List<WallpaperInfo> {
-        val path = type.path
+    /** Candidate titles of a list, best first. May return more than [limit] to allow for skipped ones. */
+    fun titles(source: ListSource, limit: Int, trakt: TraktClient?, mdbList: MdbListClient?): List<TitleRef> =
+        when (source.provider) {
+            SourceProvider.TMDB -> tmdbTitles(source.key, limit)
+            SourceProvider.TRAKT -> trakt?.titles(source.key, limit).orEmpty()
+            SourceProvider.MDBLIST -> source.key.removePrefix("mdblist:").toLongOrNull()
+                ?.let { mdbList?.titles(it, limit, client) }.orEmpty()
+        }
+
+    // --- TMDB lists ---
+
+    private fun tmdbTitles(key: String, limit: Int): List<TitleRef> = when (key) {
+        "tmdb:trending_movies" -> trending(MediaType.MOVIE, limit)
+        "tmdb:trending_tv" -> trending(MediaType.TV, limit)
+        "tmdb:popular_movies" -> simpleList("movie/popular?region=$region", MediaType.MOVIE, limit)
+        "tmdb:popular_tv" -> simpleList("tv/popular", MediaType.TV, limit)
+        "tmdb:now_playing" -> simpleList("movie/now_playing?region=$region", MediaType.MOVIE, limit)
+        "tmdb:upcoming" -> simpleList("movie/upcoming?region=$region", MediaType.MOVIE, limit)
+        "tmdb:top_rated_movies" -> simpleList("movie/top_rated", MediaType.MOVIE, limit)
+        "tmdb:top_rated_tv" -> simpleList("tv/top_rated", MediaType.TV, limit)
+        "tmdb:on_the_air" -> simpleList("tv/on_the_air", MediaType.TV, limit)
+        else -> emptyList()
+    }
+
+    /** Weekly trending + recent popular titles, ranked by weighted rating (same as TMDB.py). */
+    private fun trending(type: MediaType, limit: Int): List<TitleRef> {
         val discover = if (type == MediaType.MOVIE) {
             "discover/movie?sort_by=popularity.desc&language=$language&include_adult=false&page=1" +
                 "&with_release_type=4|5|6&include_video=false&vote_average.gte=1&vote_count.gte=50" +
@@ -51,35 +76,30 @@ class TmdbCatalog(
                 "&vote_average.gte=1&vote_count.gte=50&with_runtime.gte=15&without_genres=99|16" +
                 "&first_air_date.gte=$oneYearAgo&first_air_date.lte=$today"
         }
-
-        // Merge trending + discover without duplicates
         val candidates = linkedMapOf<Int, JsonObject>()
-        listOf("trending/$path/week?language=$language", discover).forEach { query ->
+        listOf("trending/${type.path}/week?language=$language", discover).forEach { query ->
             client.get(query)?.objects("results")?.forEach { item ->
                 item.int("id")?.let { candidates.putIfAbsent(it, item) }
             }
         }
-
-        val selected = candidates.values
+        return candidates.values
             .sortedByDescending(::weightedRating)
             .asSequence()
-            .filterNot { shouldExclude(type, it) }
-            .take(limit)
+            .filterNot { isLocalMarket(it) || isTooOld(type, it) || hasExcludedKeyword(type, it) }
+            .mapNotNull { item -> item.int("id")?.let { TitleRef(type, it) } }
+            .take(limit + EXTRA)
             .toList()
-
-        return selected.mapNotNull { item ->
-            try {
-                build(type, item)
-            } catch (e: TmdbException) {
-                throw e
-            } catch (e: Exception) {
-                Log.w(TAG, "Skipping ${item.int("id")}: ${e.message}")
-                null
-            }
-        }
     }
 
-    // --- Selection ---
+    private fun simpleList(path: String, type: MediaType, limit: Int): List<TitleRef> {
+        val separator = if ('?' in path) '&' else '?'
+        return (1..2).asSequence()
+            .flatMap { page -> client.get("$path${separator}language=$language&page=$page")?.objects("results").orEmpty() }
+            .filterNot { isLocalMarket(it) || hasExcludedKeyword(type, it) }
+            .mapNotNull { item -> item.int("id")?.let { TitleRef(type, it) } }
+            .take(limit + EXTRA)
+            .toList()
+    }
 
     /** Bayesian average: few votes pull the score towards a typical TMDB rating. */
     private fun weightedRating(item: JsonObject): Double {
@@ -88,79 +108,75 @@ class TmdbCatalog(
         return (votes * average + RANKING_MIN_VOTES * RANKING_PRIOR) / (votes + RANKING_MIN_VOTES)
     }
 
-    private fun shouldExclude(type: MediaType, item: JsonObject): Boolean {
-        val id = item.int("id") ?: return true
-        val originalLanguage = item.str("original_language")?.lowercase() ?: ""
-
-        // Local-market titles only pass when they are worldwide hits
-        if (globalHitsOnly && originalLanguage !in Languages.MAINSTREAM && originalLanguage != languageCode &&
+    /** Local-market titles only pass when they are worldwide hits. */
+    private fun isLocalMarket(item: JsonObject): Boolean {
+        if (!globalHitsOnly) return false
+        val originalLanguage = item.str("original_language")?.lowercase().orEmpty()
+        return originalLanguage !in Languages.MAINSTREAM && originalLanguage != languageCode &&
             (item.int("vote_count") ?: 0) < MIN_VOTES_OTHER_LANGUAGES
-        ) return true
-
-        // Released / last aired within the last year
-        val date = if (type == MediaType.MOVIE) item.str("release_date")
-        else tvDetails(id)?.str("last_air_date")
-        if (!date.isNullOrEmpty() && date < oneYearAgo) return true
-
-        // Excluded keywords
-        val keywords = client.get("${type.path}/$id/keywords")
-            ?.objects(if (type == MediaType.MOVIE) "keywords" else "results")
-            ?.mapNotNull { it.str("name")?.lowercase() }
-            .orEmpty()
-        return keywords.any { it in EXCLUDED_KEYWORDS }
     }
 
-    private fun tvDetails(id: Int): JsonObject? =
-        tvDetails[id] ?: client.get("tv/$id?language=$language")?.also { tvDetails[id] = it }
+    /** Released / last aired more than a year ago. */
+    private fun isTooOld(type: MediaType, item: JsonObject): Boolean {
+        val id = item.int("id") ?: return true
+        val date = if (type == MediaType.MOVIE) item.str("release_date")
+        else details(TitleRef(type, id))?.str("last_air_date")
+        return !date.isNullOrEmpty() && date < oneYearAgo
+    }
+
+    private fun hasExcludedKeyword(type: MediaType, item: JsonObject): Boolean {
+        val id = item.int("id") ?: return true
+        return client.get("${type.path}/$id/keywords")
+            ?.objects(if (type == MediaType.MOVIE) "keywords" else "results")
+            ?.any { it.str("name")?.lowercase() in EXCLUDED_KEYWORDS } == true
+    }
+
+    private fun details(ref: TitleRef): JsonObject? =
+        details[ref] ?: client.get("${ref.type.path}/${ref.tmdbId}?language=$language")?.also { details[ref] = it }
 
     // --- Wallpaper data ---
 
-    private fun build(type: MediaType, item: JsonObject): WallpaperInfo? {
-        val id = item.int("id") ?: return null
+    /** Build the wallpaper data from TMDB details; null when the title has no usable backdrop. */
+    fun build(ref: TitleRef): WallpaperInfo? {
+        val type = ref.type
+        val item = details(ref) ?: return null
         val title = item.str(if (type == MediaType.MOVIE) "title" else "name") ?: return null
-        val backdrop = textlessBackdrop(type, id, item.str("backdrop_path")) ?: return null
+        val backdrop = textlessBackdrop(ref, item.str("backdrop_path")) ?: return null
 
         val extraInfo = if (type == MediaType.MOVIE) {
-            val runtime = client.get("movie/$id?language=$language")?.int("runtime") ?: 0
+            val runtime = item.int("runtime") ?: 0
             if (runtime > 0) "${runtime / 60}h ${runtime % 60}min" else ""
         } else {
-            val seasons = tvDetails(id)?.int("number_of_seasons") ?: 0
+            val seasons = item.int("number_of_seasons") ?: 0
             if (seasons > 0) "$seasons ${if (seasons == 1) texts.season else texts.seasons}" else ""
+        }
+
+        // Untranslated synopsis: fall back to English rather than leaving it empty
+        val overview = item.str("overview").orEmpty().ifBlank {
+            client.get("${type.path}/${ref.tmdbId}?language=en-US")?.str("overview").orEmpty()
         }
 
         return WallpaperInfo(
             type = type,
-            id = id,
+            id = ref.tmdbId,
             title = title,
-            overview = item.str("overview").orEmpty(),
+            overview = overview,
             year = item.str(if (type == MediaType.MOVIE) "release_date" else "first_air_date").orEmpty().take(4),
             rating = item.double("vote_average") ?: 0.0,
             extraInfo = extraInfo,
-            genres = genreNames(type, item),
+            genres = item.objects("genres").mapNotNull { it.str("name") }
+                .map { if (type == MediaType.TV) Languages.translateTvGenre(language, it) else it }
+                .take(2)
+                .joinToString(", "),
             backdropPath = backdrop,
-            logoPath = logoPath(type, id, item, title),
-            providerLogoPaths = if (showProviders) providerLogoPaths(type, id) else emptyList(),
+            logoPath = logoPath(ref, item, title),
+            providerLogoPaths = if (showProviders) providerLogoPaths(ref) else emptyList(),
         )
     }
 
-    private fun genreNames(type: MediaType, item: JsonObject): String {
-        val map = genres.getOrPut(type) {
-            client.get("genre/${type.path}/list?language=$language")?.objects("genres")
-                ?.mapNotNull { genre -> genre.int("id")?.let { it to genre.str("name").orEmpty() } }
-                ?.toMap()
-                .orEmpty()
-        }
-        return item.array("genre_ids")
-            .mapNotNull { (it as? kotlinx.serialization.json.JsonPrimitive)?.content?.toIntOrNull() }
-            .mapNotNull { map[it] }
-            .map { if (type == MediaType.TV) Languages.translateTvGenre(language, it) else it }
-            .take(2)
-            .joinToString(", ")
-    }
-
     /** Prefer a backdrop without baked-in text, so it doesn't clash with the logo. */
-    private fun textlessBackdrop(type: MediaType, id: Int, default: String?): String? {
-        val textless = client.get("${type.path}/$id/images?include_image_language=null")
+    private fun textlessBackdrop(ref: TitleRef, default: String?): String? {
+        val textless = client.get("${ref.type.path}/${ref.tmdbId}/images?include_image_language=null")
             ?.objects("backdrops")
             ?.filter { it.str("iso_639_1") == null && (it.int("width") ?: 0) >= 1920 }
             ?.mapNotNull { it.str("file_path") }
@@ -168,32 +184,33 @@ class TmdbCatalog(
         return if (default in textless || textless.isEmpty()) default else textless.first()
     }
 
-    private fun logoPath(type: MediaType, id: Int, item: JsonObject, title: String): String? {
+    private fun logoPath(ref: TitleRef, item: JsonObject, title: String): String? {
+        val type = ref.type
         val original = item.str(if (type == MediaType.MOVIE) "original_title" else "original_name").orEmpty()
         val originalLanguage = item.str("original_language").orEmpty()
 
         var logo = if (similarity(title, original) > 0.9) {
-            multiLanguageLogo(type, id, originalLanguage)
+            multiLanguageLogo(ref, originalLanguage)
         } else {
-            logoIn(type, id, languageCode)
+            logoIn(ref, languageCode)
         }
 
         if (logo == null && originalLanguage != "en") {
-            val english = client.get("${type.path}/$id?language=en-US")
+            val english = client.get("${type.path}/${ref.tmdbId}?language=en-US")
                 ?.str(if (type == MediaType.MOVIE) "title" else "name")
                 .orEmpty()
-            if (similarity(title, english) > 0.9) logo = logoIn(type, id, "en")
+            if (similarity(title, english) > 0.9) logo = logoIn(ref, "en")
         }
         return logo
     }
 
-    private fun logoIn(type: MediaType, id: Int, code: String): String? =
-        client.get("${type.path}/$id/images?language=$code")?.objects("logos")
+    private fun logoIn(ref: TitleRef, code: String): String? =
+        client.get("${ref.type.path}/${ref.tmdbId}/images?language=$code")?.objects("logos")
             ?.firstOrNull { it.str("iso_639_1") == code && it.str("file_path")?.endsWith(".png") == true }
             ?.str("file_path")
 
-    private fun multiLanguageLogo(type: MediaType, id: Int, originalLanguage: String): String? {
-        val logos = client.get("${type.path}/$id/images?include_image_language=$languageCode,$originalLanguage")
+    private fun multiLanguageLogo(ref: TitleRef, originalLanguage: String): String? {
+        val logos = client.get("${ref.type.path}/${ref.tmdbId}/images?include_image_language=$languageCode,$originalLanguage")
             ?.objects("logos")
             ?.filter { it.str("file_path")?.endsWith(".png") == true }
             .orEmpty()
@@ -202,8 +219,8 @@ class TmdbCatalog(
             ?.str("file_path")
     }
 
-    private fun providerLogoPaths(type: MediaType, id: Int): List<String> {
-        val providers = client.get("${type.path}/$id/watch/providers")
+    private fun providerLogoPaths(ref: TitleRef): List<String> {
+        val providers = client.get("${ref.type.path}/${ref.tmdbId}/watch/providers")
             ?.obj("results")?.obj(region)?.objects("flatrate")
             ?.sortedBy { it.int("display_priority") ?: 999 }
             .orEmpty()
@@ -223,11 +240,11 @@ class TmdbCatalog(
     }
 
     companion object {
-        private const val TAG = "TmdbCatalog"
         private const val RANKING_MIN_VOTES = 300
         private const val RANKING_PRIOR = 6.5
         private const val MIN_VOTES_OTHER_LANGUAGES = 1000
         private const val MAX_PROVIDERS = 4
+        private const val EXTRA = 5
         private val EXCLUDED_KEYWORDS = setOf("adult")
 
         private val PROVIDER_VARIANT_SUFFIX = Regex(

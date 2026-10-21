@@ -35,8 +35,8 @@ class PluginServiceTest {
         Settings.init(context)
         Settings.language = "es-ES"
         Settings.regionOverride = ""
-        Settings.content = ContentType.BOTH
-        Settings.titlesPerType = 3
+        Settings.lists = Settings.DEFAULT_LISTS
+        Settings.titlesPerList = 3
         Settings.outputWidth = 1920
 
         val before = Settings.lastGeneration
@@ -62,9 +62,10 @@ class PluginServiceTest {
         // Projectivy backup round-trip
         val exported = service.preferences
         assertTrue(exported.contains("\"language\":\"es-ES\""))
-        service.setPreferences(exported.replace("\"titles_per_type\":3", "\"titles_per_type\":5"))
-        assertEquals(5, Settings.titlesPerType)
-        Settings.titlesPerType = 3
+        service.setPreferences(exported.replace("\"titles_per_list\":3", "\"titles_per_list\":5"))
+        assertEquals(5, Settings.titlesPerList)
+        assertEquals(Settings.DEFAULT_LISTS, Settings.lists)
+        Settings.titlesPerList = 3
     }
 
     private fun bind(): IWallpaperProviderService {
