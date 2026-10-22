@@ -100,9 +100,9 @@
     <string name="watched_show">Mostrar normal</string>
     <string name="watched_mark">Mostrar con la marca Visto</string>
     <string name="watched_hide">Ocultar</string>
-    <string name="setting_explore_title">Explorar listas</string>
-    <string name="setting_explore_desc">Ver qué títulos trae cada lista elegida</string>
-    <string name="explore_description">Elige una de tus listas para ver sus títulos en orden y qué pasa con cada uno.</string>
+    <string name="setting_explore_title">Explorar y ajustar listas</string>
+    <string name="setting_explore_desc">Ver los títulos de cada lista y darle sus propios filtros</string>
+    <string name="explore_description">Elige una de tus listas para ver sus títulos en orden y qué pasa con cada uno, y para darle sus propios filtros.</string>
     <string name="explore_loading">Cargando…</string>
     <string name="explore_used">Se usa</string>
     <string name="explore_reserve">Reserva: se usa si alguno de arriba no se puede</string>
@@ -127,7 +127,7 @@
     <string name="trakt_unavailable">No disponible en esta compilación (faltan las credenciales de Trakt de la app)</string>
     <!-- Filtros -->
     <string name="setting_filters_title">Filtros</string>
-    <string name="filters_description">Descarta los títulos que no quieres. Cada filtro se aplica a las listas filtradas (elígelas abajo; por defecto, tendencias y populares) o a todas las listas.</string>
+    <string name="filters_description">Filtros por defecto para todas las listas; cada lista puede tener los suyos en Listas → Explorar y ajustar listas. La antigüedad y los éxitos globales solo se aplican por defecto a tendencias, populares y similares, para no vaciar tus watchlists y favoritos.</string>
     <string name="filters_age_title">Antigüedad máxima</string>
     <string name="filters_age_none">Sin límite</string>
     <string name="filters_age_months">%1$d meses</string>
@@ -136,7 +136,7 @@
         <item quantity="other">%1$d años</item>
     </plurals>
     <string name="filters_adult_title">Excluir contenido adulto</string>
-    <string name="filters_adult_desc">Descarta los títulos marcados como adultos en TMDB</string>
+    <string name="filters_adult_desc">Descarta los títulos marcados como adultos en TMDB, en todas las listas</string>
     <string name="exclusion_adult">Descartado: contenido adulto</string>
     <string name="mdblist_unavailable">No disponible en esta versión</string>
 
@@ -222,16 +222,18 @@
     <string name="guide_caption">Distribución aproximada del launcher</string>
     <string name="footer_fallback">Plataformas, o lista de origen</string>
     <string name="footer_fallback_desc">La lista se muestra si ninguna plataforma lo tiene</string>
-    <string name="filters_applies_to">Se aplica a</string>
-    <string name="filters_scope_filtered">Listas filtradas</string>
-    <string name="filters_scope_all_lists">Todas las listas</string>
-    <string name="filters_scope_filtered_short">listas filtradas</string>
-    <string name="filters_scope_all_short">todas las listas</string>
     <string name="filter_off">No</string>
     <string name="filter_on">Sí</string>
     <string name="filters_age_explain">Descarta lo estrenado (o, en series, emitido por última vez) hace más tiempo</string>
     <string name="watched_explain">Lo que has visto en Trakt o Simkl: mostrarlo normal, con la marca Visto, u ocultarlo</string>
-    <string name="filtered_lists_title">Listas filtradas</string>
-    <string name="filtered_lists_desc">%1$d de %2$d listas</string>
-    <string name="filtered_lists_description">Los filtros con «Listas filtradas» solo se aplican a las listas marcadas aquí. Por defecto se marcan las de tendencias y populares, y no tus propias listas.</string>
+    <string name="filters_custom_title">Listas con filtros propios</string>
+    <string name="list_filters_default">Filtros por defecto</string>
+    <string name="list_filters_custom">Filtros propios: %1$s</string>
+    <string name="list_filters_hits_on">solo éxitos globales</string>
+    <string name="list_filters_hits_off">cualquier país</string>
+    <string name="list_filter_default">Por defecto (%1$s)</string>
+    <plurals name="lists_customised">
+        <item quantity="one">%d lista personalizada</item>
+        <item quantity="other">%d listas personalizadas</item>
+    </plurals>
 </resources>

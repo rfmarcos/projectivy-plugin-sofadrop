@@ -33,12 +33,14 @@ class WallpaperFactory(context: Context, private val width: Int) {
      */
     fun plan(source: ListSource, perList: Int, taken: Set<TitleRef> = emptySet()): ListPlan {
         val random = Settings.selectionMode == Settings.SELECTION_RANDOM
-        val hideWatched = Settings.watchedMode == Settings.WATCHED_HIDE
+        val watchedMode = Settings.filtersFor(source).watched
+        val hideWatched = watchedMode == Settings.WATCHED_HIDE
         val statuses = mutableMapOf<TitleRef, WatchStatus>()
         val candidates = catalog.candidates(source, perList * 2, trakt, simkl, mdbList, shuffle = random).map { candidate ->
             if (candidate.exclusion != null) return@map candidate
             if (candidate.ref in taken) return@map candidate.copy(exclusion = Exclusion.DUPLICATE)
-            val status = watched?.status(candidate.ref)?.also { statuses[candidate.ref] = it }
+            // History is only loaded when some list shows or hides watched titles
+            val status = if (watchedMode == Settings.WATCHED_SHOW) null else watched?.status(candidate.ref)?.also { statuses[candidate.ref] = it }
             if (hideWatched && status is WatchStatus.Watched) candidate.copy(exclusion = Exclusion.WATCHED) else candidate
         }
         val usable = candidates.filter { it.exclusion == null }.map { it.ref }
@@ -53,7 +55,8 @@ class WallpaperFactory(context: Context, private val width: Int) {
             else info.copy(sourceLabel = Languages.sourceLabel(Settings.language, source), sourceProvider = source.provider)
         } ?: return null
         val status = if (plan != null) plan.statuses[ref] else watched?.status(ref)
-        return if (status != null && Settings.watchedMode == Settings.WATCHED_MARK) info.copy(watchStatus = status) else info
+        val mode = source?.let { Settings.filtersFor(it).watched } ?: Settings.watchedMode
+        return if (status != null && mode == Settings.WATCHED_MARK) info.copy(watchStatus = status) else info
     }
 
     /** Download the images of [info] and draw the wallpaper. */

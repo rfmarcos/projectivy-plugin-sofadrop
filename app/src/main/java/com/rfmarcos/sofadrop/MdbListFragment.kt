@@ -61,7 +61,7 @@ class MdbListFragment : BaseSettingsFragment() {
 
     private fun refreshRows() {
         if (!isAdded) return
-        actions = listOf(accountAction()) + ownActions() + findActionById(ID_ADD)!! + publicActions()
+        refreshActions(listOf(accountAction()) + ownActions() + findActionById(ID_ADD)!! + publicActions()) { MdbListFragment() }
     }
 
     override fun onGuidedActionClicked(action: GuidedAction) {

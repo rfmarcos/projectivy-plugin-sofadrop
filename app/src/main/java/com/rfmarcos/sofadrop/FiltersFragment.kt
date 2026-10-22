@@ -7,8 +7,8 @@ import androidx.leanback.widget.GuidanceStylist.Guidance
 import androidx.leanback.widget.GuidedAction
 
 /**
- * Which titles are skipped. Each filter applies either to the "filtered lists" (picked in their own
- * screen; trending/popular ones by default) or to all lists. Watched titles use Trakt/Simkl history.
+ * Default filters for every list (each list can override them in "Explore & tune lists"), adult content
+ * (always global) and the lists that have their own filters.
  */
 class FiltersFragment : BaseSettingsFragment() {
 
@@ -20,64 +20,57 @@ class FiltersFragment : BaseSettingsFragment() {
     )
 
     override fun onCreateActions(actions: MutableList<GuidedAction>, savedInstanceState: Bundle?) {
-        val context = requireContext()
-        actions += filter(ID_AGE, R.drawable.ic_act_schedule, R.string.filters_age_title, Settings.MAX_AGE_OPTIONS.map { ageLabel(context, it) })
-        actions += filter(ID_GLOBAL_HITS, R.drawable.ic_act_public, R.string.setting_global_hits_title, onOff(context))
-        actions += filter(ID_ADULT, R.drawable.ic_act_block, R.string.filters_adult_title, onOff(context))
-        actions += action(ID_WATCHED, R.drawable.ic_act_visibility, getString(R.string.setting_watched_title), watchedDescription(context))
-            .multilineDescription(true)
-            .subActions(WATCHED_MODES.mapIndexed { index, mode -> sub(ID_WATCHED, index, watchedLabel(context, mode)) }).build()
-        actions += action(ID_LISTS, R.drawable.ic_act_list, getString(R.string.filtered_lists_title), filteredListsDescription(context))
-            .hasNext(true).build()
+        actions += buildRows()
     }
+
+    private fun buildRows(): List<GuidedAction> {
+        val context = requireContext()
+        val rows = mutableListOf(
+            choiceRow(ID_AGE, R.drawable.ic_act_schedule, R.string.filters_age_title, Settings.MAX_AGE_OPTIONS.map { ageLabel(context, it) }),
+            choiceRow(ID_GLOBAL_HITS, R.drawable.ic_act_public, R.string.setting_global_hits_title, onOff(context)),
+            choiceRow(ID_WATCHED, R.drawable.ic_act_visibility, R.string.setting_watched_title, WATCHED_MODES.map { watchedLabel(context, it) }),
+            action(ID_ADULT, R.drawable.ic_act_block, getString(R.string.filters_adult_title), getString(R.string.filters_adult_desc))
+                .checkSetId(GuidedAction.CHECKBOX_CHECK_SET_ID).checked(Settings.excludeAdult).multilineDescription(true).build(),
+        )
+        customised().takeIf { it.isNotEmpty() }?.let { lists ->
+            rows += action(ID_CUSTOM, R.drawable.ic_act_list, getString(R.string.filters_custom_title),
+                ListsFragment.listsCount(context, lists.size)).hasNext(true).build()
+        }
+        return rows
+    }
+
+    private fun choiceRow(id: Long, icon: Int, title: Int, values: List<String>) =
+        action(id, icon, getString(title), describe(requireContext(), id)).multilineDescription(true)
+            .subActions(values.mapIndexed { index, label -> GuidedAction.Builder(requireContext()).id(id * SUB_ID_BASE + index).title(label).build() })
+            .build()
 
     override fun onResume() {
         super.onResume()
-        updateDescription(ID_LISTS, filteredListsDescription(requireContext()))
+        // Replacing the actions breaks leanback's sub-action expansion, so only rebuild when the
+        // "lists with their own filters" row has to appear or disappear
+        val count = customised().size
+        when {
+            (count > 0) != (findActionById(ID_CUSTOM) != null) -> refreshActions(buildRows()) { FiltersFragment() }
+            count > 0 -> updateDescription(ID_CUSTOM, ListsFragment.listsCount(requireContext(), count))
+        }
     }
-
-    /** A filter row: its values, then "Applies to" with the two scopes (filtered lists / all lists). */
-    private fun filter(id: Long, icon: Int, title: Int, values: List<String>): GuidedAction {
-        val subs = values.mapIndexed { index, label -> sub(id, index, label) } +
-            GuidedAction.Builder(requireContext()).id(id * SUB_ID_BASE + values.size).title(R.string.filters_applies_to)
-                .enabled(false).focusable(false).build() +
-            sub(id, values.size + 1, getString(R.string.filters_scope_filtered)) +
-            sub(id, values.size + 2, getString(R.string.filters_scope_all_lists))
-        return action(id, icon, getString(title), filterDescription(requireContext(), id)).multilineDescription(true).subActions(subs).build()
-    }
-
-    private fun sub(parent: Long, index: Int, title: String) =
-        GuidedAction.Builder(requireContext()).id(parent * SUB_ID_BASE + index).title(title).build()
 
     override fun onGuidedActionClicked(action: GuidedAction) {
-        if (action.id == ID_LISTS) add(parentFragmentManager, FilteredListsFragment())
+        when (action.id) {
+            ID_ADULT -> Settings.excludeAdult = action.isChecked
+            ID_CUSTOM -> add(parentFragmentManager, ListExplorerFragment.newInstance(customOnly = true))
+        }
     }
 
     override fun onSubGuidedActionClicked(action: GuidedAction): Boolean {
         val parent = action.id / SUB_ID_BASE
         val index = (action.id % SUB_ID_BASE).toInt()
-        if (parent == ID_WATCHED) {
-            Settings.watchedMode = WATCHED_MODES[index]
-            updateDescription(ID_WATCHED, watchedDescription(requireContext()))
-            return true
+        when (parent) {
+            ID_AGE -> Settings.maxAgeMonths = Settings.MAX_AGE_OPTIONS[index]
+            ID_GLOBAL_HITS -> Settings.globalHitsOnly = index == 1
+            ID_WATCHED -> Settings.watchedMode = WATCHED_MODES[index]
         }
-        val count = if (parent == ID_AGE) Settings.MAX_AGE_OPTIONS.size else 2
-        when {
-            index < count -> when (parent) {
-                ID_AGE -> Settings.maxAgeMonths = Settings.MAX_AGE_OPTIONS[index]
-                ID_GLOBAL_HITS -> Settings.globalHitsOnly = index == 1
-                ID_ADULT -> Settings.excludeAdult = index == 1
-            }
-            index > count -> {
-                val all = index == count + 2
-                when (parent) {
-                    ID_AGE -> Settings.ageAllLists = all
-                    ID_GLOBAL_HITS -> Settings.globalHitsAllLists = all
-                    ID_ADULT -> Settings.adultAllLists = all
-                }
-            }
-        }
-        updateDescription(parent, filterDescription(requireContext(), parent))
+        updateDescription(parent, describe(requireContext(), parent))
         return true
     }
 
@@ -86,20 +79,19 @@ class FiltersFragment : BaseSettingsFragment() {
         private const val ID_GLOBAL_HITS = 3L
         private const val ID_ADULT = 4L
         private const val ID_WATCHED = 5L
-        private const val ID_LISTS = 6L
-        private val WATCHED_MODES = listOf(Settings.WATCHED_SHOW, Settings.WATCHED_MARK, Settings.WATCHED_HIDE)
+        private const val ID_CUSTOM = 6L
+        val WATCHED_MODES = listOf(Settings.WATCHED_SHOW, Settings.WATCHED_MARK, Settings.WATCHED_HIDE)
 
-        private fun onOff(context: Context) = listOf(context.getString(R.string.filter_off), context.getString(R.string.filter_on))
+        fun onOff(context: Context) = listOf(context.getString(R.string.filter_off), context.getString(R.string.filter_on))
 
-        /** "1 year · filtered lists" and, below, what the filter does. */
-        fun filterDescription(context: Context, id: Long): String {
-            val (value, all, explain) = when (id) {
-                ID_AGE -> Triple(ageLabel(context, Settings.maxAgeMonths), Settings.ageAllLists, R.string.filters_age_explain)
-                ID_GLOBAL_HITS -> Triple(onOff(context)[if (Settings.globalHitsOnly) 1 else 0], Settings.globalHitsAllLists, R.string.setting_global_hits_desc)
-                else -> Triple(onOff(context)[if (Settings.excludeAdult) 1 else 0], Settings.adultAllLists, R.string.filters_adult_desc)
-            }
-            val scope = context.getString(if (all) R.string.filters_scope_all_short else R.string.filters_scope_filtered_short)
-            return "$value · $scope\n${context.getString(explain)}"
+        /** Selected lists with their own filters. */
+        fun customised() = Sources.selected().filter { Settings.listFilters[it.key]?.isDefault == false }
+
+        /** Value of a default filter and, below, what it does. */
+        private fun describe(context: Context, id: Long): String = when (id) {
+            ID_AGE -> "${ageLabel(context, Settings.maxAgeMonths)}\n${context.getString(R.string.filters_age_explain)}"
+            ID_GLOBAL_HITS -> "${onOff(context)[if (Settings.globalHitsOnly) 1 else 0]}\n${context.getString(R.string.setting_global_hits_desc)}"
+            else -> watchedDescription(context, Settings.watchedMode)
         }
 
         fun watchedLabel(context: Context, mode: String) = context.getString(
@@ -111,20 +103,15 @@ class FiltersFragment : BaseSettingsFragment() {
         )
 
         /** "Show with a Watched badge · from Trakt + Simkl" (or how to enable it) and what it does. */
-        fun watchedDescription(context: Context): String {
+        fun watchedDescription(context: Context, mode: String): String {
             val trackers = listOfNotNull(
                 context.getString(R.string.setting_trakt_title).takeIf { Settings.traktConnected },
                 context.getString(R.string.setting_simkl_title).takeIf { Settings.simklConnected },
             )
-            val label = watchedLabel(context, Settings.watchedMode)
+            val label = watchedLabel(context, mode)
             val first = if (trackers.isEmpty()) context.getString(R.string.watched_no_tracker, label)
             else context.getString(R.string.watched_from, label, trackers.joinToString(" + "))
             return "$first\n${context.getString(R.string.watched_explain)}"
-        }
-
-        fun filteredListsDescription(context: Context): String {
-            val selected = Sources.selected()
-            return context.getString(R.string.filtered_lists_desc, selected.count(Settings::isFiltered), selected.size)
         }
 
         fun ageLabel(context: Context, months: Int) = when {
@@ -133,42 +120,24 @@ class FiltersFragment : BaseSettingsFragment() {
             else -> context.getString(R.string.filters_age_months, months)
         }
 
+        /** "Custom: no age limit, hide watched" or "Default filters", for list rows. */
+        fun listFiltersSummary(context: Context, source: ListSource): String {
+            val custom = Settings.listFilters[source.key]?.takeUnless { it.isDefault }
+                ?: return context.getString(R.string.list_filters_default)
+            val parts = listOfNotNull(
+                custom.maxAge?.let { ageLabel(context, it) },
+                custom.globalHits?.let { context.getString(if (it) R.string.list_filters_hits_on else R.string.list_filters_hits_off) },
+                custom.watched?.let { watchedLabel(context, it) },
+            )
+            return context.getString(R.string.list_filters_custom, parts.joinToString(", "))
+        }
+
         /** One-line summary for the main settings screen. */
         fun summary(context: Context): String = listOfNotNull(
             ageLabel(context, Settings.maxAgeMonths),
             context.getString(R.string.setting_global_hits_title).takeIf { Settings.globalHitsOnly },
             context.getString(R.string.watched_summary_hidden).takeIf { Settings.trackerConnected && Settings.watchedMode == Settings.WATCHED_HIDE },
+            customised().size.takeIf { it > 0 }?.let { context.resources.getQuantityString(R.plurals.lists_customised, it, it) },
         ).joinToString(" · ")
-    }
-}
-
-/** The active lists that filters set to "Filtered lists" apply to. */
-class FilteredListsFragment : BaseSettingsFragment() {
-
-    private var lists: List<ListSource> = emptyList()
-
-    override fun onCreateGuidance(savedInstanceState: Bundle?) = Guidance(
-        getString(R.string.filtered_lists_title),
-        getString(R.string.filtered_lists_description),
-        getString(R.string.setting_filters_title),
-        AppCompatResources.getDrawable(requireActivity(), R.mipmap.ic_launcher),
-    )
-
-    override fun onCreateActions(actions: MutableList<GuidedAction>, savedInstanceState: Bundle?) {
-        lists = Sources.selected()
-        if (lists.isEmpty()) {
-            actions += action(-1L, R.drawable.ic_act_info, getString(R.string.explore_empty_title), getString(R.string.explore_empty_desc))
-                .focusable(false).build()
-        }
-        lists.forEachIndexed { index, source ->
-            actions += checkbox(index.toLong(), Sources.label(requireContext(), source), null, Settings.isFiltered(source)).build()
-        }
-    }
-
-    override fun onGuidedActionClicked(action: GuidedAction) {
-        val source = lists.getOrNull(action.id.toInt()) ?: return
-        // The first change turns the default (trending/popular lists) into an explicit choice
-        val current = Settings.filteredLists ?: lists.filter { it.automatic }.map { it.key }.toSet()
-        Settings.filteredLists = if (action.isChecked) current + source.key else current - source.key
     }
 }

@@ -44,7 +44,7 @@ class DetailsFragment : PreviewSettingsFragment() {
 
     private fun replaceCountryRow() {
         val position = findActionPositionById(ID_COUNTRY)
-        actions = actions.toMutableList().also { it[position] = countryAction() }
+        refreshActions(actions.toMutableList().also { it[position] = countryAction() }) { DetailsFragment() }
     }
 
     override fun onSubGuidedActionClicked(action: GuidedAction): Boolean {

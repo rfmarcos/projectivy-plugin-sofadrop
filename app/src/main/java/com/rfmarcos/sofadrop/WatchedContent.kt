@@ -51,7 +51,7 @@ class WatchedContent private constructor(
     companion object {
         /** Null when no tracker is connected or the user wants to see everything as is. */
         fun load(trakt: TraktClient?, simkl: SimklClient?): WatchedContent? {
-            if (!Settings.trackerConnected || Settings.watchedMode == Settings.WATCHED_SHOW) return null
+            if (!Settings.trackerConnected) return null
             val traktData = trakt?.takeIf { Settings.traktConnected }?.let { client ->
                 runCatching { client.watchedMovies() to client.watchedShows() }
                     .onFailure { Log.w("WatchedContent", "Could not load Trakt history", it) }.getOrNull()

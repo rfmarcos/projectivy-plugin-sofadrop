@@ -18,6 +18,15 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
 import java.util.Locale
 
+/** Filters one list overrides; null = use the default. */
+@Serializable
+data class ListFilters(val maxAge: Int? = null, val globalHits: Boolean? = null, val watched: String? = null) {
+    val isDefault: Boolean get() = maxAge == null && globalHits == null && watched == null
+}
+
+/** The filters a list ends up using. */
+data class FilterValues(val maxAgeMonths: Int, val globalHits: Boolean, val watched: String)
+
 /** An MDBList list: one of the account's (by [id]) or a public one added by its "user/slug" [path]. */
 @Serializable
 data class MdbListRef(val id: Long, val name: String, val path: String = "") {
@@ -36,7 +45,6 @@ object Settings {
     private const val KEY_GLOBAL_HITS = "global_hits_only"
     private const val KEY_MAX_AGE = "max_age_months"
     private const val KEY_EXCLUDE_ADULT = "exclude_adult"
-    private const val KEY_FILTER_SCOPE = "filter_scope"
     private const val KEY_PROVIDERS = "show_providers"
     private const val KEY_TRAKT_CLIENT_ID = "trakt_client_id"
     private const val KEY_TRAKT_CLIENT_SECRET = "trakt_client_secret"
@@ -49,10 +57,8 @@ object Settings {
     private const val KEY_SELECTION = "selection_mode"
     private const val KEY_OVERVIEW_LINES = "overview_lines"
     private const val KEY_SHOW_SOURCE = "show_source"
-    private const val KEY_AGE_ALL = "age_all_lists"
-    private const val KEY_HITS_ALL = "global_hits_all_lists"
-    private const val KEY_ADULT_ALL = "adult_all_lists"
-    private const val KEY_FILTERED_LISTS = "filtered_lists"
+    private const val KEY_LIST_FILTERS = "list_filters"
+    private val OLD_FILTER_KEYS = listOf("filter_scope", "age_all_lists", "global_hits_all_lists", "adult_all_lists", "filtered_lists")
     private const val KEY_SOURCE_FALLBACK = "source_fallback"
     private const val KEY_LAUNCHER_GUIDE = "launcher_guide"
     private const val KEY_PROGRESS = "_generation_progress"
@@ -98,6 +104,8 @@ object Settings {
     fun init(context: Context) {
         if (!::preferences.isInitialized) {
             preferences = PreferenceManager.getDefaultSharedPreferences(context.applicationContext)
+            // Scopes of earlier versions, replaced by per-list filters
+            preferences.edit { OLD_FILTER_KEYS.forEach(::remove) }
         }
     }
 
@@ -156,29 +164,30 @@ object Settings {
         get() = preferences.getBoolean(KEY_EXCLUDE_ADULT, true)
         set(value) = preferences.edit { putBoolean(KEY_EXCLUDE_ADULT, value) }
 
-    /** The old single scope ("automatic" / "all"), only read as the default of the per-filter scopes. */
-    private val legacyScopeAll: Boolean get() = preferences.getString(KEY_FILTER_SCOPE, null) == "all"
+    /** Per-list overrides of the default filters (list key -> values), set from "Explore & tune lists". */
+    var listFilters: Map<String, ListFilters>
+        get() = try {
+            json.decodeFromString<Map<String, ListFilters>>(preferences.getString(KEY_LIST_FILTERS, null) ?: "{}")
+        } catch (_: Exception) {
+            emptyMap()
+        }
+        set(value) = preferences.edit { putString(KEY_LIST_FILTERS, json.encodeToString(value.filterValues { !it.isDefault })) }
 
-    /** Per filter: true = every list, false = only the "filtered lists". */
-    var ageAllLists: Boolean
-        get() = preferences.getBoolean(KEY_AGE_ALL, legacyScopeAll)
-        set(value) = preferences.edit { putBoolean(KEY_AGE_ALL, value) }
+    /**
+     * Filters a list really uses: its overrides, else the defaults. Age and global hits only apply by
+     * default to automatic lists (trending, popular…), so watchlists and favourites aren't emptied.
+     */
+    fun filtersFor(source: ListSource): FilterValues {
+        val custom = listFilters[source.key]
+        return FilterValues(
+            maxAgeMonths = custom?.maxAge ?: defaultMaxAge(source),
+            globalHits = (custom?.globalHits ?: defaultGlobalHits(source)) && source.localMarketFilter,
+            watched = custom?.watched ?: watchedMode,
+        )
+    }
 
-    var globalHitsAllLists: Boolean
-        get() = preferences.getBoolean(KEY_HITS_ALL, legacyScopeAll)
-        set(value) = preferences.edit { putBoolean(KEY_HITS_ALL, value) }
-
-    /** Adult content is skipped everywhere unless the user narrows it. */
-    var adultAllLists: Boolean
-        get() = preferences.getBoolean(KEY_ADULT_ALL, true)
-        set(value) = preferences.edit { putBoolean(KEY_ADULT_ALL, value) }
-
-    /** Lists the "filtered lists" scope covers; null = the default, the automatic (trending/popular) lists. */
-    var filteredLists: Set<String>?
-        get() = preferences.getStringSet(KEY_FILTERED_LISTS, null)?.toSet()
-        set(value) = preferences.edit { if (value == null) remove(KEY_FILTERED_LISTS) else putStringSet(KEY_FILTERED_LISTS, value) }
-
-    fun isFiltered(source: ListSource): Boolean = filteredLists?.contains(source.key) ?: source.automatic
+    fun defaultMaxAge(source: ListSource) = if (source.automatic) maxAgeMonths else 0
+    fun defaultGlobalHits(source: ListSource) = source.automatic && globalHitsOnly
 
     var showProviders: Boolean
         get() = preferences.getBoolean(KEY_PROVIDERS, true)
@@ -393,7 +402,7 @@ object Settings {
         get() = listOf(
             token.hashCode(), language, region, lists.sorted().joinToString(","), titlesPerList,
             outputWidth, globalHitsOnly, showProviders, selectionMode, if (trackerConnected) watchedMode else "",
-            maxAgeMonths, excludeAdult, ageAllLists, globalHitsAllLists, adultAllLists, filteredLists?.sorted(),
+            maxAgeMonths, excludeAdult, listFilters.toSortedMap(),
         // Only when changed, so existing installs don't see a pending change after updating
         ).plus(listOfNotNull(overviewLines.takeIf { it != 4 }, "nosource".takeIf { !showSource }, "fallback".takeIf { showSource && showProviders && sourceFallback })).joinToString("|")
 

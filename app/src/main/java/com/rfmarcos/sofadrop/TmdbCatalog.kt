@@ -48,20 +48,22 @@ class TmdbCatalog(
 
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
     private val today = dateFormat.format(Calendar.getInstance().time)
-    /** Oldest release / last air date allowed, or null without age limit. */
-    private val cutoff: String? = Settings.maxAgeMonths.takeIf { it > 0 }?.let { months ->
-        dateFormat.format(Calendar.getInstance().apply { add(Calendar.MONTH, -months) }.time)
+    /** Oldest release / last air date allowed for an age limit, or null without one. */
+    private fun cutoff(months: Int): String? = months.takeIf { it > 0 }?.let {
+        dateFormat.format(Calendar.getInstance().apply { add(Calendar.MONTH, -it) }.time)
     }
 
     /**
      * Candidate titles of a list, in the order they should be tried, including the ones filtered out
-     * (with the reason). Each filter applies to the "filtered lists" or, if the user chose so, to every list.
+     * (with the reason), using the list's own filters (see [Settings.filtersFor]).
      * With [shuffle] the whole list is shuffled first (random selection).
      */
     fun candidates(source: ListSource, pool: Int, trakt: TraktClient?, simkl: SimklClient?, mdbList: MdbListClient?, shuffle: Boolean = false): List<Candidate> {
         val fetch = if (shuffle) RANDOM_POOL else pool + 5
+        val filters = Settings.filtersFor(source)
+        val cutoff = cutoff(filters.maxAgeMonths)
         var refs = when (source.provider) {
-            SourceProvider.TMDB -> tmdbRefs(source.key, fetch)
+            SourceProvider.TMDB -> tmdbRefs(source.key, fetch, cutoff)
             SourceProvider.TRAKT -> trakt?.titles(source.key, fetch).orEmpty()
             SourceProvider.SIMKL -> simkl?.titles(source.key, fetch).orEmpty()
             SourceProvider.MDBLIST -> source.key.removePrefix("mdblist:").let { list ->
@@ -70,12 +72,9 @@ class TmdbCatalog(
             }
         }.distinct()
         if (shuffle) refs = refs.shuffled()
-        val inFiltered = Settings.isFiltered(source)
-        val age = inFiltered || Settings.ageAllLists
-        val hits = (inFiltered || Settings.globalHitsAllLists) && source.localMarketFilter
-        val adult = inFiltered || Settings.adultAllLists
+        val check = cutoff != null || filters.globalHits || Settings.excludeAdult
         return refs.asSequence()
-            .map { Candidate(it, if (age || hits || adult) exclusion(it, age, hits, adult) else null) }
+            .map { Candidate(it, if (check) exclusion(it, cutoff, filters.globalHits) else null) }
             .takeIncluded(pool)
     }
 
@@ -88,12 +87,12 @@ class TmdbCatalog(
 
     // --- TMDB lists ---
 
-    private fun tmdbRefs(key: String, count: Int): List<TitleRef> {
+    private fun tmdbRefs(key: String, count: Int, cutoff: String?): List<TitleRef> {
         val account = "account/${Settings.tmdbAccountId}"
         val session = "session_id=${Settings.tmdbSessionId}&sort_by=created_at.desc"
         return when (key) {
-            "tmdb:trending_movies" -> trending(MediaType.MOVIE)
-            "tmdb:trending_tv" -> trending(MediaType.TV)
+            "tmdb:trending_movies" -> trending(MediaType.MOVIE, cutoff)
+            "tmdb:trending_tv" -> trending(MediaType.TV, cutoff)
             "tmdb:popular_movies" -> pages("movie/popular?region=$region", MediaType.MOVIE, count)
             "tmdb:popular_tv" -> pages("tv/popular", MediaType.TV, count)
             "tmdb:now_playing" -> pages("movie/now_playing?region=$region", MediaType.MOVIE, count)
@@ -110,7 +109,7 @@ class TmdbCatalog(
     }
 
     /** Weekly trending + popular titles within the age limit, ranked by weighted rating (as TMDB.py). */
-    private fun trending(type: MediaType): List<TitleRef> {
+    private fun trending(type: MediaType, cutoff: String?): List<TitleRef> {
         val dates = cutoff?.let {
             if (type == MediaType.MOVIE) "&release_date.gte=$it&release_date.lte=$today" else "&first_air_date.gte=$it&first_air_date.lte=$today"
         }.orEmpty()
@@ -160,12 +159,12 @@ class TmdbCatalog(
 
     // --- Filters (from the TMDB details of each title) ---
 
-    private fun exclusion(ref: TitleRef, age: Boolean, hits: Boolean, adult: Boolean): Exclusion? {
+    private fun exclusion(ref: TitleRef, cutoff: String?, globalHits: Boolean): Exclusion? {
         val item = details(ref) ?: return null
         return when {
-            hits && isLocalMarket(item) -> Exclusion.LOCAL_MARKET
-            age && isTooOld(ref.type, item) -> Exclusion.TOO_OLD
-            adult && Settings.excludeAdult && isAdult(ref, item) -> Exclusion.ADULT
+            globalHits && isLocalMarket(item) -> Exclusion.LOCAL_MARKET
+            isTooOld(ref.type, item, cutoff) -> Exclusion.TOO_OLD
+            Settings.excludeAdult && isAdult(ref, item) -> Exclusion.ADULT
             else -> null
         }
     }
@@ -179,7 +178,7 @@ class TmdbCatalog(
     }
 
     /** Released (movies) or last aired (TV) before the age limit. */
-    private fun isTooOld(type: MediaType, item: JsonObject): Boolean {
+    private fun isTooOld(type: MediaType, item: JsonObject, cutoff: String?): Boolean {
         val limit = cutoff ?: return false
         val date = item.str(if (type == MediaType.MOVIE) "release_date" else "last_air_date")
         return !date.isNullOrEmpty() && date < limit

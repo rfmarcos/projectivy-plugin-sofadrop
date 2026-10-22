@@ -55,6 +55,30 @@ abstract class BaseSettingsFragment : GuidedStepSupportFragment() {
             .descriptionEditInputType(InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD)
             .build()
 
+    /**
+     * Show [fresh] rows. Leanback stops expanding sub-actions once rows that have them are swapped for
+     * new objects, so rows with the same ids are updated in place; a different set of rows reopens
+     * this screen with [reopen] (sub-screens only).
+     */
+    protected fun refreshActions(fresh: List<GuidedAction>, reopen: () -> GuidedStepSupportFragment) {
+        if (!isAdded) return
+        val current = actions
+        if (current.map { it.id } != fresh.map { it.id }) {
+            parentFragmentManager.popBackStack()
+            add(parentFragmentManager, reopen())
+            return
+        }
+        current.forEachIndexed { index, action ->
+            val row = fresh[index]
+            action.title = row.title
+            action.description = row.description
+            action.isEnabled = row.isEnabled
+            action.isChecked = row.isChecked
+            action.subActions = row.subActions
+            notifyActionChanged(index)
+        }
+    }
+
     protected fun updateDescription(id: Long, description: CharSequence?) {
         val action = findActionById(id) ?: return
         if (action.description == description) return

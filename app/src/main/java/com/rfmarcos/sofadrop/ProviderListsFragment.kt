@@ -46,14 +46,18 @@ class ProviderListsFragment : BaseSettingsFragment() {
         return listOf(accountAction()) + lists.mapIndexed { index, source ->
             val usable = publicUsable && !(source.needsAccount && !connected)
             checkbox(ID_LIST_BASE + index, Sources.label(requireContext(), source).substringAfter(" · "),
-                if (usable) null else getString(R.string.list_needs_account), usable && source.key in selected)
+                when {
+                    !usable -> getString(R.string.list_needs_account)
+                    Settings.listFilters[source.key]?.isDefault == false -> FiltersFragment.listFiltersSummary(requireContext(), source)
+                    else -> null
+                }, usable && source.key in selected)
                 .enabled(usable)
                 .build()
         }
     }
 
     private fun refreshRows() {
-        if (isAdded) actions = buildRows()
+        refreshActions(buildRows()) { newInstance(provider) }
     }
 
     private val connected get() = when (provider) {
