@@ -29,6 +29,10 @@ class SettingsFragment : PreviewSettingsFragment() {
         val context = requireContext()
         Settings.init(context)
 
+        if (Updater.available) {
+            actions += action(ID_APP_UPDATE, R.drawable.ic_act_refresh, getString(R.string.update_title),
+                getString(R.string.update_desc, Settings.updateVersion, BuildConfig.VERSION_NAME)).multilineDescription(true).build()
+        }
         // "Update now" also carries the status, so there is a single place to look
         actions += action(ID_GENERATE, R.drawable.ic_act_refresh, getString(R.string.action_generate_now), statusText())
             .multilineDescription(true).build()
@@ -51,6 +55,7 @@ class SettingsFragment : PreviewSettingsFragment() {
         updateDescription(ID_LISTS, ListsFragment.summary(context))
         updateDescription(ID_DETAILS, DetailsFragment.summary(context))
         handler.post(statusRefresher)
+        background({ Updater.check() }) { }
     }
 
     override fun onPause() {
@@ -74,6 +79,7 @@ class SettingsFragment : PreviewSettingsFragment() {
                 refreshStatus()
             }
             ID_PREVIEW -> startActivity(Intent(requireContext(), PreviewActivity::class.java))
+            ID_APP_UPDATE -> installUpdate()
             ID_LISTS -> add(parentFragmentManager, ListsFragment())
             ID_DETAILS -> add(parentFragmentManager, DetailsFragment())
             ID_ABOUT -> add(parentFragmentManager, AboutFragment())
@@ -97,6 +103,22 @@ class SettingsFragment : PreviewSettingsFragment() {
         change()
         refreshStatus()
         schedulePreview()
+    }
+
+    /** Download and install the new version; Android first asks to allow Sofadrop to install apps. */
+    private fun installUpdate() {
+        val context = requireContext().applicationContext
+        if (!context.packageManager.canRequestPackageInstalls()) {
+            Toast.makeText(context, R.string.update_allow, Toast.LENGTH_LONG).show()
+            startActivity(Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, android.net.Uri.parse("package:${context.packageName}")))
+            return
+        }
+        updateDescription(ID_APP_UPDATE, getString(R.string.update_downloading, Settings.updateVersion))
+        background({ Updater.install(context) }) { result ->
+            result.onFailure {
+                updateDescription(ID_APP_UPDATE, getString(R.string.update_failed, it.message ?: it.javaClass.simpleName))
+            }
+        }
     }
 
     // --- Status and pending changes ---
@@ -148,5 +170,6 @@ class SettingsFragment : PreviewSettingsFragment() {
         private const val ID_REFRESH = 8L
         private const val ID_ABOUT = 18L
         private const val ID_DETAILS = 20L
+        private const val ID_APP_UPDATE = 21L
     }
 }

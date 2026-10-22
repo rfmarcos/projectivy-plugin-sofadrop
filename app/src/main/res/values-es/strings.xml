@@ -261,4 +261,10 @@
     <string name="setting_mix_title">Orden en el launcher</string>
     <string name="mix_on">Todas las listas mezcladas</string>
     <string name="mix_off">Una lista tras otra</string>
+    <string name="update_title">Actualización disponible</string>
+    <string name="update_desc">Versión %1$s (tienes la %2$s) · instálala ahora</string>
+    <string name="update_downloading">Descargando la versión %1$s…</string>
+    <string name="update_failed">No se pudo actualizar: %1$s</string>
+    <string name="update_allow">Permite que Sofadrop instale aplicaciones y vuelve a elegir la actualización</string>
+    <string name="about_version_update">%1$s · disponible la %2$s</string>
 </resources>

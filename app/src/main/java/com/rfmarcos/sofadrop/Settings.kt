@@ -102,6 +102,9 @@ object Settings {
     private const val KEY_LAST_SIGNATURE = "_last_signature"
     private const val KEY_LAST_ERROR = "_last_error"
     private const val KEY_GENERATING = "_generating"
+    private const val KEY_UPDATE_VERSION = "_update_version"
+    private const val KEY_UPDATE_APK = "_update_apk"
+    private const val KEY_UPDATE_CHECKED = "_update_checked_at"
     private const val KEY_TRAKT_ACCESS = "_trakt_access_token"
     private const val KEY_TRAKT_REFRESH = "_trakt_refresh_token"
     private const val KEY_TRAKT_EXPIRES = "_trakt_expires_at"
@@ -377,6 +380,19 @@ object Settings {
     var showSource: Boolean
         get() = preferences.getBoolean(KEY_SHOW_SOURCE, true)
         set(value) = preferences.edit { putBoolean(KEY_SHOW_SOURCE, value) }
+
+    /** Latest release found by [Updater.check] ("1.0.1", empty until checked), its APK and when it was checked. */
+    var updateVersion: String
+        get() = string(KEY_UPDATE_VERSION)
+        set(value) = preferences.edit { putString(KEY_UPDATE_VERSION, value) }
+
+    var updateApkUrl: String
+        get() = string(KEY_UPDATE_APK)
+        set(value) = preferences.edit { putString(KEY_UPDATE_APK, value) }
+
+    var updateCheckedAt: Long
+        get() = preferences.getLong(KEY_UPDATE_CHECKED, 0)
+        set(value) = preferences.edit { putLong(KEY_UPDATE_CHECKED, value) }
 
     /** Wallpaper shown by the settings preview as "type:tmdbId" (e.g. "movie:123"); empty = automatic. */
     var previewPin: String

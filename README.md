@@ -39,6 +39,8 @@ Open them from **Projectivy → Settings → Appearance → Wallpaper → Config
 | Update every | 24 hours | 6 h, 12 h, 24 h, 3 days or 7 days. |
 | About | — | Version, support the project (Ko-fi QR), source code and credits. |
 
+**Updates:** Sofadrop checks this repository's releases (when the settings open, at most every 12 hours, and during background updates). When there is a newer version, *Update available* appears at the top of the settings: choosing it downloads the APK and opens Android's installer (the first time, Android asks you to allow Sofadrop to install apps).
+
 **Lists → Filters & explore lists** starts with the default filters for every list:
 
 * *Maximum age* (no limit by default, or 6 months to 5 years; release date, or last air date for shows) and *Global hits only* (on by default). Both apply by default only to trending, popular and similar lists, so watchlists and favourites aren't emptied.

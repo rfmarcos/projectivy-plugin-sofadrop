@@ -123,4 +123,15 @@ class ParsingTest {
         assertNull(WallpaperContentProvider.resolve(root, "/gen-1"))
         parent.deleteRecursively()
     }
+
+    @Test
+    fun updaterComparesVersions() {
+        assertTrue(Updater.isNewer("1.0.1", "1.0.0"))
+        assertTrue(Updater.isNewer("v1.0.10", "1.0.9"))
+        assertTrue(Updater.isNewer("1.1", "1.0.5"))
+        assertTrue(!Updater.isNewer("1.0.0", "1.0.0"))
+        assertTrue(!Updater.isNewer("1.0.0", "1.0.1"))
+        assertTrue(!Updater.isNewer("", "1.0.0"))
+        assertTrue(!Updater.isNewer("1.0.1-beta", "1.0.1"))
+    }
 }
