@@ -33,16 +33,19 @@ Open them from **Projectivy → Settings → Appearance → Wallpaper → Config
 | Setting | Default | |
 |---|---|---|
 | Update now | — | Also shows the status: how many wallpapers, when they were updated, the last error, or the progress while generating ("Generating · 12 wallpapers · list 2 of 5"). |
-| View wallpapers | — | The current set full screen: ◀ ▶ browse, **OK** shows that wallpaper in the settings preview (OK again unpins it), **▼** toggles an approximate launcher guide (top bar and a row of app cards) that the settings preview also follows. The info fades out after a few seconds. |
+| View wallpapers | — | The current set full screen: ◀ ▶ browse, **OK** shows that wallpaper in the settings preview (OK again unpins it). The info fades out after a few seconds. |
+| Preview | with launcher | *Wallpaper only*, or *With launcher*: Projectivy's home drawn over the preview (also in Wallpaper details). |
 | Lists | TMDB trending movies + TV shows | *Titles per list* (5, 10, 20, 50 or all, up to 100; default 10, with the estimated total) and *Order* (top of each list, or random from up to 100 titles), then one screen per service: **TMDB**, **Trakt**, **Simkl** and **MDBList**, each with its account (QR login) and its lists as checkboxes, plus **Explore & tune lists** for the selected ones (their titles and their own filters). Titles repeated across lists are only used once. |
 | Filters | 1 year · global hits · no adult | Default filters for every list: *Maximum age* (6 months to no limit; release date, or last air date for shows) and *Global hits only* (by default only for trending, popular and similar lists, so watchlists and favourites aren't emptied), *Watched titles* (Trakt/Simkl history: show normally, with a badge, or hide) and *Exclude adult content* (every list). Any list can have its own age, global hits and watched filters in **Lists → Explore & tune lists**, which shows right away which titles each list keeps or skips and why. |
-| Wallpaper details | device language · full · streaming or list source · automatic · 1080p | *Language* of titles, synopsis, logos and labels; *Streaming services*: don't show, automatic country or a chosen country; *Synopsis* full (4 lines), short (2 lines) or hidden, so the text stays clear of the launcher rows; *Footer*: nothing, the list source ("Trending · TMDB"), the streaming services, streaming or the list source when no service has it (default for new installs), or both; *Streaming country* (automatic or a chosen country, used when the footer shows streaming services); *Resolution* 1080p (recommended) or 4K. |
+| Wallpaper details | device language · full · streaming or list source · automatic · 1080p | *Language* of titles, synopsis, logos and labels; *Streaming services*: don't show, automatic country or a chosen country; *Synopsis* full (4 lines), short (2 lines) or hidden, so the text stays clear of the launcher rows; *Footer*: nothing, the list source ("Trending · TMDB"), the streaming services, streaming or the list source when no service has it (default for new installs), or both; *Streaming country* (automatic or a chosen country, used when the footer shows streaming services); *Launcher layout* (below); *Resolution* 1080p (recommended) or 4K. |
 | Update every | 24 hours | 6 h, 12 h, 24 h, 3 days or 7 days. |
 | About | — | Version, support the project (Ko-fi QR), source code and credits. |
 
 In **Filters → Watched titles** (or per list) you choose what happens with titles you have watched on **Trakt and/or Simkl** (a title counts as watched if either says so): show normally, show with a *Watched* badge ("✓ Watched", "▶ Watching · 3/8") or hide them (shows in progress are kept and marked).
 
 The left side of the screen renders a **live preview** with the current settings. While the settings differ from the current set, *Not applied yet* is shown under the preview: the changes are applied when you leave the settings, or right away with **Update now**. With no list selected nothing is regenerated and the current wallpapers are kept.
+
+With **Preview: With launcher**, Projectivy's home is drawn over the preview so you can check that the text stays clear of the rows. By default that is a generic layout (Projectivy's default home on a 1080p TV). To see **your own** rows and app banners, open **Wallpaper details → Launcher layout**, turn on *Sofadrop layout reader* in Android's accessibility settings and press Home once: it only reads Projectivy's window (positions, app names and the clock), never types, clicks or sends anything, and can be turned off anytime. *Forget captured layout* goes back to the generic one.
 
 ### Trakt (optional)
 
@@ -135,6 +138,7 @@ app/src/main/java/com/rfmarcos/sofadrop/
   WallpaperRenderer.kt         # Canvas rendering of the wallpaper
   WallpaperStore.kt            # Generated files, index and content:// URIs
   SettingsFragment.kt (main) / ListsFragment.kt, ProviderListsFragment.kt, MdbListFragment.kt (lists) / DetailsFragment.kt / PreviewActivity.kt
+  LayoutReaderService.kt / LauncherLayout.kt / LauncherGuideView.kt  # optional reader of Projectivy's home + the guide drawn over the preview
 ```
 
 ## 🧾 Credits

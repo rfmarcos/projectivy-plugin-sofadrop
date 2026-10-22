@@ -34,6 +34,7 @@ class SettingsFragment : PreviewSettingsFragment() {
             .multilineDescription(true).build()
         actions += action(ID_PREVIEW, R.drawable.ic_act_preview, getString(R.string.action_preview), getString(R.string.action_preview_desc))
             .enabled(WallpaperStore(context).current().isNotEmpty()).build()
+        actions += previewModeAction()
         actions += action(ID_LISTS, R.drawable.ic_act_movie, getString(R.string.setting_lists_title), ListsFragment.summary(context))
             .hasNext(true).build()
         actions += action(ID_FILTERS, R.drawable.ic_act_filter, getString(R.string.setting_filters_title), FiltersFragment.summary(context))
@@ -85,6 +86,7 @@ class SettingsFragment : PreviewSettingsFragment() {
     }
 
     override fun onSubGuidedActionClicked(action: GuidedAction): Boolean {
+        if (onPreviewModeClicked(action)) return true
         val index = (action.id % SUB_ID_BASE).toInt()
         when (action.id / SUB_ID_BASE) {
             ID_REFRESH -> {

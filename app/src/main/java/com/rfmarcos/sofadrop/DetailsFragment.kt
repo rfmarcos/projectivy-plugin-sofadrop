@@ -29,6 +29,9 @@ class DetailsFragment : PreviewSettingsFragment() {
                     .description(if (index == 3) getString(R.string.footer_fallback_desc) else null).build()
             }).build()
         actions += countryAction()
+        actions += previewModeAction()
+        actions += action(ID_LAYOUT, R.drawable.ic_act_tv, getString(R.string.launcher_layout_title), LauncherLayoutFragment.summary(context))
+            .hasNext(true).build()
         actions += choice(ID_RESOLUTION, R.drawable.ic_act_hd, R.string.setting_resolution_title, resolutionLabel(context, Settings.outputWidth),
             Settings.WIDTH_OPTIONS.map { resolutionLabel(context, it) })
     }
@@ -47,7 +50,17 @@ class DetailsFragment : PreviewSettingsFragment() {
         refreshActions(actions.toMutableList().also { it[position] = countryAction() }) { DetailsFragment() }
     }
 
+    override fun onGuidedActionClicked(action: GuidedAction) {
+        if (action.id == ID_LAYOUT) add(parentFragmentManager, LauncherLayoutFragment())
+    }
+
+    override fun onResume() {
+        super.onResume()
+        updateDescription(ID_LAYOUT, LauncherLayoutFragment.summary(requireContext()))
+    }
+
     override fun onSubGuidedActionClicked(action: GuidedAction): Boolean {
+        if (onPreviewModeClicked(action)) return true
         val index = (action.id % SUB_ID_BASE).toInt()
         when (action.id / SUB_ID_BASE) {
             ID_LANGUAGE -> {
@@ -85,6 +98,7 @@ class DetailsFragment : PreviewSettingsFragment() {
         private const val ID_RESOLUTION = 3L
         private const val ID_SYNOPSIS = 4L
         private const val ID_FOOTER = 5L
+        private const val ID_LAYOUT = 6L
 
         /** 0 nothing, 1 list source, 2 streaming services, 3 streaming or list source, 4 both. */
         private fun footerIndex() = when {

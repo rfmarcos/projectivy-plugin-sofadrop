@@ -20,7 +20,7 @@
     <string name="action_generate_now">Update now</string>
     <string name="generation_started">Generating wallpapers in the background…</string>
     <string name="action_preview">View wallpapers</string>
-    <string name="action_preview_desc">The current set full screen · pick the preview, try the launcher guide</string>
+    <string name="action_preview_desc">The current set full screen · OK picks the preview</string>
     <string name="preview_empty">No wallpapers yet. Use \"Update now\" first.</string>
 
     <!-- Live preview -->
@@ -229,9 +229,7 @@
     <string name="viewer_use">Use in preview</string>
     <string name="viewer_unpin">Unpin</string>
     <string name="viewer_pinned">PINNED</string>
-    <string name="viewer_guide">Launcher guide</string>
     <string name="viewer_position">%1$d of %2$d</string>
-    <string name="guide_caption">Approximate launcher layout</string>
     <string name="footer_fallback">Streaming, or list source</string>
     <string name="footer_fallback_desc">The list shows when no service has it</string>
     <string name="filter_off">Off</string>
@@ -248,4 +246,26 @@
         <item quantity="one">%d list customised</item>
         <item quantity="other">%d lists customised</item>
     </plurals>
+    <string name="preview_mode_title">Preview</string>
+    <string name="preview_mode_wallpaper">Wallpaper only</string>
+    <string name="preview_mode_launcher">With launcher</string>
+    <string name="launcher_layout_title">Launcher layout</string>
+    <string name="launcher_layout_real">Your home screen · captured %1$s</string>
+    <string name="launcher_layout_generic">Generic Projectivy layout · set up to show your apps</string>
+    <string name="launcher_layout_description">Shows your own Projectivy home in the preview: Sofadrop notes where your rows and apps sit. Android calls this an accessibility service.
+
+Private: it only reads Projectivy (positions, app names and the clock) and never types, clicks or sends anything off this TV. Turn it off anytime in Android settings.</string>
+    <string name="layout_reader_open">Open accessibility settings</string>
+    <string name="layout_reader_on">Sofadrop layout reader is on</string>
+    <string name="layout_reader_off">Turn on “Sofadrop layout reader”, then press Home once</string>
+    <string name="layout_reader_path">Settings › Device Preferences › Accessibility › Sofadrop layout reader</string>
+    <string name="layout_status_title">Captured layout</string>
+    <string name="layout_status_none">Nothing captured yet · with the reader on, press Home once</string>
+    <string name="layout_status_ok">%1$d rows · %2$d apps · %3$s</string>
+    <string name="layout_forget">Forget captured layout</string>
+    <string name="layout_forget_desc">The preview goes back to the generic layout</string>
+    <string name="layout_chip_real">Your layout · %1$s</string>
+    <string name="layout_chip_generic">Generic layout</string>
+    <string name="layout_reader_label">Sofadrop layout reader</string>
+    <string name="layout_reader_service_description">Notes where your rows and apps sit on Projectivy\'s home screen so Sofadrop\'s preview can show them. It only reads Projectivy and never types, clicks or sends anything.</string>
 </resources>

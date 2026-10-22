@@ -17,12 +17,11 @@ import androidx.appcompat.app.AppCompatActivity
 
 /**
  * Full-screen view of the generated wallpapers: ◀ ▶ browse, OK shows one in the settings preview,
- * ▼ toggles the launcher guide. The info cluster fades out when idle so the wallpaper can be seen whole.
+ * and the info cluster fades out when idle so the wallpaper can be seen whole.
  */
 class PreviewActivity : AppCompatActivity() {
 
     private lateinit var image: ImageView
-    private lateinit var guide: View
     private lateinit var overlay: View
     private lateinit var pinBadge: View
     private lateinit var store: WallpaperStore
@@ -36,7 +35,6 @@ class PreviewActivity : AppCompatActivity() {
         Settings.init(this)
         setContentView(R.layout.preview_activity)
         image = findViewById(R.id.viewer_image)
-        guide = findViewById(R.id.viewer_guide)
         overlay = findViewById(R.id.viewer_overlay)
         pinBadge = findViewById(R.id.viewer_pin_badge)
         store = WallpaperStore(this)
@@ -62,7 +60,6 @@ class PreviewActivity : AppCompatActivity() {
     }
 
     private fun show() {
-        guide.visibility = if (Settings.launcherGuide) View.VISIBLE else View.GONE
         val title = findViewById<TextView>(R.id.viewer_title)
         val subtitle = findViewById<TextView>(R.id.viewer_subtitle)
         val chips = findViewById<LinearLayout>(R.id.viewer_chips)
@@ -87,7 +84,6 @@ class PreviewActivity : AppCompatActivity() {
         chips.removeAllViews()
         chips.addView(chip("◀ ▶", getString(R.string.viewer_browse)))
         chips.addView(chip("OK", getString(if (pinned) R.string.viewer_unpin else R.string.viewer_use)))
-        chips.addView(chip("▼", getString(R.string.viewer_guide)))
         showOverlay()
     }
 
@@ -134,8 +130,6 @@ class PreviewActivity : AppCompatActivity() {
             KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_MEDIA_PREVIOUS -> position = (position - 1 + wallpapers.size) % wallpapers.size
             // While the overlay is hidden, OK only brings it back: nothing gets pinned by accident
             KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER -> if (!overlayHidden) togglePin()
-            KeyEvent.KEYCODE_DPAD_DOWN -> Settings.launcherGuide = !Settings.launcherGuide
-            KeyEvent.KEYCODE_DPAD_UP -> Unit
             else -> return super.onKeyDown(keyCode, event)
         }
         show()

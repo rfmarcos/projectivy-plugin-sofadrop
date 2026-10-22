@@ -25,6 +25,7 @@
         <item name="guidedActionsSelectorDrawable">@drawable/settings_item_selector</item>
         <item name="guidedActionItemIconStyle">@style/Widget.Sofadrop.ActionIcon</item>
         <item name="guidanceTitleStyle">@style/Widget.Sofadrop.GuidanceTitle</item>
+        <item name="guidanceDescriptionStyle">@style/Widget.Sofadrop.GuidanceDescription</item>
         <item name="guidanceIconStyle">@style/Widget.Sofadrop.GuidanceIcon</item>
     </style>
 
@@ -51,6 +52,10 @@
         <item name="android:textSize">12sp</item>
         <item name="android:textStyle">bold</item>
         <item name="android:letterSpacing">0.08</item>
+    </style>
+
+    <style name="Widget.Sofadrop.GuidanceDescription" parent="@style/Widget.Leanback.GuidanceDescriptionStyle">
+        <item name="android:maxLines">14</item>
     </style>
 
     <style name="Widget.Sofadrop.GuidanceIcon" parent="@style/Widget.Leanback.GuidanceIconStyle">

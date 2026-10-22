@@ -17,7 +17,7 @@
     <string name="action_generate_now">Actualizar ahora</string>
     <string name="generation_started">Generando fondos en segundo plano…</string>
     <string name="action_preview">Ver fondos</string>
-    <string name="action_preview_desc">El conjunto actual a pantalla completa · elige la vista previa, prueba la guía del launcher</string>
+    <string name="action_preview_desc">El conjunto actual a pantalla completa · OK elige la vista previa</string>
     <string name="preview_empty">Aún no hay fondos. Usa primero «Actualizar ahora».</string>
 
     <string name="preview_label">Vista previa · %1$s</string>
@@ -217,9 +217,7 @@
     <string name="viewer_use">Usar en la vista previa</string>
     <string name="viewer_unpin">Quitar</string>
     <string name="viewer_pinned">FIJADA</string>
-    <string name="viewer_guide">Guía del launcher</string>
     <string name="viewer_position">%1$d de %2$d</string>
-    <string name="guide_caption">Distribución aproximada del launcher</string>
     <string name="footer_fallback">Plataformas, o lista de origen</string>
     <string name="footer_fallback_desc">La lista se muestra si ninguna plataforma lo tiene</string>
     <string name="filter_off">No</string>
@@ -236,4 +234,26 @@
         <item quantity="one">%d lista personalizada</item>
         <item quantity="other">%d listas personalizadas</item>
     </plurals>
+    <string name="preview_mode_title">Vista previa</string>
+    <string name="preview_mode_wallpaper">Solo el fondo</string>
+    <string name="preview_mode_launcher">Con el launcher</string>
+    <string name="launcher_layout_title">Distribución del launcher</string>
+    <string name="launcher_layout_real">Tu pantalla de inicio · capturada %1$s</string>
+    <string name="launcher_layout_generic">Distribución genérica de Projectivy · configúrala para ver tus apps</string>
+    <string name="launcher_layout_description">Muestra tu propia pantalla de inicio de Projectivy en la vista previa: Sofadrop apunta dónde están tus filas y apps. Android lo llama servicio de accesibilidad.
+
+Privado: solo lee Projectivy (posiciones, nombres de apps y el reloj) y nunca escribe, pulsa ni envía nada fuera de esta tele. Puedes desactivarlo cuando quieras en los ajustes de Android.</string>
+    <string name="layout_reader_open">Abrir ajustes de accesibilidad</string>
+    <string name="layout_reader_on">El lector de distribución de Sofadrop está activado</string>
+    <string name="layout_reader_off">Activa «Lector de distribución de Sofadrop» y pulsa Inicio una vez</string>
+    <string name="layout_reader_path">Ajustes › Preferencias del dispositivo › Accesibilidad › Lector de distribución de Sofadrop</string>
+    <string name="layout_status_title">Distribución capturada</string>
+    <string name="layout_status_none">Aún no hay captura · con el lector activado, pulsa Inicio una vez</string>
+    <string name="layout_status_ok">%1$d filas · %2$d apps · %3$s</string>
+    <string name="layout_forget">Olvidar la distribución capturada</string>
+    <string name="layout_forget_desc">La vista previa vuelve a la distribución genérica</string>
+    <string name="layout_chip_real">Tu distribución · %1$s</string>
+    <string name="layout_chip_generic">Distribución genérica</string>
+    <string name="layout_reader_label">Lector de distribución de Sofadrop</string>
+    <string name="layout_reader_service_description">Apunta dónde están tus filas y apps en la pantalla de inicio de Projectivy para que la vista previa de Sofadrop pueda mostrarlas. Solo lee Projectivy y nunca escribe, pulsa ni envía nada.</string>
 </resources>

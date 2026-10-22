@@ -13,12 +13,6 @@
         android:importantForAccessibility="no"
         android:scaleType="fitCenter" />
 
-    <com.rfmarcos.sofadrop.LauncherGuideView
-        android:id="@+id/viewer_guide"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:visibility="gone" />
-
     <!-- Shown while the overlay is hidden and this wallpaper is the pinned preview -->
     <TextView
         android:id="@+id/viewer_pin_badge"

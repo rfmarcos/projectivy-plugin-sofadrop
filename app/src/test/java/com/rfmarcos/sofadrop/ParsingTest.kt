@@ -107,4 +107,13 @@ class ParsingTest {
         val mdb = ListSource("mdblist:a/b", SourceProvider.MDBLIST, label = "A very long MDBList list name for tests")
         assertEquals("A very long MDBList list na…", Languages.sourceLabel("en-US", mdb))
     }
+
+    @Test
+    fun launcherLayoutPlausibility() {
+        assertTrue(LauncherLayout.GENERIC.isPlausible())
+        val noRows = LauncherLayout.GENERIC.copy(rows = emptyList())
+        assertTrue(!noRows.isPlausible())
+        val offScreen = LauncherLayout.GENERIC.copy(cards = listOf(LauncherLayout.Card("X", listOf(1800, 700, 2400, 860))))
+        assertTrue(!offScreen.isPlausible())
+    }
 }

@@ -61,6 +61,7 @@ object Settings {
     private val OLD_FILTER_KEYS = listOf("filter_scope", "age_all_lists", "global_hits_all_lists", "adult_all_lists", "filtered_lists")
     private const val KEY_SOURCE_FALLBACK = "source_fallback"
     private const val KEY_LAUNCHER_GUIDE = "launcher_guide"
+    private const val KEY_LAUNCHER_LAYOUT = "_launcher_layout"
     private const val KEY_PROGRESS = "_generation_progress"
     private const val KEY_PREVIEW_PIN = "_preview_pin"
     private const val KEY_WATCHED = "watched_mode"
@@ -163,6 +164,11 @@ object Settings {
     var excludeAdult: Boolean
         get() = preferences.getBoolean(KEY_EXCLUDE_ADULT, true)
         set(value) = preferences.edit { putBoolean(KEY_EXCLUDE_ADULT, value) }
+
+    /** Projectivy home layout last read by the layout reader; null = none (the preview uses the generic one). */
+    var launcherLayout: LauncherLayout?
+        get() = preferences.getString(KEY_LAUNCHER_LAYOUT, null)?.let { runCatching { json.decodeFromString<LauncherLayout>(it) }.getOrNull() }
+        set(value) = preferences.edit { if (value == null) remove(KEY_LAUNCHER_LAYOUT) else putString(KEY_LAUNCHER_LAYOUT, json.encodeToString(value)) }
 
     /** Per-list overrides of the default filters (list key -> values), set from "Explore & tune lists". */
     var listFilters: Map<String, ListFilters>
@@ -293,9 +299,9 @@ object Settings {
 
     val OVERVIEW_OPTIONS = listOf(4, 2, 0)
 
-    /** Approximate launcher layout drawn over previews (viewer ▼ toggles it; the settings preview follows). */
+    /** Settings preview: draw Projectivy's home (captured or generic) over the wallpaper. */
     var launcherGuide: Boolean
-        get() = preferences.getBoolean(KEY_LAUNCHER_GUIDE, false)
+        get() = preferences.getBoolean(KEY_LAUNCHER_GUIDE, true)
         set(value) = preferences.edit { putBoolean(KEY_LAUNCHER_GUIDE, value) }
 
     /**
