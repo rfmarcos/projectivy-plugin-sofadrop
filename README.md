@@ -77,13 +77,13 @@ Bug reports and ideas are welcome in the [issues](../../issues). Want to build i
 
 ## 🧾 Credits
 
-* The wallpaper idea and design come from [adelatour11/androidtvbackground](https://github.com/adelatour11/androidtvbackground) (Plex/TMDB backgrounds for Android TV), which [androidtvbackground-reddit](https://github.com/rfmarcos/androidtvbackground-reddit) built on and Sofadrop brings onto the TV as a plugin.
 * Based on the official [Projectivy wallpaper provider template](https://github.com/spocky/projectivy-plugin-wallpaper-provider) by spocky (Apache 2.0).
 * Movie and TV data, images and logos from [TMDB](https://www.themoviedb.org/). *This product uses the TMDB API but is not endorsed or certified by TMDB.*
 * Lists and watch history from [Trakt](https://trakt.tv/), [Simkl](https://simkl.com/) and [MDBList](https://mdblist.com/). *Sofadrop uses Trakt but is not endorsed or certified by Trakt.*
 * The Trakt logo is the official dark-background logo from [trakt.tv/branding](https://trakt.tv/branding), used unaltered; the Simkl and MDBList logos come from their own sites. All names and logos belong to their owners.
 * Streaming availability from TMDB Watch Providers, powered by [JustWatch](https://www.justwatch.com/).
 * [Roboto](https://github.com/googlefonts/roboto) (Apache 2.0) and [Nunito](https://github.com/googlefonts/nunito) (SIL Open Font License 1.1) fonts, and Material Icons (Apache 2.0).
+* Thanks to [adelatour11/androidtvbackground](https://github.com/adelatour11/androidtvbackground), the script that started [androidtvbackground-reddit](https://github.com/rfmarcos/androidtvbackground-reddit) and, through it, this plugin.
 
 ## 📜 License
 
