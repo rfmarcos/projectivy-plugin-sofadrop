@@ -55,6 +55,8 @@ class SettingsFragment : PreviewSettingsFragment() {
         updateDescription(ID_LISTS, ListsFragment.summary(context))
         updateDescription(ID_DETAILS, DetailsFragment.summary(context))
         handler.post(statusRefresher)
+        // Back from the system installer (cancelled, or blocked by Play Protect): offer the update again
+        updateDescription(ID_APP_UPDATE, getString(R.string.update_desc, Settings.updateVersion, BuildConfig.VERSION_NAME))
         background({ Updater.check() }) { }
     }
 
