@@ -23,6 +23,8 @@ class ListsFragment : BaseSettingsFragment() {
             Settings.COUNT_OPTIONS.map { countLabel(context, it) })
         actions += choice(ID_ORDER, R.drawable.ic_act_shuffle, R.string.setting_selection_title, orderLabel(Settings.selectionMode),
             ORDER_MODES.map(::orderLabel))
+        actions += choice(ID_MIX, R.drawable.ic_act_shuffle, R.string.setting_mix_title, mixLabel(Settings.mixLists),
+            listOf(mixLabel(true), mixLabel(false)))
         actions += provider(ID_TMDB, R.drawable.badge_tmdb, "TMDB", ProviderListsFragment.summary(context, SourceProvider.TMDB))
         actions += provider(ID_TRAKT, R.drawable.badge_trakt, getString(R.string.setting_trakt_title),
             ProviderListsFragment.summary(context, SourceProvider.TRAKT))
@@ -70,9 +72,15 @@ class ListsFragment : BaseSettingsFragment() {
                 Settings.selectionMode = ORDER_MODES[index]
                 updateDescription(ID_ORDER, orderLabel(Settings.selectionMode))
             }
+            ID_MIX -> {
+                Settings.mixLists = index == 0
+                updateDescription(ID_MIX, mixLabel(Settings.mixLists))
+            }
         }
         return true
     }
+
+    private fun mixLabel(mixed: Boolean) = getString(if (mixed) R.string.mix_on else R.string.mix_off)
 
     private fun orderLabel(mode: String) =
         getString(if (mode == Settings.SELECTION_RANDOM) R.string.selection_random else R.string.selection_order)
@@ -85,6 +93,7 @@ class ListsFragment : BaseSettingsFragment() {
         private const val ID_SIMKL = 5L
         private const val ID_COUNT = 6L
         private const val ID_ORDER = 7L
+        private const val ID_MIX = 8L
         private val ORDER_MODES = listOf(Settings.SELECTION_ORDER, Settings.SELECTION_RANDOM)
 
         fun countLabel(context: Context, count: Int) =

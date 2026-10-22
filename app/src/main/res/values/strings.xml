@@ -103,7 +103,7 @@
     <string name="list_tmdb_watchlist_tv">TMDB · Your watchlist (TV shows)</string>
     <string name="list_tmdb_favorite_movies">TMDB · Your favourite movies</string>
     <string name="list_tmdb_favorite_tv">TMDB · Your favourite TV shows</string>
-    <string name="setting_selection_title">Order</string>
+    <string name="setting_selection_title">Title picking</string>
     <string name="selection_order">Top of each list</string>
     <string name="selection_random">Random from the whole list</string>
     <string name="setting_watched_title">Watched titles</string>
@@ -270,4 +270,7 @@
     <string name="synopsis_mode_skip">Skip the title</string>
     <string name="synopsis_mode_skip_desc">Only titles with a synopsis in your language</string>
     <string name="exclusion_no_synopsis">Skipped: no synopsis in your language</string>
+    <string name="setting_mix_title">Order in the launcher</string>
+    <string name="mix_on">All lists mixed</string>
+    <string name="mix_off">One list after another</string>
 </resources>

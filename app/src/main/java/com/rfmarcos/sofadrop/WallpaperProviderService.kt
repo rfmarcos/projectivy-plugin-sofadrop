@@ -38,7 +38,7 @@ class WallpaperProviderService : Service() {
 
             Log.i(TAG, "getWallpapers: ${current.size} wallpapers, stale=$stale, pendingChanges=${Settings.hasPendingChanges}")
             store.markServed()
-            return current.mapNotNull { wallpaper ->
+            return (if (Settings.mixLists) current.shuffled() else current).mapNotNull { wallpaper ->
                 val uri = store.uriOf(wallpaper) ?: return@mapNotNull null
                 Wallpaper(
                     uri = uri.toString(),

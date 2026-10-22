@@ -66,6 +66,7 @@ object Settings {
     private const val KEY_WATCHED = "watched_mode"
     private const val KEY_WATCH_SOURCE = "watch_source"
     private const val KEY_SKIP_DUPLICATES = "skip_duplicates"
+    private const val KEY_MIX_LISTS = "mix_lists"
     private const val KEY_REQUIRE_LOGO = "require_logo"
     private const val KEY_LOGO_FALLBACK = "logo_fallback"
     private const val KEY_LOGO_MODE = "logo_mode"
@@ -183,6 +184,14 @@ object Settings {
     var excludeAdult: Boolean
         get() = preferences.getBoolean(KEY_EXCLUDE_ADULT, true)
         set(value) = preferences.edit { putBoolean(KEY_EXCLUDE_ADULT, value) }
+
+    /**
+     * Hand Projectivy the wallpapers shuffled (again on every request) instead of list after list, so
+     * a list of movies isn't followed by a run of shows whichever way Projectivy walks the list.
+     */
+    var mixLists: Boolean
+        get() = preferences.getBoolean(KEY_MIX_LISTS, true)
+        set(value) = preferences.edit { putBoolean(KEY_MIX_LISTS, value) }
 
     /** A title already taken by an earlier list is skipped there, so that list uses its next one. */
     var skipDuplicates: Boolean

@@ -93,7 +93,7 @@
     <string name="list_tmdb_watchlist_tv">TMDB · Tu watchlist (series)</string>
     <string name="list_tmdb_favorite_movies">TMDB · Tus películas favoritas</string>
     <string name="list_tmdb_favorite_tv">TMDB · Tus series favoritas</string>
-    <string name="setting_selection_title">Orden</string>
+    <string name="setting_selection_title">Elección de títulos</string>
     <string name="selection_order">Los primeros de cada lista</string>
     <string name="selection_random">Al azar de toda la lista</string>
     <string name="setting_watched_title">Títulos vistos</string>
@@ -258,4 +258,7 @@
     <string name="synopsis_mode_skip">Descartar el título</string>
     <string name="synopsis_mode_skip_desc">Solo títulos con sinopsis en tu idioma</string>
     <string name="exclusion_no_synopsis">Descartado: sin sinopsis en tu idioma</string>
+    <string name="setting_mix_title">Orden en el launcher</string>
+    <string name="mix_on">Todas las listas mezcladas</string>
+    <string name="mix_off">Una lista tras otra</string>
 </resources>
