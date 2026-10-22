@@ -29,6 +29,11 @@ class DetailsFragment : PreviewSettingsFragment() {
                     .description(if (index == 3) getString(R.string.footer_fallback_desc) else null).build()
             }).build()
         actions += countryAction()
+        actions += action(ID_LOGO_LANGUAGE, R.drawable.ic_act_language, getString(R.string.logo_language_title), logoLanguageLabel(context))
+            .subActions(listOf(R.string.logo_language_own, R.string.logo_language_fallback).mapIndexed { index, label ->
+                GuidedAction.Builder(context).id(ID_LOGO_LANGUAGE * SUB_ID_BASE + index).title(getString(label))
+                    .description(if (index == 1) getString(R.string.logo_language_fallback_desc) else null).build()
+            }).build()
         actions += choice(ID_RESOLUTION, R.drawable.ic_act_hd, R.string.setting_resolution_title, resolutionLabel(context, Settings.outputWidth),
             Settings.WIDTH_OPTIONS.map { resolutionLabel(context, it) })
     }
@@ -70,6 +75,10 @@ class DetailsFragment : PreviewSettingsFragment() {
                 Settings.regionOverride = if (index == 0) "" else Languages.REGIONS[index - 1]
                 updateDescription(ID_COUNTRY, countryLabel(requireContext()))
             }
+            ID_LOGO_LANGUAGE -> {
+                Settings.logoFallback = index == 1
+                updateDescription(ID_LOGO_LANGUAGE, logoLanguageLabel(requireContext()))
+            }
             ID_RESOLUTION -> {
                 Settings.outputWidth = Settings.WIDTH_OPTIONS[index]
                 updateDescription(ID_RESOLUTION, resolutionLabel(requireContext(), Settings.outputWidth))
@@ -85,6 +94,7 @@ class DetailsFragment : PreviewSettingsFragment() {
         private const val ID_RESOLUTION = 3L
         private const val ID_SYNOPSIS = 4L
         private const val ID_FOOTER = 5L
+        private const val ID_LOGO_LANGUAGE = 6L
 
         /** 0 nothing, 1 list source, 2 streaming services, 3 streaming or list source, 4 both. */
         private fun footerIndex() = when {
@@ -103,6 +113,9 @@ class DetailsFragment : PreviewSettingsFragment() {
                 else -> R.string.footer_none
             }
         )
+
+        fun logoLanguageLabel(context: Context) =
+            context.getString(if (Settings.logoFallback) R.string.logo_language_fallback else R.string.logo_language_own)
 
         fun synopsisLabel(context: Context, lines: Int) = context.getString(
             when (lines) {

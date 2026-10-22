@@ -27,7 +27,7 @@ data class WallpaperInfo(
 )
 
 /** Why a title of a list is not used. */
-enum class Exclusion { LOCAL_MARKET, TOO_OLD, ADULT, WATCHED, NO_IMAGE, DUPLICATE }
+enum class Exclusion { LOCAL_MARKET, TOO_OLD, ADULT, NO_LOGO, WATCHED, NO_IMAGE, DUPLICATE }
 
 /** A title of a list and, when it is filtered out, the reason. */
 data class Candidate(val ref: TitleRef, val exclusion: Exclusion? = null)
@@ -72,7 +72,7 @@ class TmdbCatalog(
             }
         }.distinct()
         if (shuffle) refs = refs.shuffled()
-        val check = cutoff != null || filters.globalHits || Settings.excludeAdult
+        val check = cutoff != null || filters.globalHits || Settings.excludeAdult || Settings.requireLogo
         return refs.asSequence()
             .map { Candidate(it, if (check) exclusion(it, cutoff, filters.globalHits) else null) }
             .takeIncluded(pool)
@@ -165,6 +165,8 @@ class TmdbCatalog(
             globalHits && isLocalMarket(item) -> Exclusion.LOCAL_MARKET
             isTooOld(ref.type, item, cutoff) -> Exclusion.TOO_OLD
             Settings.excludeAdult && isAdult(ref, item) -> Exclusion.ADULT
+            // Last: it costs an images request per title
+            Settings.requireLogo && logoPath(ref, item) == null -> Exclusion.NO_LOGO
             else -> null
         }
     }
@@ -227,7 +229,7 @@ class TmdbCatalog(
                 .take(2)
                 .joinToString(", "),
             backdropPath = backdrop,
-            logoPath = logoPath(ref, item, title),
+            logoPath = logoPath(ref, item),
             providerLogoPaths = if (showProviders) providerLogoPaths(ref) else emptyList(),
         )
     }
@@ -242,8 +244,9 @@ class TmdbCatalog(
         return if (default in textless || textless.isEmpty()) default else textless.first()
     }
 
-    private fun logoPath(ref: TitleRef, item: JsonObject, title: String): String? {
+    private fun logoPath(ref: TitleRef, item: JsonObject): String? {
         val type = ref.type
+        val title = item.str(if (type == MediaType.MOVIE) "title" else "name").orEmpty()
         val original = item.str(if (type == MediaType.MOVIE) "original_title" else "original_name").orEmpty()
         val originalLanguage = item.str("original_language").orEmpty()
 
@@ -259,6 +262,8 @@ class TmdbCatalog(
                 .orEmpty()
             if (similarity(title, english) > 0.9) logo = logoIn(ref, "en")
         }
+        // Optional: a logo in another language beats the title written as plain text
+        if (logo == null && Settings.logoFallback) logo = logoIn(ref, originalLanguage) ?: logoIn(ref, "en")
         return logo
     }
 

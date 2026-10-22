@@ -45,6 +45,10 @@ class ListExplorerFragment : BaseSettingsFragment() {
                 .also { it.isEnabled = Settings.watchSource != null },
             action(ID_ADULT, R.drawable.ic_act_block, getString(R.string.filters_adult_title), getString(R.string.filters_adult_desc))
                 .checkSetId(GuidedAction.CHECKBOX_CHECK_SET_ID).checked(Settings.excludeAdult).multilineDescription(true).build(),
+            action(ID_DUPLICATES, R.drawable.ic_act_list, getString(R.string.filters_duplicates_title), getString(R.string.filters_duplicates_desc))
+                .checkSetId(GuidedAction.CHECKBOX_CHECK_SET_ID).checked(Settings.skipDuplicates).multilineDescription(true).build(),
+            action(ID_LOGO, R.drawable.ic_act_hd, getString(R.string.filters_logo_title), getString(R.string.filters_logo_desc))
+                .checkSetId(GuidedAction.CHECKBOX_CHECK_SET_ID).checked(Settings.requireLogo).multilineDescription(true).build(),
         )
         // Only selected lists: duplicates (and so what a list really brings) depend on the others
         lists = Sources.selected()
@@ -65,7 +69,11 @@ class ListExplorerFragment : BaseSettingsFragment() {
             .build()
 
     override fun onGuidedActionClicked(action: GuidedAction) {
-        if (action.id == ID_ADULT) Settings.excludeAdult = action.isChecked
+        when (action.id) {
+            ID_ADULT -> Settings.excludeAdult = action.isChecked
+            ID_DUPLICATES -> Settings.skipDuplicates = action.isChecked
+            ID_LOGO -> Settings.requireLogo = action.isChecked
+        }
         val source = lists.getOrNull((action.id - LIST_BASE).toInt()) ?: return
         add(parentFragmentManager, ListContentsFragment.newInstance(source.key))
     }
@@ -90,6 +98,8 @@ class ListExplorerFragment : BaseSettingsFragment() {
         private const val ID_WATCHED = 5L
         private const val ID_WATCH_SOURCE = 6L
         private const val ID_HEADER = 7L
+        private const val ID_DUPLICATES = 8L
+        private const val ID_LOGO = 9L
         private const val LIST_BASE = 100L
 
         /** Value of a default filter and, below, what it does. */
@@ -229,6 +239,7 @@ class ListContentsFragment : BaseSettingsFragment() {
             Exclusion.LOCAL_MARKET -> R.string.exclusion_local_market
             Exclusion.TOO_OLD -> R.string.exclusion_too_old
             Exclusion.ADULT -> R.string.exclusion_adult
+            Exclusion.NO_LOGO -> R.string.exclusion_no_logo
             Exclusion.WATCHED -> R.string.exclusion_watched
             Exclusion.NO_IMAGE -> R.string.exclusion_no_image
             Exclusion.DUPLICATE -> R.string.exclusion_duplicate

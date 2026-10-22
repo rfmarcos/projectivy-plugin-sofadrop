@@ -247,4 +247,13 @@
     <string name="watched_need_source">Choose a watch history first</string>
     <string name="explore_lists_header">Your lists</string>
     <string name="explore_lists_header_desc">Open one to see its titles and give it its own filters</string>
+    <string name="filters_duplicates_title">Skip repeated titles</string>
+    <string name="filters_duplicates_desc">A title already taken from an earlier list is skipped, and that list uses its next one</string>
+    <string name="filters_logo_title">Only titles with a title image</string>
+    <string name="filters_logo_desc">Skips titles whose name would be written as plain text because TMDB has no logo for them</string>
+    <string name="exclusion_no_logo">Skipped: no title image</string>
+    <string name="logo_language_title">Title image</string>
+    <string name="logo_language_own">In your language only</string>
+    <string name="logo_language_fallback">Your language, else the original</string>
+    <string name="logo_language_fallback_desc">With no logo in your language, the original-language one (or English) is used instead of plain text</string>
 </resources>

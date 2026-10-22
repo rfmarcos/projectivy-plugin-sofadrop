@@ -82,7 +82,8 @@ class GenerateWallpapersWorker(context: Context, params: WorkerParameters) : Wor
             for (ref in plan.usable) {
                 if (isStopped) return stored
                 if (added >= perList) break
-                if (!seen.add(ref)) continue
+                // Without skipping duplicates, a title already drawn for another list still counts for this one
+                if (!seen.add(ref)) { added++; continue }
                 try {
                     val info = factory.build(ref, plan) ?: continue
                     val bitmap = factory.render(info)

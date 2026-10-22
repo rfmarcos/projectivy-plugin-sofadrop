@@ -65,6 +65,9 @@ object Settings {
     private const val KEY_PREVIEW_PIN = "_preview_pin"
     private const val KEY_WATCHED = "watched_mode"
     private const val KEY_WATCH_SOURCE = "watch_source"
+    private const val KEY_SKIP_DUPLICATES = "skip_duplicates"
+    private const val KEY_REQUIRE_LOGO = "require_logo"
+    private const val KEY_LOGO_FALLBACK = "logo_fallback"
     private const val KEY_TMDB_SESSION = "_tmdb_session_id"
     private const val KEY_TMDB_ACCOUNT = "_tmdb_account_id"
     private const val KEY_TMDB_USER = "_tmdb_user"
@@ -167,6 +170,21 @@ object Settings {
     var excludeAdult: Boolean
         get() = preferences.getBoolean(KEY_EXCLUDE_ADULT, true)
         set(value) = preferences.edit { putBoolean(KEY_EXCLUDE_ADULT, value) }
+
+    /** A title already taken by an earlier list is skipped there, so that list uses its next one. */
+    var skipDuplicates: Boolean
+        get() = preferences.getBoolean(KEY_SKIP_DUPLICATES, true)
+        set(value) = preferences.edit { putBoolean(KEY_SKIP_DUPLICATES, value) }
+
+    /** Skip titles with no logo (their name would be drawn as plain text). */
+    var requireLogo: Boolean
+        get() = preferences.getBoolean(KEY_REQUIRE_LOGO, false)
+        set(value) = preferences.edit { putBoolean(KEY_REQUIRE_LOGO, value) }
+
+    /** With no logo in the configured language, use the original-language one (or the English one). */
+    var logoFallback: Boolean
+        get() = preferences.getBoolean(KEY_LOGO_FALLBACK, false)
+        set(value) = preferences.edit { putBoolean(KEY_LOGO_FALLBACK, value) }
 
     /** Per-list overrides of the default filters (list key -> values), set on each list's page in "Filters & explore lists". */
     var listFilters: Map<String, ListFilters>
@@ -298,7 +316,7 @@ object Settings {
 
     /** "order": first titles of each list; "random": random picks among the best ones. */
     var selectionMode: String
-        get() = preferences.getString(KEY_SELECTION, SELECTION_ORDER) ?: SELECTION_ORDER
+        get() = preferences.getString(KEY_SELECTION, SELECTION_RANDOM) ?: SELECTION_RANDOM
         set(value) = preferences.edit { putString(KEY_SELECTION, value) }
 
     /** Synopsis lines on the wallpaper: fewer lines keep the info block clear of the launcher rows. */
@@ -414,7 +432,8 @@ object Settings {
             outputWidth, globalHitsOnly, showProviders, selectionMode, watchSource?.let { "$it:$watchedMode" }.orEmpty(),
             maxAgeMonths, excludeAdult, listFilters.toSortedMap(),
         // Only when changed, so existing installs don't see a pending change after updating
-        ).plus(listOfNotNull(overviewLines.takeIf { it != 4 }, "nosource".takeIf { !showSource }, "fallback".takeIf { showSource && showProviders && sourceFallback })).joinToString("|")
+        ).plus(listOfNotNull(overviewLines.takeIf { it != 4 }, "nosource".takeIf { !showSource }, "fallback".takeIf { showSource && showProviders && sourceFallback },
+            "dups".takeIf { !skipDuplicates }, "logo".takeIf { requireLogo }, "logofallback".takeIf { logoFallback })).joinToString("|")
 
     /** True when the current wallpapers were generated with different settings. */
     val hasPendingChanges: Boolean

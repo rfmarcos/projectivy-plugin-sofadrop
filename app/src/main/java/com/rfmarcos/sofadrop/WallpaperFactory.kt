@@ -38,7 +38,7 @@ class WallpaperFactory(context: Context, private val width: Int) {
         val statuses = mutableMapOf<TitleRef, WatchStatus>()
         val candidates = catalog.candidates(source, perList * 2, trakt, simkl, mdbList, shuffle = random).map { candidate ->
             if (candidate.exclusion != null) return@map candidate
-            if (candidate.ref in taken) return@map candidate.copy(exclusion = Exclusion.DUPLICATE)
+            if (Settings.skipDuplicates && candidate.ref in taken) return@map candidate.copy(exclusion = Exclusion.DUPLICATE)
             // History is only loaded when some list shows or hides watched titles
             val status = if (watchedMode == Settings.WATCHED_SHOW) null else watched?.status(candidate.ref)?.also { statuses[candidate.ref] = it }
             if (hideWatched && status is WatchStatus.Watched) candidate.copy(exclusion = Exclusion.WATCHED) else candidate

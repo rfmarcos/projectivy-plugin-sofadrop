@@ -235,4 +235,13 @@
     <string name="watched_need_source">Elige antes un historial de vistos</string>
     <string name="explore_lists_header">Tus listas</string>
     <string name="explore_lists_header_desc">Abre una para ver sus títulos y darle sus propios filtros</string>
+    <string name="filters_duplicates_title">Saltar títulos repetidos</string>
+    <string name="filters_duplicates_desc">Si un título ya salió de una lista anterior, se salta y esa lista usa el siguiente</string>
+    <string name="filters_logo_title">Solo títulos con imagen de título</string>
+    <string name="filters_logo_desc">Salta los títulos cuyo nombre se escribiría como texto porque TMDB no tiene su logo</string>
+    <string name="exclusion_no_logo">Descartado: sin imagen de título</string>
+    <string name="logo_language_title">Imagen del título</string>
+    <string name="logo_language_own">Solo en tu idioma</string>
+    <string name="logo_language_fallback">Tu idioma o, si no hay, el original</string>
+    <string name="logo_language_fallback_desc">Si no hay logo en tu idioma, se usa el del idioma original (o el inglés) en vez de texto</string>
 </resources>
