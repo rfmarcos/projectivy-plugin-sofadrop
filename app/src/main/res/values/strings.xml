@@ -274,8 +274,7 @@
     <string name="mix_on">All lists mixed</string>
     <string name="mix_off">One list after another</string>
     <string name="update_title">Update available</string>
-    <string name="update_desc">Version %1$s (you have %2$s) · install it now
-If Play Protect blocks it: More details → Install anyway</string>
+    <string name="update_desc">Version %1$s (you have %2$s) · install it now\nIf Play Protect blocks it: More details → Install anyway</string>
     <string name="update_downloading">Downloading version %1$s…</string>
     <string name="update_failed">Couldn\'t update: %1$s</string>
     <string name="update_allow">Allow Sofadrop to install apps, then choose the update again</string>

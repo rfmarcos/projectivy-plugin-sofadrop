@@ -262,8 +262,7 @@
     <string name="mix_on">Todas las listas mezcladas</string>
     <string name="mix_off">Una lista tras otra</string>
     <string name="update_title">Actualización disponible</string>
-    <string name="update_desc">Versión %1$s (tienes la %2$s) · instálala ahora
-Si Play Protect la bloquea: Más detalles → Instalar de todos modos</string>
+    <string name="update_desc">Versión %1$s (tienes la %2$s) · instálala ahora\nSi Play Protect la bloquea: Más detalles → Instalar de todos modos</string>
     <string name="update_downloading">Descargando la versión %1$s…</string>
     <string name="update_failed">No se pudo actualizar: %1$s</string>
     <string name="update_allow">Permite que Sofadrop instale aplicaciones y vuelve a elegir la actualización</string>
