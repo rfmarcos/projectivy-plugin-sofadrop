@@ -25,6 +25,7 @@ Sofadrop is a wallpaper plugin for [Projectivy Launcher](https://github.com/spoc
 
 | | |
 |---|---|
+| ![Moana on Projectivy's home screen](docs/images/projectivy_home_moana.jpg) | ![Minions & Monsters on Projectivy's home screen](docs/images/projectivy_home_minions.jpg) |
 | ![Avengers: Doomsday](docs/images/wallpaper_en_avengers.jpg) | ![Toy Story 5](docs/images/wallpaper_en_toy_story_5.jpg) |
 | ![A title marked as watched from your Trakt history](docs/images/wallpaper_en_watched.jpg) | ![Streaming services available in your country](docs/images/wallpaper_en_streaming.jpg) |
 | ![Avatar: Aang, in Spanish](docs/images/wallpaper_es_avatar.jpg) | ![The Mandalorian & Grogu, in Spanish](docs/images/wallpaper_es_mandalorian.jpg) |
