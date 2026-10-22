@@ -10,6 +10,7 @@ import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.ContextCompat
 import androidx.leanback.app.GuidedStepSupportFragment
 import androidx.leanback.widget.GuidedAction
+import androidx.leanback.widget.GuidedActionsStylist
 import java.util.concurrent.Executors
 
 /** Shared look and helpers of the settings screens (styled like Projectivy's own settings). */
@@ -18,6 +19,15 @@ abstract class BaseSettingsFragment : GuidedStepSupportFragment() {
     protected val handler = Handler(Looper.getMainLooper())
 
     override fun onProvideTheme(): Int = R.style.Theme_Sofadrop_GuidedStep
+
+    // Choices open on their current value instead of the first option
+    override fun onCreateActionsStylist(): GuidedActionsStylist = object : GuidedActionsStylist() {
+        override fun onUpdateExpandedViewHolder(avh: ViewHolder?) {
+            super.onUpdateExpandedViewHolder(avh)
+            val index = avh?.action?.subActions?.indexOfFirst { it.isChecked } ?: return
+            if (index > 0) subActionsGridView?.post { subActionsGridView?.selectedPosition = index }
+        }
+    }
 
     /** Setting icon inside a translucent circle. */
     protected fun actionIcon(iconRes: Int): Drawable {
@@ -40,12 +50,15 @@ abstract class BaseSettingsFragment : GuidedStepSupportFragment() {
             .checkSetId(GuidedAction.CHECKBOX_CHECK_SET_ID).checked(checked)
 
     /** Row that expands into single-choice options with ids `id * SUB_ID_BASE + index`. */
-    protected fun choice(id: Long, icon: Int, title: Int, current: String, options: List<String>): GuidedAction {
-        val subActions = options.mapIndexed { index, label ->
-            GuidedAction.Builder(requireContext()).id(id * SUB_ID_BASE + index).title(label).build()
+    protected fun choice(id: Long, icon: Int, title: Int, current: String, options: List<String>): GuidedAction =
+        action(id, icon, getString(title), current).subActions(options(id, options, current)).build()
+
+    /** Single-choice options of row [id], the one labelled [current] marked as a radio button. */
+    protected fun options(id: Long, labels: List<String>, current: String, descriptions: List<String?> = emptyList()) =
+        labels.mapIndexed { index, label ->
+            GuidedAction.Builder(requireContext()).id(id * SUB_ID_BASE + index).title(label).description(descriptions.getOrNull(index))
+                .checkSetId(RADIO_SET_BASE + id.toInt()).checked(label == current).build()
         }
-        return action(id, icon, getString(title), current).subActions(subActions).build()
-    }
 
     /** Text field edited with the on-screen keyboard; [shown] is what the row displays. */
     protected fun editable(id: Long, icon: Int, title: CharSequence, value: String, shown: CharSequence) =
@@ -101,6 +114,7 @@ abstract class BaseSettingsFragment : GuidedStepSupportFragment() {
     companion object {
         /** Sub-action ids are `parent * SUB_ID_BASE + index`. */
         const val SUB_ID_BASE = 1000L
+        private const val RADIO_SET_BASE = 100
         private val executor = Executors.newCachedThreadPool()
     }
 }

@@ -37,12 +37,15 @@ class ListExplorerFragment : BaseSettingsFragment() {
         val context = requireContext()
         val trackers = Settings.connectedTrackers
         val rows = mutableListOf(
-            choiceRow(ID_AGE, R.drawable.ic_act_schedule, R.string.filters_age_title, Settings.MAX_AGE_OPTIONS.map { Filters.ageLabel(context, it) }),
-            choiceRow(ID_GLOBAL_HITS, R.drawable.ic_act_public, R.string.setting_global_hits_title, Filters.onOff(context)),
+            choiceRow(ID_AGE, R.drawable.ic_act_schedule, R.string.filters_age_title, Settings.MAX_AGE_OPTIONS.map { Filters.ageLabel(context, it) },
+                Filters.ageLabel(context, Settings.maxAgeMonths)),
+            choiceRow(ID_GLOBAL_HITS, R.drawable.ic_act_public, R.string.setting_global_hits_title, Filters.onOff(context),
+                Filters.onOff(context)[if (Settings.globalHitsOnly) 1 else 0]),
             choiceRow(ID_WATCH_SOURCE, R.drawable.ic_act_history, R.string.watch_source_title,
-                (listOf(Settings.WATCH_NONE) + trackers).map { Filters.watchSourceLabel(context, it) }).also { it.isEnabled = trackers.isNotEmpty() },
-            choiceRow(ID_WATCHED, R.drawable.ic_act_visibility, R.string.setting_watched_title, Filters.WATCHED_MODES.map { Filters.watchedLabel(context, it) })
-                .also { it.isEnabled = Settings.watchSource != null },
+                (listOf(Settings.WATCH_NONE) + trackers).map { Filters.watchSourceLabel(context, it) },
+                Filters.watchSourceLabel(context, Settings.watchSource)).also { it.isEnabled = trackers.isNotEmpty() },
+            choiceRow(ID_WATCHED, R.drawable.ic_act_visibility, R.string.setting_watched_title, Filters.WATCHED_MODES.map { Filters.watchedLabel(context, it) },
+                Filters.watchedLabel(context, Settings.watchedMode)).also { it.isEnabled = Settings.watchSource != null },
             action(ID_ADULT, R.drawable.ic_act_block, getString(R.string.filters_adult_title), getString(R.string.filters_adult_desc))
                 .checkSetId(GuidedAction.CHECKBOX_CHECK_SET_ID).checked(Settings.excludeAdult).multilineDescription(true).build(),
             action(ID_DUPLICATES, R.drawable.ic_act_list, getString(R.string.filters_duplicates_title), getString(R.string.filters_duplicates_desc))
@@ -63,10 +66,9 @@ class ListExplorerFragment : BaseSettingsFragment() {
         return rows
     }
 
-    private fun choiceRow(id: Long, icon: Int, title: Int, values: List<String>) =
+    private fun choiceRow(id: Long, icon: Int, title: Int, values: List<String>, current: String) =
         action(id, icon, getString(title), describe(requireContext(), id)).multilineDescription(true)
-            .subActions(values.mapIndexed { index, label -> GuidedAction.Builder(requireContext()).id(id * SUB_ID_BASE + index).title(label).build() })
-            .build()
+            .subActions(options(id, values, current)).build()
 
     override fun onGuidedActionClicked(action: GuidedAction) {
         when (action.id) {
@@ -166,7 +168,7 @@ class ListContentsFragment : BaseSettingsFragment() {
 
     private fun filterRow(id: Long, icon: Int, title: Int, value: String, options: List<String>) =
         action(id, icon, getString(title), value)
-            .subActions(options.mapIndexed { index, label -> GuidedAction.Builder(requireContext()).id(id * SUB_ID_BASE + index).title(label).build() })
+            .subActions(options(id, options, value))
             .build()
 
     override fun onSubGuidedActionClicked(action: GuidedAction): Boolean {
@@ -198,7 +200,7 @@ class ListContentsFragment : BaseSettingsFragment() {
             val factory = WallpaperFactory(context, 1280)
             val plan = factory.plan(list, perList)
             val usable = plan.usable.take(perList).toSet()
-            plan.candidates.mapIndexed { index, candidate ->
+            plan.usable.size to plan.candidates.mapIndexed { index, candidate ->
                 val (title, year) = factory.catalog.summary(candidate.ref) ?: ("TMDB ${candidate.ref.tmdbId}" to "")
                 val status = when {
                     candidate.exclusion != null -> exclusionText(context, candidate.exclusion)
@@ -220,11 +222,13 @@ class ListContentsFragment : BaseSettingsFragment() {
             }
         }) { result ->
             if (job != loadJob) return@background
-            result.onSuccess { rows ->
-                guidanceStylist.descriptionView?.text = getString(
-                    if (Settings.selectionMode == Settings.SELECTION_RANDOM) R.string.explore_summary_random else R.string.explore_summary,
-                    rows.size, perList,
-                )
+            result.onSuccess { (usableCount, rows) ->
+                guidanceStylist.descriptionView?.text = when {
+                    // Fewer usable titles than asked for: all of them are used, whatever the order
+                    usableCount <= perList -> getString(R.string.explore_summary_all, rows.size, usableCount)
+                    Settings.selectionMode == Settings.SELECTION_RANDOM -> getString(R.string.explore_summary_random, rows.size, perList)
+                    else -> getString(R.string.explore_summary, rows.size, perList)
+                }
                 setActions(filterActions + rows.mapIndexed { index, (title, status, icon) ->
                     action(TITLE_BASE + index, icon, title, status).multilineDescription(true).focusable(true).build()
                 })

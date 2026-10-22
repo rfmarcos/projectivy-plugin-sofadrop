@@ -80,7 +80,7 @@ class ProviderListsFragment : BaseSettingsFragment() {
         }
         val (icon, title) = when (provider) {
             SourceProvider.TRAKT -> R.drawable.ic_act_trakt to R.string.account_title_trakt
-            SourceProvider.SIMKL -> R.drawable.ic_act_check to R.string.account_title_simkl
+            SourceProvider.SIMKL -> R.drawable.ic_act_account to R.string.account_title_simkl
             else -> R.drawable.ic_act_account to R.string.account_title_tmdb
         }
         val builder = action(ID_ACCOUNT, icon, getString(title), description)

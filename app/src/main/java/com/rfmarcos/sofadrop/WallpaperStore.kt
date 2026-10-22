@@ -32,13 +32,17 @@ class WallpaperStore(private val context: Context) {
     fun newGeneration(): File =
         File(root, "gen-${System.currentTimeMillis()}").apply { mkdirs() }
 
-    /** Make [generation] the current set and delete the previous ones. */
+    /**
+     * Make [generation] the current set. The previous set is kept until the next publish: Projectivy
+     * keeps showing its URIs until it asks for the list again, and deleted files fail to load there.
+     */
     fun publish(generation: File, wallpapers: List<StoredWallpaper>) {
         File(generation, INDEX).writeText(json.encodeToString(wallpapers))
+        val previous = currentDir()?.name
         val tmp = File(root, "current.tmp")
         tmp.writeText(generation.name)
         tmp.renameTo(currentFile)
-        root.listFiles()?.filter { it.isDirectory && it.name != generation.name }?.forEach { it.deleteRecursively() }
+        root.listFiles()?.filter { it.isDirectory && it.name != generation.name && it.name != previous }?.forEach { it.deleteRecursively() }
     }
 
     fun discard(generation: File) {

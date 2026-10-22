@@ -24,20 +24,19 @@
         android:text="@string/viewer_pinned"
         android:visibility="gone" />
 
+    <!-- Full screen so the radial glow fades out completely instead of ending at the cluster's edge -->
     <FrameLayout
         android:id="@+id/viewer_overlay"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:background="@drawable/viewer_scrim"
-        android:paddingStart="160dp"
-        android:paddingTop="120dp"
         android:paddingEnd="56dp"
         android:paddingBottom="44dp">
 
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
             android:gravity="end"
             android:orientation="vertical">
 

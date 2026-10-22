@@ -9,9 +9,9 @@ import androidx.leanback.widget.GuidedAction
 class AboutFragment : BaseSettingsFragment() {
 
     override fun onCreateGuidance(savedInstanceState: Bundle?) = Guidance(
-        getString(R.string.plugin_name),
-        getString(R.string.plugin_description),
         getString(R.string.setting_about_title),
+        getString(R.string.plugin_description),
+        getString(R.string.plugin_name),
         AppCompatResources.getDrawable(requireActivity(), R.mipmap.ic_launcher),
     )
 

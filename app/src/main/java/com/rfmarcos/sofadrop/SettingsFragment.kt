@@ -128,7 +128,10 @@ class SettingsFragment : PreviewSettingsFragment() {
             Settings.hasPendingChanges -> getString(R.string.status_pending, count)
             else -> getString(
                 R.string.status_ok, count,
-                DateUtils.getRelativeTimeSpanString(Settings.lastGeneration, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS),
+                // "0 minutes ago" reads oddly; mid-sentence, Spanish and others capitalise it ("Hace 3 minutos")
+                if (System.currentTimeMillis() - Settings.lastGeneration < DateUtils.MINUTE_IN_MILLIS) getString(R.string.time_just_now)
+                else DateUtils.getRelativeTimeSpanString(Settings.lastGeneration, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS)
+                    .toString().replaceFirstChar { it.lowercase() },
             )
         }
     }

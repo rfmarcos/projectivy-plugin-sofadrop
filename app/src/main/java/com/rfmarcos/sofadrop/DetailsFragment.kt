@@ -23,17 +23,13 @@ class DetailsFragment : PreviewSettingsFragment() {
         actions += choice(ID_SYNOPSIS, R.drawable.ic_act_count, R.string.synopsis_title, synopsisLabel(context, Settings.overviewLines),
             Settings.OVERVIEW_OPTIONS.map { synopsisLabel(context, it) })
         actions += action(ID_FOOTER, R.drawable.ic_act_list, getString(R.string.footer_title), footerLabel(context, footerIndex()))
-            .subActions((0..4).map { index ->
-                GuidedAction.Builder(context).id(ID_FOOTER * SUB_ID_BASE + index).title(footerLabel(context, index))
-                    // the fallback option is the one that needs explaining
-                    .description(if (index == 3) getString(R.string.footer_fallback_desc) else null).build()
-            }).build()
+            // the fallback option is the one that needs explaining
+            .subActions(options(ID_FOOTER, (0..4).map { footerLabel(context, it) }, footerLabel(context, footerIndex()),
+                listOf(null, null, null, getString(R.string.footer_fallback_desc)))).build()
         actions += countryAction()
         actions += action(ID_LOGO_LANGUAGE, R.drawable.ic_act_language, getString(R.string.logo_language_title), logoLanguageLabel(context))
-            .subActions(listOf(R.string.logo_language_own, R.string.logo_language_fallback).mapIndexed { index, label ->
-                GuidedAction.Builder(context).id(ID_LOGO_LANGUAGE * SUB_ID_BASE + index).title(getString(label))
-                    .description(if (index == 1) getString(R.string.logo_language_fallback_desc) else null).build()
-            }).build()
+            .subActions(options(ID_LOGO_LANGUAGE, listOf(getString(R.string.logo_language_own), getString(R.string.logo_language_fallback)),
+                logoLanguageLabel(context), listOf(null, getString(R.string.logo_language_fallback_desc)))).build()
         actions += choice(ID_RESOLUTION, R.drawable.ic_act_hd, R.string.setting_resolution_title, resolutionLabel(context, Settings.outputWidth),
             Settings.WIDTH_OPTIONS.map { resolutionLabel(context, it) })
     }

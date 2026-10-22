@@ -91,8 +91,8 @@ class TmdbCatalog(
         val account = "account/${Settings.tmdbAccountId}"
         val session = "session_id=${Settings.tmdbSessionId}&sort_by=created_at.desc"
         return when (key) {
-            "tmdb:trending_movies" -> trending(MediaType.MOVIE, cutoff)
-            "tmdb:trending_tv" -> trending(MediaType.TV, cutoff)
+            "tmdb:trending_movies" -> trending(MediaType.MOVIE, cutoff, count)
+            "tmdb:trending_tv" -> trending(MediaType.TV, cutoff, count)
             "tmdb:popular_movies" -> pages("movie/popular?region=$region", MediaType.MOVIE, count)
             "tmdb:popular_tv" -> pages("tv/popular", MediaType.TV, count)
             "tmdb:now_playing" -> pages("movie/now_playing?region=$region", MediaType.MOVIE, count)
@@ -109,23 +109,28 @@ class TmdbCatalog(
     }
 
     /** Weekly trending + popular titles within the age limit, ranked by weighted rating (as TMDB.py). */
-    private fun trending(type: MediaType, cutoff: String?): List<TitleRef> {
+    private fun trending(type: MediaType, cutoff: String?, count: Int): List<TitleRef> {
         val dates = cutoff?.let {
             if (type == MediaType.MOVIE) "&release_date.gte=$it&release_date.lte=$today" else "&first_air_date.gte=$it&first_air_date.lte=$today"
         }.orEmpty()
         val discover = if (type == MediaType.MOVIE) {
-            "discover/movie?sort_by=popularity.desc&language=$language&include_adult=false&page=1" +
+            "discover/movie?sort_by=popularity.desc&language=$language&include_adult=false" +
                 "&with_release_type=4|5|6&include_video=false&vote_average.gte=1&vote_count.gte=50" +
                 "&with_runtime.gte=15&without_genres=99$dates"
         } else {
-            "discover/tv?sort_by=popularity.desc&language=$language&include_adult=false&page=1" +
+            "discover/tv?sort_by=popularity.desc&language=$language&include_adult=false" +
                 "&vote_average.gte=1&vote_count.gte=50&with_runtime.gte=15&without_genres=99|16$dates"
         }
         val items = linkedMapOf<Int, JsonObject>()
-        listOf("trending/${type.path}/week?language=$language", discover).forEach { query ->
-            client.get(query)?.objects("results")?.forEach { item ->
-                item.int("id")?.let { items.putIfAbsent(it, item) }
+        // Both sources overlap, so read about as many pages of each as the list needs (20 titles per page)
+        val pageCount = ((count + 19) / 20).coerceIn(1, 5)
+        for (page in 1..pageCount) {
+            listOf("trending/${type.path}/week?language=$language&page=$page", "$discover&page=$page").forEach { query ->
+                client.get(query)?.objects("results")?.forEach { item ->
+                    item.int("id")?.let { items.putIfAbsent(it, item) }
+                }
             }
+            if (items.size >= count) break
         }
         return items.values.sortedByDescending(::weightedRating).mapNotNull { item -> item.int("id")?.let { TitleRef(type, it) } }
     }
