@@ -41,6 +41,8 @@ Open them from **Projectivy → Settings → Appearance → Wallpaper → Config
 
 **Updates:** Sofadrop checks this repository's releases (when the settings open, at most every 12 hours, and during background updates). When there is a newer version, *Update available* appears at the top of the settings: choosing it downloads the APK and opens Android's installer (the first time, Android asks you to allow Sofadrop to install apps).
 
+**Google Play Protect** may block the install (also when installing the APK by hand) with *"Play Protect doesn't recognise other apps from this developer"*: Sofadrop isn't on Google Play, so Google doesn't know its developer yet. Choose **More details → Install anyway**; your settings are kept.
+
 **Lists → Filters & explore lists** starts with the default filters for every list:
 
 * *Maximum age* (no limit by default, or 6 months to 5 years; release date, or last air date for shows) and *Global hits only* (on by default). Both apply by default only to trending, popular and similar lists, so watchlists and favourites aren't emptied.
@@ -85,7 +87,7 @@ How often the wallpaper *changes on screen* is configured in Projectivy itself; 
 ## 📥 Installation
 
 1. Download the APK from the [releases](../../releases) (or build it, see below).
-2. Install it on your Android TV (e.g. with *Downloader*, *Send Files to TV* or `adb install`).
+2. Install it on your Android TV (e.g. with *Downloader*, *Send Files to TV* or `adb install`). If Google Play Protect blocks it, choose **More details → Install anyway** (see *Updates* below).
 3. In Projectivy go to **Settings → Appearance → Wallpaper → Launcher wallpaper** and pick **🔌 Sofadrop** (at the end of the list).
 4. Open **Configure**, enter your TMDB key and choose **Update now**.
 
