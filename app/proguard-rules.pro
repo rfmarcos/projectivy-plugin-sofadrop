@@ -19,3 +19,9 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+# WorkManager's Room database is created by reflection (WorkDatabase_Impl); without this the
+# release build crashes on start ("Failed to create an instance of class androidx.work.impl.WorkDatabase")
+-keep class * extends androidx.room.RoomDatabase { <init>(); }
+# Same for WorkManager's input mergers: its own "-keep class" rule doesn't keep the constructor in
+# R8 full mode, and work never starts ("Could not create Input Merger ...OverwritingInputMerger")
+-keep class * extends androidx.work.InputMerger { <init>(); }

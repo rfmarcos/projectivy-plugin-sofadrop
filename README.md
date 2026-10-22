@@ -108,7 +108,7 @@ trakt.clientId=YOUR_TRAKT_CLIENT_ID     # optional
 trakt.clientSecret=YOUR_TRAKT_SECRET    # optional
 ```
 
-The TMDB and MDBList keys are only included in **debug** builds; release builds never contain them. The Trakt client id/secret identify the *app* (not a user) and are included in every build.
+Your personal keys (`tmdb.token`, `mdblist.key`) are only included in **debug** builds; release builds never contain them. The app's own credentials (`tmdb.appKey` and the Trakt, Simkl and MDBList client ids) identify the *app*, not a user, and are included in every build, so users only scan QR codes.
 
 Instrumented tests (`connectedDebugAndroidTest`) uninstall the app when they finish, so point them at an emulator, e.g. `ANDROID_SERIAL=emulator-5554 ./gradlew :app:connectedDebugAndroidTest`.
 
