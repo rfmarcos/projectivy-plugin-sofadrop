@@ -13,7 +13,7 @@ class SettingsActivity : FragmentActivity() {
         super.onCreate(savedInstanceState)
         Settings.init(this)
 
-        if (!packageManager.isApplicationInstalled(PROJECTIVY_PACKAGE)) {
+        if (!packageManager.isApplicationInstalled(Projectivy.PACKAGE)) {
             Toast.makeText(this, R.string.projectivy_not_installed, Toast.LENGTH_LONG).show()
         }
 
@@ -47,9 +47,5 @@ class SettingsActivity : FragmentActivity() {
         true
     } catch (_: PackageManager.NameNotFoundException) {
         false
-    }
-
-    companion object {
-        private const val PROJECTIVY_PACKAGE = "com.spocky.projengmenu"
     }
 }

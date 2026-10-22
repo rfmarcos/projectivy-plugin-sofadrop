@@ -45,6 +45,9 @@ class WallpaperStore(private val context: Context) {
         root.listFiles()?.filter { it.isDirectory && it.name != generation.name && it.name != keep }?.forEach { it.deleteRecursively() }
     }
 
+    /** True once Projectivy has been given a set (since 1.0.1). */
+    val everServed: Boolean get() = servedFile.exists()
+
     /** Remember that Projectivy now has the current set's URIs (see [publish]). */
     fun markServed() {
         currentDir()?.let { servedFile.writeText(it.name) }

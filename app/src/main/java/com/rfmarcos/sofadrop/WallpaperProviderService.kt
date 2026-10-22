@@ -23,6 +23,7 @@ class WallpaperProviderService : Service() {
 
         override fun getWallpapers(event: Event?): List<Wallpaper> {
             Log.d(TAG, "getWallpapers(${event?.javaClass?.simpleName})")
+            Settings.projectivyAskedAt = System.currentTimeMillis()
             if (event !is Event.TimeElapsed) return emptyList()
 
             // Never block Projectivy: return what we have and refresh in the background if needed

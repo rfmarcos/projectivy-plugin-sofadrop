@@ -20,6 +20,8 @@ class AboutFragment : BaseSettingsFragment() {
         else BuildConfig.VERSION_NAME
         actions += action(ID_VERSION, R.drawable.ic_act_status, getString(R.string.about_version), version)
             .focusable(false).build()
+        actions += action(ID_USE_IN_PROJECTIVY, R.drawable.ic_act_tv, getString(R.string.use_in_projectivy_title),
+            getString(R.string.use_in_projectivy_desc)).multilineDescription(true).build()
         if (BuildConfig.SUPPORT_URL.isNotBlank()) {
             actions += action(ID_SUPPORT, R.drawable.ic_act_heart, getString(R.string.about_support), getString(R.string.about_support_desc)).build()
         }
@@ -32,6 +34,7 @@ class AboutFragment : BaseSettingsFragment() {
 
     override fun onGuidedActionClicked(action: GuidedAction) {
         when (action.id) {
+            ID_USE_IN_PROJECTIVY -> Projectivy.openWallpaperSettings(requireContext())
             ID_SUPPORT -> LinkQrDialog.newInstance(BuildConfig.SUPPORT_URL, R.string.about_support, R.string.about_support_scan)
                 .show(parentFragmentManager, "support")
             ID_SOURCE -> LinkQrDialog.newInstance(BuildConfig.SOURCE_URL, R.string.about_source, R.string.about_source_scan)
@@ -44,5 +47,6 @@ class AboutFragment : BaseSettingsFragment() {
         private const val ID_SUPPORT = 2L
         private const val ID_SOURCE = 3L
         private const val ID_CREDITS = 4L
+        private const val ID_USE_IN_PROJECTIVY = 5L
     }
 }

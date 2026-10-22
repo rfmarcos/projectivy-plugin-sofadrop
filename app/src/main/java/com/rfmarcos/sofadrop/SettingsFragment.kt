@@ -29,6 +29,11 @@ class SettingsFragment : PreviewSettingsFragment() {
         val context = requireContext()
         Settings.init(context)
 
+        // First run: Sofadrop does nothing until it is Projectivy's wallpaper, so say where to pick it
+        if (Settings.projectivyAskedAt == 0L && !WallpaperStore(context).everServed) {
+            actions += action(ID_USE_IN_PROJECTIVY, R.drawable.ic_act_tv, getString(R.string.use_in_projectivy_title),
+                getString(R.string.use_in_projectivy_desc)).multilineDescription(true).build()
+        }
         if (Updater.available) {
             actions += action(ID_APP_UPDATE, R.drawable.ic_act_refresh, getString(R.string.update_title),
                 getString(R.string.update_desc, Settings.updateVersion, BuildConfig.VERSION_NAME)).multilineDescription(true).build()
@@ -82,6 +87,7 @@ class SettingsFragment : PreviewSettingsFragment() {
             }
             ID_PREVIEW -> startActivity(Intent(requireContext(), PreviewActivity::class.java))
             ID_APP_UPDATE -> installUpdate()
+            ID_USE_IN_PROJECTIVY -> Projectivy.openWallpaperSettings(requireContext())
             ID_LISTS -> add(parentFragmentManager, ListsFragment())
             ID_DETAILS -> add(parentFragmentManager, DetailsFragment())
             ID_ABOUT -> add(parentFragmentManager, AboutFragment())
@@ -173,5 +179,6 @@ class SettingsFragment : PreviewSettingsFragment() {
         private const val ID_ABOUT = 18L
         private const val ID_DETAILS = 20L
         private const val ID_APP_UPDATE = 21L
+        private const val ID_USE_IN_PROJECTIVY = 22L
     }
 }
