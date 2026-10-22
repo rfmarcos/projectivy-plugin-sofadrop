@@ -34,8 +34,8 @@ Sofadrop is a wallpaper plugin for [Projectivy Launcher](https://github.com/spoc
 
 ## 📥 Installation
 
-1. Download the latest APK: [**sofadrop.apk**](https://github.com/rfmarcos/projectivy-plugin-sofadrop/releases/latest/download/sofadrop.apk) (this link always points to the newest version; see all [releases](../../releases)).
-2. Install it on your Android TV, e.g. with *Downloader*, *Send Files to TV* or `adb install`.
+1. **With [Downloader](https://www.aftvnews.com/downloader/)**, enter the code **`7882519`**. Or download the latest APK: [**sofadrop.apk**](https://github.com/rfmarcos/projectivy-plugin-sofadrop/releases/latest/download/sofadrop.apk) (this link always points to the newest version; see all [releases](../../releases)).
+2. Install it on your Android TV (Downloader does it for you; otherwise use *Send Files to TV* or `adb install`).
 3. In Projectivy go to **Settings → Appearance → Wallpaper → Launcher wallpaper** and pick **🔌 Sofadrop**.
 
 That's it: the first wallpapers are ready in a minute or two. Choose **Configure** in the same screen (or open Sofadrop from your apps) to pick your lists and style.
