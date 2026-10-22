@@ -4,9 +4,9 @@
 
 Sofadrop is a wallpaper plugin for [Projectivy Launcher](https://github.com/spocky/miproja1) (Android TV) that turns your home screen into a rotating showcase of **movies and TV shows** from the lists you choose: what's trending, your Trakt or Simkl lists, any public MDBList list… Everything is generated **on your TV** and set up from inside the launcher, with a live preview.
 
-> ⚠️ Projectivy marks third-party wallpaper plugins as a **Premium** feature (its built-in sources are free).
+![Sofadrop on Projectivy's home screen](docs/images/projectivy_home_en.jpg)
 
-![Example wallpaper](https://raw.githubusercontent.com/rfmarcos/androidtvbackground-reddit/main/docs/images/hero_toy_story_5_en.jpg)
+> ⚠️ Projectivy marks third-party wallpaper plugins as a **Premium** feature. No Premium? [androidtvbackground-reddit](https://github.com/rfmarcos/androidtvbackground-reddit) publishes wallpapers with the same design to [r/AndroidTVWallpapers](https://www.reddit.com/r/AndroidTVWallpapers) (English) and [r/AndroidTVWallpapersES](https://www.reddit.com/r/AndroidTVWallpapersES) (Spanish), which work with Projectivy's free Reddit source: simpler, but nothing to install.
 
 ## ✨ Features
 
@@ -21,6 +21,16 @@ Sofadrop is a wallpaper plugin for [Projectivy Launcher](https://github.com/spoc
 * 🌍 **Languages**: English, Spanish, Portuguese, French, Italian and German wallpapers.
 * 🔄 **Updates itself**: new versions are offered inside the app.
 
+## 📸 Screenshots
+
+| | |
+|---|---|
+| ![Avengers: Doomsday](docs/images/wallpaper_en_avengers.jpg) | ![Toy Story 5](docs/images/wallpaper_en_toy_story_5.jpg) |
+| ![A title marked as watched from your Trakt history](docs/images/wallpaper_en_watched.jpg) | ![Streaming services available in your country](docs/images/wallpaper_en_streaming.jpg) |
+| ![Avatar: Aang, in Spanish](docs/images/wallpaper_es_avatar.jpg) | ![The Mandalorian & Grogu, in Spanish](docs/images/wallpaper_es_mandalorian.jpg) |
+
+*Titles watched on Trakt or Simkl get a badge (or can be hidden), the footer shows where to watch each title, and wallpapers come in six languages (Spanish above).*
+
 ## 📥 Installation
 
 1. Download the latest APK from the [releases](../../releases).
@@ -34,6 +44,8 @@ That's it: the first wallpapers are ready in a minute or two. Choose **Configure
 ## ⚙️ Settings
 
 The left side of the settings shows a **live preview** of a wallpaper with your current choices. Changes are applied when you leave the settings, or right away with **Update now**.
+
+![Sofadrop settings with the live preview](docs/images/settings_en.jpg)
 
 * **Update now** also shows the status: how many wallpapers you have, when they were updated, or the progress while generating.
 * **View wallpapers** shows the current set full screen (◀ ▶ to browse, **OK** to use one in the preview).
