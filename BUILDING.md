@@ -46,6 +46,8 @@ release.keyPassword=...
 ./gradlew :app:assembleRelease
 ```
 
+Attach the APK to each GitHub release twice: as `sofadrop-<version>.apk` and as **`sofadrop.apk`**. The second name keeps `https://github.com/rfmarcos/projectivy-plugin-sofadrop/releases/latest/download/sofadrop.apk` (used by the README and the Downloader code) pointing at the newest version.
+
 Release builds are minified with R8 (full mode): smoke-test them on a device or emulator before publishing (`app/proguard-rules.pro` keeps the classes WorkManager creates by reflection).
 
 ## Tests

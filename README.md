@@ -26,7 +26,7 @@ Sofadrop is a wallpaper plugin for [Projectivy Launcher](https://github.com/spoc
 | | |
 |---|---|
 | ![Moana on Projectivy's home screen](docs/images/projectivy_home_moana.jpg) | ![Minions & Monsters on Projectivy's home screen](docs/images/projectivy_home_minions.jpg) |
-| ![Avengers: Doomsday](docs/images/wallpaper_en_avengers.jpg) | ![Toy Story 5](docs/images/wallpaper_en_toy_story_5.jpg) |
+| ![Clayface on Projectivy's home screen](docs/images/projectivy_home_clayface.jpg) | ![Avengers: Doomsday](docs/images/wallpaper_en_avengers.jpg) |
 | ![A title marked as watched from your Trakt history](docs/images/wallpaper_en_watched.jpg) | ![Streaming services available in your country](docs/images/wallpaper_en_streaming.jpg) |
 | ![Avatar: Aang, in Spanish](docs/images/wallpaper_es_avatar.jpg) | ![The Mandalorian & Grogu, in Spanish](docs/images/wallpaper_es_mandalorian.jpg) |
 
@@ -34,7 +34,7 @@ Sofadrop is a wallpaper plugin for [Projectivy Launcher](https://github.com/spoc
 
 ## 📥 Installation
 
-1. Download the latest APK from the [releases](../../releases).
+1. Download the latest APK: [**sofadrop.apk**](https://github.com/rfmarcos/projectivy-plugin-sofadrop/releases/latest/download/sofadrop.apk) (this link always points to the newest version; see all [releases](../../releases)).
 2. Install it on your Android TV, e.g. with *Downloader*, *Send Files to TV* or `adb install`.
 3. In Projectivy go to **Settings → Appearance → Wallpaper → Launcher wallpaper** and pick **🔌 Sofadrop**.
 
