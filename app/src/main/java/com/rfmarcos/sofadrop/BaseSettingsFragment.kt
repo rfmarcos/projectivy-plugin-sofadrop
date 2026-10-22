@@ -1,5 +1,7 @@
 package com.rfmarcos.sofadrop
 
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.LayerDrawable
@@ -20,13 +22,47 @@ abstract class BaseSettingsFragment : GuidedStepSupportFragment() {
 
     override fun onProvideTheme(): Int = R.style.Theme_Sofadrop_GuidedStep
 
-    // Choices open on their current value instead of the first option
+    /** Ids of the section headers of this screen (see [header]). */
+    private val headerIds = mutableSetOf<Long>()
+
+    /** Long explanations shown in the left pane while their row is focused, so rows show only their value. */
+    protected val explanations = mutableMapOf<Long, CharSequence>()
+    private var guidanceText: CharSequence? = null
+
     override fun onCreateActionsStylist(): GuidedActionsStylist = object : GuidedActionsStylist() {
+        // Checkbox / radio at the end of the row (see settings_action_item.xml)
+        override fun onProvideItemLayoutId() = R.layout.settings_action_item
+
+        override fun getItemViewType(action: GuidedAction) = if (action.id in headerIds) VIEW_TYPE_HEADER else super.getItemViewType(action)
+
+        override fun onProvideItemLayoutId(viewType: Int) =
+            if (viewType == VIEW_TYPE_HEADER) R.layout.settings_action_header else super.onProvideItemLayoutId(viewType)
+
+        // Choices open on their current value instead of the first option
         override fun onUpdateExpandedViewHolder(avh: ViewHolder?) {
             super.onUpdateExpandedViewHolder(avh)
             val index = avh?.action?.subActions?.indexOfFirst { it.isChecked } ?: return
             if (index > 0) subActionsGridView?.post { subActionsGridView?.selectedPosition = index }
         }
+    }
+
+    override fun onGuidedActionFocused(action: GuidedAction) {
+        super.onGuidedActionFocused(action)
+        val view = guidanceStylist.descriptionView ?: return
+        if (guidanceText == null) guidanceText = view.text
+        view.text = explanations[action.id] ?: guidanceText
+    }
+
+    /** Change the left pane's text, which it shows again when a row without an explanation is focused. */
+    protected fun setGuidanceText(text: CharSequence) {
+        guidanceText = text
+        guidanceStylist.descriptionView?.text = text
+    }
+
+    /** Non-focusable section header between rows. */
+    protected fun header(id: Long, title: CharSequence): GuidedAction {
+        headerIds += id
+        return GuidedAction.Builder(requireContext()).id(id).title(title).focusable(false).build()
     }
 
     /** Setting icon inside a translucent circle. */
@@ -44,9 +80,12 @@ abstract class BaseSettingsFragment : GuidedStepSupportFragment() {
     protected fun action(id: Long, icon: Int, title: CharSequence, description: CharSequence?) =
         GuidedAction.Builder(requireContext()).id(id).icon(actionIcon(icon)).title(title).description(description)
 
-    /** Checkbox row of a list (no icon: a column of identical icons is only noise). */
+    /**
+     * Checkbox row of a list. A column of identical icons is only noise, so an empty one keeps the text
+     * aligned with the other rows.
+     */
     protected fun checkbox(id: Long, title: CharSequence, description: CharSequence?, checked: Boolean) =
-        GuidedAction.Builder(requireContext()).id(id).title(title).description(description)
+        GuidedAction.Builder(requireContext()).id(id).icon(ColorDrawable(Color.TRANSPARENT)).title(title).description(description)
             .checkSetId(GuidedAction.CHECKBOX_CHECK_SET_ID).checked(checked)
 
     /** Row that expands into single-choice options with ids `id * SUB_ID_BASE + index`. */
@@ -115,6 +154,7 @@ abstract class BaseSettingsFragment : GuidedStepSupportFragment() {
         /** Sub-action ids are `parent * SUB_ID_BASE + index`. */
         const val SUB_ID_BASE = 1000L
         private const val RADIO_SET_BASE = 100
+        private const val VIEW_TYPE_HEADER = 1
         private val executor = Executors.newCachedThreadPool()
     }
 }

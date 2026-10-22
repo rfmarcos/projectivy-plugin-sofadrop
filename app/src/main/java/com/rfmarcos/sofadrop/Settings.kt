@@ -181,7 +181,7 @@ object Settings {
         get() = preferences.getBoolean(KEY_REQUIRE_LOGO, false)
         set(value) = preferences.edit { putBoolean(KEY_REQUIRE_LOGO, value) }
 
-    /** With no logo in the configured language, use the original-language one (or the English one). */
+    /** With no logo or synopsis in the configured language, use the original-language logo (or English) and the English synopsis. */
     var logoFallback: Boolean
         get() = preferences.getBoolean(KEY_LOGO_FALLBACK, false)
         set(value) = preferences.edit { putBoolean(KEY_LOGO_FALLBACK, value) }

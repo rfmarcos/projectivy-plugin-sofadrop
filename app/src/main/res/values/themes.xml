@@ -24,6 +24,9 @@
         <item name="guidedActionsShadowWidth">0dp</item>
         <item name="guidedActionsSelectorDrawable">@drawable/settings_item_selector</item>
         <item name="guidedActionItemIconStyle">@style/Widget.Sofadrop.ActionIcon</item>
+        <item name="guidedActionItemCheckmarkStyle">@style/Widget.Sofadrop.Checkmark</item>
+        <item name="android:listChoiceIndicatorMultiple">@drawable/indicator_checkbox</item>
+        <item name="android:listChoiceIndicatorSingle">@drawable/indicator_radio</item>
         <item name="guidanceTitleStyle">@style/Widget.Sofadrop.GuidanceTitle</item>
         <item name="guidanceDescriptionStyle">@style/Widget.Sofadrop.GuidanceDescription</item>
         <item name="guidanceIconStyle">@style/Widget.Sofadrop.GuidanceIcon</item>
@@ -33,6 +36,14 @@
         <item name="android:layout_width">44dp</item>
         <item name="android:layout_height">44dp</item>
         <item name="android:layout_marginEnd">20dp</item>
+    </style>
+
+    <!-- At the end of the row (see settings_action_item.xml) -->
+    <style name="Widget.Sofadrop.Checkmark" parent="@style/Widget.Leanback.GuidedActionItemCheckmarkStyle">
+        <item name="android:layout_width">30dp</item>
+        <item name="android:layout_height">30dp</item>
+        <item name="android:layout_marginEnd">8dp</item>
+        <item name="android:layout_marginStart">16dp</item>
     </style>
 
     <!-- Titles in white Nunito, like the icon's wordmark; the accent colour is kept for focus and state -->

@@ -111,7 +111,7 @@
     <string name="watched_mark">Show with a Watched badge</string>
     <string name="watched_hide">Hide</string>
     <string name="setting_explore_title">Filters &amp; explore lists</string>
-    <string name="explore_description">The filters on top apply to every list. Open a list below to see its titles in order, what happens to each one, and to give it its own filters.\n\nAge and global hits only apply by default to trending, popular and similar lists, so your watchlists and favourites aren\'t emptied.</string>
+    <string name="explore_description">These filters apply to all your lists. Open a list to see its titles and give it its own filters.</string>
     <string name="explore_loading">Loading…</string>
     <string name="explore_used">Used</string>
     <string name="explore_reserve">Backup: used if one above can\'t be</string>
@@ -246,16 +246,18 @@
     <string name="watch_source_connect">Connect Trakt or Simkl in Lists to use your watch history</string>
     <string name="watched_need_source">Choose a watch history first</string>
     <string name="explore_lists_header">Your lists</string>
-    <string name="explore_lists_header_desc">Open one to see its titles and give it its own filters</string>
     <string name="filters_duplicates_title">Skip repeated titles</string>
     <string name="filters_duplicates_desc">A title already taken from an earlier list is skipped, and that list uses its next one</string>
     <string name="filters_logo_title">Only titles with a logo</string>
     <string name="filters_logo_desc">Skips titles with no logo on TMDB, whose name would be written as plain text</string>
     <string name="exclusion_no_logo">Skipped: no logo</string>
-    <string name="logo_language_title">Title logo</string>
-    <string name="logo_language_own">In your language only</string>
-    <string name="logo_language_fallback">Your language, else the original</string>
-    <string name="logo_language_fallback_desc">With no logo in your language, the original-language one (or English) is used instead of plain text</string>
+    <string name="logo_language_title">Missing translation</string>
+    <string name="logo_language_own">Your language only</string>
+    <string name="logo_language_fallback">Use the original language</string>
+    <string name="logo_language_fallback_desc">With no logo or synopsis in your language, the original-language logo (or English) and the English synopsis are used</string>
     <string name="explore_summary_all">%1$d titles · all %2$d usable ones are used</string>
     <string name="time_just_now">just now</string>
+    <string name="filters_automatic_note">By default this only applies to trending, popular and similar lists, so your watchlists and favourites aren\'t emptied.</string>
+    <string name="explore_titles_header">Titles · %1$d</string>
+    <string name="about_credits_short">TMDB · Trakt · Simkl · MDBList</string>
 </resources>

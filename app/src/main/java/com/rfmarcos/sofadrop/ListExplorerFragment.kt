@@ -46,19 +46,20 @@ class ListExplorerFragment : BaseSettingsFragment() {
                 Filters.watchSourceLabel(context, Settings.watchSource)).also { it.isEnabled = trackers.isNotEmpty() },
             choiceRow(ID_WATCHED, R.drawable.ic_act_visibility, R.string.setting_watched_title, Filters.WATCHED_MODES.map { Filters.watchedLabel(context, it) },
                 Filters.watchedLabel(context, Settings.watchedMode)).also { it.isEnabled = Settings.watchSource != null },
-            action(ID_ADULT, R.drawable.ic_act_block, getString(R.string.filters_adult_title), getString(R.string.filters_adult_desc))
-                .checkSetId(GuidedAction.CHECKBOX_CHECK_SET_ID).checked(Settings.excludeAdult).multilineDescription(true).build(),
-            action(ID_DUPLICATES, R.drawable.ic_act_list, getString(R.string.filters_duplicates_title), getString(R.string.filters_duplicates_desc))
-                .checkSetId(GuidedAction.CHECKBOX_CHECK_SET_ID).checked(Settings.skipDuplicates).multilineDescription(true).build(),
-            action(ID_LOGO, R.drawable.ic_act_hd, getString(R.string.filters_logo_title), getString(R.string.filters_logo_desc))
-                .checkSetId(GuidedAction.CHECKBOX_CHECK_SET_ID).checked(Settings.requireLogo).multilineDescription(true).build(),
+            action(ID_ADULT, R.drawable.ic_act_block, getString(R.string.filters_adult_title), null)
+                .checkSetId(GuidedAction.CHECKBOX_CHECK_SET_ID).checked(Settings.excludeAdult).build(),
+            action(ID_DUPLICATES, R.drawable.ic_act_list, getString(R.string.filters_duplicates_title), null)
+                .checkSetId(GuidedAction.CHECKBOX_CHECK_SET_ID).checked(Settings.skipDuplicates).build(),
+            action(ID_LOGO, R.drawable.ic_act_hd, getString(R.string.filters_logo_title), null)
+                .checkSetId(GuidedAction.CHECKBOX_CHECK_SET_ID).checked(Settings.requireLogo).build(),
         )
+        explanations.putAll(filterExplanations(context))
         // Only selected lists: duplicates (and so what a list really brings) depend on the others
         lists = Sources.selected()
         rows += if (lists.isEmpty()) {
             action(ID_EMPTY, R.drawable.ic_act_info, getString(R.string.explore_empty_title), getString(R.string.explore_empty_desc)).focusable(false).build()
         } else {
-            action(ID_HEADER, R.drawable.ic_act_list, getString(R.string.explore_lists_header), getString(R.string.explore_lists_header_desc)).focusable(false).build()
+            header(ID_HEADER, getString(R.string.explore_lists_header))
         }
         rows += lists.mapIndexed { index, source ->
             action(LIST_BASE + index, R.drawable.ic_act_list, Sources.label(context, source), Filters.listFiltersSummary(context, source)).hasNext(true).build()
@@ -67,7 +68,7 @@ class ListExplorerFragment : BaseSettingsFragment() {
     }
 
     private fun choiceRow(id: Long, icon: Int, title: Int, values: List<String>, current: String) =
-        action(id, icon, getString(title), describe(requireContext(), id)).multilineDescription(true)
+        action(id, icon, getString(title), describe(requireContext(), id))
             .subActions(options(id, values, current)).build()
 
     override fun onGuidedActionClicked(action: GuidedAction) {
@@ -104,14 +105,28 @@ class ListExplorerFragment : BaseSettingsFragment() {
         private const val ID_LOGO = 9L
         private const val LIST_BASE = 100L
 
-        /** Value of a default filter and, below, what it does. */
+        /** Value of a default filter (what it does is shown in the left pane, see [filterExplanations]). */
         private fun describe(context: Context, id: Long): String = when (id) {
-            ID_AGE -> "${Filters.ageLabel(context, Settings.maxAgeMonths)}\n${context.getString(R.string.filters_age_explain)}"
-            ID_GLOBAL_HITS -> "${Filters.onOff(context)[if (Settings.globalHitsOnly) 1 else 0]}\n${context.getString(R.string.setting_global_hits_desc)}"
+            ID_AGE -> Filters.ageLabel(context, Settings.maxAgeMonths)
+            ID_GLOBAL_HITS -> Filters.onOff(context)[if (Settings.globalHitsOnly) 1 else 0]
             ID_WATCH_SOURCE -> if (Settings.connectedTrackers.isEmpty()) context.getString(R.string.watch_source_connect)
-                else "${Filters.watchSourceLabel(context, Settings.watchSource)}\n${context.getString(R.string.watch_source_explain)}"
+                else Filters.watchSourceLabel(context, Settings.watchSource)
             else -> if (Settings.watchSource == null) context.getString(R.string.watched_need_source)
-                else "${Filters.watchedLabel(context, Settings.watchedMode)}\n${context.getString(R.string.watched_explain)}"
+                else Filters.watchedLabel(context, Settings.watchedMode)
+        }
+
+        /** What each filter does, for the left pane; the list pages use the same ids for their own filters. */
+        fun filterExplanations(context: Context): Map<Long, String> {
+            val automatic = context.getString(R.string.filters_automatic_note)
+            return mapOf(
+                ID_AGE to context.getString(R.string.filters_age_explain) + "\n\n" + automatic,
+                ID_GLOBAL_HITS to context.getString(R.string.setting_global_hits_desc) + "\n\n" + automatic,
+                ID_WATCH_SOURCE to context.getString(R.string.watch_source_explain),
+                ID_WATCHED to context.getString(R.string.watched_explain),
+                ID_ADULT to context.getString(R.string.filters_adult_desc),
+                ID_DUPLICATES to context.getString(R.string.filters_duplicates_desc),
+                ID_LOGO to context.getString(R.string.filters_logo_desc),
+            )
         }
     }
 }
@@ -138,6 +153,7 @@ class ListContentsFragment : BaseSettingsFragment() {
         val list = source ?: return
         filterActions = filterRows(list)
         actions += filterActions
+        explanations.putAll(ListExplorerFragment.filterExplanations(requireContext()))
         loadTitles(list)
     }
 
@@ -195,7 +211,7 @@ class ListContentsFragment : BaseSettingsFragment() {
         val context = requireContext().applicationContext
         val perList = Settings.titlesPerList
         val job = ++loadJob
-        guidanceStylist.descriptionView?.text = getString(R.string.explore_loading)
+        setGuidanceText(getString(R.string.explore_loading))
         background({
             val factory = WallpaperFactory(context, 1280)
             val plan = factory.plan(list, perList)
@@ -223,17 +239,17 @@ class ListContentsFragment : BaseSettingsFragment() {
         }) { result ->
             if (job != loadJob) return@background
             result.onSuccess { (usableCount, rows) ->
-                guidanceStylist.descriptionView?.text = when {
+                setGuidanceText(when {
                     // Fewer usable titles than asked for: all of them are used, whatever the order
                     usableCount <= perList -> getString(R.string.explore_summary_all, rows.size, usableCount)
                     Settings.selectionMode == Settings.SELECTION_RANDOM -> getString(R.string.explore_summary_random, rows.size, perList)
                     else -> getString(R.string.explore_summary, rows.size, perList)
-                }
-                setActions(filterActions + rows.mapIndexed { index, (title, status, icon) ->
+                })
+                setActions(filterActions + header(TITLES_HEADER, getString(R.string.explore_titles_header, rows.size)) + rows.mapIndexed { index, (title, status, icon) ->
                     action(TITLE_BASE + index, icon, title, status).multilineDescription(true).focusable(true).build()
                 })
             }.onFailure {
-                guidanceStylist.descriptionView?.text = getString(R.string.preview_error, it.message ?: it.javaClass.simpleName)
+                setGuidanceText(getString(R.string.preview_error, it.message ?: it.javaClass.simpleName))
             }
         }
     }
@@ -252,10 +268,12 @@ class ListContentsFragment : BaseSettingsFragment() {
 
     companion object {
         private const val ARG_KEY = "list_key"
-        private const val ID_AGE = 1L
-        private const val ID_HITS = 2L
-        private const val ID_WATCHED = 3L
+        // Same ids as the explorer's default filters, whose explanations they share
+        private const val ID_AGE = 2L
+        private const val ID_HITS = 3L
+        private const val ID_WATCHED = 5L
         private const val TITLE_BASE = 100L
+        private const val TITLES_HEADER = 99L
 
         fun newInstance(key: String) = ListContentsFragment().apply { arguments = Bundle().apply { putString(ARG_KEY, key) } }
     }

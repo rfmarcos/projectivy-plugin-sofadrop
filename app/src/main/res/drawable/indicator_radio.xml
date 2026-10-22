@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Radio button to match the checkbox: ring when off, ring with a dot when on -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_checked="true">
+        <layer-list>
+            <item>
+                <shape android:shape="oval">
+                    <stroke android:width="2.5dp" android:color="@color/color_accent" />
+                    <size android:width="30dp" android:height="30dp" />
+                </shape>
+            </item>
+            <item android:bottom="8dp" android:left="8dp" android:right="8dp" android:top="8dp">
+                <shape android:shape="oval">
+                    <solid android:color="@color/color_accent" />
+                </shape>
+            </item>
+        </layer-list>
+    </item>
+    <item>
+        <shape android:shape="oval">
+            <stroke android:width="2.5dp" android:color="#B3FFFFFF" />
+            <size android:width="30dp" android:height="30dp" />
+        </shape>
+    </item>
+</selector>

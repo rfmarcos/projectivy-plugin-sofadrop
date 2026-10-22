@@ -237,7 +237,7 @@ class WallpaperRenderer(
     private fun drawOverview(canvas: Canvas, overview: String): Float {
         val paint = textPaint(regular, s(48f), Color.rgb(220, 220, 220))
         var top = s(META_CENTER + 36 + 52)
-        if (overviewLines <= 0) return top // hidden: the streaming row moves up
+        if (overviewLines <= 0 || overview.isBlank()) return top // hidden or untranslated: the streaming row moves up
         for (line in wrap(overview, paint, s(CONTENT_WIDTH), overviewLines)) {
             canvas.drawText(line, s(MARGIN_LEFT), top - paint.fontMetrics.ascent, paint)
             top += s(66f)

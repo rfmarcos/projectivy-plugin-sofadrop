@@ -217,10 +217,11 @@ class TmdbCatalog(
             if (seasons > 0) "$seasons ${if (seasons == 1) texts.season else texts.seasons}" else ""
         }
 
-        // Untranslated synopsis: fall back to English rather than leaving it empty
-        val overview = item.str("overview").orEmpty().ifBlank {
-            client.get("${type.path}/${ref.tmdbId}?language=en-US")?.str("overview").orEmpty()
-        }
+        // Untranslated synopsis: another country's translation in the same language (es-MX for es-ES),
+        // else English only when the user wants the original language over nothing
+        val overview = item.str("overview").orEmpty()
+            .ifBlank { translations(ref).firstNotNullOfOrNull { it.obj("data")?.str("overview")?.takeIf(String::isNotBlank) }.orEmpty() }
+            .ifBlank { if (Settings.logoFallback) client.get("${type.path}/${ref.tmdbId}?language=en-US")?.str("overview").orEmpty() else "" }
 
         return WallpaperInfo(
             type = type,
@@ -281,14 +282,18 @@ class TmdbCatalog(
     private fun localLogo(ref: TitleRef, logos: List<JsonObject>, title: String): String? {
         logos.firstOrNull { it.str("iso_3166_1").let { c -> c == null || c == country } }?.let { return it.str("file_path") }
         if (logos.isEmpty()) return null
-        val titles = client.get("${ref.type.path}/${ref.tmdbId}/translations")?.objects("translations").orEmpty()
-            .filter { it.str("iso_639_1") == languageCode }
+        val titles = translations(ref)
             .mapNotNull { t ->
                 val name = t.obj("data")?.str(if (ref.type == MediaType.MOVIE) "title" else "name")?.takeIf { it.isNotBlank() }
                 t.str("iso_3166_1")?.let { c -> name?.let { c to it } }
             }.toMap()
         return logos.firstOrNull { logo -> titles[logo.str("iso_3166_1")]?.let { similarity(it, title) > 0.9 } == true }?.str("file_path")
     }
+
+    /** TMDB translations of a title in the configured language, one per country. */
+    private fun translations(ref: TitleRef): List<JsonObject> =
+        client.get("${ref.type.path}/${ref.tmdbId}/translations")?.objects("translations").orEmpty()
+            .filter { it.str("iso_639_1") == languageCode }
 
     private fun providerLogoPaths(ref: TitleRef): List<String> {
         val providers = client.get("${ref.type.path}/${ref.tmdbId}/watch/providers")

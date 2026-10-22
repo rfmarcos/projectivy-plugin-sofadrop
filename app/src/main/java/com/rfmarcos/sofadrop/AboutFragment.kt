@@ -24,8 +24,8 @@ class AboutFragment : BaseSettingsFragment() {
         if (BuildConfig.SOURCE_URL.isNotBlank()) {
             actions += action(ID_SOURCE, R.drawable.ic_act_code, getString(R.string.about_source), BuildConfig.SOURCE_URL.removePrefix("https://")).build()
         }
-        actions += action(ID_CREDITS, R.drawable.ic_act_movie, getString(R.string.about_credits), getString(R.string.about_credits_desc))
-            .multilineDescription(true).build()
+        actions += action(ID_CREDITS, R.drawable.ic_act_movie, getString(R.string.about_credits), getString(R.string.about_credits_short)).build()
+        explanations[ID_CREDITS] = getString(R.string.about_credits_desc)
     }
 
     override fun onGuidedActionClicked(action: GuidedAction) {
