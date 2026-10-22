@@ -1,51 +1,20 @@
 package com.rfmarcos.sofadrop
 
 import android.content.Intent
-import android.graphics.Bitmap
 import android.os.Bundle
 import android.text.format.DateUtils
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import android.widget.ImageView
-import android.widget.ProgressBar
-import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.content.res.AppCompatResources
-import androidx.leanback.widget.GuidanceStylist
 import androidx.leanback.widget.GuidanceStylist.Guidance
 import androidx.leanback.widget.GuidedAction
 
 /** Main settings: what to do now, where titles come from, and how often. Details live in sub-screens. */
-class SettingsFragment : BaseSettingsFragment() {
-
-    // Live preview
-    private var previewImage: ImageView? = null
-    private var previewProgress: ProgressBar? = null
-    private var previewLabel: TextView? = null
-    private var pendingNotice: TextView? = null
-    private var previewJob = 0
-    private val previewRunnable = Runnable { startPreview() }
+class SettingsFragment : PreviewSettingsFragment() {
 
     private val statusRefresher = object : Runnable {
         override fun run() {
             refreshStatus()
             handler.postDelayed(this, 2000)
-        }
-    }
-
-    override fun onCreateGuidanceStylist(): GuidanceStylist = object : GuidanceStylist() {
-        override fun onProvideLayoutId() = R.layout.settings_guidance
-
-        override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, guidance: Guidance): View {
-            val view = super.onCreateView(inflater, container, guidance)
-            previewImage = view.findViewById(R.id.preview_image)
-            previewProgress = view.findViewById(R.id.preview_progress)
-            previewLabel = view.findViewById(R.id.preview_label)
-            pendingNotice = view.findViewById(R.id.pending_notice)
-            view.findViewById<View>(R.id.preview_frame).clipToOutline = true
-            cachedPreview?.let { (key, bitmap, title) -> if (key == previewKey()) showPreview(bitmap, title) }
-            return view
         }
     }
 
@@ -85,12 +54,10 @@ class SettingsFragment : BaseSettingsFragment() {
         updateDescription(ID_FILTERS, FiltersFragment.summary(context))
         updateDescription(ID_DETAILS, DetailsFragment.summary(context))
         handler.post(statusRefresher)
-        schedulePreview(0)
     }
 
     override fun onPause() {
         handler.removeCallbacks(statusRefresher)
-        handler.removeCallbacks(previewRunnable)
         val context = requireContext()
         GenerateWallpapersWorker.schedule(context, settingsChanged = true)
         // First run: nothing to show in Projectivy yet, so generate right away
@@ -148,8 +115,7 @@ class SettingsFragment : BaseSettingsFragment() {
                 notifyActionChanged(findActionPositionById(ID_PREVIEW))
             }
         }
-        val pending = Settings.hasPendingChanges && !Settings.generating && Sources.selected().isNotEmpty()
-        pendingNotice?.visibility = if (pending) View.VISIBLE else View.GONE
+        refreshPending()
     }
 
     private fun statusText(): String {
@@ -171,65 +137,6 @@ class SettingsFragment : BaseSettingsFragment() {
         }
     }
 
-    // --- Live preview ---
-
-    /** Everything that changes how the preview looks. */
-    private fun previewKey() = listOf(
-        Settings.token.hashCode(), Settings.language, Settings.region, Settings.lists.sorted(),
-        Settings.globalHitsOnly, Settings.maxAgeMonths, Settings.excludeAdult, Settings.filterScope, Settings.showProviders, Settings.traktConnected, Settings.mdbLists.size,
-        Settings.tmdbConnected, Settings.selectionMode, Settings.watchedMode, Settings.overviewLines, Settings.showSource, Settings.previewPin,
-        WallpaperStore(requireContext()).current().size,
-    ).joinToString("|")
-
-    private fun schedulePreview(delay: Long = 700) {
-        handler.removeCallbacks(previewRunnable)
-        handler.postDelayed(previewRunnable, delay)
-    }
-
-    private fun startPreview() {
-        val key = previewKey()
-        if (cachedPreview?.first == key && previewImage?.drawable != null) return
-        if (Settings.token.isBlank()) {
-            showPreviewMessage(getString(R.string.preview_no_token))
-            return
-        }
-        if (Sources.selected().isEmpty()) {
-            showPreviewMessage(getString(R.string.error_no_lists))
-            return
-        }
-        val job = ++previewJob
-        previewProgress?.visibility = View.VISIBLE
-        previewLabel?.text = getString(R.string.preview_loading)
-        val context = requireContext().applicationContext
-        background({ renderPreview(context) }) { result ->
-            if (job != previewJob) return@background
-            previewProgress?.visibility = View.GONE
-            result.onSuccess { preview ->
-                if (preview == null) {
-                    showPreviewMessage(getString(R.string.preview_no_titles))
-                } else {
-                    cachedPreview = Triple(key, preview.first, preview.second)
-                    showPreview(preview.first, preview.second)
-                }
-            }.onFailure {
-                showPreviewMessage(getString(R.string.preview_error, it.message ?: it.javaClass.simpleName))
-            }
-        }
-    }
-
-    private fun showPreview(bitmap: Bitmap, title: String) {
-        previewImage?.setImageBitmap(bitmap)
-        val pinned = Settings.previewPin.isNotEmpty()
-        previewLabel?.text = getString(if (pinned) R.string.preview_label_pinned else R.string.preview_label, title)
-    }
-
-    private fun showPreviewMessage(message: String) {
-        previewProgress?.visibility = View.GONE
-        previewImage?.setImageDrawable(null)
-        previewImage?.minimumHeight = (resources.displayMetrics.density * 200).toInt()
-        previewLabel?.text = message
-    }
-
     // --- Labels ---
 
     private fun refreshLabel(hours: Int) =
@@ -243,39 +150,5 @@ class SettingsFragment : BaseSettingsFragment() {
         private const val ID_FILTERS = 10L
         private const val ID_ABOUT = 18L
         private const val ID_DETAILS = 20L
-        private const val PREVIEW_WIDTH = 1280
-
-        /** The pinned title while it is still in the current set; a pin left behind by a new set is dropped. */
-        private fun pinnedRef(context: android.content.Context): Pair<TitleRef, String>? {
-            val pin = Settings.previewPin.ifEmpty { return null }
-            val stored = WallpaperStore(context).current().firstOrNull { "${it.type}:${it.tmdbId}" == pin }
-            val type = MediaType.entries.firstOrNull { it.path == stored?.type }
-            if (stored == null || type == null) {
-                Settings.previewPin = ""
-                return null
-            }
-            return TitleRef(type, stored.tmdbId) to stored.source
-        }
-
-        /** Last preview (key, image, title), kept while the process lives so reopening is instant. */
-        private var cachedPreview: Triple<String, Bitmap, String>? = null
-
-        /** Render the pinned wallpaper, else one of the first selected list that has a usable title. */
-        fun renderPreview(context: android.content.Context): Pair<Bitmap, String>? {
-            Settings.init(context)
-            val factory = WallpaperFactory(context, PREVIEW_WIDTH)
-            pinnedRef(context)?.let { (ref, sourceKey) ->
-                val source = Sources.available().firstOrNull { it.key == sourceKey }
-                factory.build(ref, source = source)?.let { info -> return factory.render(info) to info.title }
-            }
-            for (source in Sources.selected()) {
-                val plan = runCatching { factory.plan(source, 3) }.getOrNull() ?: continue
-                for (ref in plan.usable.take(4)) {
-                    val info = factory.build(ref, plan) ?: continue
-                    return factory.render(info) to info.title
-                }
-            }
-            return null
-        }
     }
 }

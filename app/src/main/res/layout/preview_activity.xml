@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Full-screen viewer: the wallpaper, an optional launcher guide, and a compact info cluster at the
+     bottom right (the wallpaper's own text sits on the left) that fades out when idle. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FF000000">
+
+    <ImageView
+        android:id="@+id/viewer_image"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:importantForAccessibility="no"
+        android:scaleType="fitCenter" />
+
+    <com.rfmarcos.sofadrop.LauncherGuideView
+        android:id="@+id/viewer_guide"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
+
+    <!-- Shown while the overlay is hidden and this wallpaper is the pinned preview -->
+    <TextView
+        android:id="@+id/viewer_pin_badge"
+        style="@style/Widget.Sofadrop.Pill.Accent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:layout_margin="32dp"
+        android:text="@string/viewer_pinned"
+        android:visibility="gone" />
+
+    <FrameLayout
+        android:id="@+id/viewer_overlay"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:background="@drawable/viewer_scrim"
+        android:paddingStart="160dp"
+        android:paddingTop="120dp"
+        android:paddingEnd="56dp"
+        android:paddingBottom="44dp">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="end"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/viewer_pinned"
+                style="@style/Widget.Sofadrop.Pill.Accent"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:text="@string/viewer_pinned"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/viewer_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/nunito_bold"
+                android:maxLines="1"
+                android:textColor="#FFFFFFFF"
+                android:textSize="24sp" />
+
+            <TextView
+                android:id="@+id/viewer_subtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:maxLines="1"
+                android:textColor="#B3FFFFFF"
+                android:textSize="16sp" />
+
+            <LinearLayout
+                android:id="@+id/viewer_chips"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:orientation="horizontal" />
+        </LinearLayout>
+    </FrameLayout>
+</FrameLayout>

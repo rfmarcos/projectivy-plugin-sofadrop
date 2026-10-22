@@ -55,7 +55,7 @@ class TmdbCatalog(
 
     /**
      * Candidate titles of a list, in the order they should be tried, including the ones filtered out
-     * (with the reason). Filters apply to automatic lists, or to every list if the user chose so.
+     * (with the reason). Each filter applies to the "filtered lists" or, if the user chose so, to every list.
      * With [shuffle] the whole list is shuffled first (random selection).
      */
     fun candidates(source: ListSource, pool: Int, trakt: TraktClient?, simkl: SimklClient?, mdbList: MdbListClient?, shuffle: Boolean = false): List<Candidate> {
@@ -70,9 +70,12 @@ class TmdbCatalog(
             }
         }.distinct()
         if (shuffle) refs = refs.shuffled()
-        val filtered = Settings.filterScope == Settings.SCOPE_ALL || source.automatic
+        val inFiltered = Settings.isFiltered(source)
+        val age = inFiltered || Settings.ageAllLists
+        val hits = (inFiltered || Settings.globalHitsAllLists) && source.localMarketFilter
+        val adult = inFiltered || Settings.adultAllLists
         return refs.asSequence()
-            .map { Candidate(it, if (filtered) exclusion(it, source.localMarketFilter) else null) }
+            .map { Candidate(it, if (age || hits || adult) exclusion(it, age, hits, adult) else null) }
             .takeIncluded(pool)
     }
 
@@ -157,12 +160,12 @@ class TmdbCatalog(
 
     // --- Filters (from the TMDB details of each title) ---
 
-    private fun exclusion(ref: TitleRef, localMarketFilter: Boolean = true): Exclusion? {
+    private fun exclusion(ref: TitleRef, age: Boolean, hits: Boolean, adult: Boolean): Exclusion? {
         val item = details(ref) ?: return null
         return when {
-            localMarketFilter && isLocalMarket(item) -> Exclusion.LOCAL_MARKET
-            isTooOld(ref.type, item) -> Exclusion.TOO_OLD
-            Settings.excludeAdult && isAdult(ref, item) -> Exclusion.ADULT
+            hits && isLocalMarket(item) -> Exclusion.LOCAL_MARKET
+            age && isTooOld(ref.type, item) -> Exclusion.TOO_OLD
+            adult && Settings.excludeAdult && isAdult(ref, item) -> Exclusion.ADULT
             else -> null
         }
     }

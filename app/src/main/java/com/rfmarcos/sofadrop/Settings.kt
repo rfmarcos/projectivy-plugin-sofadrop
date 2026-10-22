@@ -49,6 +49,12 @@ object Settings {
     private const val KEY_SELECTION = "selection_mode"
     private const val KEY_OVERVIEW_LINES = "overview_lines"
     private const val KEY_SHOW_SOURCE = "show_source"
+    private const val KEY_AGE_ALL = "age_all_lists"
+    private const val KEY_HITS_ALL = "global_hits_all_lists"
+    private const val KEY_ADULT_ALL = "adult_all_lists"
+    private const val KEY_FILTERED_LISTS = "filtered_lists"
+    private const val KEY_SOURCE_FALLBACK = "source_fallback"
+    private const val KEY_LAUNCHER_GUIDE = "launcher_guide"
     private const val KEY_PROGRESS = "_generation_progress"
     private const val KEY_PREVIEW_PIN = "_preview_pin"
     private const val KEY_WATCHED = "watched_mode"
@@ -58,8 +64,6 @@ object Settings {
 
     const val SELECTION_ORDER = "order"
     const val SELECTION_RANDOM = "random"
-    const val SCOPE_AUTOMATIC = "automatic"
-    const val SCOPE_ALL = "all"
     /** Months; 0 means no limit. */
     val MAX_AGE_OPTIONS = listOf(6, 12, 24, 60, 0)
     const val WATCHED_SHOW = "show"
@@ -152,10 +156,29 @@ object Settings {
         get() = preferences.getBoolean(KEY_EXCLUDE_ADULT, true)
         set(value) = preferences.edit { putBoolean(KEY_EXCLUDE_ADULT, value) }
 
-    /** "automatic": only trending/popular-like lists; "all": also the user's own lists. */
-    var filterScope: String
-        get() = preferences.getString(KEY_FILTER_SCOPE, SCOPE_AUTOMATIC) ?: SCOPE_AUTOMATIC
-        set(value) = preferences.edit { putString(KEY_FILTER_SCOPE, value) }
+    /** The old single scope ("automatic" / "all"), only read as the default of the per-filter scopes. */
+    private val legacyScopeAll: Boolean get() = preferences.getString(KEY_FILTER_SCOPE, null) == "all"
+
+    /** Per filter: true = every list, false = only the "filtered lists". */
+    var ageAllLists: Boolean
+        get() = preferences.getBoolean(KEY_AGE_ALL, legacyScopeAll)
+        set(value) = preferences.edit { putBoolean(KEY_AGE_ALL, value) }
+
+    var globalHitsAllLists: Boolean
+        get() = preferences.getBoolean(KEY_HITS_ALL, legacyScopeAll)
+        set(value) = preferences.edit { putBoolean(KEY_HITS_ALL, value) }
+
+    /** Adult content is skipped everywhere unless the user narrows it. */
+    var adultAllLists: Boolean
+        get() = preferences.getBoolean(KEY_ADULT_ALL, true)
+        set(value) = preferences.edit { putBoolean(KEY_ADULT_ALL, value) }
+
+    /** Lists the "filtered lists" scope covers; null = the default, the automatic (trending/popular) lists. */
+    var filteredLists: Set<String>?
+        get() = preferences.getStringSet(KEY_FILTERED_LISTS, null)?.toSet()
+        set(value) = preferences.edit { if (value == null) remove(KEY_FILTERED_LISTS) else putStringSet(KEY_FILTERED_LISTS, value) }
+
+    fun isFiltered(source: ListSource): Boolean = filteredLists?.contains(source.key) ?: source.automatic
 
     var showProviders: Boolean
         get() = preferences.getBoolean(KEY_PROVIDERS, true)
@@ -261,6 +284,22 @@ object Settings {
 
     val OVERVIEW_OPTIONS = listOf(4, 2, 0)
 
+    /** Approximate launcher layout drawn over previews (viewer ▼ toggles it; the settings preview follows). */
+    var launcherGuide: Boolean
+        get() = preferences.getBoolean(KEY_LAUNCHER_GUIDE, false)
+        set(value) = preferences.edit { putBoolean(KEY_LAUNCHER_GUIDE, value) }
+
+    /**
+     * With both footer parts on, show the list source only when the title has no streaming service.
+     * Default for new installs; existing installs keep showing both (decided once, on first read).
+     */
+    var sourceFallback: Boolean
+        get() {
+            if (!preferences.contains(KEY_SOURCE_FALLBACK)) sourceFallback = lastGeneration == 0L
+            return preferences.getBoolean(KEY_SOURCE_FALLBACK, false)
+        }
+        set(value) = preferences.edit { putBoolean(KEY_SOURCE_FALLBACK, value) }
+
     /** Footer line naming the list each title came from ("Trending · TMDB"). */
     var showSource: Boolean
         get() = preferences.getBoolean(KEY_SHOW_SOURCE, true)
@@ -354,9 +393,9 @@ object Settings {
         get() = listOf(
             token.hashCode(), language, region, lists.sorted().joinToString(","), titlesPerList,
             outputWidth, globalHitsOnly, showProviders, selectionMode, if (trackerConnected) watchedMode else "",
-            maxAgeMonths, excludeAdult, filterScope,
+            maxAgeMonths, excludeAdult, ageAllLists, globalHitsAllLists, adultAllLists, filteredLists?.sorted(),
         // Only when changed, so existing installs don't see a pending change after updating
-        ).plus(listOfNotNull(overviewLines.takeIf { it != 4 }, "nosource".takeIf { !showSource })).joinToString("|")
+        ).plus(listOfNotNull(overviewLines.takeIf { it != 4 }, "nosource".takeIf { !showSource }, "fallback".takeIf { showSource && showProviders && sourceFallback })).joinToString("|")
 
     /** True when the current wallpapers were generated with different settings. */
     val hasPendingChanges: Boolean

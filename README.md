@@ -33,10 +33,10 @@ Open them from **Projectivy → Settings → Appearance → Wallpaper → Config
 | Setting | Default | |
 |---|---|---|
 | Update now | — | Also shows the status: how many wallpapers, when they were updated, the last error, or the progress while generating ("Generating · 12 wallpapers · list 2 of 5"). |
-| View wallpapers | — | The current set full screen (◀ ▶ to browse). **OK** shows that wallpaper in the settings preview (OK again goes back to automatic). |
+| View wallpapers | — | The current set full screen: ◀ ▶ browse, **OK** shows that wallpaper in the settings preview (OK again unpins it), **▼** toggles an approximate launcher guide (top bar and a row of app cards) that the settings preview also follows. The info fades out after a few seconds. |
 | Lists | TMDB trending movies + TV shows | *Titles per list* (5, 10, 20, 50 or all, up to 100; default 10, with the estimated total) and *Order* (top of each list, or random from up to 100 titles), then one screen per service: **TMDB**, **Trakt**, **Simkl** and **MDBList**, each with its account (QR login) and its lists as checkboxes, plus **Explore lists** for the selected ones. Titles repeated across lists are only used once. |
-| Filters | 1 year · global hits · no adult | *Maximum age* 6 months, 1, 2 or 5 years or no limit (release date, or last air date for shows); *Global hits only*; *Exclude adult content*; *Watched titles*; *Apply to* trending & popular lists only or all lists. |
-| Wallpaper details | device language · full · both · automatic · 1080p | *Language* of titles, synopsis, logos and labels; *Streaming services*: don't show, automatic country or a chosen country; *Synopsis* full (4 lines), short (2 lines) or hidden, so the text stays clear of the launcher rows; *Footer*: nothing, the list source ("Trending · TMDB"), the streaming services, or both; *Streaming country* (automatic or a chosen country, used when the footer shows streaming services); *Resolution* 1080p (recommended) or 4K. |
+| Filters | 1 year · global hits · no adult | *Maximum age* 6 months, 1, 2 or 5 years or no limit (release date, or last air date for shows); *Global hits only*; *Exclude adult content*; each applies to the **filtered lists** (ticked in their own screen; trending and popular lists by default) or to all lists. *Watched titles* (Trakt/Simkl history): show normally, with a badge, or hide. |
+| Wallpaper details | device language · full · streaming or list source · automatic · 1080p | *Language* of titles, synopsis, logos and labels; *Streaming services*: don't show, automatic country or a chosen country; *Synopsis* full (4 lines), short (2 lines) or hidden, so the text stays clear of the launcher rows; *Footer*: nothing, the list source ("Trending · TMDB"), the streaming services, streaming or the list source when no service has it (default for new installs), or both; *Streaming country* (automatic or a chosen country, used when the footer shows streaming services); *Resolution* 1080p (recommended) or 4K. |
 | Update every | 24 hours | 6 h, 12 h, 24 h, 3 days or 7 days. |
 | About | — | Version, support the project (Ko-fi QR), source code and credits. |
 
@@ -144,7 +144,7 @@ app/src/main/java/com/rfmarcos/sofadrop/
 * Lists and watch history from [Simkl](https://simkl.com/).
 * The Trakt logo is the official dark-background logo from [trakt.tv/branding](https://trakt.tv/branding), used unaltered; the Simkl and MDBList logos come from their own sites. All names and logos belong to their owners.
 * Streaming availability from TMDB Watch Providers, powered by [JustWatch](https://www.justwatch.com/).
-* [Roboto](https://github.com/googlefonts/roboto) font (Apache 2.0) and Material Icons (Apache 2.0).
+* [Roboto](https://github.com/googlefonts/roboto) (Apache 2.0) and [Nunito](https://github.com/googlefonts/nunito) (SIL Open Font License 1.1) fonts, and Material Icons (Apache 2.0).
 
 ## 📜 License
 

@@ -1,6 +1,6 @@
 <resources>
     <string name="plugin_name">Sofadrop</string>
-    <string name="plugin_description">Wallpapers of movies and TV shows from TMDB, Trakt or MDBList lists, generated on this device.</string>
+    <string name="plugin_description">Wallpapers of movies and TV shows from TMDB, Trakt, Simkl or MDBList lists, generated on this device.</string>
     <string name="plugin_uuid" translatable="false">9b151d4e-9849-4ae0-8495-3347b7c47150</string>
 
     <string name="projectivy_not_installed">Warning, this plugin requires Projectivy Launcher which does not seem to be installed.</string>
@@ -20,9 +20,8 @@
     <string name="action_generate_now">Update now</string>
     <string name="generation_started">Generating wallpapers in the background…</string>
     <string name="action_preview">View wallpapers</string>
-    <string name="action_preview_desc">The current set full screen · OK picks the preview</string>
+    <string name="action_preview_desc">The current set full screen · pick the preview, try the launcher guide</string>
     <string name="preview_empty">No wallpapers yet. Use \"Update now\" first.</string>
-    <string name="preview_counter">%1$d / %2$d · ◀ ▶</string>
 
     <!-- Live preview -->
     <string name="preview_label">Preview · %1$s</string>
@@ -43,7 +42,7 @@
     <string name="resolution_1080">1080p (recommended)</string>
     <string name="resolution_2160">4K (slower, more storage)</string>
     <string name="setting_global_hits_title">Global hits only</string>
-    <string name="setting_global_hits_desc">In TMDB trending and popular lists, hide titles only popular in a local market</string>
+    <string name="setting_global_hits_desc">Hides titles only popular in one country, unless they\'re worldwide hits (1,000+ TMDB votes)</string>
 
     <!-- Lists -->
     <string name="list_tmdb_trending_movies">TMDB · Trending movies</string>
@@ -138,10 +137,7 @@
     <string name="trakt_unavailable">Not available in this build (missing the app\'s Trakt credentials)</string>
     <!-- Filters -->
     <string name="setting_filters_title">Filters</string>
-    <string name="filters_description">Skip titles you don\'t want. Your own lists (watchlists, favourites, MDBList) are left as they are unless you choose all lists.</string>
-    <string name="filters_scope_title">Apply to</string>
-    <string name="filters_scope_automatic">Trending &amp; popular lists only</string>
-    <string name="filters_scope_all">All lists, including yours</string>
+    <string name="filters_description">Skip titles you don\'t want. Each filter applies to the filtered lists (pick them below; trending and popular lists by default) or to all lists.</string>
     <string name="filters_age_title">Maximum age</string>
     <string name="filters_age_none">No limit</string>
     <string name="filters_age_months">%1$d months</string>
@@ -150,7 +146,7 @@
         <item quantity="other">%1$d years</item>
     </plurals>
     <string name="filters_adult_title">Exclude adult content</string>
-    <string name="filters_adult_desc">Skip titles marked as adult on TMDB</string>
+    <string name="filters_adult_desc">Skips titles marked as adult on TMDB</string>
     <string name="exclusion_adult">Skipped: adult content</string>
     <string name="mdblist_unavailable">Not available in this version</string>
 
@@ -196,8 +192,6 @@
     <string name="synopsis_summary_short">short synopsis</string>
     <string name="synopsis_summary_hidden">no synopsis</string>
     <string name="preview_label_pinned">Preview · %1$s · pinned</string>
-    <string name="preview_hint_pin">OK  Use in preview</string>
-    <string name="preview_hint_unpin">📌 In preview · OK  Back to automatic</string>
     <string name="preview_pinned">Shown in the settings preview</string>
     <string name="preview_unpinned">Preview back to automatic</string>
     <string name="setting_simkl_title">Simkl</string>
@@ -212,7 +206,7 @@
     <string name="simkl_login_ok">Simkl connected as %1$s</string>
     <string name="simkl_failed">Simkl error: %1$s</string>
     <string name="watched_from">%1$s · from %2$s</string>
-    <string name="watched_no_tracker">Connect Trakt or Simkl in Lists to use this</string>
+    <string name="watched_no_tracker">%1$s · connect Trakt or Simkl in Lists</string>
     <string name="watched_summary_hidden">watched hidden</string>
     <string name="status_progress">Generating · %1$s · list %2$d of %3$d</string>
     <plurals name="wallpapers_count">
@@ -226,9 +220,30 @@
     <string name="footer_none">Nothing</string>
     <string name="footer_source">List source</string>
     <string name="footer_streaming">Streaming services</string>
-    <string name="footer_both">List source and streaming</string>
+    <string name="footer_both">Streaming and list source</string>
     <string name="streaming_country_title">Streaming country</string>
     <string name="streaming_country_disabled">Only used when the footer shows streaming services</string>
     <string name="explore_empty_title">No lists selected</string>
     <string name="explore_empty_desc">Pick lists from TMDB, Trakt, Simkl or MDBList</string>
+    <string name="viewer_browse">Browse</string>
+    <string name="viewer_use">Use in preview</string>
+    <string name="viewer_unpin">Unpin</string>
+    <string name="viewer_pinned">PINNED</string>
+    <string name="viewer_guide">Launcher guide</string>
+    <string name="viewer_position">%1$d of %2$d</string>
+    <string name="guide_caption">Approximate launcher layout</string>
+    <string name="footer_fallback">Streaming, or list source</string>
+    <string name="footer_fallback_desc">The list shows when no service has it</string>
+    <string name="filters_applies_to">Applies to</string>
+    <string name="filters_scope_filtered">Filtered lists</string>
+    <string name="filters_scope_all_lists">All lists</string>
+    <string name="filters_scope_filtered_short">filtered lists</string>
+    <string name="filters_scope_all_short">all lists</string>
+    <string name="filter_off">Off</string>
+    <string name="filter_on">On</string>
+    <string name="filters_age_explain">Skips titles released (or, for shows, last aired) longer ago</string>
+    <string name="watched_explain">What you\'ve watched on Trakt or Simkl: show it as usual, with a Watched badge, or skip it</string>
+    <string name="filtered_lists_title">Filtered lists</string>
+    <string name="filtered_lists_desc">%1$d of %2$d lists</string>
+    <string name="filtered_lists_description">Filters set to “Filtered lists” only apply to the lists ticked here. By default, trending and popular lists are ticked and your own lists aren\'t.</string>
 </resources>

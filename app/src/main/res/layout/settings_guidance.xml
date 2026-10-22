@@ -41,9 +41,9 @@
                 android:id="@id/guidance_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-light"
-                android:textColor="@color/color_accent"
-                android:textSize="30sp" />
+                android:fontFamily="@font/nunito_bold"
+                android:textColor="#FFFFFFFF"
+                android:textSize="32sp" />
         </LinearLayout>
     </LinearLayout>
 
@@ -61,6 +61,12 @@
             android:adjustViewBounds="true"
             android:importantForAccessibility="no"
             android:scaleType="fitCenter" />
+
+        <com.rfmarcos.sofadrop.LauncherGuideView
+            android:id="@+id/preview_guide"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
 
         <ProgressBar
             android:id="@+id/preview_progress"

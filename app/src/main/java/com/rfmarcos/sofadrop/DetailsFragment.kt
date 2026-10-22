@@ -7,7 +7,7 @@ import androidx.leanback.widget.GuidanceStylist.Guidance
 import androidx.leanback.widget.GuidedAction
 
 /** How each wallpaper looks: language, synopsis, footer (list source / streaming services) and resolution. */
-class DetailsFragment : BaseSettingsFragment() {
+class DetailsFragment : PreviewSettingsFragment() {
 
     override fun onCreateGuidance(savedInstanceState: Bundle?) = Guidance(
         getString(R.string.setting_details_title),
@@ -22,8 +22,12 @@ class DetailsFragment : BaseSettingsFragment() {
             Languages.OPTIONS.values.toList())
         actions += choice(ID_SYNOPSIS, R.drawable.ic_act_count, R.string.synopsis_title, synopsisLabel(context, Settings.overviewLines),
             Settings.OVERVIEW_OPTIONS.map { synopsisLabel(context, it) })
-        actions += choice(ID_FOOTER, R.drawable.ic_act_list, R.string.footer_title, footerLabel(context, footerIndex()),
-            (0..3).map { footerLabel(context, it) })
+        actions += action(ID_FOOTER, R.drawable.ic_act_list, getString(R.string.footer_title), footerLabel(context, footerIndex()))
+            .subActions((0..4).map { index ->
+                GuidedAction.Builder(context).id(ID_FOOTER * SUB_ID_BASE + index).title(footerLabel(context, index))
+                    // the fallback option is the one that needs explaining
+                    .description(if (index == 3) getString(R.string.footer_fallback_desc) else null).build()
+            }).build()
         actions += countryAction()
         actions += choice(ID_RESOLUTION, R.drawable.ic_act_hd, R.string.setting_resolution_title, resolutionLabel(context, Settings.outputWidth),
             Settings.WIDTH_OPTIONS.map { resolutionLabel(context, it) })
@@ -56,8 +60,9 @@ class DetailsFragment : BaseSettingsFragment() {
                 updateDescription(ID_SYNOPSIS, synopsisLabel(requireContext(), Settings.overviewLines))
             }
             ID_FOOTER -> {
-                Settings.showSource = index == 1 || index == 3
+                Settings.showSource = index == 1 || index >= 3
                 Settings.showProviders = index >= 2
+                Settings.sourceFallback = index == 3
                 updateDescription(ID_FOOTER, footerLabel(requireContext(), index))
                 replaceCountryRow()
             }
@@ -70,6 +75,7 @@ class DetailsFragment : BaseSettingsFragment() {
                 updateDescription(ID_RESOLUTION, resolutionLabel(requireContext(), Settings.outputWidth))
             }
         }
+        schedulePreview(300)
         return true
     }
 
@@ -80,14 +86,20 @@ class DetailsFragment : BaseSettingsFragment() {
         private const val ID_SYNOPSIS = 4L
         private const val ID_FOOTER = 5L
 
-        /** 0 nothing, 1 list source, 2 streaming services, 3 both. */
-        private fun footerIndex() = (if (Settings.showSource) 1 else 0) + (if (Settings.showProviders) 2 else 0)
+        /** 0 nothing, 1 list source, 2 streaming services, 3 streaming or list source, 4 both. */
+        private fun footerIndex() = when {
+            !Settings.showProviders -> if (Settings.showSource) 1 else 0
+            !Settings.showSource -> 2
+            Settings.sourceFallback -> 3
+            else -> 4
+        }
 
         fun footerLabel(context: Context, index: Int) = context.getString(
             when (index) {
                 1 -> R.string.footer_source
                 2 -> R.string.footer_streaming
-                3 -> R.string.footer_both
+                3 -> R.string.footer_fallback
+                4 -> R.string.footer_both
                 else -> R.string.footer_none
             }
         )

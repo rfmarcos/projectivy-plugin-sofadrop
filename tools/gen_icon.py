@@ -234,7 +234,7 @@ if __name__ == "__main__":
     os.makedirs(out, exist_ok=True)
     pts = [(x, min(y, CLIP)) for d in [panel_path(i) for i in range(len(PANELS))] + SOFA_BASE_PATHS for poly in flatten(d) for x, y in poly]
     print(f"artwork reaches {max(math.hypot(x - 54, y - 54) for x, y in pts):.1f} from the centre (safe zone 33, visible 36)")
-    font = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "app", "src", "main", "res", "font", "roboto_bold.ttf")
+    font = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "app", "src", "main", "res", "font", "nunito_extrabold.ttf")
     for shape in ("square", "circle", "rounded"):
         render_icon(512, shape).save(os.path.join(out, f"icon_{shape}.png"))
     for px in (48, 96):

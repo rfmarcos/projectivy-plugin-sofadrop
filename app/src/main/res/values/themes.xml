@@ -34,8 +34,23 @@
         <item name="android:layout_marginEnd">20dp</item>
     </style>
 
+    <!-- Titles in white Nunito, like the icon's wordmark; the accent colour is kept for focus and state -->
     <style name="Widget.Sofadrop.GuidanceTitle" parent="@style/Widget.Leanback.GuidanceTitleStyle">
-        <item name="android:textColor">@color/color_accent</item>
+        <item name="android:textColor">#FFFFFFFF</item>
+        <item name="android:fontFamily">@font/nunito_bold</item>
+        <item name="android:textSize">34sp</item>
+    </style>
+
+    <style name="Widget.Sofadrop.Pill.Accent" parent="">
+        <item name="android:background">@drawable/pill_accent</item>
+        <item name="android:paddingStart">10dp</item>
+        <item name="android:paddingEnd">10dp</item>
+        <item name="android:paddingTop">3dp</item>
+        <item name="android:paddingBottom">3dp</item>
+        <item name="android:textColor">#FF0B1A24</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">0.08</item>
     </style>
 
     <style name="Widget.Sofadrop.GuidanceIcon" parent="@style/Widget.Leanback.GuidanceIconStyle">

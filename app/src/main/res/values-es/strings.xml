@@ -1,6 +1,6 @@
 <resources>
     <string name="plugin_name">Sofadrop</string>
-    <string name="plugin_description">Fondos de pantalla de películas y series de listas de TMDB, Trakt o MDBList, generados en este dispositivo.</string>
+    <string name="plugin_description">Fondos de pantalla de películas y series de listas de TMDB, Trakt, Simkl o MDBList, generados en este dispositivo.</string>
 
     <string name="projectivy_not_installed">Atención: este plugin necesita Projectivy Launcher, que no parece estar instalado.</string>
     <string name="settings">Ajustes</string>
@@ -17,9 +17,8 @@
     <string name="action_generate_now">Actualizar ahora</string>
     <string name="generation_started">Generando fondos en segundo plano…</string>
     <string name="action_preview">Ver fondos</string>
-    <string name="action_preview_desc">El conjunto actual a pantalla completa · OK elige la vista previa</string>
+    <string name="action_preview_desc">El conjunto actual a pantalla completa · elige la vista previa, prueba la guía del launcher</string>
     <string name="preview_empty">Aún no hay fondos. Usa primero «Actualizar ahora».</string>
-    <string name="preview_counter">%1$d / %2$d · ◀ ▶</string>
 
     <string name="preview_label">Vista previa · %1$s</string>
     <string name="preview_loading">Generando vista previa…</string>
@@ -37,7 +36,7 @@
     <string name="resolution_1080">1080p (recomendado)</string>
     <string name="resolution_2160">4K (más lento, ocupa más)</string>
     <string name="setting_global_hits_title">Solo éxitos globales</string>
-    <string name="setting_global_hits_desc">En las listas de tendencias y populares de TMDB, oculta títulos populares solo en un mercado local</string>
+    <string name="setting_global_hits_desc">Oculta lo que solo es popular en un país, salvo los éxitos mundiales (más de 1.000 votos en TMDB)</string>
 
     <string name="list_tmdb_trending_movies">TMDB · Películas en tendencia</string>
     <string name="list_tmdb_trending_tv">TMDB · Series en tendencia</string>
@@ -128,10 +127,7 @@
     <string name="trakt_unavailable">No disponible en esta compilación (faltan las credenciales de Trakt de la app)</string>
     <!-- Filtros -->
     <string name="setting_filters_title">Filtros</string>
-    <string name="filters_description">Descarta los títulos que no quieres. Tus propias listas (watchlists, favoritos, MDBList) se respetan tal cual salvo que elijas todas las listas.</string>
-    <string name="filters_scope_title">Aplicar a</string>
-    <string name="filters_scope_automatic">Solo tendencias y populares</string>
-    <string name="filters_scope_all">Todas las listas, también las tuyas</string>
+    <string name="filters_description">Descarta los títulos que no quieres. Cada filtro se aplica a las listas filtradas (elígelas abajo; por defecto, tendencias y populares) o a todas las listas.</string>
     <string name="filters_age_title">Antigüedad máxima</string>
     <string name="filters_age_none">Sin límite</string>
     <string name="filters_age_months">%1$d meses</string>
@@ -184,8 +180,6 @@
     <string name="synopsis_summary_short">sinopsis corta</string>
     <string name="synopsis_summary_hidden">sin sinopsis</string>
     <string name="preview_label_pinned">Vista previa · %1$s · fijada</string>
-    <string name="preview_hint_pin">OK  Usar en la vista previa</string>
-    <string name="preview_hint_unpin">📌 En la vista previa · OK  Volver a automático</string>
     <string name="preview_pinned">Se mostrará en la vista previa de los ajustes</string>
     <string name="preview_unpinned">Vista previa en automático</string>
     <string name="setting_simkl_title">Simkl</string>
@@ -200,7 +194,7 @@
     <string name="simkl_login_ok">Simkl conectado como %1$s</string>
     <string name="simkl_failed">Error de Simkl: %1$s</string>
     <string name="watched_from">%1$s · de %2$s</string>
-    <string name="watched_no_tracker">Conecta Trakt o Simkl en Listas para usarlo</string>
+    <string name="watched_no_tracker">%1$s · conecta Trakt o Simkl en Listas</string>
     <string name="watched_summary_hidden">vistos ocultos</string>
     <string name="status_progress">Generando · %1$s · lista %2$d de %3$d</string>
     <plurals name="wallpapers_count">
@@ -214,9 +208,30 @@
     <string name="footer_none">Nada</string>
     <string name="footer_source">Lista de origen</string>
     <string name="footer_streaming">Plataformas de streaming</string>
-    <string name="footer_both">Lista de origen y plataformas</string>
+    <string name="footer_both">Plataformas y lista de origen</string>
     <string name="streaming_country_title">País de las plataformas</string>
     <string name="streaming_country_disabled">Solo se usa si el pie muestra las plataformas</string>
     <string name="explore_empty_title">No hay listas elegidas</string>
     <string name="explore_empty_desc">Elige listas de TMDB, Trakt, Simkl o MDBList</string>
+    <string name="viewer_browse">Navegar</string>
+    <string name="viewer_use">Usar en la vista previa</string>
+    <string name="viewer_unpin">Quitar</string>
+    <string name="viewer_pinned">FIJADA</string>
+    <string name="viewer_guide">Guía del launcher</string>
+    <string name="viewer_position">%1$d de %2$d</string>
+    <string name="guide_caption">Distribución aproximada del launcher</string>
+    <string name="footer_fallback">Plataformas, o lista de origen</string>
+    <string name="footer_fallback_desc">La lista se muestra si ninguna plataforma lo tiene</string>
+    <string name="filters_applies_to">Se aplica a</string>
+    <string name="filters_scope_filtered">Listas filtradas</string>
+    <string name="filters_scope_all_lists">Todas las listas</string>
+    <string name="filters_scope_filtered_short">listas filtradas</string>
+    <string name="filters_scope_all_short">todas las listas</string>
+    <string name="filter_off">No</string>
+    <string name="filter_on">Sí</string>
+    <string name="filters_age_explain">Descarta lo estrenado (o, en series, emitido por última vez) hace más tiempo</string>
+    <string name="watched_explain">Lo que has visto en Trakt o Simkl: mostrarlo normal, con la marca Visto, u ocultarlo</string>
+    <string name="filtered_lists_title">Listas filtradas</string>
+    <string name="filtered_lists_desc">%1$d de %2$d listas</string>
+    <string name="filtered_lists_description">Los filtros con «Listas filtradas» solo se aplican a las listas marcadas aquí. Por defecto se marcan las de tendencias y populares, y no tus propias listas.</string>
 </resources>
