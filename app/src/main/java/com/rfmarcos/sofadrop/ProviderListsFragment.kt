@@ -48,7 +48,7 @@ class ProviderListsFragment : BaseSettingsFragment() {
             checkbox(ID_LIST_BASE + index, Sources.label(requireContext(), source).substringAfter(" · "),
                 when {
                     !usable -> getString(R.string.list_needs_account)
-                    Settings.listFilters[source.key]?.isDefault == false -> FiltersFragment.listFiltersSummary(requireContext(), source)
+                    Settings.listFilters[source.key]?.isDefault == false -> Filters.listFiltersSummary(requireContext(), source)
                     else -> null
                 }, usable && source.key in selected)
                 .enabled(usable)

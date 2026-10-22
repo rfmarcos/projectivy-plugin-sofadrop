@@ -41,19 +41,6 @@
             android:exported="false"
             android:theme="@style/Theme.Sofadrop.Preview" />
 
-        <!-- Optional: reads only Projectivy's home layout for the settings preview (res/xml/layout_reader.xml) -->
-        <service
-            android:name=".LayoutReaderService"
-            android:exported="true"
-            android:label="@string/layout_reader_label"
-            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
-            <intent-filter>
-                <action android:name="android.accessibilityservice.AccessibilityService" />
-            </intent-filter>
-            <meta-data
-                android:name="android.accessibilityservice"
-                android:resource="@xml/layout_reader" />
-        </service>
 
         <service
             android:name=".WallpaperProviderService"

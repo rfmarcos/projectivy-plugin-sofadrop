@@ -58,13 +58,13 @@ object Settings {
     private const val KEY_OVERVIEW_LINES = "overview_lines"
     private const val KEY_SHOW_SOURCE = "show_source"
     private const val KEY_LIST_FILTERS = "list_filters"
-    private val OLD_FILTER_KEYS = listOf("filter_scope", "age_all_lists", "global_hits_all_lists", "adult_all_lists", "filtered_lists")
+    private val OLD_FILTER_KEYS = listOf("filter_scope", "age_all_lists", "global_hits_all_lists", "adult_all_lists", "filtered_lists",
+        "launcher_guide", "_launcher_layout")
     private const val KEY_SOURCE_FALLBACK = "source_fallback"
-    private const val KEY_LAUNCHER_GUIDE = "launcher_guide"
-    private const val KEY_LAUNCHER_LAYOUT = "_launcher_layout"
     private const val KEY_PROGRESS = "_generation_progress"
     private const val KEY_PREVIEW_PIN = "_preview_pin"
     private const val KEY_WATCHED = "watched_mode"
+    private const val KEY_WATCH_SOURCE = "watch_source"
     private const val KEY_TMDB_SESSION = "_tmdb_session_id"
     private const val KEY_TMDB_ACCOUNT = "_tmdb_account_id"
     private const val KEY_TMDB_USER = "_tmdb_user"
@@ -76,6 +76,9 @@ object Settings {
     const val WATCHED_SHOW = "show"
     const val WATCHED_MARK = "mark"
     const val WATCHED_HIDE = "hide"
+    const val WATCH_TRAKT = "trakt"
+    const val WATCH_SIMKL = "simkl"
+    const val WATCH_NONE = "none"
 
     // Internal state, not exported in Projectivy backups
     private const val KEY_LAST_GENERATION = "_last_generation"
@@ -105,7 +108,7 @@ object Settings {
     fun init(context: Context) {
         if (!::preferences.isInitialized) {
             preferences = PreferenceManager.getDefaultSharedPreferences(context.applicationContext)
-            // Scopes of earlier versions, replaced by per-list filters
+            // Scopes of earlier versions (replaced by per-list filters) and the dropped launcher guide
             preferences.edit { OLD_FILTER_KEYS.forEach(::remove) }
         }
     }
@@ -158,19 +161,14 @@ object Settings {
 
     /** Skip titles released (or, for TV, last aired) longer ago than this; 0 = no limit. */
     var maxAgeMonths: Int
-        get() = preferences.getInt(KEY_MAX_AGE, 12)
+        get() = preferences.getInt(KEY_MAX_AGE, 0)
         set(value) = preferences.edit { putInt(KEY_MAX_AGE, value) }
 
     var excludeAdult: Boolean
         get() = preferences.getBoolean(KEY_EXCLUDE_ADULT, true)
         set(value) = preferences.edit { putBoolean(KEY_EXCLUDE_ADULT, value) }
 
-    /** Projectivy home layout last read by the layout reader; null = none (the preview uses the generic one). */
-    var launcherLayout: LauncherLayout?
-        get() = preferences.getString(KEY_LAUNCHER_LAYOUT, null)?.let { runCatching { json.decodeFromString<LauncherLayout>(it) }.getOrNull() }
-        set(value) = preferences.edit { if (value == null) remove(KEY_LAUNCHER_LAYOUT) else putString(KEY_LAUNCHER_LAYOUT, json.encodeToString(value)) }
-
-    /** Per-list overrides of the default filters (list key -> values), set from "Explore & tune lists". */
+    /** Per-list overrides of the default filters (list key -> values), set on each list's page in "Filters & explore lists". */
     var listFilters: Map<String, ListFilters>
         get() = try {
             json.decodeFromString<Map<String, ListFilters>>(preferences.getString(KEY_LIST_FILTERS, null) ?: "{}")
@@ -264,8 +262,19 @@ object Settings {
         remove(KEY_SIMKL_ACCESS); remove(KEY_SIMKL_REFRESH); remove(KEY_SIMKL_EXPIRES); remove(KEY_SIMKL_USER)
     }
 
-    /** Watched titles can be marked or hidden when at least one tracker is connected. */
-    val trackerConnected: Boolean get() = traktConnected || simklConnected
+    /** Connected trackers that can provide the watch history. */
+    val connectedTrackers: List<String> get() = listOfNotNull(WATCH_TRAKT.takeIf { traktConnected }, WATCH_SIMKL.takeIf { simklConnected })
+
+    /**
+     * Tracker whose history marks or hides watched titles: the chosen one while connected, null when off
+     * or disconnected. Until chosen, the first connected tracker (what earlier versions used).
+     */
+    val watchSource: String?
+        get() = preferences.getString(KEY_WATCH_SOURCE, null).let { chosen ->
+            if (chosen == null) connectedTrackers.firstOrNull() else chosen.takeIf { it in connectedTrackers }
+        }
+
+    fun setWatchSource(value: String) = preferences.edit { putString(KEY_WATCH_SOURCE, value) }
 
     // --- TMDB account (optional, adds the user's watchlist / favourites) ---
 
@@ -299,11 +308,6 @@ object Settings {
 
     val OVERVIEW_OPTIONS = listOf(4, 2, 0)
 
-    /** Settings preview: draw Projectivy's home (captured or generic) over the wallpaper. */
-    var launcherGuide: Boolean
-        get() = preferences.getBoolean(KEY_LAUNCHER_GUIDE, true)
-        set(value) = preferences.edit { putBoolean(KEY_LAUNCHER_GUIDE, value) }
-
     /**
      * With both footer parts on, show the list source only when the title has no streaming service.
      * Default for new installs; existing installs keep showing both (decided once, on first read).
@@ -325,7 +329,7 @@ object Settings {
         get() = string(KEY_PREVIEW_PIN)
         set(value) = preferences.edit { putString(KEY_PREVIEW_PIN, value) }
 
-    /** What to do with titles already watched on Trakt: "show", "mark" or "hide". */
+    /** What to do with titles in the watch history: "show", "mark" or "hide". */
     var watchedMode: String
         get() = preferences.getString(KEY_WATCHED, WATCHED_MARK) ?: WATCHED_MARK
         set(value) = preferences.edit { putString(KEY_WATCHED, value) }
@@ -407,7 +411,7 @@ object Settings {
     val signature: String
         get() = listOf(
             token.hashCode(), language, region, lists.sorted().joinToString(","), titlesPerList,
-            outputWidth, globalHitsOnly, showProviders, selectionMode, if (trackerConnected) watchedMode else "",
+            outputWidth, globalHitsOnly, showProviders, selectionMode, watchSource?.let { "$it:$watchedMode" }.orEmpty(),
             maxAgeMonths, excludeAdult, listFilters.toSortedMap(),
         // Only when changed, so existing installs don't see a pending change after updating
         ).plus(listOfNotNull(overviewLines.takeIf { it != 4 }, "nosource".takeIf { !showSource }, "fallback".takeIf { showSource && showProviders && sourceFallback })).joinToString("|")

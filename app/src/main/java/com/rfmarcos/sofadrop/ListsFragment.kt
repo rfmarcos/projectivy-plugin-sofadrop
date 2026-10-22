@@ -29,8 +29,8 @@ class ListsFragment : BaseSettingsFragment() {
         actions += provider(ID_SIMKL, R.drawable.badge_simkl, getString(R.string.setting_simkl_title),
             ProviderListsFragment.summary(context, SourceProvider.SIMKL))
         actions += provider(ID_MDBLIST, R.drawable.badge_mdblist, getString(R.string.setting_mdblist_title), MdbListFragment.summary(context))
-        actions += action(ID_EXPLORE, R.drawable.ic_act_search, getString(R.string.setting_explore_title),
-            getString(R.string.setting_explore_desc)).hasNext(true).build()
+        actions += action(ID_EXPLORE, R.drawable.ic_act_filter, getString(R.string.setting_explore_title),
+            Filters.summary(context)).hasNext(true).build()
     }
 
     /** Provider row with the provider's own round badge instead of a generic icon in the grey circle. */
@@ -46,6 +46,7 @@ class ListsFragment : BaseSettingsFragment() {
         updateDescription(ID_TRAKT, ProviderListsFragment.summary(context, SourceProvider.TRAKT))
         updateDescription(ID_SIMKL, ProviderListsFragment.summary(context, SourceProvider.SIMKL))
         updateDescription(ID_MDBLIST, MdbListFragment.summary(context))
+        updateDescription(ID_EXPLORE, Filters.summary(context))
     }
 
     override fun onGuidedActionClicked(action: GuidedAction) {

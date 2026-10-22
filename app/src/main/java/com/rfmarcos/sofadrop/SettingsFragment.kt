@@ -34,10 +34,7 @@ class SettingsFragment : PreviewSettingsFragment() {
             .multilineDescription(true).build()
         actions += action(ID_PREVIEW, R.drawable.ic_act_preview, getString(R.string.action_preview), getString(R.string.action_preview_desc))
             .enabled(WallpaperStore(context).current().isNotEmpty()).build()
-        actions += previewModeAction()
         actions += action(ID_LISTS, R.drawable.ic_act_movie, getString(R.string.setting_lists_title), ListsFragment.summary(context))
-            .hasNext(true).build()
-        actions += action(ID_FILTERS, R.drawable.ic_act_filter, getString(R.string.setting_filters_title), FiltersFragment.summary(context))
             .hasNext(true).build()
         actions += action(ID_DETAILS, R.drawable.ic_act_tv, getString(R.string.setting_details_title), DetailsFragment.summary(context))
             .hasNext(true).build()
@@ -52,7 +49,6 @@ class SettingsFragment : PreviewSettingsFragment() {
         // Sub-screens may have changed lists, filters or details
         val context = requireContext()
         updateDescription(ID_LISTS, ListsFragment.summary(context))
-        updateDescription(ID_FILTERS, FiltersFragment.summary(context))
         updateDescription(ID_DETAILS, DetailsFragment.summary(context))
         handler.post(statusRefresher)
     }
@@ -79,14 +75,12 @@ class SettingsFragment : PreviewSettingsFragment() {
             }
             ID_PREVIEW -> startActivity(Intent(requireContext(), PreviewActivity::class.java))
             ID_LISTS -> add(parentFragmentManager, ListsFragment())
-            ID_FILTERS -> add(parentFragmentManager, FiltersFragment())
             ID_DETAILS -> add(parentFragmentManager, DetailsFragment())
             ID_ABOUT -> add(parentFragmentManager, AboutFragment())
         }
     }
 
     override fun onSubGuidedActionClicked(action: GuidedAction): Boolean {
-        if (onPreviewModeClicked(action)) return true
         val index = (action.id % SUB_ID_BASE).toInt()
         when (action.id / SUB_ID_BASE) {
             ID_REFRESH -> {
@@ -149,7 +143,6 @@ class SettingsFragment : PreviewSettingsFragment() {
         private const val ID_PREVIEW = 3L
         private const val ID_LISTS = 4L
         private const val ID_REFRESH = 8L
-        private const val ID_FILTERS = 10L
         private const val ID_ABOUT = 18L
         private const val ID_DETAILS = 20L
     }

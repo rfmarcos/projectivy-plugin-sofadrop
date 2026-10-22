@@ -8,10 +8,7 @@ sealed class WatchStatus {
     data class InProgress(val completed: Int, val aired: Int) : WatchStatus()
 }
 
-/**
- * Watched titles of the connected trackers, loaded once per generation. With both connected a title
- * counts as watched if either says so, and the furthest episode progress wins.
- */
+/** Watched titles of the tracker chosen as watch history ([Settings.watchSource]), loaded once per generation. */
 class WatchedContent private constructor(
     private val trakt: TraktClient?,
     private val traktMovies: Set<Int>,
@@ -49,14 +46,14 @@ class WatchedContent private constructor(
     }
 
     companion object {
-        /** Null when no tracker is connected or the user wants to see everything as is. */
+        /** Null when no watch history is chosen (or its tracker isn't connected). */
         fun load(trakt: TraktClient?, simkl: SimklClient?): WatchedContent? {
-            if (!Settings.trackerConnected) return null
-            val traktData = trakt?.takeIf { Settings.traktConnected }?.let { client ->
+            val source = Settings.watchSource ?: return null
+            val traktData = trakt?.takeIf { source == Settings.WATCH_TRAKT }?.let { client ->
                 runCatching { client.watchedMovies() to client.watchedShows() }
                     .onFailure { Log.w("WatchedContent", "Could not load Trakt history", it) }.getOrNull()
             }
-            val simklData = if (simkl == null || !Settings.simklConnected) null else runCatching { simkl.watched() }
+            val simklData = if (simkl == null || source != Settings.WATCH_SIMKL) null else runCatching { simkl.watched() }
                 .onFailure { Log.w("WatchedContent", "Could not load Simkl history", it) }.getOrNull()
             if (traktData == null && simklData == null) return null
             return WatchedContent(trakt.takeIf { traktData != null }, traktData?.first.orEmpty(), traktData?.second.orEmpty(), simklData.orEmpty())

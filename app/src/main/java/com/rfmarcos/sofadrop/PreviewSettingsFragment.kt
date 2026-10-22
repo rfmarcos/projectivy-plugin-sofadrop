@@ -10,18 +10,16 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.leanback.widget.GuidanceStylist
 import androidx.leanback.widget.GuidanceStylist.Guidance
-import androidx.leanback.widget.GuidedAction
 
 /**
  * Settings screen whose left pane is a live preview of one wallpaper rendered with the current settings
- * (plus the "not applied yet" state and the optional launcher guide). Call [schedulePreview] after a change.
+ * (plus the "not applied yet" state). Call [schedulePreview] after a change.
  */
 abstract class PreviewSettingsFragment : BaseSettingsFragment() {
 
     private var previewImage: ImageView? = null
     private var previewProgress: ProgressBar? = null
     private var previewLabel: TextView? = null
-    private var previewGuide: View? = null
     protected var pendingNotice: TextView? = null
     private var previewJob = 0
     private val previewRunnable = Runnable { startPreview() }
@@ -34,7 +32,6 @@ abstract class PreviewSettingsFragment : BaseSettingsFragment() {
             previewImage = view.findViewById(R.id.preview_image)
             previewProgress = view.findViewById(R.id.preview_progress)
             previewLabel = view.findViewById(R.id.preview_label)
-            previewGuide = view.findViewById(R.id.preview_guide)
             pendingNotice = view.findViewById(R.id.pending_notice)
             view.findViewById<View>(R.id.preview_frame).clipToOutline = true
             cachedPreview?.let { (key, bitmap, title) -> if (key == previewKey()) showPreview(bitmap, title) }
@@ -44,7 +41,6 @@ abstract class PreviewSettingsFragment : BaseSettingsFragment() {
 
     override fun onResume() {
         super.onResume()
-        updateGuide()
         refreshPending()
         schedulePreview(0)
     }
@@ -52,27 +48,6 @@ abstract class PreviewSettingsFragment : BaseSettingsFragment() {
     override fun onPause() {
         handler.removeCallbacks(previewRunnable)
         super.onPause()
-    }
-
-    /** Show or hide Projectivy's home over the preview (redrawn, as the captured layout may have changed). */
-    protected fun updateGuide() {
-        previewGuide?.visibility = if (Settings.launcherGuide) View.VISIBLE else View.GONE
-        previewGuide?.invalidate()
-    }
-
-    /** The "Preview: Wallpaper only / With launcher" row both preview screens show. */
-    protected fun previewModeAction(): GuidedAction {
-        val options = listOf(getString(R.string.preview_mode_wallpaper), getString(R.string.preview_mode_launcher))
-        return choice(ID_PREVIEW_MODE, R.drawable.ic_act_preview, R.string.preview_mode_title, options[if (Settings.launcherGuide) 1 else 0], options)
-    }
-
-    /** Handles the "Preview" row's sub-actions; true when [action] was one of them. */
-    protected fun onPreviewModeClicked(action: GuidedAction): Boolean {
-        if (action.id / SUB_ID_BASE != ID_PREVIEW_MODE) return false
-        Settings.launcherGuide = action.id % SUB_ID_BASE == 1L
-        updateDescription(ID_PREVIEW_MODE, getString(if (Settings.launcherGuide) R.string.preview_mode_launcher else R.string.preview_mode_wallpaper))
-        updateGuide()
-        return true
     }
 
     protected fun refreshPending() {
@@ -137,7 +112,6 @@ abstract class PreviewSettingsFragment : BaseSettingsFragment() {
     }
 
     companion object {
-        const val ID_PREVIEW_MODE = 900L
         private const val PREVIEW_WIDTH = 1280
 
         /** Last preview (key, image, title), kept while the process lives so reopening is instant. */

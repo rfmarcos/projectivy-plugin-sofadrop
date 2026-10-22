@@ -62,11 +62,6 @@
             android:importantForAccessibility="no"
             android:scaleType="fitCenter" />
 
-        <com.rfmarcos.sofadrop.LauncherGuideView
-            android:id="@+id/preview_guide"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:visibility="gone" />
 
         <ProgressBar
             android:id="@+id/preview_progress"

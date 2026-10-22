@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Full-screen viewer: the wallpaper, an optional launcher guide, and a compact info cluster at the
+<!-- Full-screen viewer: the wallpaper and a compact info cluster at the
      bottom right (the wallpaper's own text sits on the left) that fades out when idle. -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"

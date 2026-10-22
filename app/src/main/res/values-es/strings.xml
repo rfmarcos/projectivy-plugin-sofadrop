@@ -100,9 +100,8 @@
     <string name="watched_show">Mostrar normal</string>
     <string name="watched_mark">Mostrar con la marca Visto</string>
     <string name="watched_hide">Ocultar</string>
-    <string name="setting_explore_title">Explorar y ajustar listas</string>
-    <string name="setting_explore_desc">Ver los títulos de cada lista y darle sus propios filtros</string>
-    <string name="explore_description">Elige una de tus listas para ver sus títulos en orden y qué pasa con cada uno, y para darle sus propios filtros.</string>
+    <string name="setting_explore_title">Filtros y explorar listas</string>
+    <string name="explore_description">Los filtros de arriba se aplican a todas las listas. Abre una lista de abajo para ver sus títulos en orden, qué pasa con cada uno, y para darle sus propios filtros.\n\nLa antigüedad y los éxitos globales solo se aplican por defecto a tendencias, populares y similares, para no vaciar tus watchlists y favoritos.</string>
     <string name="explore_loading">Cargando…</string>
     <string name="explore_used">Se usa</string>
     <string name="explore_reserve">Reserva: se usa si alguno de arriba no se puede</string>
@@ -126,8 +125,6 @@
     <string name="mdblist_key_mode">Clave de API · %1$s</string>
     <string name="trakt_unavailable">No disponible en esta compilación (faltan las credenciales de Trakt de la app)</string>
     <!-- Filtros -->
-    <string name="setting_filters_title">Filtros</string>
-    <string name="filters_description">Filtros por defecto para todas las listas; cada lista puede tener los suyos en Listas → Explorar y ajustar listas. La antigüedad y los éxitos globales solo se aplican por defecto a tendencias, populares y similares, para no vaciar tus watchlists y favoritos.</string>
     <string name="filters_age_title">Antigüedad máxima</string>
     <string name="filters_age_none">Sin límite</string>
     <string name="filters_age_months">%1$d meses</string>
@@ -156,7 +153,7 @@
     <string name="details_description">Cómo se ve cada fondo: idioma, longitud de la sinopsis, qué muestra el pie (la lista de origen, las plataformas) y resolución. Una sinopsis más corta evita que las filas del launcher tapen el texto.</string>
     <string name="streaming_summary_none">sin plataformas</string>
     <string name="streaming_summary">plataformas de %1$s</string>
-    <string name="lists_hub_description">Cuántos títulos coger de cada lista y en qué orden, y después las listas. Un título que está en varias listas solo se usa una vez.</string>
+    <string name="lists_hub_description">Cuántos títulos coger de cada lista y en qué orden, después las listas y, al final, los filtros. Un título que está en varias listas solo se usa una vez.</string>
     <string name="lists_summary">%1$s · %2$s</string>
     <string name="provider_summary_connected">%1$d elegidas · conectado como %2$s</string>
     <string name="provider_summary_disconnected">%1$d elegidas · cuenta sin conectar</string>
@@ -193,8 +190,6 @@
     <string name="simkl_lists_description">Listas de Simkl, el tracker de series, películas y anime. Conecta tu cuenta para tus listas Pendientes y Viendo; su historial también alimenta Títulos vistos (en Filtros).</string>
     <string name="simkl_login_ok">Simkl conectado como %1$s</string>
     <string name="simkl_failed">Error de Simkl: %1$s</string>
-    <string name="watched_from">%1$s · de %2$s</string>
-    <string name="watched_no_tracker">%1$s · conecta Trakt o Simkl en Listas</string>
     <string name="watched_summary_hidden">vistos ocultos</string>
     <string name="status_progress">Generando · %1$s · lista %2$d de %3$d</string>
     <plurals name="wallpapers_count">
@@ -223,8 +218,7 @@
     <string name="filter_off">No</string>
     <string name="filter_on">Sí</string>
     <string name="filters_age_explain">Descarta lo estrenado (o, en series, emitido por última vez) hace más tiempo</string>
-    <string name="watched_explain">Lo que has visto en Trakt o Simkl: mostrarlo normal, con la marca Visto, u ocultarlo</string>
-    <string name="filters_custom_title">Listas con filtros propios</string>
+    <string name="watched_explain">Títulos de tu historial: mostrarlos normal, con la marca Visto, u ocultarlos</string>
     <string name="list_filters_default">Filtros por defecto</string>
     <string name="list_filters_custom">Filtros propios: %1$s</string>
     <string name="list_filters_hits_on">solo éxitos globales</string>
@@ -234,26 +228,11 @@
         <item quantity="one">%d lista personalizada</item>
         <item quantity="other">%d listas personalizadas</item>
     </plurals>
-    <string name="preview_mode_title">Vista previa</string>
-    <string name="preview_mode_wallpaper">Solo el fondo</string>
-    <string name="preview_mode_launcher">Con el launcher</string>
-    <string name="launcher_layout_title">Distribución del launcher</string>
-    <string name="launcher_layout_real">Tu pantalla de inicio · capturada %1$s</string>
-    <string name="launcher_layout_generic">Distribución genérica de Projectivy · configúrala para ver tus apps</string>
-    <string name="launcher_layout_description">Muestra tu propia pantalla de inicio de Projectivy en la vista previa: Sofadrop apunta dónde están tus filas y apps. Android lo llama servicio de accesibilidad.
-
-Privado: solo lee Projectivy (posiciones, nombres de apps y el reloj) y nunca escribe, pulsa ni envía nada fuera de esta tele. Puedes desactivarlo cuando quieras en los ajustes de Android.</string>
-    <string name="layout_reader_open">Abrir ajustes de accesibilidad</string>
-    <string name="layout_reader_on">El lector de distribución de Sofadrop está activado</string>
-    <string name="layout_reader_off">Activa «Lector de distribución de Sofadrop» y pulsa Inicio una vez</string>
-    <string name="layout_reader_path">Ajustes › Preferencias del dispositivo › Accesibilidad › Lector de distribución de Sofadrop</string>
-    <string name="layout_status_title">Distribución capturada</string>
-    <string name="layout_status_none">Aún no hay captura · con el lector activado, pulsa Inicio una vez</string>
-    <string name="layout_status_ok">%1$d filas · %2$d apps · %3$s</string>
-    <string name="layout_forget">Olvidar la distribución capturada</string>
-    <string name="layout_forget_desc">La vista previa vuelve a la distribución genérica</string>
-    <string name="layout_chip_real">Tu distribución · %1$s</string>
-    <string name="layout_chip_generic">Distribución genérica</string>
-    <string name="layout_reader_label">Lector de distribución de Sofadrop</string>
-    <string name="layout_reader_service_description">Apunta dónde están tus filas y apps en la pantalla de inicio de Projectivy para que la vista previa de Sofadrop pueda mostrarlas. Solo lee Projectivy y nunca escribe, pulsa ni envía nada.</string>
+    <string name="watch_source_title">Historial de vistos</string>
+    <string name="watch_source_off">No usar</string>
+    <string name="watch_source_explain">La cuenta de Trakt o Simkl cuyos títulos vistos se pueden marcar u ocultar</string>
+    <string name="watch_source_connect">Conecta Trakt o Simkl en Listas para usar tu historial</string>
+    <string name="watched_need_source">Elige antes un historial de vistos</string>
+    <string name="explore_lists_header">Tus listas</string>
+    <string name="explore_lists_header_desc">Abre una para ver sus títulos y darle sus propios filtros</string>
 </resources>

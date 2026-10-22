@@ -1,21 +1,23 @@
 package com.rfmarcos.sofadrop
 
+import android.content.Context
 import android.os.Bundle
 import androidx.appcompat.content.res.AppCompatResources
-import androidx.core.os.bundleOf
 import androidx.leanback.widget.GuidanceStylist.Guidance
 import androidx.leanback.widget.GuidedAction
 
-/** Pick a selected list to see what it contains and tune its filters. */
+/**
+ * The default filters of every list (watch history first, then what to do with watched titles), and the
+ * selected lists: open one to see what it contains and give it its own filters.
+ */
 class ListExplorerFragment : BaseSettingsFragment() {
 
     private var lists: List<ListSource> = emptyList()
-    private val customOnly get() = arguments?.getBoolean(ARG_CUSTOM_ONLY) == true
 
     override fun onCreateGuidance(savedInstanceState: Bundle?) = Guidance(
-        getString(if (customOnly) R.string.filters_custom_title else R.string.setting_explore_title),
+        getString(R.string.setting_explore_title),
         getString(R.string.explore_description),
-        getString(if (customOnly) R.string.setting_filters_title else R.string.setting_lists_title),
+        getString(R.string.setting_lists_title),
         AppCompatResources.getDrawable(requireActivity(), R.mipmap.ic_launcher),
     )
 
@@ -25,33 +27,80 @@ class ListExplorerFragment : BaseSettingsFragment() {
 
     override fun onResume() {
         super.onResume()
-        actions = buildRows() // a list's filters may have changed on its page
+        refresh() // a list's filters or the connected trackers may have changed
     }
+
+    // Replacing the actions breaks leanback's sub-action expansion, so rows are updated in place
+    private fun refresh() = refreshActions(buildRows()) { ListExplorerFragment() }
 
     private fun buildRows(): List<GuidedAction> {
+        val context = requireContext()
+        val trackers = Settings.connectedTrackers
+        val rows = mutableListOf(
+            choiceRow(ID_AGE, R.drawable.ic_act_schedule, R.string.filters_age_title, Settings.MAX_AGE_OPTIONS.map { Filters.ageLabel(context, it) }),
+            choiceRow(ID_GLOBAL_HITS, R.drawable.ic_act_public, R.string.setting_global_hits_title, Filters.onOff(context)),
+            choiceRow(ID_WATCH_SOURCE, R.drawable.ic_act_history, R.string.watch_source_title,
+                (listOf(Settings.WATCH_NONE) + trackers).map { Filters.watchSourceLabel(context, it) }).also { it.isEnabled = trackers.isNotEmpty() },
+            choiceRow(ID_WATCHED, R.drawable.ic_act_visibility, R.string.setting_watched_title, Filters.WATCHED_MODES.map { Filters.watchedLabel(context, it) })
+                .also { it.isEnabled = Settings.watchSource != null },
+            action(ID_ADULT, R.drawable.ic_act_block, getString(R.string.filters_adult_title), getString(R.string.filters_adult_desc))
+                .checkSetId(GuidedAction.CHECKBOX_CHECK_SET_ID).checked(Settings.excludeAdult).multilineDescription(true).build(),
+        )
         // Only selected lists: duplicates (and so what a list really brings) depend on the others
-        lists = if (customOnly) FiltersFragment.customised() else Sources.selected()
-        if (lists.isEmpty()) {
-            return listOf(action(EMPTY, R.drawable.ic_act_info, getString(R.string.explore_empty_title), getString(R.string.explore_empty_desc))
-                .focusable(false).build())
+        lists = Sources.selected()
+        rows += if (lists.isEmpty()) {
+            action(ID_EMPTY, R.drawable.ic_act_info, getString(R.string.explore_empty_title), getString(R.string.explore_empty_desc)).focusable(false).build()
+        } else {
+            action(ID_HEADER, R.drawable.ic_act_list, getString(R.string.explore_lists_header), getString(R.string.explore_lists_header_desc)).focusable(false).build()
         }
-        return lists.mapIndexed { index, source ->
-            action(index.toLong(), R.drawable.ic_act_list, Sources.label(requireContext(), source),
-                FiltersFragment.listFiltersSummary(requireContext(), source)).hasNext(true).build()
+        rows += lists.mapIndexed { index, source ->
+            action(LIST_BASE + index, R.drawable.ic_act_list, Sources.label(context, source), Filters.listFiltersSummary(context, source)).hasNext(true).build()
         }
+        return rows
     }
 
+    private fun choiceRow(id: Long, icon: Int, title: Int, values: List<String>) =
+        action(id, icon, getString(title), describe(requireContext(), id)).multilineDescription(true)
+            .subActions(values.mapIndexed { index, label -> GuidedAction.Builder(requireContext()).id(id * SUB_ID_BASE + index).title(label).build() })
+            .build()
+
     override fun onGuidedActionClicked(action: GuidedAction) {
-        if (action.id == EMPTY) return
-        val source = lists.getOrNull(action.id.toInt()) ?: return
+        if (action.id == ID_ADULT) Settings.excludeAdult = action.isChecked
+        val source = lists.getOrNull((action.id - LIST_BASE).toInt()) ?: return
         add(parentFragmentManager, ListContentsFragment.newInstance(source.key))
     }
 
-    companion object {
-        private const val EMPTY = -1L
-        private const val ARG_CUSTOM_ONLY = "custom_only"
+    override fun onSubGuidedActionClicked(action: GuidedAction): Boolean {
+        val index = (action.id % SUB_ID_BASE).toInt()
+        when (action.id / SUB_ID_BASE) {
+            ID_AGE -> Settings.maxAgeMonths = Settings.MAX_AGE_OPTIONS[index]
+            ID_GLOBAL_HITS -> Settings.globalHitsOnly = index == 1
+            ID_WATCH_SOURCE -> Settings.setWatchSource((listOf(Settings.WATCH_NONE) + Settings.connectedTrackers)[index])
+            ID_WATCHED -> Settings.watchedMode = Filters.WATCHED_MODES[index]
+        }
+        refresh() // the watched row follows the watch history
+        return true
+    }
 
-        fun newInstance(customOnly: Boolean = false) = ListExplorerFragment().apply { arguments = bundleOf(ARG_CUSTOM_ONLY to customOnly) }
+    companion object {
+        private const val ID_EMPTY = -1L
+        private const val ID_AGE = 2L
+        private const val ID_GLOBAL_HITS = 3L
+        private const val ID_ADULT = 4L
+        private const val ID_WATCHED = 5L
+        private const val ID_WATCH_SOURCE = 6L
+        private const val ID_HEADER = 7L
+        private const val LIST_BASE = 100L
+
+        /** Value of a default filter and, below, what it does. */
+        private fun describe(context: Context, id: Long): String = when (id) {
+            ID_AGE -> "${Filters.ageLabel(context, Settings.maxAgeMonths)}\n${context.getString(R.string.filters_age_explain)}"
+            ID_GLOBAL_HITS -> "${Filters.onOff(context)[if (Settings.globalHitsOnly) 1 else 0]}\n${context.getString(R.string.setting_global_hits_desc)}"
+            ID_WATCH_SOURCE -> if (Settings.connectedTrackers.isEmpty()) context.getString(R.string.watch_source_connect)
+                else "${Filters.watchSourceLabel(context, Settings.watchSource)}\n${context.getString(R.string.watch_source_explain)}"
+            else -> if (Settings.watchSource == null) context.getString(R.string.watched_need_source)
+                else "${Filters.watchedLabel(context, Settings.watchedMode)}\n${context.getString(R.string.watched_explain)}"
+        }
     }
 }
 
@@ -86,21 +135,22 @@ class ListContentsFragment : BaseSettingsFragment() {
         val context = requireContext()
         val custom = Settings.listFilters[list.key] ?: ListFilters()
         fun default(label: String) = getString(R.string.list_filter_default, label)
-        val defaultAge = FiltersFragment.ageLabel(context, Settings.defaultMaxAge(list))
-        val defaultHits = FiltersFragment.onOff(context)[if (Settings.defaultGlobalHits(list)) 1 else 0]
-        val defaultWatched = FiltersFragment.watchedLabel(context, Settings.watchedMode)
+        val defaultAge = Filters.ageLabel(context, Settings.defaultMaxAge(list))
+        val defaultHits = Filters.onOff(context)[if (Settings.defaultGlobalHits(list)) 1 else 0]
+        val defaultWatched = Filters.watchedLabel(context, Settings.watchedMode)
         val rows = mutableListOf(
             filterRow(ID_AGE, R.drawable.ic_act_schedule, R.string.filters_age_title,
-                custom.maxAge?.let { FiltersFragment.ageLabel(context, it) } ?: default(defaultAge),
-                listOf(default(defaultAge)) + Settings.MAX_AGE_OPTIONS.map { FiltersFragment.ageLabel(context, it) }),
+                custom.maxAge?.let { Filters.ageLabel(context, it) } ?: default(defaultAge),
+                listOf(default(defaultAge)) + Settings.MAX_AGE_OPTIONS.map { Filters.ageLabel(context, it) }),
         )
         // Global hits never applies to lists that are niche on purpose (anime)
         if (list.localMarketFilter) rows += filterRow(ID_HITS, R.drawable.ic_act_public, R.string.setting_global_hits_title,
-            custom.globalHits?.let { FiltersFragment.onOff(context)[if (it) 1 else 0] } ?: default(defaultHits),
-            listOf(default(defaultHits)) + FiltersFragment.onOff(context))
-        rows += filterRow(ID_WATCHED, R.drawable.ic_act_visibility, R.string.setting_watched_title,
-            custom.watched?.let { FiltersFragment.watchedLabel(context, it) } ?: default(defaultWatched),
-            listOf(default(defaultWatched)) + FiltersFragment.WATCHED_MODES.map { FiltersFragment.watchedLabel(context, it) })
+            custom.globalHits?.let { Filters.onOff(context)[if (it) 1 else 0] } ?: default(defaultHits),
+            listOf(default(defaultHits)) + Filters.onOff(context))
+        // What to do with watched titles needs a watch history (chosen in the default filters)
+        if (Settings.watchSource != null) rows += filterRow(ID_WATCHED, R.drawable.ic_act_visibility, R.string.setting_watched_title,
+            custom.watched?.let { Filters.watchedLabel(context, it) } ?: default(defaultWatched),
+            listOf(default(defaultWatched)) + Filters.WATCHED_MODES.map { Filters.watchedLabel(context, it) })
         return rows
     }
 
@@ -117,7 +167,7 @@ class ListContentsFragment : BaseSettingsFragment() {
         val updated = when (action.id / SUB_ID_BASE) {
             ID_AGE -> current.copy(maxAge = if (index == 0) null else Settings.MAX_AGE_OPTIONS[index - 1])
             ID_HITS -> current.copy(globalHits = if (index == 0) null else index == 2)
-            ID_WATCHED -> current.copy(watched = if (index == 0) null else FiltersFragment.WATCHED_MODES[index - 1])
+            ID_WATCHED -> current.copy(watched = if (index == 0) null else Filters.WATCHED_MODES[index - 1])
             else -> return true
         }
         Settings.listFilters = Settings.listFilters + (list.key to updated)

@@ -110,9 +110,8 @@
     <string name="watched_show">Show normally</string>
     <string name="watched_mark">Show with a Watched badge</string>
     <string name="watched_hide">Hide</string>
-    <string name="setting_explore_title">Explore &amp; tune lists</string>
-    <string name="setting_explore_desc">See each list\'s titles and give it its own filters</string>
-    <string name="explore_description">Pick one of your lists to see its titles in order and what happens to each one, and to give it its own filters.</string>
+    <string name="setting_explore_title">Filters &amp; explore lists</string>
+    <string name="explore_description">The filters on top apply to every list. Open a list below to see its titles in order, what happens to each one, and to give it its own filters.\n\nAge and global hits only apply by default to trending, popular and similar lists, so your watchlists and favourites aren\'t emptied.</string>
     <string name="explore_loading">Loading…</string>
     <string name="explore_used">Used</string>
     <string name="explore_reserve">Backup: used if one above can\'t be</string>
@@ -136,8 +135,6 @@
     <string name="mdblist_key_mode">API key · %1$s</string>
     <string name="trakt_unavailable">Not available in this build (missing the app\'s Trakt credentials)</string>
     <!-- Filters -->
-    <string name="setting_filters_title">Filters</string>
-    <string name="filters_description">Default filters for every list; any list can have its own in Lists → Explore &amp; tune lists. Age and global hits only apply by default to trending, popular and similar lists, so your watchlists and favourites aren\'t emptied.</string>
     <string name="filters_age_title">Maximum age</string>
     <string name="filters_age_none">No limit</string>
     <string name="filters_age_months">%1$d months</string>
@@ -166,7 +163,7 @@
     <string name="details_description">How each wallpaper looks: language, synopsis length, what the footer shows (the list it came from, the streaming services) and image resolution. A shorter synopsis keeps the text clear of the launcher rows.</string>
     <string name="streaming_summary_none">no streaming services</string>
     <string name="streaming_summary">streaming in %1$s</string>
-    <string name="lists_hub_description">How many titles to take from each list and in what order, then the lists themselves. A title in several lists is only used once.</string>
+    <string name="lists_hub_description">How many titles to take from each list and in what order, then the lists themselves and, at the end, the filters. A title in several lists is only used once.</string>
     <string name="lists_summary">%1$s · %2$s</string>
     <string name="provider_summary_connected">%1$d selected · connected as %2$s</string>
     <string name="provider_summary_disconnected">%1$d selected · account not connected</string>
@@ -205,8 +202,6 @@
     <string name="simkl_lists_description">Lists from Simkl, the tracker for TV, movies and anime. Connect your account for your Plan to watch and Watching lists; its history also powers Watched titles (in Filters).</string>
     <string name="simkl_login_ok">Simkl connected as %1$s</string>
     <string name="simkl_failed">Simkl error: %1$s</string>
-    <string name="watched_from">%1$s · from %2$s</string>
-    <string name="watched_no_tracker">%1$s · connect Trakt or Simkl in Lists</string>
     <string name="watched_summary_hidden">watched hidden</string>
     <string name="status_progress">Generating · %1$s · list %2$d of %3$d</string>
     <plurals name="wallpapers_count">
@@ -235,8 +230,7 @@
     <string name="filter_off">Off</string>
     <string name="filter_on">On</string>
     <string name="filters_age_explain">Skips titles released (or, for shows, last aired) longer ago</string>
-    <string name="watched_explain">What you\'ve watched on Trakt or Simkl: show it as usual, with a Watched badge, or skip it</string>
-    <string name="filters_custom_title">Lists with their own filters</string>
+    <string name="watched_explain">Titles in your watch history: show them as usual, with a Watched badge, or skip them</string>
     <string name="list_filters_default">Default filters</string>
     <string name="list_filters_custom">Own filters: %1$s</string>
     <string name="list_filters_hits_on">global hits only</string>
@@ -246,26 +240,11 @@
         <item quantity="one">%d list customised</item>
         <item quantity="other">%d lists customised</item>
     </plurals>
-    <string name="preview_mode_title">Preview</string>
-    <string name="preview_mode_wallpaper">Wallpaper only</string>
-    <string name="preview_mode_launcher">With launcher</string>
-    <string name="launcher_layout_title">Launcher layout</string>
-    <string name="launcher_layout_real">Your home screen · captured %1$s</string>
-    <string name="launcher_layout_generic">Generic Projectivy layout · set up to show your apps</string>
-    <string name="launcher_layout_description">Shows your own Projectivy home in the preview: Sofadrop notes where your rows and apps sit. Android calls this an accessibility service.
-
-Private: it only reads Projectivy (positions, app names and the clock) and never types, clicks or sends anything off this TV. Turn it off anytime in Android settings.</string>
-    <string name="layout_reader_open">Open accessibility settings</string>
-    <string name="layout_reader_on">Sofadrop layout reader is on</string>
-    <string name="layout_reader_off">Turn on “Sofadrop layout reader”, then press Home once</string>
-    <string name="layout_reader_path">Settings › Device Preferences › Accessibility › Sofadrop layout reader</string>
-    <string name="layout_status_title">Captured layout</string>
-    <string name="layout_status_none">Nothing captured yet · with the reader on, press Home once</string>
-    <string name="layout_status_ok">%1$d rows · %2$d apps · %3$s</string>
-    <string name="layout_forget">Forget captured layout</string>
-    <string name="layout_forget_desc">The preview goes back to the generic layout</string>
-    <string name="layout_chip_real">Your layout · %1$s</string>
-    <string name="layout_chip_generic">Generic layout</string>
-    <string name="layout_reader_label">Sofadrop layout reader</string>
-    <string name="layout_reader_service_description">Notes where your rows and apps sit on Projectivy\'s home screen so Sofadrop\'s preview can show them. It only reads Projectivy and never types, clicks or sends anything.</string>
+    <string name="watch_source_title">Watch history</string>
+    <string name="watch_source_off">Don\'t use</string>
+    <string name="watch_source_explain">The Trakt or Simkl account whose watched titles can be marked or hidden</string>
+    <string name="watch_source_connect">Connect Trakt or Simkl in Lists to use your watch history</string>
+    <string name="watched_need_source">Choose a watch history first</string>
+    <string name="explore_lists_header">Your lists</string>
+    <string name="explore_lists_header_desc">Open one to see its titles and give it its own filters</string>
 </resources>
