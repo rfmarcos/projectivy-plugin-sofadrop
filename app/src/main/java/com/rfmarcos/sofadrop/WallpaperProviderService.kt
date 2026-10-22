@@ -2,7 +2,6 @@ package com.rfmarcos.sofadrop
 
 import android.app.Service
 import android.content.Intent
-import android.os.Binder
 import android.os.IBinder
 import android.util.Log
 import tv.projectivy.plugin.wallpaperprovider.api.Event
@@ -37,10 +36,10 @@ class WallpaperProviderService : Service() {
             }
             GenerateWallpapersWorker.schedule(this@WallpaperProviderService)
 
-            val callers = callerPackages()
-            Log.i(TAG, "getWallpapers from $callers: ${current.size} wallpapers, stale=$stale, pendingChanges=${Settings.hasPendingChanges}")
+            Log.i(TAG, "getWallpapers: ${current.size} wallpapers, stale=$stale, pendingChanges=${Settings.hasPendingChanges}")
+            store.markServed()
             return current.mapNotNull { wallpaper ->
-                val uri = store.uriOf(wallpaper, callers) ?: return@mapNotNull null
+                val uri = store.uriOf(wallpaper) ?: return@mapNotNull null
                 Wallpaper(
                     uri = uri.toString(),
                     type = WallpaperType.IMAGE,
@@ -58,15 +57,9 @@ class WallpaperProviderService : Service() {
             Settings.import(params)
         }
 
-        /** Packages behind the binder call (Projectivy), so they can read our content:// URIs. */
-        private fun callerPackages(): Set<String> {
-            val packages = packageManager.getPackagesForUid(Binder.getCallingUid())?.toSet().orEmpty()
-            return packages + PROJECTIVY_PACKAGE
-        }
     }
 
     companion object {
         private const val TAG = "SofadropService"
-        private const val PROJECTIVY_PACKAGE = "com.spocky.projengmenu"
     }
 }

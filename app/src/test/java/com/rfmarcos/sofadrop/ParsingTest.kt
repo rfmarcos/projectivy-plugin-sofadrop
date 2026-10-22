@@ -108,4 +108,19 @@ class ParsingTest {
         assertEquals("A very long MDBList list na…", Languages.sourceLabel("en-US", mdb))
     }
 
+    @Test
+    fun wallpaperProviderOnlyServesWallpapers() {
+        val parent = kotlin.io.path.createTempDirectory("files").toFile()
+        val root = java.io.File(parent, "wallpapers")
+        val gen = java.io.File(root, "gen-1").apply { mkdirs() }
+        val image = java.io.File(gen, "movie-1.jpg").apply { writeText("x") }
+        java.io.File(gen, "index.json").writeText("[]")
+        java.io.File(parent, "secret.jpg").writeText("x")
+        assertEquals(image.canonicalFile, WallpaperContentProvider.resolve(root, "/gen-1/movie-1.jpg"))
+        assertNull(WallpaperContentProvider.resolve(root, "/gen-1/index.json"))
+        assertNull(WallpaperContentProvider.resolve(root, "/../secret.jpg"))
+        assertNull(WallpaperContentProvider.resolve(root, "/gen-1/missing.jpg"))
+        assertNull(WallpaperContentProvider.resolve(root, "/gen-1"))
+        parent.deleteRecursively()
+    }
 }

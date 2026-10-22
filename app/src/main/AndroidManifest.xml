@@ -73,7 +73,7 @@
                 android:name="settingsActivity"
                 android:value=".SettingsActivity" />
 
-            <!-- Projectivy asks again every 30 minutes; the plugin itself decides when to regenerate -->
+            <!-- Projectivy asks again every 10 minutes (it ignores our update broadcast until then); the plugin itself decides when to regenerate -->
             <meta-data
                 android:name="itemsCacheDurationMillis"
                 android:value="@integer/items_cache_duration_millis" />
@@ -85,15 +85,12 @@
         </service>
 
         <!-- Shares the generated wallpapers with Projectivy -->
+        <!-- Read-only wallpapers for Projectivy, no per-URI grants (see WallpaperContentProvider) -->
         <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.files"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/file_paths" />
-        </provider>
+            android:name=".WallpaperContentProvider"
+            android:authorities="${applicationId}.wallpapers"
+            android:exported="true"
+            tools:ignore="ExportedContentProvider" />
     </application>
 
 </manifest>

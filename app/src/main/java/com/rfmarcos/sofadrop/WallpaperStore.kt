@@ -1,9 +1,7 @@
 package com.rfmarcos.sofadrop
 
 import android.content.Context
-import android.content.Intent
 import android.net.Uri
-import androidx.core.content.FileProvider
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -25,24 +23,31 @@ data class StoredWallpaper(
  */
 class WallpaperStore(private val context: Context) {
 
-    private val root = File(context.filesDir, "wallpapers")
+    private val root = File(context.filesDir, DIR)
     private val currentFile = File(root, "current.txt")
+    private val servedFile = File(root, "served.txt")
     private val json = Json { ignoreUnknownKeys = true; prettyPrint = true }
 
     fun newGeneration(): File =
         File(root, "gen-${System.currentTimeMillis()}").apply { mkdirs() }
 
     /**
-     * Make [generation] the current set. The previous set is kept until the next publish: Projectivy
-     * keeps showing its URIs until it asks for the list again, and deleted files fail to load there.
+     * Make [generation] the current set. The set Projectivy was last given is kept: it caches those
+     * URIs (for up to [R.integer.items_cache_duration_millis], or until it restarts) and falls back to
+     * its own wallpaper when they fail to load. Before anything was served, the previous set is kept.
      */
     fun publish(generation: File, wallpapers: List<StoredWallpaper>) {
         File(generation, INDEX).writeText(json.encodeToString(wallpapers))
-        val previous = currentDir()?.name
+        val keep = servedFile.takeIf { it.exists() }?.readText()?.trim() ?: currentDir()?.name
         val tmp = File(root, "current.tmp")
         tmp.writeText(generation.name)
         tmp.renameTo(currentFile)
-        root.listFiles()?.filter { it.isDirectory && it.name != generation.name && it.name != previous }?.forEach { it.deleteRecursively() }
+        root.listFiles()?.filter { it.isDirectory && it.name != generation.name && it.name != keep }?.forEach { it.deleteRecursively() }
+    }
+
+    /** Remember that Projectivy now has the current set's URIs (see [publish]). */
+    fun markServed() {
+        currentDir()?.let { servedFile.writeText(it.name) }
     }
 
     fun discard(generation: File) {
@@ -64,21 +69,15 @@ class WallpaperStore(private val context: Context) {
 
     fun fileOf(wallpaper: StoredWallpaper): File? = currentDir()?.let { File(it, wallpaper.file) }
 
-    /** content:// URI readable by the packages it is granted to. */
-    fun uriOf(wallpaper: StoredWallpaper, grantTo: Collection<String>): Uri? {
-        val file = fileOf(wallpaper) ?: return null
-        val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", file)
-        grantTo.forEach {
-            try {
-                context.grantUriPermission(it, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            } catch (_: Exception) {
-                // Package not installed: nothing to grant
-            }
-        }
-        return uri
+    /** content:// URI of a current wallpaper, served by [WallpaperContentProvider]. */
+    fun uriOf(wallpaper: StoredWallpaper): Uri? {
+        val dir = currentDir() ?: return null
+        return Uri.Builder().scheme("content").authority("${context.packageName}.wallpapers")
+            .appendPath(dir.name).appendPath(wallpaper.file).build()
     }
 
     companion object {
         private const val INDEX = "index.json"
+        const val DIR = "wallpapers"
     }
 }

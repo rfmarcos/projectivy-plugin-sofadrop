@@ -43,6 +43,7 @@ class TmdbCatalog(
     private val showProviders: Boolean,
 ) {
     private val languageCode = Languages.code(language)
+    private val country = Languages.regionOf(language)
     private val texts = Languages.texts(language)
     private val details = mutableMapOf<TitleRef, JsonObject>()
 
@@ -254,37 +255,39 @@ class TmdbCatalog(
         val title = item.str(if (type == MediaType.MOVIE) "title" else "name").orEmpty()
         val original = item.str(if (type == MediaType.MOVIE) "original_title" else "original_name").orEmpty()
         val originalLanguage = item.str("original_language").orEmpty()
+        val logos = client.get("${type.path}/${ref.tmdbId}/images?include_image_language=$languageCode,$originalLanguage,en")
+            ?.objects("logos")?.filter { it.str("file_path")?.endsWith(".png") == true }.orEmpty()
+        fun inLanguage(code: String) = logos.filter { it.str("iso_639_1") == code }
 
-        var logo = if (similarity(title, original) > 0.9) {
-            multiLanguageLogo(ref, originalLanguage)
-        } else {
-            logoIn(ref, languageCode)
-        }
-
+        var logo = localLogo(ref, inLanguage(languageCode), title)
+        // An untranslated title reads the same on the original-language logo
+        if (logo == null && similarity(title, original) > 0.9) logo = inLanguage(originalLanguage).firstOrNull()?.str("file_path")
         if (logo == null && originalLanguage != "en") {
             val english = client.get("${type.path}/${ref.tmdbId}?language=en-US")
                 ?.str(if (type == MediaType.MOVIE) "title" else "name")
                 .orEmpty()
-            if (similarity(title, english) > 0.9) logo = logoIn(ref, "en")
+            if (similarity(title, english) > 0.9) logo = inLanguage("en").firstOrNull()?.str("file_path")
         }
         // Optional: a logo in another language beats the title written as plain text
-        if (logo == null && Settings.logoFallback) logo = logoIn(ref, originalLanguage) ?: logoIn(ref, "en")
+        if (logo == null && Settings.logoFallback) logo = (inLanguage(originalLanguage) + inLanguage("en")).firstOrNull()?.str("file_path")
         return logo
     }
 
-    private fun logoIn(ref: TitleRef, code: String): String? =
-        client.get("${ref.type.path}/${ref.tmdbId}/images?language=$code")?.objects("logos")
-            ?.firstOrNull { it.str("iso_639_1") == code && it.str("file_path")?.endsWith(".png") == true }
-            ?.str("file_path")
-
-    private fun multiLanguageLogo(ref: TitleRef, originalLanguage: String): String? {
-        val logos = client.get("${ref.type.path}/${ref.tmdbId}/images?include_image_language=$languageCode,$originalLanguage")
-            ?.objects("logos")
-            ?.filter { it.str("file_path")?.endsWith(".png") == true }
-            .orEmpty()
-        return (logos.firstOrNull { it.str("iso_639_1") == languageCode }
-            ?: logos.firstOrNull { it.str("iso_639_1") == originalLanguage })
-            ?.str("file_path")
+    /**
+     * A logo in the configured language: one made for the configured country (or for none) first. One
+     * made for another country only when that country's title is ours too: an "es-MX" logo can read
+     * "Código: Venganza" where Spain's title is "El motín".
+     */
+    private fun localLogo(ref: TitleRef, logos: List<JsonObject>, title: String): String? {
+        logos.firstOrNull { it.str("iso_3166_1").let { c -> c == null || c == country } }?.let { return it.str("file_path") }
+        if (logos.isEmpty()) return null
+        val titles = client.get("${ref.type.path}/${ref.tmdbId}/translations")?.objects("translations").orEmpty()
+            .filter { it.str("iso_639_1") == languageCode }
+            .mapNotNull { t ->
+                val name = t.obj("data")?.str(if (ref.type == MediaType.MOVIE) "title" else "name")?.takeIf { it.isNotBlank() }
+                t.str("iso_3166_1")?.let { c -> name?.let { c to it } }
+            }.toMap()
+        return logos.firstOrNull { logo -> titles[logo.str("iso_3166_1")]?.let { similarity(it, title) > 0.9 } == true }?.str("file_path")
     }
 
     private fun providerLogoPaths(ref: TitleRef): List<String> {
