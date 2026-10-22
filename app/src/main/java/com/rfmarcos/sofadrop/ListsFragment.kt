@@ -20,7 +20,7 @@ class ListsFragment : BaseSettingsFragment() {
         val context = requireContext()
         // How lists are read: they apply to every provider below
         actions += choice(ID_COUNT, R.drawable.ic_act_count, R.string.setting_count_title, countDescription(context),
-            Settings.COUNT_OPTIONS.map { countLabel(context, it) })
+            Settings.COUNT_OPTIONS.map { countLabel(context, it) }, selected = countLabel(context, Settings.titlesPerList))
         actions += choice(ID_ORDER, R.drawable.ic_act_shuffle, R.string.setting_selection_title, orderLabel(Settings.selectionMode),
             ORDER_MODES.map(::orderLabel))
         actions += choice(ID_MIX, R.drawable.ic_act_shuffle, R.string.setting_mix_title, mixLabel(Settings.mixLists),

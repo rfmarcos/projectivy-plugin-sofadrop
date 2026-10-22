@@ -88,9 +88,12 @@ abstract class BaseSettingsFragment : GuidedStepSupportFragment() {
         GuidedAction.Builder(requireContext()).id(id).icon(ColorDrawable(Color.TRANSPARENT)).title(title).description(description)
             .checkSetId(GuidedAction.CHECKBOX_CHECK_SET_ID).checked(checked)
 
-    /** Row that expands into single-choice options with ids `id * SUB_ID_BASE + index`. */
-    protected fun choice(id: Long, icon: Int, title: Int, current: String, options: List<String>): GuidedAction =
-        action(id, icon, getString(title), current).subActions(options(id, options, current)).build()
+    /**
+     * Row that expands into single-choice options with ids `id * SUB_ID_BASE + index`; [selected] is the
+     * current option's label when the row describes it differently ("10 · about 20 wallpapers").
+     */
+    protected fun choice(id: Long, icon: Int, title: Int, current: String, options: List<String>, selected: String = current): GuidedAction =
+        action(id, icon, getString(title), current).subActions(options(id, options, selected)).build()
 
     /** Single-choice options of row [id], the one labelled [current] marked as a radio button. */
     protected fun options(id: Long, labels: List<String>, current: String, descriptions: List<String?> = emptyList()) =

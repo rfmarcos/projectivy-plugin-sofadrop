@@ -43,7 +43,8 @@ class DetailsFragment : PreviewSettingsFragment() {
     private fun countryAction(): GuidedAction {
         val action = choice(ID_COUNTRY, R.drawable.ic_act_tv, R.string.streaming_country_title,
             if (Settings.showProviders) countryLabel(requireContext()) else getString(R.string.streaming_country_disabled),
-            listOf(getString(R.string.region_auto, Languages.regionOf(Settings.language))) + Languages.REGIONS.map { "${Languages.countryName(it)} ($it)" })
+            listOf(getString(R.string.region_auto, Languages.regionOf(Settings.language))) + Languages.REGIONS.map { "${Languages.countryName(it)} ($it)" },
+            selected = countryLabel(requireContext()))
         action.isEnabled = Settings.showProviders
         return action
     }
