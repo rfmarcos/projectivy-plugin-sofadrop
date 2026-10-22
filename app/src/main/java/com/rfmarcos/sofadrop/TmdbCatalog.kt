@@ -27,7 +27,7 @@ data class WallpaperInfo(
 )
 
 /** Why a title of a list is not used. */
-enum class Exclusion { LOCAL_MARKET, TOO_OLD, ADULT, NO_LOGO, WATCHED, NO_IMAGE, DUPLICATE }
+enum class Exclusion { LOCAL_MARKET, TOO_OLD, ADULT, NO_LOGO, NO_SYNOPSIS, WATCHED, NO_IMAGE, DUPLICATE }
 
 /** A title of a list and, when it is filtered out, the reason. */
 data class Candidate(val ref: TitleRef, val exclusion: Exclusion? = null)
@@ -73,7 +73,7 @@ class TmdbCatalog(
             }
         }.distinct()
         if (shuffle) refs = refs.shuffled()
-        val check = cutoff != null || filters.globalHits || Settings.excludeAdult || Settings.requireLogo
+        val check = cutoff != null || filters.globalHits || Settings.excludeAdult || Settings.requireLogo || Settings.synopsisMode == Settings.SYNOPSIS_SKIP
         return refs.asSequence()
             .map { Candidate(it, if (check) exclusion(it, cutoff, filters.globalHits) else null) }
             .takeIncluded(pool)
@@ -173,6 +173,7 @@ class TmdbCatalog(
             Settings.excludeAdult && isAdult(ref, item) -> Exclusion.ADULT
             // Last: it costs an images request per title
             Settings.requireLogo && logoPath(ref, item) == null -> Exclusion.NO_LOGO
+            Settings.synopsisMode == Settings.SYNOPSIS_SKIP && localOverview(ref, item).isBlank() -> Exclusion.NO_SYNOPSIS
             else -> null
         }
     }
@@ -217,11 +218,10 @@ class TmdbCatalog(
             if (seasons > 0) "$seasons ${if (seasons == 1) texts.season else texts.seasons}" else ""
         }
 
-        // Untranslated synopsis: another country's translation in the same language (es-MX for es-ES),
-        // else English only when the user wants the original language over nothing
-        val overview = item.str("overview").orEmpty()
-            .ifBlank { translations(ref).firstNotNullOfOrNull { it.obj("data")?.str("overview")?.takeIf(String::isNotBlank) }.orEmpty() }
-            .ifBlank { if (Settings.logoFallback) client.get("${type.path}/${ref.tmdbId}?language=en-US")?.str("overview").orEmpty() else "" }
+        // Untranslated synopsis: English only when the user prefers it to none
+        val overview = localOverview(ref, item).ifBlank {
+            if (Settings.synopsisMode == Settings.SYNOPSIS_ENGLISH) client.get("${type.path}/${ref.tmdbId}?language=en-US")?.str("overview").orEmpty() else ""
+        }
 
         return WallpaperInfo(
             type = type,
@@ -289,6 +289,10 @@ class TmdbCatalog(
             }.toMap()
         return logos.firstOrNull { logo -> titles[logo.str("iso_3166_1")]?.let { similarity(it, title) > 0.9 } == true }?.str("file_path")
     }
+
+    /** Synopsis in the configured language, from another country if needed (es-MX for es-ES); empty when there is none. */
+    private fun localOverview(ref: TitleRef, item: JsonObject): String = item.str("overview").orEmpty()
+        .ifBlank { translations(ref).firstNotNullOfOrNull { it.obj("data")?.str("overview")?.takeIf(String::isNotBlank) }.orEmpty() }
 
     /** TMDB translations of a title in the configured language, one per country. */
     private fun translations(ref: TitleRef): List<JsonObject> =

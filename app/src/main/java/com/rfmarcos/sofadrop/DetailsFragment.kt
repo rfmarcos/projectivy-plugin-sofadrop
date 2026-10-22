@@ -27,9 +27,14 @@ class DetailsFragment : PreviewSettingsFragment() {
             .subActions(options(ID_FOOTER, (0..4).map { footerLabel(context, it) }, footerLabel(context, footerIndex()),
                 listOf(null, null, null, getString(R.string.footer_fallback_desc)))).build()
         actions += countryAction()
-        actions += action(ID_LOGO_LANGUAGE, R.drawable.ic_act_language, getString(R.string.logo_language_title), logoLanguageLabel(context))
-            .subActions(options(ID_LOGO_LANGUAGE, listOf(getString(R.string.logo_language_own), getString(R.string.logo_language_fallback)),
-                logoLanguageLabel(context), listOf(null, getString(R.string.logo_language_fallback_desc)))).build()
+        actions += action(ID_LOGO_LANGUAGE, R.drawable.ic_act_language, getString(R.string.logo_mode_title), logoModeLabel(context, Settings.logoMode))
+            .subActions(options(ID_LOGO_LANGUAGE, Settings.LOGO_MODES.map { logoModeLabel(context, it) }, logoModeLabel(context, Settings.logoMode),
+                listOf(R.string.logo_mode_text_desc, R.string.logo_mode_original_desc, R.string.logo_mode_original_skip_desc, R.string.logo_mode_skip_desc).map(::getString)))
+            .build()
+        actions += action(ID_SYNOPSIS_LANGUAGE, R.drawable.ic_act_language, getString(R.string.synopsis_mode_title), synopsisModeLabel(context, Settings.synopsisMode))
+            .subActions(options(ID_SYNOPSIS_LANGUAGE, Settings.SYNOPSIS_MODES.map { synopsisModeLabel(context, it) }, synopsisModeLabel(context, Settings.synopsisMode),
+                listOf(getString(R.string.synopsis_mode_hide_desc), null, getString(R.string.synopsis_mode_skip_desc))))
+            .build()
         actions += choice(ID_RESOLUTION, R.drawable.ic_act_hd, R.string.setting_resolution_title, resolutionLabel(context, Settings.outputWidth),
             Settings.WIDTH_OPTIONS.map { resolutionLabel(context, it) })
     }
@@ -72,8 +77,12 @@ class DetailsFragment : PreviewSettingsFragment() {
                 updateDescription(ID_COUNTRY, countryLabel(requireContext()))
             }
             ID_LOGO_LANGUAGE -> {
-                Settings.logoFallback = index == 1
-                updateDescription(ID_LOGO_LANGUAGE, logoLanguageLabel(requireContext()))
+                Settings.logoMode = Settings.LOGO_MODES[index]
+                updateDescription(ID_LOGO_LANGUAGE, logoModeLabel(requireContext(), Settings.logoMode))
+            }
+            ID_SYNOPSIS_LANGUAGE -> {
+                Settings.synopsisMode = Settings.SYNOPSIS_MODES[index]
+                updateDescription(ID_SYNOPSIS_LANGUAGE, synopsisModeLabel(requireContext(), Settings.synopsisMode))
             }
             ID_RESOLUTION -> {
                 Settings.outputWidth = Settings.WIDTH_OPTIONS[index]
@@ -91,6 +100,7 @@ class DetailsFragment : PreviewSettingsFragment() {
         private const val ID_SYNOPSIS = 4L
         private const val ID_FOOTER = 5L
         private const val ID_LOGO_LANGUAGE = 6L
+        private const val ID_SYNOPSIS_LANGUAGE = 7L
 
         /** 0 nothing, 1 list source, 2 streaming services, 3 streaming or list source, 4 both. */
         private fun footerIndex() = when {
@@ -110,8 +120,22 @@ class DetailsFragment : PreviewSettingsFragment() {
             }
         )
 
-        fun logoLanguageLabel(context: Context) =
-            context.getString(if (Settings.logoFallback) R.string.logo_language_fallback else R.string.logo_language_own)
+        fun logoModeLabel(context: Context, mode: String) = context.getString(
+            when (mode) {
+                Settings.LOGO_ORIGINAL -> R.string.logo_mode_original
+                Settings.LOGO_ORIGINAL_OR_SKIP -> R.string.logo_mode_original_skip
+                Settings.LOGO_SKIP -> R.string.logo_mode_skip
+                else -> R.string.logo_mode_text
+            }
+        )
+
+        fun synopsisModeLabel(context: Context, mode: String) = context.getString(
+            when (mode) {
+                Settings.SYNOPSIS_ENGLISH -> R.string.synopsis_mode_english
+                Settings.SYNOPSIS_SKIP -> R.string.synopsis_mode_skip
+                else -> R.string.synopsis_mode_hide
+            }
+        )
 
         fun synopsisLabel(context: Context, lines: Int) = context.getString(
             when (lines) {

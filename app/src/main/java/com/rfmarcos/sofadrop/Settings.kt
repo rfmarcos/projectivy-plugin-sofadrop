@@ -68,6 +68,8 @@ object Settings {
     private const val KEY_SKIP_DUPLICATES = "skip_duplicates"
     private const val KEY_REQUIRE_LOGO = "require_logo"
     private const val KEY_LOGO_FALLBACK = "logo_fallback"
+    private const val KEY_LOGO_MODE = "logo_mode"
+    private const val KEY_SYNOPSIS_MODE = "synopsis_mode"
     private const val KEY_TMDB_SESSION = "_tmdb_session_id"
     private const val KEY_TMDB_ACCOUNT = "_tmdb_account_id"
     private const val KEY_TMDB_USER = "_tmdb_user"
@@ -82,6 +84,17 @@ object Settings {
     const val WATCH_TRAKT = "trakt"
     const val WATCH_SIMKL = "simkl"
     const val WATCH_NONE = "none"
+    /** With no logo in the configured language: write the title, use the original-language (or English) one, or skip the title. */
+    const val LOGO_TEXT = "text"
+    const val LOGO_ORIGINAL = "original"
+    const val LOGO_ORIGINAL_OR_SKIP = "original_skip"
+    const val LOGO_SKIP = "skip"
+    val LOGO_MODES = listOf(LOGO_TEXT, LOGO_ORIGINAL, LOGO_ORIGINAL_OR_SKIP, LOGO_SKIP)
+    /** With no synopsis in the configured language (any country): leave it out, use the English one, or skip the title. */
+    const val SYNOPSIS_HIDE = "hide"
+    const val SYNOPSIS_ENGLISH = "english"
+    const val SYNOPSIS_SKIP = "skip"
+    val SYNOPSIS_MODES = listOf(SYNOPSIS_HIDE, SYNOPSIS_ENGLISH, SYNOPSIS_SKIP)
 
     // Internal state, not exported in Projectivy backups
     private const val KEY_LAST_GENERATION = "_last_generation"
@@ -176,15 +189,29 @@ object Settings {
         get() = preferences.getBoolean(KEY_SKIP_DUPLICATES, true)
         set(value) = preferences.edit { putBoolean(KEY_SKIP_DUPLICATES, value) }
 
-    /** Skip titles with no logo (their name would be drawn as plain text). */
-    var requireLogo: Boolean
-        get() = preferences.getBoolean(KEY_REQUIRE_LOGO, false)
-        set(value) = preferences.edit { putBoolean(KEY_REQUIRE_LOGO, value) }
 
-    /** With no logo or synopsis in the configured language, use the original-language logo (or English) and the English synopsis. */
-    var logoFallback: Boolean
-        get() = preferences.getBoolean(KEY_LOGO_FALLBACK, false)
-        set(value) = preferences.edit { putBoolean(KEY_LOGO_FALLBACK, value) }
+    /** See [LOGO_MODES]; earlier versions stored "logo_fallback" and "require_logo" (read until changed). */
+    var logoMode: String
+        get() = preferences.getString(KEY_LOGO_MODE, null) ?: run {
+            val fallback = preferences.getBoolean(KEY_LOGO_FALLBACK, false)
+            val required = preferences.getBoolean(KEY_REQUIRE_LOGO, false)
+            when {
+                fallback && required -> LOGO_ORIGINAL_OR_SKIP
+                required -> LOGO_SKIP
+                fallback -> LOGO_ORIGINAL
+                else -> LOGO_TEXT
+            }
+        }
+        set(value) = preferences.edit { putString(KEY_LOGO_MODE, value); remove(KEY_REQUIRE_LOGO) }
+
+    /** See [SYNOPSIS_MODES]; "logo_fallback" briefly covered the synopsis too. */
+    var synopsisMode: String
+        get() = preferences.getString(KEY_SYNOPSIS_MODE, null)
+            ?: if (preferences.getBoolean(KEY_LOGO_FALLBACK, false)) SYNOPSIS_ENGLISH else SYNOPSIS_HIDE
+        set(value) = preferences.edit { putString(KEY_SYNOPSIS_MODE, value) }
+
+    val logoFallback: Boolean get() = logoMode == LOGO_ORIGINAL || logoMode == LOGO_ORIGINAL_OR_SKIP
+    val requireLogo: Boolean get() = logoMode == LOGO_ORIGINAL_OR_SKIP || logoMode == LOGO_SKIP
 
     /** Per-list overrides of the default filters (list key -> values), set on each list's page in "Filters & explore lists". */
     var listFilters: Map<String, ListFilters>
@@ -433,7 +460,7 @@ object Settings {
             maxAgeMonths, excludeAdult, listFilters.toSortedMap(),
         // Only when changed, so existing installs don't see a pending change after updating
         ).plus(listOfNotNull(overviewLines.takeIf { it != 4 }, "nosource".takeIf { !showSource }, "fallback".takeIf { showSource && showProviders && sourceFallback },
-            "dups".takeIf { !skipDuplicates }, "logo".takeIf { requireLogo }, "logofallback".takeIf { logoFallback })).joinToString("|")
+            "dups".takeIf { !skipDuplicates }, "logo:$logoMode".takeIf { logoMode != LOGO_TEXT }, "synopsis:$synopsisMode".takeIf { synopsisMode != SYNOPSIS_HIDE })).joinToString("|")
 
     /** True when the current wallpapers were generated with different settings. */
     val hasPendingChanges: Boolean
