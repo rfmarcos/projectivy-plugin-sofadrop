@@ -50,6 +50,8 @@ object Settings {
     private const val KEY_TRAKT_CLIENT_SECRET = "trakt_client_secret"
     private const val KEY_MDBLIST_KEY = "mdblist_api_key"
     private const val KEY_MDBLIST_LISTS = "mdblist_lists"
+    private const val KEY_RATINGS = "rating_sources"
+    private const val KEY_HEADER_HIDDEN = "header_hidden"
     private const val KEY_MDBLIST_ACCESS = "_mdblist_access_token"
     private const val KEY_MDBLIST_REFRESH = "_mdblist_refresh_token"
     private const val KEY_MDBLIST_EXPIRES = "_mdblist_expires_at"
@@ -456,6 +458,27 @@ object Settings {
         }
         set(value) = preferences.edit { putString(KEY_MDBLIST_LISTS, json.encodeToString(value)) }
 
+    /** Scores shown on the wallpapers, in order; by default TMDB's, as before they could be chosen. */
+    var ratingSources: List<RatingSource>
+        get() = ratingSourcesKey.split(',').mapNotNull(RatingSource::of)
+        set(value) = preferences.edit { putString(KEY_RATINGS, value.joinToString(",") { it.key }) }
+
+    // Read without string(): empty means "no ratings", not the default
+    private val ratingSourcesKey: String get() = preferences.getString(KEY_RATINGS, null) ?: RatingSource.TMDB.key
+
+    /** Header items under the title: everything is shown unless hidden here. */
+    const val HEADER_YEAR = "year"
+    const val HEADER_RUNTIME = "runtime"
+    const val HEADER_GENRES = "genres"
+    const val HEADER_WATCHED = "watched"
+    val HEADER_ITEMS = listOf(HEADER_YEAR, HEADER_RUNTIME, HEADER_GENRES, HEADER_WATCHED)
+
+    var headerHidden: Set<String>
+        get() = preferences.getStringSet(KEY_HEADER_HIDDEN, null)?.toSet() ?: emptySet()
+        set(value) = preferences.edit { putStringSet(KEY_HEADER_HIDDEN, value) }
+
+    fun showsInHeader(item: String) = item !in headerHidden
+
     // --- Generation state ---
 
     var lastGeneration: Long
@@ -491,7 +514,9 @@ object Settings {
             maxAgeMonths, excludeAdult, listFilters.toSortedMap(),
         // Only when changed, so existing installs don't see a pending change after updating
         ).plus(listOfNotNull(overviewLines.takeIf { it != 4 }, "nosource".takeIf { !showSource }, "fallback".takeIf { showSource && showProviders && sourceFallback },
-            "dups".takeIf { !skipDuplicates }, "logo:$logoMode".takeIf { logoMode != LOGO_TEXT }, "synopsis:$synopsisMode".takeIf { synopsisMode != SYNOPSIS_HIDE })).joinToString("|")
+            "dups".takeIf { !skipDuplicates }, "logo:$logoMode".takeIf { logoMode != LOGO_TEXT }, "synopsis:$synopsisMode".takeIf { synopsisMode != SYNOPSIS_HIDE },
+            "ratings:$ratingSourcesKey:$mdbListAvailable".takeIf { ratingSourcesKey != RatingSource.TMDB.key },
+            "header:${headerHidden.sorted()}".takeIf { headerHidden.isNotEmpty() })).joinToString("|")
 
     /** True when the current wallpapers were generated with different settings. */
     val hasPendingChanges: Boolean

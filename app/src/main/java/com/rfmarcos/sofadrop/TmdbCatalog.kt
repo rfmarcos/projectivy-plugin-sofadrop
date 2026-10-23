@@ -14,6 +14,7 @@ data class WallpaperInfo(
     val title: String,
     val overview: String,
     val year: String,
+    /** TMDB's own score, 0-10. */
     val rating: Double,
     val extraInfo: String,
     val genres: String,
@@ -21,6 +22,10 @@ data class WallpaperInfo(
     val logoPath: String?,
     val providerLogoPaths: List<String>,
     val watchStatus: WatchStatus? = null,
+    /** Scores drawn on the wallpaper, in order (see [Rating.pick]). */
+    val ratings: List<Rating> = emptyList(),
+    /** For the IMDb rating without MDBList. */
+    val imdbId: String? = null,
     /** List the title was taken from, for the footer ("Trending · TMDB"). */
     val sourceLabel: String? = null,
     val sourceProvider: SourceProvider? = null,
@@ -198,8 +203,10 @@ class TmdbCatalog(
             ?.objects(if (ref.type == MediaType.MOVIE) "keywords" else "results")
             ?.any { it.str("name")?.lowercase() in EXCLUDED_KEYWORDS } == true
 
+    // Series only have their IMDb id in external_ids (movies carry imdb_id)
     private fun details(ref: TitleRef): JsonObject? =
-        details[ref] ?: client.get("${ref.type.path}/${ref.tmdbId}?language=$language")?.also { details[ref] = it }
+        details[ref] ?: client.get("${ref.type.path}/${ref.tmdbId}?language=$language" + if (ref.type == MediaType.TV) "&append_to_response=external_ids" else "")
+            ?.also { details[ref] = it }
 
     // --- Wallpaper data ---
 
@@ -238,6 +245,7 @@ class TmdbCatalog(
             backdropPath = backdrop,
             logoPath = logoPath(ref, item),
             providerLogoPaths = if (showProviders) providerLogoPaths(ref) else emptyList(),
+            imdbId = item.str("imdb_id") ?: item.obj("external_ids")?.str("imdb_id"),
         )
     }
 

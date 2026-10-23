@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Rotten Tomatoes fresh tomato (File:Rotten_Tomatoes.svg) from Wikimedia Commons, unaltered. Shown next to the score it identifies; the logo belongs to its owner -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="138dp"
+    android:height="141dp"
+    android:viewportWidth="138.75"
+    android:viewportHeight="141.25">
+    <path
+        android:fillColor="#FFF93208"
+        android:pathData="M20.15 40.83c-28.15 27.62-13.66 61.01-5.73 71.93 35.25 41.95 92.79 25.34 111.89-5.91 4.76-8.2 22.55-53.47-23.98-78.01z"/>
+    <path
+        android:fillColor="#FFF93208"
+        android:pathData="M39.61 39.27l4.78-8.87 28.41-5.03 11.12 9.2z"/>
+    <path
+        android:fillColor="#FF02902E"
+        android:pathData="M39.44 8.57l8.96-5.28 6.76 15.48c3.79-6.32 13.79-16.32 24.94-4.67-4.73 1.26-7.52 3.86-7.74 8.47 15.14-4.17 31.34 3.21 33.54 9.1-10.95-4.31-27.7 10.38-41.77 2.33 0.01 15.04-12.62 16.64-19.9 17.08 2.08-5 5.59-9.99 1.47-14.99-7.62 8.17-13.87 10.67-33.17 4.67 4.88-1.68 14.84-11.39 24.45-11.43-6.78-2.47-12.29-2.09-17.82-1.47 2.92-3.96 12.15-15.2 28.63-8.48z"/>
+</vector>

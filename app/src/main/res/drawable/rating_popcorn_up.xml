@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Rotten Tomatoes audience, positive (File:Rotten_Tomatoes_positive_audience.svg) from Wikimedia Commons, unaltered. Shown next to the score it identifies; the logo belongs to its owner -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="106dp"
+    android:height="140dp"
+    android:viewportWidth="106.25"
+    android:viewportHeight="140">
+    <path
+        android:fillColor="#FFFA3106"
+        android:pathData="M2.73 39.54c-0.47-21.98 100.88-25.09 100.88-0.42L92.91 117.56c-7.61 26.86-72.06 27.01-79.07 0.21z"/>
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M8.81 51.91l9.02 66.64c3.47 4.51 8.5 7.38 9.64 8.02l-6.92-68.57c-3.5-1.41-9.88-4.58-11.74-6.09zM28.63 59.78l5.45 68.89c4.93 2.65 11.04 3.39 15.73 3.57l-1.26-70.37c-3.41-0.02-13.82-0.64-19.92-2.09zM97.63 52.12l-9.02 66.64c-3.47 4.51-8.5 7.38-9.64 8.03l6.92-68.59c3.5-1.41 9.88-4.58 11.74-6.08zM77.81 59.99l-5.45 68.89c-4.93 2.65-11.04 3.39-15.73 3.57l1.26-70.37c3.41-0.02 13.82-0.64 19.92-2.09z"/>
+    <path
+        android:fillColor="#FFFFD600"
+        android:pathData="M87.36 35.45c5.79 2.8 1.35-2.21 10.69 2.09-9.57 15.34-74.77 16.89-90.29 0.53l-0.21-3.99L38.59 16.99l22.86-6.61 15.52 9.97z"/>
+</vector>

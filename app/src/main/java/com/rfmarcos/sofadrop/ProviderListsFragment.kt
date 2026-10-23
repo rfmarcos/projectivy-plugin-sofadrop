@@ -2,13 +2,12 @@ package com.rfmarcos.sofadrop
 
 import android.content.Context
 import android.os.Bundle
-import android.widget.Toast
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.os.bundleOf
 import androidx.leanback.widget.GuidanceStylist.Guidance
 import androidx.leanback.widget.GuidedAction
 
-/** TMDB, Trakt or Simkl: the account (QR login) and the provider's lists as checkboxes. */
+/** TMDB, Trakt or Simkl: the provider's lists as checkboxes, under a shortcut to its account. */
 class ProviderListsFragment : BaseSettingsFragment() {
 
     private val provider get() = SourceProvider.valueOf(requireArguments().getString(ARG_PROVIDER)!!)
@@ -29,12 +28,6 @@ class ProviderListsFragment : BaseSettingsFragment() {
         getString(R.string.setting_lists_title),
         AppCompatResources.getDrawable(requireActivity(), R.mipmap.ic_launcher),
     )
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        // The QR login is shown in this fragment's own manager, so its result comes back here
-        childFragmentManager.setFragmentResultListener(QrDialog.RESULT_KEY, this) { _, _ -> refreshRows() }
-    }
 
     override fun onCreateActions(actions: MutableList<GuidedAction>, savedInstanceState: Bundle?) {
         actions += buildRows()
@@ -60,69 +53,32 @@ class ProviderListsFragment : BaseSettingsFragment() {
         refreshActions(buildRows()) { newInstance(provider) }
     }
 
-    private val connected get() = when (provider) {
-        SourceProvider.TRAKT -> Settings.traktConnected
-        SourceProvider.SIMKL -> Settings.simklConnected
-        else -> Settings.tmdbConnected
-    }
+    private val connected get() = AccountsFragment.connected(provider)
 
-    private val loginAvailable get() = when (provider) {
-        SourceProvider.TRAKT -> Settings.traktLoginAvailable
-        SourceProvider.SIMKL -> Settings.simklLoginAvailable
-        else -> Settings.token.isNotBlank()
-    }
-
+    /** The account is managed in Accounts; this row shows its state and goes there. */
     private fun accountAction(): GuidedAction {
-        val description = when {
-            connected -> getString(R.string.tmdb_account_connected, accountUser(provider).ifBlank { "—" })
-            !loginAvailable -> getString(R.string.account_unavailable)
-            else -> getString(R.string.account_not_connected)
-        }
         val (icon, title) = when (provider) {
             SourceProvider.TRAKT -> R.drawable.ic_act_trakt to R.string.account_title_trakt
             SourceProvider.SIMKL -> R.drawable.ic_act_account to R.string.account_title_simkl
             else -> R.drawable.ic_act_account to R.string.account_title_tmdb
         }
-        val builder = action(ID_ACCOUNT, icon, getString(title), description)
-        // Connected: expands into "Disconnect". Not connected: a click opens the QR login.
-        if (connected) builder.subActions(listOf(
-            GuidedAction.Builder(requireContext()).id(ID_ACCOUNT * SUB_ID_BASE).title(R.string.tmdb_disconnect).build()
-        ))
-        return builder.build()
+        return action(ID_ACCOUNT, icon, getString(title), AccountsFragment.status(requireContext(), provider)).hasNext(true).build()
+    }
+
+    // Back from Accounts: lists that need the account unlock (or lock)
+    override fun onResume() {
+        super.onResume()
+        refreshRows()
     }
 
     override fun onGuidedActionClicked(action: GuidedAction) {
         when {
-            action.id == ID_ACCOUNT && !connected -> {
-                if (!loginAvailable) {
-                    Toast.makeText(requireContext(), R.string.account_unavailable, Toast.LENGTH_LONG).show()
-                    return
-                }
-                val dialog = when (provider) {
-                    SourceProvider.TRAKT -> TraktLoginDialog()
-                    SourceProvider.SIMKL -> SimklLoginDialog()
-                    else -> TmdbLoginDialog()
-                }
-                dialog.show(childFragmentManager, dialog.javaClass.simpleName)
-            }
+            action.id == ID_ACCOUNT -> add(parentFragmentManager, AccountsFragment.newInstance(provider))
             action.id >= ID_LIST_BASE -> {
                 val key = lists.getOrNull((action.id - ID_LIST_BASE).toInt())?.key ?: return
                 Settings.lists = if (action.isChecked) Settings.lists + key else Settings.lists - key
             }
         }
-    }
-
-    override fun onSubGuidedActionClicked(action: GuidedAction): Boolean {
-        if (action.id / SUB_ID_BASE == ID_ACCOUNT) {
-            when (provider) {
-                SourceProvider.TRAKT -> Settings.clearTraktSession()
-                SourceProvider.SIMKL -> Settings.clearSimklSession()
-                else -> Settings.clearTmdbSession()
-            }
-            Settings.lists -= lists.filter { it.needsAccount }.map { it.key }.toSet()
-            refreshRows()
-        }
-        return true
     }
 
     companion object {
