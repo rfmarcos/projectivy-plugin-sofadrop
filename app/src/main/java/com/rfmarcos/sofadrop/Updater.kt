@@ -49,7 +49,8 @@ object Updater {
 
     /** Look for a newer release, at most every 12 hours unless [force]; network errors are only logged. */
     fun check(force: Boolean = false) {
-        val repo = repo() ?: return
+        // The Dev build must not offer to "update" itself to the release
+        val repo = repo()?.takeUnless { BuildConfig.DEBUG } ?: return
         if (!force && System.currentTimeMillis() - Settings.updateCheckedAt < CHECK_EVERY) return
         try {
             val request = Request.Builder().url("https://api.github.com/repos/$repo/releases/latest")
