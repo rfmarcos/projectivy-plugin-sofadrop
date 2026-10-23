@@ -4,6 +4,9 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Log
+import java.util.concurrent.Callable
+import java.util.concurrent.ExecutionException
+import java.util.concurrent.Executors
 
 /** The titles a list contributes, see [WallpaperFactory.plan]. */
 data class ListPlan(
@@ -98,26 +101,51 @@ class WallpaperFactory(context: Context, private val width: Int) {
         return listOfNotNull(imdb?.let { Rating(RatingSource.IMDB, it) }, trakt?.let { Rating(RatingSource.TRAKT, it * 10) })
     }
 
-    /** Download the images of [info] and draw the wallpaper. */
+    /**
+     * Download the images of [info] and draw the wallpaper. Downloads overlap other titles; decoding and
+     * drawing go one at a time: in the background Android runs the app on a single core of the TV.
+     */
     fun render(info: WallpaperInfo): Bitmap {
-        val backdrop = client.image(info.backdropPath)?.let { decode(it, width) } ?: error("No backdrop for ${info.title}")
-        val logo = info.logoPath
-            ?.let { client.image(it, if (width > 1920) "original" else "w500") }
-            ?.let { decode(it, 0) }
-            ?.let { WallpaperRenderer.brightenDarkLogo(WallpaperRenderer.trimTransparent(it)) }
-        val providers = info.providerLogoPaths.mapNotNull { path -> client.image(path, "w154")?.let { decode(it, 0) } }
+        // Previews are 1280 px wide: TMDB's 1280 size instead of decoding the (often 4K) original
+        val backdropBytes = client.image(info.backdropPath, if (width <= 1280) "w1280" else "original")
+        val logoBytes = info.logoPath?.let { client.image(it, if (width > 1920) "original" else "w500") }
+        val providerBytes = info.providerLogoPaths.mapNotNull { client.image(it, "w154") }
 
-        return try {
-            renderer.render(info, backdrop, logo, providers)
-        } finally {
-            backdrop.recycle()
-            logo?.recycle()
-            providers.forEach { it.recycle() }
+        synchronized(drawing) {
+            val backdrop = backdropBytes?.let { decode(it, width) } ?: error("No backdrop for ${info.title}")
+            val logo = logoBytes?.let { decode(it, 0) }?.let { WallpaperRenderer.brightenDarkLogo(WallpaperRenderer.trimTransparent(it)) }
+            val providers = providerBytes.mapNotNull { decode(it, 0) }
+            return try {
+                renderer.render(info, backdrop, logo, providers)
+            } finally {
+                backdrop.recycle()
+                logo?.recycle()
+                providers.forEach { it.recycle() }
+            }
         }
     }
 
     companion object {
         private const val TAG = "WallpaperFactory"
+
+        /** Shared by every factory; only callers outside it may wait on it (a task waiting on another could deadlock). */
+        private val pool = Executors.newFixedThreadPool(4)
+        private val drawing = Any()
+
+        /**
+         * [transform] of every item on [pool], in the items' order; each result is returned as soon as
+         * it and the ones before it are done. Errors are thrown as they were thrown inside.
+         */
+        fun <T, R> parallel(items: List<T>, transform: (T) -> R): Sequence<R> {
+            val futures = items.map { item -> pool.submit(Callable { transform(item) }) }
+            return futures.asSequence().map { future ->
+                try {
+                    future.get()
+                } catch (e: ExecutionException) {
+                    throw e.cause ?: e
+                }
+            }
+        }
 
         /** Decode an image, subsampling large backdrops close to the target width to save memory. */
         fun decode(bytes: ByteArray, targetWidth: Int): Bitmap? {

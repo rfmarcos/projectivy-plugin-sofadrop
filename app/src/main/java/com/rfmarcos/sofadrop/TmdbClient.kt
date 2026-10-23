@@ -30,11 +30,7 @@ class TmdbClient(token: String, cacheDir: File) {
     private val token = token.trim()
     private val isApiKey = Regex("^[0-9a-fA-F]{32}$").matches(this.token)
 
-    private val http = OkHttpClient.Builder()
-        .cache(Cache(File(cacheDir, "http"), 150L * 1024 * 1024))
-        .connectTimeout(15, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
-        .build()
+    private val http = sharedHttp(cacheDir)
 
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
 
@@ -100,6 +96,17 @@ class TmdbClient(token: String, cacheDir: File) {
         private const val API_URL = "https://api.themoviedb.org/3/"
         private const val IMAGE_URL = "https://image.tmdb.org/t/p/"
         private const val MAX_ATTEMPTS = 3
+
+        // One client per process: each preview reuses the open connections, and OkHttp wants one Cache per directory
+        private var shared: OkHttpClient? = null
+
+        @Synchronized
+        private fun sharedHttp(cacheDir: File): OkHttpClient = shared ?: OkHttpClient.Builder()
+            .cache(Cache(File(cacheDir, "http"), 150L * 1024 * 1024))
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .build()
+            .also { shared = it }
     }
 }
 

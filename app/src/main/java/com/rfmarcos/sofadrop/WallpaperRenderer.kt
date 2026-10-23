@@ -20,6 +20,8 @@ import android.graphics.Typeface
 import android.graphics.drawable.Drawable
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.res.ResourcesCompat
+import kotlin.math.ceil
+import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -127,10 +129,19 @@ class WallpaperRenderer(
         } else {
             LinearGradient(0f, 0f, 0f, height.toFloat(), colors, positions, Shader.TileMode.CLAMP)
         }
-        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), Paint().apply {
+        // Only the band where the gradient isn't fully transparent: the slowest step on the TV, and it
+        // covers most of the screen at alpha 0 (same shader, so the pixels drawn don't change)
+        val first = colors.indexOfFirst { Color.alpha(it) > 0 }.takeIf { it >= 0 } ?: return
+        val last = colors.indexOfLast { Color.alpha(it) > 0 }
+        val length = if (horizontal) width else height
+        val start = floor(positions[max(first - 1, 0)] * length)
+        val end = ceil(positions[min(last + 1, stops - 1)] * length)
+        val paint = Paint().apply {
             this.shader = shader
             isDither = true
-        })
+        }
+        if (horizontal) canvas.drawRect(start, 0f, end, height.toFloat(), paint)
+        else canvas.drawRect(0f, start, width.toFloat(), end, paint)
     }
 
     // --- Title / logo ---
@@ -467,14 +478,15 @@ class WallpaperRenderer(
             var count = 0
             var valueSum = 0f
             var saturationSum = 0f
-            val hsv = FloatArray(3)
             var i = 0
             while (i < pixels.size) {
                 val pixel = pixels[i]
                 if (Color.alpha(pixel) > 128) {
-                    Color.colorToHSV(pixel, hsv)
-                    saturationSum += hsv[1]
-                    valueSum += hsv[2]
+                    // Saturation and value as Color.colorToHSV (Skia) computes them, without its native call per pixel (~130 ms a logo on the TV)
+                    val high = max(Color.red(pixel), max(Color.green(pixel), Color.blue(pixel)))
+                    val low = min(Color.red(pixel), min(Color.green(pixel), Color.blue(pixel)))
+                    if (high > low) saturationSum += (high - low).toFloat() / high
+                    valueSum += high.toFloat() / 255
                     count++
                 }
                 i += step
