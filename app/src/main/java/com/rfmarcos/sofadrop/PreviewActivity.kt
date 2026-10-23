@@ -83,7 +83,7 @@ class PreviewActivity : AppCompatActivity() {
         subtitle.text = listOfNotNull(getString(R.string.viewer_position, position + 1, wallpapers.size), source).joinToString("  ·  ")
         chips.removeAllViews()
         chips.addView(chip("◀ ▶", getString(R.string.viewer_browse)))
-        chips.addView(chip("OK", getString(if (pinned) R.string.viewer_unpin else R.string.viewer_use)))
+        chips.addView(chip("OK", getString(if (pinned && !picking) R.string.viewer_unpin else R.string.viewer_use)))
         showOverlay()
     }
 
@@ -116,10 +116,18 @@ class PreviewActivity : AppCompatActivity() {
 
     private fun pinOf(wallpaper: StoredWallpaper) = "${wallpaper.type}:${wallpaper.tmdbId}"
 
+    /** Opened from "Preview title" to pick one: OK keeps it and goes back there. */
+    private val picking get() = intent.getBooleanExtra(EXTRA_PICK, false)
+
     private fun togglePin() {
-        val pin = pinOf(wallpapers[position])
-        val pinned = Settings.previewPin != pin
-        Settings.previewPin = if (pinned) pin else ""
+        val wallpaper = wallpapers[position]
+        if (picking) {
+            Settings.pinPreview(pinOf(wallpaper), wallpaper.title)
+            finish()
+            return
+        }
+        val pinned = Settings.previewPin != pinOf(wallpaper)
+        if (pinned) Settings.pinPreview(pinOf(wallpaper), wallpaper.title) else Settings.pinPreview("", "")
         Toast.makeText(this, if (pinned) R.string.preview_pinned else R.string.preview_unpinned, Toast.LENGTH_SHORT).show()
     }
 
@@ -139,5 +147,9 @@ class PreviewActivity : AppCompatActivity() {
     override fun onDestroy() {
         handler.removeCallbacks(hideOverlay)
         super.onDestroy()
+    }
+
+    companion object {
+        const val EXTRA_PICK = "pick"
     }
 }

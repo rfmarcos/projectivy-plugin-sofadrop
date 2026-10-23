@@ -41,9 +41,11 @@ class ListExplorerFragment : BaseSettingsFragment() {
                 Filters.ageLabel(context, Settings.maxAgeMonths)),
             choiceRow(ID_GLOBAL_HITS, R.drawable.ic_act_public, R.string.setting_global_hits_title, Filters.onOff(context),
                 Filters.onOff(context)[if (Settings.globalHitsOnly) 1 else 0]),
-            choiceRow(ID_WATCH_SOURCE, R.drawable.ic_act_history, R.string.watch_source_title,
+            if (trackers.isEmpty()) action(ID_WATCH_SOURCE, R.drawable.ic_act_history, getString(R.string.watch_source_title),
+                describe(context, ID_WATCH_SOURCE)).hasNext(true).build()
+            else choiceRow(ID_WATCH_SOURCE, R.drawable.ic_act_history, R.string.watch_source_title,
                 (listOf(Settings.WATCH_NONE) + trackers).map { Filters.watchSourceLabel(context, it) },
-                Filters.watchSourceLabel(context, Settings.watchSource)).also { it.isEnabled = trackers.isNotEmpty() },
+                Filters.watchSourceLabel(context, Settings.watchSource)),
             choiceRow(ID_WATCHED, R.drawable.ic_act_visibility, R.string.setting_watched_title, Filters.WATCHED_MODES.map { Filters.watchedLabel(context, it) },
                 Filters.watchedLabel(context, Settings.watchedMode)).also { it.isEnabled = Settings.watchSource != null },
             action(ID_ADULT, R.drawable.ic_act_block, getString(R.string.filters_adult_title), null)
@@ -72,6 +74,7 @@ class ListExplorerFragment : BaseSettingsFragment() {
     override fun onGuidedActionClicked(action: GuidedAction) {
         when (action.id) {
             ID_ADULT -> Settings.excludeAdult = action.isChecked
+            ID_WATCH_SOURCE -> if (Settings.connectedTrackers.isEmpty()) add(parentFragmentManager, AccountsFragment.newInstance(SourceProvider.TRAKT))
             ID_DUPLICATES -> Settings.skipDuplicates = action.isChecked
         }
         val source = lists.getOrNull((action.id - LIST_BASE).toInt()) ?: return

@@ -139,6 +139,13 @@ class TraktClient(private val clientId: String, private val clientSecret: String
     // --- Watched content ---
 
     /** TMDB ids of watched movies. */
+    /** Trakt's community score of a title (0-10); works with the app's client id alone. */
+    fun rating(ref: TitleRef): Double? {
+        val type = if (ref.type == MediaType.MOVIE) "movie" else "show"
+        val found = (get("search/tmdb/${ref.tmdbId}?type=$type&extended=full", auth = false) as? JsonArray)?.firstOrNull() as? JsonObject
+        return found?.obj(type)?.double("rating")?.takeIf { it > 0 }
+    }
+
     fun watchedMovies(): Set<Int> =
         (get("sync/watched/movies", auth = true) as? JsonArray).orEmpty().filterIsInstance<JsonObject>()
             .mapNotNull { it.obj("movie")?.obj("ids")?.int("tmdb") }.toSet()

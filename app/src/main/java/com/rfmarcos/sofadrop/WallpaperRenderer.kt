@@ -20,11 +20,11 @@ import android.graphics.Typeface
 import android.graphics.drawable.Drawable
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.res.ResourcesCompat
-import kotlin.math.cos
+import kotlin.math.ceil
+import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
-import kotlin.math.sin
 
 /**
  * Draws a wallpaper with the same layout as TMDB.py. All sizes are defined for a 3840 px wide
@@ -49,6 +49,12 @@ class WallpaperRenderer(
     private val traktLogo: Drawable = AppCompatResources.getDrawable(context, R.drawable.logo_trakt)!!
     private val simklLogo: Bitmap = BitmapFactory.decodeResource(context.resources, R.drawable.logo_simkl)
     private val mdbListLogo: Bitmap = BitmapFactory.decodeResource(context.resources, R.drawable.logo_mdblist)
+    // Official marks of the rating platforms, unaltered (sources in each drawable)
+    private val ratingLogos: Map<Int, Drawable> = listOf(
+        R.drawable.rating_imdb, R.drawable.rating_tomatoes_fresh, R.drawable.rating_tomatoes_rotten, R.drawable.rating_popcorn_up,
+        R.drawable.rating_popcorn_down, R.drawable.rating_metacritic, R.drawable.rating_letterboxd, R.drawable.rating_tmdb,
+        R.drawable.badge_trakt, R.drawable.rating_myanimelist,
+    ).associateWith { AppCompatResources.getDrawable(context, it)!! }
 
     private fun s(value: Float) = value * scale
     private fun s(value: Int) = value * scale
@@ -123,10 +129,19 @@ class WallpaperRenderer(
         } else {
             LinearGradient(0f, 0f, 0f, height.toFloat(), colors, positions, Shader.TileMode.CLAMP)
         }
-        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), Paint().apply {
+        // Only the band where the gradient isn't fully transparent: the slowest step on the TV, and it
+        // covers most of the screen at alpha 0 (same shader, so the pixels drawn don't change)
+        val first = colors.indexOfFirst { Color.alpha(it) > 0 }.takeIf { it >= 0 } ?: return
+        val last = colors.indexOfLast { Color.alpha(it) > 0 }
+        val length = if (horizontal) width else height
+        val start = floor(positions[max(first - 1, 0)] * length)
+        val end = ceil(positions[min(last + 1, stops - 1)] * length)
+        val paint = Paint().apply {
             this.shader = shader
             isDither = true
-        })
+        }
+        if (horizontal) canvas.drawRect(start, 0f, end, height.toFloat(), paint)
+        else canvas.drawRect(0f, start, width.toFloat(), end, paint)
     }
 
     // --- Title / logo ---
@@ -164,47 +179,105 @@ class WallpaperRenderer(
     private fun drawMetadata(canvas: Canvas, info: WallpaperInfo) {
         var x = s(MARGIN_LEFT)
         val center = s(META_CENTER)
+        val limit = s(MARGIN_LEFT + CONTENT_WIDTH)
 
-        if (info.rating > 0) {
-            val ratingPaint = textPaint(medium, s(46f), Color.WHITE)
-            val ratingText = String.format(java.util.Locale.US, "%.1f", info.rating)
-            val pad = s(24f)
-            val star = s(22f)
-            val gap = s(14f)
-            val pillHeight = s(72f)
-            val pillWidth = pad + star * 2 + gap + ratingPaint.measureText(ratingText) + pad
-            canvas.drawRoundRect(
-                RectF(x, center - pillHeight / 2, x + pillWidth, center + pillHeight / 2),
-                pillHeight / 2, pillHeight / 2,
-                Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.argb(46, 255, 255, 255) },
-            )
-            canvas.drawPath(starPath(x + pad + star, center, star, star * 0.45f), Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = Color.rgb(245, 197, 24)
-            })
-            drawCentered(canvas, ratingText, x + pad + star * 2 + gap, center, ratingPaint)
-            x += pillWidth + s(20f)
+        val metaPaint = shadowed(textPaint(medium, s(48f), Color.rgb(230, 230, 230)))
+        var parts = listOf(info.year, info.extraInfo, info.genres).filter { it.isNotEmpty() }
+        fun line() = parts.joinToString("   ·   ")
+        val badgeWidth = info.watchStatus?.let { watchBadgeWidth(it) + s(28f) } ?: 0f
+        val afterRatings = if (badgeWidth > 0 || parts.isNotEmpty()) s(RATINGS_GAP) else 0f
+
+        // Up to MIN_RATINGS always fit (the details give way below); more only in the room the
+        // other items leave, so hiding the year, runtime or genres makes space for them
+        val reserved = badgeWidth + (if (parts.isEmpty()) 0f else metaPaint.measureText(line())) + afterRatings
+        val items = info.ratings.map(::ratingItem)
+        var shown = 0
+        var ratingsWidth = 0f
+        for (item in items) {
+            val width = ratingsWidth + (if (shown > 0) s(RATING_SPACING) else 0f) + item.width
+            if (shown >= MIN_RATINGS && x + width + reserved > limit) break
+            ratingsWidth = width
+            shown++
         }
+        if (shown > 0) x = drawRatings(canvas, items.take(shown), x, center) + afterRatings
 
-        info.watchStatus?.let { x = drawWatchBadge(canvas, it, x, center) + s(14f) }
-        if (info.rating > 0 || info.watchStatus != null) x += s(14f)
+        info.watchStatus?.let { x = drawWatchBadge(canvas, it, x, center) + s(28f) }
 
-        val meta = listOf(info.year, info.extraInfo, info.genres).filter { it.isNotEmpty() }.joinToString("   ·   ")
-        drawCentered(canvas, meta, x, center, textPaint(medium, s(48f), Color.rgb(230, 230, 230)))
+        // Still too long (long genres, or one wide rating): genres go first, then the runtime / seasons
+        while (parts.size > 1 && x + metaPaint.measureText(line()) > limit) parts = parts.dropLast(1)
+        if (parts.isNotEmpty()) drawCentered(canvas, line(), x, center, metaPaint)
+    }
+
+    /** A platform's logo and its score in the brand colour, measured for the header row. */
+    private class RatingItem(val logo: Drawable, val logoWidth: Float, val logoHeight: Float, val text: String, val paint: Paint, val gap: Float) {
+        val width: Float get() = logoWidth + gap + paint.measureText(text)
+    }
+
+    private fun ratingItem(rating: Rating): RatingItem {
+        val logo = ratingLogos.getValue(ratingLogo(rating))
+        // Same optical size: wide wordmarks shorter than round icons
+        val height = s(
+            when (rating.source) {
+                RatingSource.IMDB -> 40f
+                RatingSource.TMDB -> 44f
+                RatingSource.MYANIMELIST -> 42f
+                RatingSource.LETTERBOXD -> 26f
+                else -> 50f
+            }
+        )
+        // White: the logos already bring the colour, and the score stays a step above the grey details
+        val paint = shadowed(textPaint(bold, s(48f), Color.WHITE))
+        return RatingItem(logo, height * logo.intrinsicWidth / logo.intrinsicHeight, height, rating.text, paint, s(14f))
+    }
+
+    /** Logos and scores in a row, no background (as Nuvio does); returns where they end. */
+    private fun drawRatings(canvas: Canvas, items: List<RatingItem>, x: Float, center: Float): Float {
+        var left = x
+        items.forEachIndexed { index, item ->
+            if (index > 0) left += s(RATING_SPACING)
+            item.logo.setBounds(left.roundToInt(), (center - item.logoHeight / 2).roundToInt(),
+                (left + item.logoWidth).roundToInt(), (center + item.logoHeight / 2).roundToInt())
+            item.logo.draw(canvas)
+            drawCentered(canvas, item.text, left + item.logoWidth + item.gap, center, item.paint)
+            left += item.width
+        }
+        return left
+    }
+
+    private fun ratingLogo(rating: Rating) = when (rating.source) {
+        RatingSource.IMDB -> R.drawable.rating_imdb
+        RatingSource.TOMATOES -> if (rating.positive) R.drawable.rating_tomatoes_fresh else R.drawable.rating_tomatoes_rotten
+        RatingSource.POPCORN -> if (rating.positive) R.drawable.rating_popcorn_up else R.drawable.rating_popcorn_down
+        RatingSource.METACRITIC -> R.drawable.rating_metacritic
+        RatingSource.LETTERBOXD -> R.drawable.rating_letterboxd
+        RatingSource.TMDB -> R.drawable.rating_tmdb
+        RatingSource.TRAKT -> R.drawable.badge_trakt
+        RatingSource.MYANIMELIST -> R.drawable.rating_myanimelist
+    }
+
+    /** Soft shadow that keeps the header text readable over bright backdrops. */
+    private fun shadowed(paint: Paint) = paint.apply { setShadowLayer(s(10f), 0f, s(2f), Color.argb(150, 0, 0, 0)) }
+
+    private fun watchBadgeWidth(status: WatchStatus): Float {
+        val text = watchBadgeText(status)
+        return s(24f) * 2 + s(30f) + s(14f) + textPaint(medium, s(44f), Color.WHITE).measureText(text)
+    }
+
+    private fun watchBadgeText(status: WatchStatus) = when (status) {
+        is WatchStatus.Watched -> texts.watched
+        is WatchStatus.InProgress -> String.format(texts.watching, status.completed, status.aired)
     }
 
     /** "✓ Watched" (green) or "▶ Watching · 3/8" (blue) pill; returns where it ends. */
     private fun drawWatchBadge(canvas: Canvas, status: WatchStatus, x: Float, center: Float): Float {
         val watched = status is WatchStatus.Watched
-        val text = when (status) {
-            is WatchStatus.Watched -> texts.watched
-            is WatchStatus.InProgress -> String.format(texts.watching, status.completed, status.aired)
-        }
+        val text = watchBadgeText(status)
         val textPaint = textPaint(medium, s(44f), Color.WHITE)
         val pad = s(24f)
         val icon = s(30f)
         val gap = s(14f)
         val height = s(72f)
-        val width = pad + icon + gap + textPaint.measureText(text) + pad
+        val width = watchBadgeWidth(status)
         val color = if (watched) Color.rgb(46, 160, 87) else Color.rgb(59, 130, 246)
         canvas.drawRoundRect(
             RectF(x, center - height / 2, x + width, center + height / 2), height / 2, height / 2,
@@ -319,17 +392,6 @@ class WallpaperRenderer(
         canvas.drawText(text, x, centerY - (metrics.ascent + metrics.descent) / 2, paint)
     }
 
-    private fun starPath(cx: Float, cy: Float, outer: Float, inner: Float) = Path().apply {
-        for (i in 0 until 10) {
-            val radius = if (i % 2 == 0) outer else inner
-            val angle = -Math.PI / 2 + i * Math.PI / 5
-            val px = cx + radius * cos(angle).toFloat()
-            val py = cy + radius * sin(angle).toFloat()
-            if (i == 0) moveTo(px, py) else lineTo(px, py)
-        }
-        close()
-    }
-
     private fun roundedSquare(source: Bitmap, size: Int, radius: Float): Bitmap {
         val result = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(result)
@@ -344,6 +406,10 @@ class WallpaperRenderer(
     companion object {
         private const val MARGIN_LEFT = 210
         private const val CONTENT_WIDTH = 1550
+        /** Between two ratings, and between the ratings and the rest of the header. */
+        private const val RATING_SPACING = 44f
+        private const val RATINGS_GAP = 72f
+        private const val MIN_RATINGS = 3
         private const val LOGO_MAX_WIDTH = 1350
         private const val LOGO_MAX_HEIGHT = 420
         private const val LOGO_BOTTOM = 640
@@ -412,14 +478,15 @@ class WallpaperRenderer(
             var count = 0
             var valueSum = 0f
             var saturationSum = 0f
-            val hsv = FloatArray(3)
             var i = 0
             while (i < pixels.size) {
                 val pixel = pixels[i]
                 if (Color.alpha(pixel) > 128) {
-                    Color.colorToHSV(pixel, hsv)
-                    saturationSum += hsv[1]
-                    valueSum += hsv[2]
+                    // Saturation and value as Color.colorToHSV (Skia) computes them, without its native call per pixel (~130 ms a logo on the TV)
+                    val high = max(Color.red(pixel), max(Color.green(pixel), Color.blue(pixel)))
+                    val low = min(Color.red(pixel), min(Color.green(pixel), Color.blue(pixel)))
+                    if (high > low) saturationSum += (high - low).toFloat() / high
+                    valueSum += high.toFloat() / 255
                     count++
                 }
                 i += step

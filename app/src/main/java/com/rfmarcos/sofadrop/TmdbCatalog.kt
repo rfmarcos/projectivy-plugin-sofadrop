@@ -4,6 +4,7 @@ import kotlinx.serialization.json.JsonObject
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
+import java.util.concurrent.ConcurrentHashMap
 
 enum class MediaType(val path: String) { MOVIE("movie"), TV("tv") }
 
@@ -14,6 +15,7 @@ data class WallpaperInfo(
     val title: String,
     val overview: String,
     val year: String,
+    /** TMDB's own score, 0-10. */
     val rating: Double,
     val extraInfo: String,
     val genres: String,
@@ -21,6 +23,10 @@ data class WallpaperInfo(
     val logoPath: String?,
     val providerLogoPaths: List<String>,
     val watchStatus: WatchStatus? = null,
+    /** Scores drawn on the wallpaper, in order (see [Rating.pick]). */
+    val ratings: List<Rating> = emptyList(),
+    /** For the IMDb rating without MDBList. */
+    val imdbId: String? = null,
     /** List the title was taken from, for the footer ("Trending · TMDB"). */
     val sourceLabel: String? = null,
     val sourceProvider: SourceProvider? = null,
@@ -45,7 +51,7 @@ class TmdbCatalog(
     private val languageCode = Languages.code(language)
     private val country = Languages.regionOf(language)
     private val texts = Languages.texts(language)
-    private val details = mutableMapOf<TitleRef, JsonObject>()
+    private val details = ConcurrentHashMap<TitleRef, JsonObject>()
 
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
     private val today = dateFormat.format(Calendar.getInstance().time)
@@ -74,8 +80,10 @@ class TmdbCatalog(
         }.distinct()
         if (shuffle) refs = refs.shuffled()
         val check = cutoff != null || filters.globalHits || Settings.excludeAdult || Settings.requireLogo || Settings.synopsisMode == Settings.SYNOPSIS_SKIP
+        // Checked a batch at a time in parallel: at most one batch more than needed
         return refs.asSequence()
-            .map { Candidate(it, if (check) exclusion(it, cutoff, filters.globalHits) else null) }
+            .chunked(CHECK_BATCH)
+            .flatMap { batch -> WallpaperFactory.parallel(batch) { Candidate(it, if (check) exclusion(it, cutoff, filters.globalHits) else null) } }
             .takeIncluded(pool)
     }
 
@@ -126,8 +134,9 @@ class TmdbCatalog(
         // Both sources overlap, so read about as many pages of each as the list needs (20 titles per page)
         val pageCount = ((count + 19) / 20).coerceIn(1, 5)
         for (page in 1..pageCount) {
-            listOf("trending/${type.path}/week?language=$language&page=$page", "$discover&page=$page").forEach { query ->
-                client.get(query)?.objects("results")?.forEach { item ->
+            val queries = listOf("trending/${type.path}/week?language=$language&page=$page", "$discover&page=$page")
+            WallpaperFactory.parallel(queries) { client.get(it) }.forEach { page ->
+                page?.objects("results")?.forEach { item ->
                     item.int("id")?.let { items.putIfAbsent(it, item) }
                 }
             }
@@ -140,9 +149,9 @@ class TmdbCatalog(
     private fun pages(path: String, type: MediaType, count: Int): List<TitleRef> {
         val separator = if ('?' in path) '&' else '?'
         val pageCount = ((count + 19) / 20).coerceIn(1, 5)
-        return (1..pageCount).flatMap { page ->
+        return WallpaperFactory.parallel((1..pageCount).toList()) { page ->
             client.get("$path${separator}language=$language&page=$page")?.objects("results").orEmpty()
-        }.mapNotNull { item -> item.int("id")?.let { TitleRef(type, it) } }
+        }.flatten().toList().mapNotNull { item -> item.int("id")?.let { TitleRef(type, it) } }
     }
 
     /** Keep candidates until [count] of them are usable (filtered ones are kept to explain them). */
@@ -194,12 +203,14 @@ class TmdbCatalog(
     }
 
     private fun isAdult(ref: TitleRef, item: JsonObject): Boolean =
-        item.bool("adult") == true || client.get("${ref.type.path}/${ref.tmdbId}/keywords")
+        item.bool("adult") == true || item.obj("keywords")
             ?.objects(if (ref.type == MediaType.MOVIE) "keywords" else "results")
             ?.any { it.str("name")?.lowercase() in EXCLUDED_KEYWORDS } == true
 
+    // Series only have their IMDb id in external_ids (movies carry imdb_id); keywords for the adult filter
     private fun details(ref: TitleRef): JsonObject? =
-        details[ref] ?: client.get("${ref.type.path}/${ref.tmdbId}?language=$language")?.also { details[ref] = it }
+        details[ref] ?: client.get("${ref.type.path}/${ref.tmdbId}?language=$language&append_to_response=keywords" + if (ref.type == MediaType.TV) ",external_ids" else "")
+            ?.also { details[ref] = it }
 
     // --- Wallpaper data ---
 
@@ -238,6 +249,7 @@ class TmdbCatalog(
             backdropPath = backdrop,
             logoPath = logoPath(ref, item),
             providerLogoPaths = if (showProviders) providerLogoPaths(ref) else emptyList(),
+            imdbId = item.str("imdb_id") ?: item.obj("external_ids")?.str("imdb_id"),
         )
     }
 
@@ -325,6 +337,7 @@ class TmdbCatalog(
         private const val MIN_VOTES_OTHER_LANGUAGES = 1000
         private const val MAX_PROVIDERS = 4
         private const val RANDOM_POOL = 100
+        private const val CHECK_BATCH = 8
         private val EXCLUDED_KEYWORDS = setOf("adult")
 
         private val PROVIDER_VARIANT_SUFFIX = Regex(

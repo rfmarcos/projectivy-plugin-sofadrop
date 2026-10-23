@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Metacritic logo (File:Metacritic.svg) from Wikimedia Commons, unaltered. Shown next to the score it identifies; the logo belongs to its owner -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="88dp"
+    android:height="88dp"
+    android:viewportWidth="88"
+    android:viewportHeight="88">
+    <path
+        android:fillColor="#FF001B36"
+        android:strokeColor="#FFFFCC00"
+        android:strokeWidth="4.6"
+        android:pathData="M44 2.4a41.6 41.6 0 1 0 0 83.2 41.6 41.6 0 1 0 0-83.2z"/>
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M10.65 50.49l6.45-6.82 3.88 3.58q-1.05-7.83 3.73-12.89 2.54-2.69 5.53-3.63 2.99-0.94 6.46-0.11-0.53-3.94 0.37-7.11a13.3 13.3 0 0 1 3.19-5.59q2.91-3.08 6.2-4.05 3.29-0.96 6.74 0.26 2.54 0.92 6.61 4.66l18.15 16.76-7.01 7.4-16.22-14.98q-4.22-3.9-6.18-4.27-2.58-0.45-4.59 1.68-1.47 1.55-1.8 3.82-0.33 2.26 0.95 4.57t5.29 6.03l13.63 12.58-7 7.41-15.55-14.37q-4.14-3.83-5.72-4.54-1.57-0.71-2.95-0.43-1.37 0.29-2.72 1.71-1.62 1.71-1.98 3.95t0.84 4.45q1.2 2.22 5.3 6l13.79 12.73-7 7.41z"/>
+</vector>

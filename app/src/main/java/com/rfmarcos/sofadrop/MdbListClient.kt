@@ -5,10 +5,14 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
 import okhttp3.FormBody
 import okhttp3.HttpUrl.Companion.toHttpUrl
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
@@ -38,19 +42,33 @@ class MdbListClient(private val apiKey: String = "", private val accessToken: St
         }
     }
 
+    /**
+     * Scores of many titles of one type, by TMDB id. A batch costs one request of the daily quota
+     * whatever its size, and comes back in no particular order.
+     */
+    fun ratings(type: MediaType, tmdbIds: Collection<Int>): Map<Int, List<Rating>> =
+        tmdbIds.distinct().chunked(BATCH_SIZE).flatMap { ids ->
+            val body = buildJsonObject { put("ids", JsonArray(ids.map { JsonPrimitive(it.toString()) })) }
+            (get("tmdb/${if (type == MediaType.MOVIE) "movie" else "show"}", body = body) as? JsonArray).orEmpty()
+                .filterIsInstance<JsonObject>()
+                .mapNotNull { item -> item.obj("ids")?.int("tmdb")?.let { it to Rating.parse(item) } }
+        }.toMap()
+
     private fun resolveImdb(tmdb: TmdbClient, imdbId: String, type: MediaType): TitleRef? {
         val found = tmdb.get("find/$imdbId?external_source=imdb_id") ?: return null
         val key = if (type == MediaType.MOVIE) "movie_results" else "tv_results"
         return found.objects(key).firstOrNull()?.int("id")?.let { TitleRef(type, it) }
     }
 
-    private fun get(path: String, vararg params: Pair<String, String>): JsonElement? {
+    /** GET, or POST of [body] as JSON. */
+    private fun get(path: String, vararg params: Pair<String, String>, body: JsonObject? = null): JsonElement? {
         val url = "$API_URL$path".toHttpUrl().newBuilder().apply {
             if (accessToken.isBlank()) addQueryParameter("apikey", apiKey)
             params.forEach { (name, value) -> addQueryParameter(name, value) }
         }.build()
         val request = Request.Builder().url(url).apply {
             if (accessToken.isNotBlank()) header("Authorization", "Bearer $accessToken")
+            if (body != null) post(body.toString().toRequestBody(JSON_TYPE))
         }.build()
         http.newCall(request).execute().use { response ->
             if (response.code == 404) return null
@@ -152,6 +170,8 @@ class MdbListClient(private val apiKey: String = "", private val accessToken: St
     companion object {
         private const val API_URL = "https://api.mdblist.com/"
         private const val SITE_URL = "https://mdblist.com/lists/"
+        private const val BATCH_SIZE = 100
+        private val JSON_TYPE = "application/json".toMediaType()
         private val PATH_PART = Regex("[A-Za-z0-9_.-]+")
         private val TITLE = Regex("<title>([^<]*)</title>")
 

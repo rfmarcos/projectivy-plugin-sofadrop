@@ -74,7 +74,7 @@ abstract class PreviewSettingsFragment : BaseSettingsFragment() {
             showPreviewMessage(getString(R.string.preview_no_token))
             return
         }
-        if (Sources.selected().isEmpty()) {
+        if (Sources.selected().isEmpty() && Settings.previewPin.isEmpty()) {
             showPreviewMessage(getString(R.string.error_no_lists))
             return
         }
@@ -117,25 +117,39 @@ abstract class PreviewSettingsFragment : BaseSettingsFragment() {
         /** Last preview (key, image, title), kept while the process lives so reopening is instant. */
         private var cachedPreview: Triple<String, Bitmap, String>? = null
 
-        /** The pinned title while it is still in the current set; a pin left behind by a new set is dropped. */
-        private fun pinnedRef(context: Context): Pair<TitleRef, String>? {
-            val pin = Settings.previewPin.ifEmpty { return null }
-            val stored = WallpaperStore(context).current().firstOrNull { "${it.type}:${it.tmdbId}" == pin }
-            val type = MediaType.entries.firstOrNull { it.path == stored?.type }
-            if (stored == null || type == null) {
-                Settings.previewPin = ""
-                return null
-            }
-            return TitleRef(type, stored.tmdbId) to stored.source
+        /** "type:tmdbId" pins for what the user typed: "tv 1399", "tv:1399" or a TMDB URL; a bare number may be either type. */
+        fun pinCandidates(text: String): List<String> {
+            Regex("(?i)(?<![a-z])(tv|movie)(?![a-z])\\W*(\\d+)").find(text)?.let { return listOf("${it.groupValues[1].lowercase()}:${it.groupValues[2]}") }
+            val id = Regex("\\d+").find(text)?.value ?: return emptyList()
+            return MediaType.entries.map { "${it.path}:$id" }
         }
 
-        /** Render the pinned wallpaper, else one of the first selected list that has a usable title. */
+        private fun pinRef(pin: String): TitleRef? {
+            val (type, id) = pin.split(':').takeIf { it.size == 2 } ?: return null
+            return TitleRef(MediaType.entries.firstOrNull { it.path == type } ?: return null, id.toIntOrNull() ?: return null)
+        }
+
+        /** [pins] that can be a wallpaper (the id exists and has a backdrop), with their TMDB details. */
+        fun pinInfos(context: Context, pins: List<String>): List<Pair<String, WallpaperInfo>> {
+            Settings.init(context)
+            val catalog = WallpaperFactory(context, PREVIEW_WIDTH).catalog
+            return pins.mapNotNull { pin -> pinRef(pin)?.let(catalog::build)?.let { pin to it } }
+        }
+
+        /**
+         * Render the pinned title (with its list while it is in the current set; it may be any TMDB id),
+         * else one of the first selected list that has a usable title.
+         */
         fun renderPreview(context: Context): Pair<Bitmap, String>? {
             Settings.init(context)
             val factory = WallpaperFactory(context, PREVIEW_WIDTH)
-            pinnedRef(context)?.let { (ref, sourceKey) ->
+            val pin = Settings.previewPin
+            pinRef(pin)?.let { ref ->
+                val sourceKey = WallpaperStore(context).current().firstOrNull { "${it.type}:${it.tmdbId}" == pin }?.source
                 val source = Sources.available().firstOrNull { it.key == sourceKey }
-                factory.build(ref, source = source)?.let { info -> return factory.render(info) to info.title }
+                // A pin that fails says so instead of silently showing another title
+                val info = factory.build(ref, source = source) ?: error(context.getString(R.string.preview_pin_not_found, pin))
+                return factory.render(info) to info.title
             }
             for (source in Sources.selected()) {
                 val plan = runCatching { factory.plan(source, 3) }.getOrNull() ?: continue

@@ -41,6 +41,7 @@ class GenerateWallpapersWorker(context: Context, params: WorkerParameters) : Wor
         val generation = store.newGeneration()
         Settings.generating = true
         return try {
+            val start = System.currentTimeMillis()
             val stored = generate(generation)
             if (stored.isEmpty()) throw TmdbException(applicationContext.getString(R.string.error_no_titles))
             store.publish(generation, stored)
@@ -48,7 +49,7 @@ class GenerateWallpapersWorker(context: Context, params: WorkerParameters) : Wor
             Settings.lastSignature = signature
             Settings.lastError = ""
             notifyProjectivy(applicationContext)
-            Log.i(TAG, "Generated ${stored.size} wallpapers (${Settings.language}), Projectivy notified")
+            Log.i(TAG, "Generated ${stored.size} wallpapers (${Settings.language}) in ${System.currentTimeMillis() - start} ms, Projectivy notified")
             Result.success()
         } catch (e: Exception) {
             Log.e(TAG, "Generation failed", e)
@@ -64,6 +65,8 @@ class GenerateWallpapersWorker(context: Context, params: WorkerParameters) : Wor
     private fun generate(generation: File): List<StoredWallpaper> {
         val factory = WallpaperFactory(applicationContext, Settings.outputWidth)
         val perList = Settings.titlesPerList
+        // Finished 4K wallpapers are ~33 MB each until compressed: one title at a time there
+        val parallelTitles = if (Settings.outputWidth > 1920) 1 else perList
         val seen = mutableSetOf<TitleRef>()
         val stored = mutableListOf<StoredWallpaper>()
 
@@ -80,30 +83,44 @@ class GenerateWallpapersWorker(context: Context, params: WorkerParameters) : Wor
                 continue
             }
             var added = 0
-            for (ref in plan.usable) {
+            var next = 0
+            // In parallel, as many titles as still missing: the same ones a title-by-title loop would pick
+            while (added < perList && next < plan.usable.size) {
                 if (isStopped) return stored
-                if (added >= perList) break
-                // Without skipping duplicates, a title already drawn for another list still counts for this one
-                if (!seen.add(ref)) { added++; continue }
-                try {
-                    val info = factory.build(ref, plan) ?: continue
-                    val bitmap = factory.render(info)
-                    val name = "${info.type.path}-${info.id}.jpg"
-                    FileOutputStream(File(generation, name)).use { bitmap.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, it) }
-                    bitmap.recycle()
-                    stored += StoredWallpaper(name, info.title, info.type.path, info.id, source.key)
+                val batch = mutableListOf<TitleRef>()
+                while (added + batch.size < perList && batch.size < parallelTitles && next < plan.usable.size) {
+                    val ref = plan.usable[next++]
+                    // Without skipping duplicates, a title already drawn for another list still counts for this one
+                    if (seen.add(ref)) batch += ref else added++
+                }
+                for (wallpaper in WallpaperFactory.parallel(batch) { ref -> store(factory, plan, ref, generation) }) {
+                    if (wallpaper == null) continue
+                    stored += wallpaper
                     added++
                     Settings.generationProgress = Triple(stored.size, index + 1, sources.size)
-                } catch (e: TmdbException) {
-                    throw e
-                } catch (e: Exception) {
-                    Log.w(TAG, "Could not render ${ref.type.path}/${ref.tmdbId}", e)
                 }
             }
             Log.i(TAG, "${source.key}: $added wallpapers")
         }
         return stored
     }
+
+    /** Render one title into [generation]; null when it can't be drawn. */
+    private fun store(factory: WallpaperFactory, plan: ListPlan, ref: TitleRef, generation: File): StoredWallpaper? =
+        try {
+            factory.build(ref, plan)?.let { info ->
+                val bitmap = factory.render(info)
+                val name = "${info.type.path}-${info.id}.jpg"
+                FileOutputStream(File(generation, name)).use { bitmap.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, it) }
+                bitmap.recycle()
+                StoredWallpaper(name, info.title, info.type.path, info.id, plan.source.key)
+            }
+        } catch (e: TmdbException) {
+            throw e
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not render ${ref.type.path}/${ref.tmdbId}", e)
+            null
+        }
 
     companion object {
         private const val TAG = "GenerateWallpapers"

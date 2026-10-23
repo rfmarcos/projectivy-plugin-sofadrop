@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- MyAnimeList favicon (File:MyAnimeList_favicon.svg) from Wikimedia Commons, unaltered. Shown next to the score it identifies; the logo belongs to its owner -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="100dp"
+    android:height="100dp"
+    android:viewportWidth="256"
+    android:viewportHeight="256">
+    <path
+        android:fillColor="#FF2E51A2"
+        android:fillAlpha="1"
+        android:pathData="M0 0h256v256H0z"/>
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M30.64 88.41v68.71h17.76v-41.91l15.47 19.77 16.68-19.77v41.91h17.76V88.41h-17.76L63.87 109.82 48.4 88.41Z"/>
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M182.5 88.41v68.71h39.08l3.78-14.66h-25.1v-54.05Z"/>
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M149.65 88.41c-21.64 0-35.07 10.21-39.37 25.39-4.2 14.82 0.34 34.37 10.29 53.79l14.86-10.47s-7.06-9.22-8.4-23.04h21.99v23.04h19.73v-51.68h-19.73v14.96H130.8c1.72-11.2 8.29-17.31 15.47-17.3h25.81l-5.12-14.69z"/>
+</vector>

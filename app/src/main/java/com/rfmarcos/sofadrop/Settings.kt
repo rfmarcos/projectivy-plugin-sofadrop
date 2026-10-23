@@ -50,6 +50,8 @@ object Settings {
     private const val KEY_TRAKT_CLIENT_SECRET = "trakt_client_secret"
     private const val KEY_MDBLIST_KEY = "mdblist_api_key"
     private const val KEY_MDBLIST_LISTS = "mdblist_lists"
+    private const val KEY_RATINGS = "rating_sources"
+    private const val KEY_HEADER_HIDDEN = "header_hidden"
     private const val KEY_MDBLIST_ACCESS = "_mdblist_access_token"
     private const val KEY_MDBLIST_REFRESH = "_mdblist_refresh_token"
     private const val KEY_MDBLIST_EXPIRES = "_mdblist_expires_at"
@@ -63,6 +65,7 @@ object Settings {
     private const val KEY_SOURCE_FALLBACK = "source_fallback"
     private const val KEY_PROGRESS = "_generation_progress"
     private const val KEY_PREVIEW_PIN = "_preview_pin"
+    private const val KEY_PREVIEW_PIN_TITLE = "_preview_pin_title"
     private const val KEY_WATCHED = "watched_mode"
     private const val KEY_WATCH_SOURCE = "watch_source"
     private const val KEY_SKIP_DUPLICATES = "skip_duplicates"
@@ -401,9 +404,15 @@ object Settings {
         set(value) = preferences.edit { putLong(KEY_UPDATE_CHECKED, value) }
 
     /** Wallpaper shown by the settings preview as "type:tmdbId" (e.g. "movie:123"); empty = automatic. */
-    var previewPin: String
-        get() = string(KEY_PREVIEW_PIN)
-        set(value) = preferences.edit { putString(KEY_PREVIEW_PIN, value) }
+    val previewPin: String get() = string(KEY_PREVIEW_PIN)
+
+    /** Name of [previewPin], for the settings rows; empty for pins saved before it existed. */
+    val previewPinTitle: String get() = string(KEY_PREVIEW_PIN_TITLE)
+
+    fun pinPreview(pin: String, title: String) = preferences.edit {
+        putString(KEY_PREVIEW_PIN, pin)
+        putString(KEY_PREVIEW_PIN_TITLE, title)
+    }
 
     /** What to do with titles in the watch history: "show", "mark" or "hide". */
     var watchedMode: String
@@ -456,6 +465,27 @@ object Settings {
         }
         set(value) = preferences.edit { putString(KEY_MDBLIST_LISTS, json.encodeToString(value)) }
 
+    /** Scores shown on the wallpapers, in order; by default TMDB's, as before they could be chosen. */
+    var ratingSources: List<RatingSource>
+        get() = ratingSourcesKey.split(',').mapNotNull(RatingSource::of)
+        set(value) = preferences.edit { putString(KEY_RATINGS, value.joinToString(",") { it.key }) }
+
+    // Read without string(): empty means "no ratings", not the default
+    private val ratingSourcesKey: String get() = preferences.getString(KEY_RATINGS, null) ?: RatingSource.TMDB.key
+
+    /** Header items under the title: everything is shown unless hidden here. */
+    const val HEADER_YEAR = "year"
+    const val HEADER_RUNTIME = "runtime"
+    const val HEADER_GENRES = "genres"
+    const val HEADER_WATCHED = "watched"
+    val HEADER_ITEMS = listOf(HEADER_YEAR, HEADER_RUNTIME, HEADER_GENRES, HEADER_WATCHED)
+
+    var headerHidden: Set<String>
+        get() = preferences.getStringSet(KEY_HEADER_HIDDEN, null)?.toSet() ?: emptySet()
+        set(value) = preferences.edit { putStringSet(KEY_HEADER_HIDDEN, value) }
+
+    fun showsInHeader(item: String) = item !in headerHidden
+
     // --- Generation state ---
 
     var lastGeneration: Long
@@ -491,7 +521,9 @@ object Settings {
             maxAgeMonths, excludeAdult, listFilters.toSortedMap(),
         // Only when changed, so existing installs don't see a pending change after updating
         ).plus(listOfNotNull(overviewLines.takeIf { it != 4 }, "nosource".takeIf { !showSource }, "fallback".takeIf { showSource && showProviders && sourceFallback },
-            "dups".takeIf { !skipDuplicates }, "logo:$logoMode".takeIf { logoMode != LOGO_TEXT }, "synopsis:$synopsisMode".takeIf { synopsisMode != SYNOPSIS_HIDE })).joinToString("|")
+            "dups".takeIf { !skipDuplicates }, "logo:$logoMode".takeIf { logoMode != LOGO_TEXT }, "synopsis:$synopsisMode".takeIf { synopsisMode != SYNOPSIS_HIDE },
+            "ratings:$ratingSourcesKey:$mdbListAvailable".takeIf { ratingSourcesKey != RatingSource.TMDB.key },
+            "header:${headerHidden.sorted()}".takeIf { headerHidden.isNotEmpty() })).joinToString("|")
 
     /** True when the current wallpapers were generated with different settings. */
     val hasPendingChanges: Boolean
