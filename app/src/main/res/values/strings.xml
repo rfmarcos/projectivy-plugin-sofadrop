@@ -20,7 +20,7 @@
     <string name="action_generate_now">Update now</string>
     <string name="generation_started">Generating wallpapers in the background…</string>
     <string name="action_preview">View wallpapers</string>
-    <string name="action_preview_desc">The current set full screen · OK picks the preview</string>
+    <string name="action_preview_desc">The current set full screen</string>
     <string name="preview_empty">No wallpapers yet. Use \"Update now\" first.</string>
 
     <!-- Live preview -->
@@ -241,7 +241,19 @@
     <string name="synopsis_summary_short">short synopsis</string>
     <string name="synopsis_summary_hidden">no synopsis</string>
     <string name="preview_label_pinned">Preview · %1$s · pinned</string>
-    <string name="preview_pinned">Shown in the settings preview</string>
+    <string name="preview_pinned">Shown in the settings preview · change it in Wallpaper details</string>
+    <string name="preview_pin_title">Preview title</string>
+    <string name="preview_pin_automatic">Automatic</string>
+    <string name="preview_pin_not_found">%1$s is not on TMDB or has no background image</string>
+    <string name="preview_pin_desc">The title the preview shows, to try the settings on it. It stays until you change it, even when the wallpapers are updated.</string>
+    <string name="preview_pin_auto_desc">A title from your first list</string>
+    <string name="preview_pin_auto_on">In use · a title from your first list</string>
+    <string name="preview_pin_pick">Pick from your wallpapers</string>
+    <string name="preview_pin_pick_desc">Full screen · OK picks one</string>
+    <string name="preview_pin_id">TMDB id</string>
+    <string name="preview_pin_id_desc">603, tv 1399 or a TMDB link</string>
+    <string name="preview_pin_movie">Movie</string>
+    <string name="preview_pin_series">Series</string>
     <string name="preview_unpinned">Preview back to automatic</string>
     <string name="setting_simkl_title">Simkl</string>
     <string name="account_title_simkl">Your Simkl account</string>

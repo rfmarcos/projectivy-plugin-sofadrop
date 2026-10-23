@@ -134,4 +134,15 @@ class ParsingTest {
         assertTrue(!Updater.isNewer("", "1.0.0"))
         assertTrue(!Updater.isNewer("1.0.1-beta", "1.0.1"))
     }
+
+    @Test
+    fun previewPin() {
+        assertEquals(listOf("movie:603", "tv:603"), PreviewSettingsFragment.pinCandidates(" 603 "))
+        assertEquals(listOf("tv:1399"), PreviewSettingsFragment.pinCandidates("tv 1399"))
+        assertEquals(listOf("tv:1399"), PreviewSettingsFragment.pinCandidates("TV:1399"))
+        assertEquals(listOf("movie:603"), PreviewSettingsFragment.pinCandidates("movie:603"))
+        assertEquals(listOf("tv:1399"), PreviewSettingsFragment.pinCandidates("https://www.themoviedb.org/tv/1399-game-of-thrones"))
+        assertEquals(listOf("movie:603"), PreviewSettingsFragment.pinCandidates("https://www.themoviedb.org/movie/603-the-matrix?language=es"))
+        assertEquals(emptyList<String>(), PreviewSettingsFragment.pinCandidates("matrix"))
+    }
 }

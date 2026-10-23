@@ -38,6 +38,8 @@ class DetailsFragment : PreviewSettingsFragment() {
             .build()
         actions += choice(ID_RESOLUTION, R.drawable.ic_act_hd, R.string.setting_resolution_title, resolutionLabel(context, Settings.outputWidth),
             Settings.WIDTH_OPTIONS.map { resolutionLabel(context, it) })
+        actions += action(ID_PREVIEW_PIN, R.drawable.ic_act_preview, getString(R.string.preview_pin_title), PreviewPinFragment.summary(context))
+            .hasNext(true).build()
     }
 
     /** Country of the streaming services; only meaningful while the footer shows them (kept visible so rows don't jump). */
@@ -58,10 +60,14 @@ class DetailsFragment : PreviewSettingsFragment() {
     override fun onResume() {
         super.onResume()
         updateDescription(ID_HEADER, HeaderFragment.summary(requireContext()))
+        updateDescription(ID_PREVIEW_PIN, PreviewPinFragment.summary(requireContext()))
     }
 
     override fun onGuidedActionClicked(action: GuidedAction) {
-        if (action.id == ID_HEADER) add(parentFragmentManager, HeaderFragment())
+        when (action.id) {
+            ID_HEADER -> add(parentFragmentManager, HeaderFragment())
+            ID_PREVIEW_PIN -> add(parentFragmentManager, PreviewPinFragment())
+        }
     }
 
     override fun onSubGuidedActionClicked(action: GuidedAction): Boolean {
@@ -113,6 +119,7 @@ class DetailsFragment : PreviewSettingsFragment() {
         private const val ID_LOGO_LANGUAGE = 6L
         private const val ID_SYNOPSIS_LANGUAGE = 7L
         private const val ID_HEADER = 8L
+        private const val ID_PREVIEW_PIN = 9L
 
         /** 0 nothing, 1 list source, 2 streaming services, 3 streaming or list source, 4 both. */
         private fun footerIndex() = when {

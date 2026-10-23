@@ -17,7 +17,7 @@
     <string name="action_generate_now">Actualizar ahora</string>
     <string name="generation_started">Generando fondos en segundo plano…</string>
     <string name="action_preview">Ver fondos</string>
-    <string name="action_preview_desc">El conjunto actual a pantalla completa · OK elige la vista previa</string>
+    <string name="action_preview_desc">El conjunto actual a pantalla completa</string>
     <string name="preview_empty">Aún no hay fondos. Usa primero «Actualizar ahora».</string>
 
     <string name="preview_label">Vista previa · %1$s</string>
@@ -223,7 +223,19 @@
     <string name="synopsis_summary_short">sinopsis corta</string>
     <string name="synopsis_summary_hidden">sin sinopsis</string>
     <string name="preview_label_pinned">Vista previa · %1$s · fijada</string>
-    <string name="preview_pinned">Se mostrará en la vista previa de los ajustes</string>
+    <string name="preview_pinned">Se mostrará en la vista previa de los ajustes · cámbialo en Detalles del fondo</string>
+    <string name="preview_pin_title">Título de la vista previa</string>
+    <string name="preview_pin_automatic">Automático</string>
+    <string name="preview_pin_not_found">%1$s no está en TMDB o no tiene imagen de fondo</string>
+    <string name="preview_pin_desc">El título que muestra la vista previa, para probar los ajustes con él. Se queda hasta que lo cambies, aunque se actualicen los fondos.</string>
+    <string name="preview_pin_auto_desc">Un título de tu primera lista</string>
+    <string name="preview_pin_auto_on">En uso · un título de tu primera lista</string>
+    <string name="preview_pin_pick">Elegir de tus fondos</string>
+    <string name="preview_pin_pick_desc">A pantalla completa · OK elige uno</string>
+    <string name="preview_pin_id">Id de TMDB</string>
+    <string name="preview_pin_id_desc">603, tv 1399 o un enlace de TMDB</string>
+    <string name="preview_pin_movie">Película</string>
+    <string name="preview_pin_series">Serie</string>
     <string name="preview_unpinned">Vista previa en automático</string>
     <string name="setting_simkl_title">Simkl</string>
     <string name="account_title_simkl">Tu cuenta de Simkl</string>

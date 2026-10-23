@@ -65,6 +65,7 @@ object Settings {
     private const val KEY_SOURCE_FALLBACK = "source_fallback"
     private const val KEY_PROGRESS = "_generation_progress"
     private const val KEY_PREVIEW_PIN = "_preview_pin"
+    private const val KEY_PREVIEW_PIN_TITLE = "_preview_pin_title"
     private const val KEY_WATCHED = "watched_mode"
     private const val KEY_WATCH_SOURCE = "watch_source"
     private const val KEY_SKIP_DUPLICATES = "skip_duplicates"
@@ -403,9 +404,15 @@ object Settings {
         set(value) = preferences.edit { putLong(KEY_UPDATE_CHECKED, value) }
 
     /** Wallpaper shown by the settings preview as "type:tmdbId" (e.g. "movie:123"); empty = automatic. */
-    var previewPin: String
-        get() = string(KEY_PREVIEW_PIN)
-        set(value) = preferences.edit { putString(KEY_PREVIEW_PIN, value) }
+    val previewPin: String get() = string(KEY_PREVIEW_PIN)
+
+    /** Name of [previewPin], for the settings rows; empty for pins saved before it existed. */
+    val previewPinTitle: String get() = string(KEY_PREVIEW_PIN_TITLE)
+
+    fun pinPreview(pin: String, title: String) = preferences.edit {
+        putString(KEY_PREVIEW_PIN, pin)
+        putString(KEY_PREVIEW_PIN_TITLE, title)
+    }
 
     /** What to do with titles in the watch history: "show", "mark" or "hide". */
     var watchedMode: String
