@@ -74,6 +74,8 @@ object Settings {
     private const val KEY_LOGO_FALLBACK = "logo_fallback"
     private const val KEY_LOGO_MODE = "logo_mode"
     private const val KEY_SYNOPSIS_MODE = "synopsis_mode"
+    private const val KEY_TITLE_LANGUAGE = "title_language"
+    private const val KEY_SYNOPSIS_LANGUAGE = "synopsis_language"
     private const val KEY_TMDB_SESSION = "_tmdb_session_id"
     private const val KEY_TMDB_ACCOUNT = "_tmdb_account_id"
     private const val KEY_TMDB_USER = "_tmdb_user"
@@ -88,17 +90,21 @@ object Settings {
     const val WATCH_TRAKT = "trakt"
     const val WATCH_SIMKL = "simkl"
     const val WATCH_NONE = "none"
-    /** With no logo in the configured language: write the title, use the original-language (or English) one, or skip the title. */
+    /** With no logo in the logo language: write the title, use the original-language (or English) one, or skip the title. */
     const val LOGO_TEXT = "text"
     const val LOGO_ORIGINAL = "original"
     const val LOGO_ORIGINAL_OR_SKIP = "original_skip"
     const val LOGO_SKIP = "skip"
     val LOGO_MODES = listOf(LOGO_TEXT, LOGO_ORIGINAL, LOGO_ORIGINAL_OR_SKIP, LOGO_SKIP)
-    /** With no synopsis in the configured language (any country): leave it out, use the English one, or skip the title. */
+    /** With no synopsis in the synopsis language (any country): leave it out, use the English one, or skip the title. */
     const val SYNOPSIS_HIDE = "hide"
     const val SYNOPSIS_ENGLISH = "english"
     const val SYNOPSIS_SKIP = "skip"
     val SYNOPSIS_MODES = listOf(SYNOPSIS_HIDE, SYNOPSIS_ENGLISH, SYNOPSIS_SKIP)
+    /** Language of the logo (and of the title written instead) and of the synopsis: the general one, the title's own or a locale. */
+    const val LANGUAGE_AUTO = "auto"
+    const val LANGUAGE_ORIGINAL = "original"
+    val PART_LANGUAGES = listOf(LANGUAGE_AUTO, LANGUAGE_ORIGINAL) + Languages.OPTIONS.keys
 
     // Internal state, not exported in Projectivy backups
     private const val KEY_LAST_GENERATION = "_last_generation"
@@ -225,6 +231,30 @@ object Settings {
         get() = preferences.getString(KEY_SYNOPSIS_MODE, null)
             ?: if (preferences.getBoolean(KEY_LOGO_FALLBACK, false)) SYNOPSIS_ENGLISH else SYNOPSIS_HIDE
         set(value) = preferences.edit { putString(KEY_SYNOPSIS_MODE, value) }
+
+    /** See [PART_LANGUAGES]; [logoMode] applies when there is no logo in this language. */
+    var titleLanguage: String
+        get() = partLanguage(KEY_TITLE_LANGUAGE)
+        set(value) = preferences.edit { putString(KEY_TITLE_LANGUAGE, value) }
+
+    /** See [PART_LANGUAGES]; [synopsisMode] applies when there is no synopsis in this language. */
+    var synopsisLanguage: String
+        get() = partLanguage(KEY_SYNOPSIS_LANGUAGE)
+        set(value) = preferences.edit { putString(KEY_SYNOPSIS_LANGUAGE, value) }
+
+    private fun partLanguage(key: String) =
+        preferences.getString(key, null)?.takeIf { it == LANGUAGE_ORIGINAL || it in Languages.OPTIONS } ?: LANGUAGE_AUTO
+
+    /** [titleLanguage] and [synopsisLanguage] as TMDB locales. */
+    val partLanguages: PartLanguages
+        get() = PartLanguages(resolve(titleLanguage), resolve(synopsisLanguage))
+
+    /** A [PART_LANGUAGES] value as a TMDB locale; null for the title's original language. */
+    fun resolve(partLanguage: String): String? = when (partLanguage) {
+        LANGUAGE_AUTO -> language
+        LANGUAGE_ORIGINAL -> null
+        else -> partLanguage
+    }
 
     val logoFallback: Boolean get() = logoMode == LOGO_ORIGINAL || logoMode == LOGO_ORIGINAL_OR_SKIP
     val requireLogo: Boolean get() = logoMode == LOGO_ORIGINAL_OR_SKIP || logoMode == LOGO_SKIP
@@ -522,6 +552,7 @@ object Settings {
         // Only when changed, so existing installs don't see a pending change after updating
         ).plus(listOfNotNull(overviewLines.takeIf { it != 4 }, "nosource".takeIf { !showSource }, "fallback".takeIf { showSource && showProviders && sourceFallback },
             "dups".takeIf { !skipDuplicates }, "logo:$logoMode".takeIf { logoMode != LOGO_TEXT }, "synopsis:$synopsisMode".takeIf { synopsisMode != SYNOPSIS_HIDE },
+            "titlelang:$titleLanguage".takeIf { titleLanguage != LANGUAGE_AUTO }, "synopsislang:$synopsisLanguage".takeIf { synopsisLanguage != LANGUAGE_AUTO },
             "ratings:$ratingSourcesKey:$mdbListAvailable".takeIf { ratingSourcesKey != RatingSource.TMDB.key },
             "header:${headerHidden.sorted()}".takeIf { headerHidden.isNotEmpty() })).joinToString("|")
 

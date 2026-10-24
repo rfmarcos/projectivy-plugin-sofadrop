@@ -12,6 +12,9 @@ data class WallpaperTexts(
     val watching: String,
 )
 
+/** Language of the title (logo or text) and of the synopsis: a TMDB locale, or null for the title's original language. */
+data class PartLanguages(val title: String?, val synopsis: String?)
+
 object Languages {
     /** TMDB language codes offered in the settings, with their native names. */
     val OPTIONS = linkedMapOf(

@@ -25,7 +25,7 @@ class WallpaperFactory(context: Context, private val width: Int) {
     private val appContext = context.applicationContext
 
     val client = TmdbClient(Settings.token, context.cacheDir)
-    val catalog = TmdbCatalog(client, Settings.language, Settings.region, Settings.showProviders)
+    val catalog = TmdbCatalog(client, Settings.language, Settings.region, Settings.showProviders, Settings.partLanguages)
     private val renderer = WallpaperRenderer(context, width, Languages.texts(Settings.language), Settings.overviewLines)
 
     val trakt: TraktClient? = if (Settings.traktConfigured) TraktClient(Settings.traktClientId, Settings.traktClientSecret) else null
