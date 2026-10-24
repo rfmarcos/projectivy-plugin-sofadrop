@@ -31,10 +31,12 @@ data class WallpaperInfo(
     /** List the title was taken from, for the footer ("Trending · TMDB"). */
     val sourceLabel: String? = null,
     val sourceProvider: SourceProvider? = null,
+    /** Age certification of the streaming country ("16", "TV-MA"), see [Certifications]. */
+    val certification: String? = null,
 )
 
 /** Why a title of a list is not used. */
-enum class Exclusion { LOCAL_MARKET, TOO_OLD, ADULT, NO_LOGO, NO_SYNOPSIS, WATCHED, NO_IMAGE, DUPLICATE }
+enum class Exclusion { LOCAL_MARKET, TOO_OLD, ADULT, AGE_RATING, NO_LOGO, NO_SYNOPSIS, WATCHED, NO_IMAGE, DUPLICATE }
 
 /** A title of a list and, when it is filtered out, the reason. */
 data class Candidate(val ref: TitleRef, val exclusion: Exclusion? = null)
@@ -82,7 +84,8 @@ class TmdbCatalog(
             }
         }.distinct()
         if (shuffle) refs = refs.shuffled()
-        val check = cutoff != null || filters.globalHits || Settings.excludeAdult || Settings.requireLogo || Settings.synopsisMode == Settings.SYNOPSIS_SKIP
+        val check = cutoff != null || filters.globalHits || Settings.excludeAdult || Settings.maxRatingAge > 0 ||
+            Settings.requireLogo || Settings.synopsisMode == Settings.SYNOPSIS_SKIP
         // Checked a batch at a time in parallel: at most one batch more than needed
         return refs.asSequence()
             .chunked(CHECK_BATCH)
@@ -183,6 +186,8 @@ class TmdbCatalog(
             globalHits && isLocalMarket(item) -> Exclusion.LOCAL_MARKET
             isTooOld(ref.type, item, cutoff) -> Exclusion.TOO_OLD
             Settings.excludeAdult && isAdult(ref, item) -> Exclusion.ADULT
+            // Unrated titles (mostly not released yet) pass
+            Settings.maxRatingAge > 0 && (Certifications.minimumAge(ref.type, item, region) ?: 0) > Settings.maxRatingAge -> Exclusion.AGE_RATING
             // Last: it costs an images request per title
             Settings.requireLogo && logoPath(ref, item) == null -> Exclusion.NO_LOGO
             Settings.synopsisMode == Settings.SYNOPSIS_SKIP && localOverview(ref, item).isBlank() -> Exclusion.NO_SYNOPSIS
@@ -210,9 +215,11 @@ class TmdbCatalog(
             ?.objects(if (ref.type == MediaType.MOVIE) "keywords" else "results")
             ?.any { it.str("name")?.lowercase() in EXCLUDED_KEYWORDS } == true
 
-    // Series only have their IMDb id in external_ids (movies carry imdb_id); keywords for the adult filter
+    // Series only have their IMDb id in external_ids (movies carry imdb_id); keywords for the adult filter;
+    // release dates and content ratings for the age certification
     private fun details(ref: TitleRef): JsonObject? =
-        details[ref] ?: client.get("${ref.type.path}/${ref.tmdbId}?language=$language&append_to_response=keywords" + if (ref.type == MediaType.TV) ",external_ids" else "")
+        details[ref] ?: client.get("${ref.type.path}/${ref.tmdbId}?language=$language&append_to_response=keywords," +
+            if (ref.type == MediaType.TV) "external_ids,content_ratings" else "release_dates")
             ?.also { details[ref] = it }
 
     // --- Wallpaper data ---
@@ -253,6 +260,7 @@ class TmdbCatalog(
             logoPath = logoPath(ref, item),
             providerLogoPaths = if (showProviders) providerLogoPaths(ref) else emptyList(),
             imdbId = item.str("imdb_id") ?: item.obj("external_ids")?.str("imdb_id"),
+            certification = Certifications.of(type, item, region)?.let { Certifications.label(region, it) },
         )
     }
 

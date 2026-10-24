@@ -145,6 +145,11 @@
     <string name="filters_adult_title">Exclude adult content</string>
     <string name="filters_adult_desc">Skips titles marked as adult on TMDB, in every list</string>
     <string name="exclusion_adult">Skipped: adult content</string>
+    <string name="filters_rating_age_title">Age rating</string>
+    <string name="filters_rating_age_up_to">Up to %1$d years old</string>
+    <string name="filters_rating_age_summary">rated up to %1$d</string>
+    <string name="filters_rating_age_desc">Skips titles rated for older viewers in %1$s (the streaming country), or in the US when it has no rating there. Titles with no rating anywhere, mostly not released yet, are kept. In every list.</string>
+    <string name="exclusion_rating_age">Skipped: rated for older viewers</string>
     <string name="mdblist_unavailable">Not available in this version</string>
 
     <!-- About -->
@@ -180,8 +185,8 @@
     <string name="rating_trakt" translatable="false">Trakt</string>
     <string name="rating_myanimelist" translatable="false">MyAnimeList</string>
     <string name="header_title">Header</string>
-    <string name="header_fit_desc">When it doesn\'t all fit, the first 3 ratings always stay and the genres go first, then the runtime. More ratings only appear where there\'s room left: hide details to fit more.</string>
-    <string name="header_show">Show</string>
+    <string name="header_fit_desc">When the line doesn\'t fit, the ratings beyond the minimum go first, then the genres one by one, then the runtime. The year, age rating and watched badge always stay.</string>
+    <string name="header_show">Line under the logo, in this order</string>
     <string name="header_year">Year</string>
     <string name="header_runtime">Runtime or seasons</string>
     <string name="header_genres">Genres</string>
@@ -192,6 +197,13 @@
     <string name="header_watched_short">watched</string>
     <string name="header_empty">Nothing</string>
     <string name="header_watched_needs">Needs Trakt or Simkl history</string>
+    <string name="header_certification">Age rating</string>
+    <string name="header_certification_short">age rating</string>
+    <string name="header_certification_desc">The one for %1$s, the streaming country · not shown when it has none</string>
+    <string name="header_ratings">Ratings</string>
+    <string name="header_ratings_short">ratings</string>
+    <string name="header_min_ratings">Ratings always shown</string>
+    <string name="header_min_ratings_desc">%1$d · more only appear where there\'s room left</string>
     <string name="imdb_data_title">IMDb ratings</string>
     <string name="imdb_data_date">Official IMDb data from %1$s · press to update (about 9 MB)</string>
     <string name="imdb_data_never">Downloaded when first needed (about 9 MB) · press to download now</string>

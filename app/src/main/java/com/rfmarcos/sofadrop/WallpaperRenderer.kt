@@ -35,6 +35,10 @@ class WallpaperRenderer(
     private val width: Int,
     private val texts: WallpaperTexts,
     private val overviewLines: Int = 4,
+    /** Blocks of the header line in order, see [Settings.headerOrder]. */
+    private val headerOrder: List<String> = Settings.HEADER_BLOCKS,
+    /** Ratings that stay when the header line is full, see [Settings.minRatings]. */
+    private val minRatings: Int = 2,
 ) {
 
     private val height = width * 9 / 16
@@ -176,36 +180,110 @@ class WallpaperRenderer(
 
     // --- Metadata ---
 
+    /**
+     * The header line: its blocks in the user's order. When they don't fit, the ratings beyond
+     * [minRatings] go first, then the genres one by one, then the runtime / seasons; the year, the
+     * age certification and the watched badge always stay.
+     */
     private fun drawMetadata(canvas: Canvas, info: WallpaperInfo) {
-        var x = s(MARGIN_LEFT)
         val center = s(META_CENTER)
-        val limit = s(MARGIN_LEFT + CONTENT_WIDTH)
-
         val metaPaint = shadowed(textPaint(medium, s(48f), Color.rgb(230, 230, 230)))
-        var parts = listOf(info.year, info.extraInfo, info.genres).filter { it.isNotEmpty() }
-        fun line() = parts.joinToString("   ·   ")
-        val badgeWidth = info.watchStatus?.let { watchBadgeWidth(it) + s(28f) } ?: 0f
-        val afterRatings = if (badgeWidth > 0 || parts.isNotEmpty()) s(RATINGS_GAP) else 0f
+        val ratings = info.ratings.map(::ratingItem)
+        val genres = info.genres.split(", ").filter { it.isNotBlank() }
+        var ratingCount = ratings.size
+        var genreCount = genres.size
+        var runtime = info.extraInfo
 
-        // Up to MIN_RATINGS always fit (the details give way below); more only in the room the
-        // other items leave, so hiding the year, runtime or genres makes space for them
-        val reserved = badgeWidth + (if (parts.isEmpty()) 0f else metaPaint.measureText(line())) + afterRatings
-        val items = info.ratings.map(::ratingItem)
-        var shown = 0
-        var ratingsWidth = 0f
-        for (item in items) {
-            val width = ratingsWidth + (if (shown > 0) s(RATING_SPACING) else 0f) + item.width
-            if (shown >= MIN_RATINGS && x + width + reserved > limit) break
-            ratingsWidth = width
-            shown++
+        fun blocks(): List<Block> = headerOrder.mapNotNull { block ->
+            when (block) {
+                Settings.HEADER_RATINGS -> ratings.take(ratingCount).takeIf { it.isNotEmpty() }?.let { RatingsBlock(it) }
+                Settings.HEADER_WATCHED -> info.watchStatus?.let { WatchBlock(it) }
+                Settings.HEADER_YEAR -> YearBlock(info.year, info.certification.orEmpty(), metaPaint).takeIf { it.width > 0 }
+                Settings.HEADER_RUNTIME -> runtime.takeIf { it.isNotEmpty() }?.let { TextBlock(it, metaPaint) }
+                Settings.HEADER_GENRES -> genres.take(genreCount).takeIf { it.isNotEmpty() }?.let { TextBlock(it.joinToString(", "), metaPaint) }
+                else -> null
+            }
         }
-        if (shown > 0) x = drawRatings(canvas, items.take(shown), x, center) + afterRatings
+        // Text blocks read as one phrase joined by dots; ratings and the badge stand apart
+        val separator = s(SEPARATOR_PAD) * 2 + metaPaint.measureText("·")
+        fun gap(before: Block, after: Block) = if (before.text && after.text) separator else s(BLOCK_GAP)
+        fun width(line: List<Block>) = line.sumOf { it.width.toDouble() }.toFloat() + line.zipWithNext(::gap).sum()
 
-        info.watchStatus?.let { x = drawWatchBadge(canvas, it, x, center) + s(28f) }
+        var line = blocks()
+        while (width(line) > s(CONTENT_WIDTH)) {
+            when {
+                ratingCount > minRatings -> ratingCount--
+                genreCount > 0 -> genreCount--
+                runtime.isNotEmpty() -> runtime = ""
+                else -> break
+            }
+            line = blocks()
+        }
 
-        // Still too long (long genres, or one wide rating): genres go first, then the runtime / seasons
-        while (parts.size > 1 && x + metaPaint.measureText(line()) > limit) parts = parts.dropLast(1)
-        if (parts.isNotEmpty()) drawCentered(canvas, line(), x, center, metaPaint)
+        var x = s(MARGIN_LEFT)
+        line.forEachIndexed { index, block ->
+            if (index > 0) {
+                val before = line[index - 1]
+                if (before.text && block.text) drawCentered(canvas, "·", x + s(SEPARATOR_PAD), center, metaPaint)
+                x += gap(before, block)
+            }
+            block.draw(canvas, x, center)
+            x += block.width
+        }
+    }
+
+    /** One block of the header line, see [Settings.HEADER_BLOCKS]. */
+    private abstract inner class Block {
+        abstract val width: Float
+        /** Text blocks are joined by a dot. */
+        open val text: Boolean get() = false
+        abstract fun draw(canvas: Canvas, x: Float, center: Float)
+    }
+
+    private inner class RatingsBlock(val items: List<RatingItem>) : Block() {
+        override val width = items.sumOf { it.width.toDouble() }.toFloat() + s(RATING_SPACING) * (items.size - 1)
+        override fun draw(canvas: Canvas, x: Float, center: Float) {
+            drawRatings(canvas, items, x, center)
+        }
+    }
+
+    private inner class WatchBlock(val status: WatchStatus) : Block() {
+        override val width = watchBadgeWidth(status)
+        override fun draw(canvas: Canvas, x: Float, center: Float) {
+            drawWatchBadge(canvas, status, x, center)
+        }
+    }
+
+    private inner class TextBlock(val value: String, val paint: Paint) : Block() {
+        override val width = paint.measureText(value)
+        override val text get() = true
+        override fun draw(canvas: Canvas, x: Float, center: Float) = drawCentered(canvas, value, x, center, paint)
+    }
+
+    /** "2024 [16]": the certification boxed right after the year, no dot between (the box already separates). */
+    private inner class YearBlock(val year: String, val certification: String, val paint: Paint) : Block() {
+        private val boxPaint = textPaint(medium, s(36f), Color.rgb(230, 230, 230))
+        private val boxWidth = if (certification.isEmpty()) 0f else boxPaint.measureText(certification) + s(CERT_PADDING) * 2
+        private val yearWidth = if (year.isEmpty()) 0f else paint.measureText(year)
+        override val width = yearWidth + boxWidth + if (year.isNotEmpty() && certification.isNotEmpty()) s(CERT_GAP) else 0f
+        override val text get() = true
+
+        override fun draw(canvas: Canvas, x: Float, center: Float) {
+            if (year.isNotEmpty()) drawCentered(canvas, year, x, center, paint)
+            if (certification.isEmpty()) return
+            val left = x + width - boxWidth
+            val h = s(CERT_HEIGHT)
+            val stroke = s(3f)
+            // Inset by half the stroke, so the outline stays inside the measured box
+            val box = RectF(left, center - h / 2, left + boxWidth, center + h / 2).apply { inset(stroke / 2, stroke / 2) }
+            canvas.drawRoundRect(box, s(8f), s(8f), Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.argb(30, 255, 255, 255) })
+            canvas.drawRoundRect(box, s(8f), s(8f), shadowed(Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                style = Paint.Style.STROKE
+                strokeWidth = stroke
+                color = Color.argb(200, 230, 230, 230)
+            }))
+            drawCentered(canvas, certification, left + s(CERT_PADDING), center, boxPaint)
+        }
     }
 
     /** A platform's logo and its score in the brand colour, measured for the header row. */
@@ -260,7 +338,7 @@ class WallpaperRenderer(
 
     private fun watchBadgeWidth(status: WatchStatus): Float {
         val text = watchBadgeText(status)
-        return s(24f) * 2 + s(30f) + s(14f) + textPaint(medium, s(44f), Color.WHITE).measureText(text)
+        return s(24f) * 2 + s(26f) + s(14f) + textPaint(medium, s(40f), Color.WHITE).measureText(text)
     }
 
     private fun watchBadgeText(status: WatchStatus) = when (status) {
@@ -272,11 +350,11 @@ class WallpaperRenderer(
     private fun drawWatchBadge(canvas: Canvas, status: WatchStatus, x: Float, center: Float): Float {
         val watched = status is WatchStatus.Watched
         val text = watchBadgeText(status)
-        val textPaint = textPaint(medium, s(44f), Color.WHITE)
+        val textPaint = textPaint(medium, s(40f), Color.WHITE)
         val pad = s(24f)
-        val icon = s(30f)
+        val icon = s(26f)
         val gap = s(14f)
-        val height = s(72f)
+        val height = s(64f)
         val width = watchBadgeWidth(status)
         val color = if (watched) Color.rgb(46, 160, 87) else Color.rgb(59, 130, 246)
         canvas.drawRoundRect(
@@ -406,15 +484,20 @@ class WallpaperRenderer(
     companion object {
         private const val MARGIN_LEFT = 210
         private const val CONTENT_WIDTH = 1550
-        /** Between two ratings, and between the ratings and the rest of the header. */
         private const val RATING_SPACING = 44f
-        private const val RATINGS_GAP = 72f
-        private const val MIN_RATINGS = 3
+        /** Between header blocks that aren't both text (ratings, the watched badge). */
+        private const val BLOCK_GAP = 60f
+        /** Each side of the dot between text blocks. */
+        private const val SEPARATOR_PAD = 22f
         private const val LOGO_MAX_WIDTH = 1350
         private const val LOGO_MAX_HEIGHT = 420
         private const val LOGO_BOTTOM = 640
         private const val META_CENTER = 725
         private const val PROVIDER_ICON_SIZE = 88
+        private const val CERT_HEIGHT = 56f
+        private const val CERT_PADDING = 14f
+        /** Between the year and its certification box. */
+        private const val CERT_GAP = 24f
 
         private fun font(context: Context, id: Int): Typeface =
             ResourcesCompat.getFont(context, id) ?: Typeface.DEFAULT

@@ -135,6 +135,11 @@
     <string name="filters_adult_title">Excluir contenido adulto</string>
     <string name="filters_adult_desc">Descarta los títulos marcados como adultos en TMDB, en todas las listas</string>
     <string name="exclusion_adult">Descartado: contenido adulto</string>
+    <string name="filters_rating_age_title">Clasificación por edades</string>
+    <string name="filters_rating_age_up_to">Hasta %1$d años</string>
+    <string name="filters_rating_age_summary">hasta %1$d años</string>
+    <string name="filters_rating_age_desc">Descarta los títulos para mayores de esa edad en %1$s (el país de streaming), o en EE. UU. si allí no tienen clasificación. Los que no la tienen en ningún sitio, casi siempre aún sin estrenar, se mantienen. En todas las listas.</string>
+    <string name="exclusion_rating_age">Descartado: para mayores de esa edad</string>
     <string name="mdblist_unavailable">No disponible en esta versión</string>
 
     <!-- Acerca de -->
@@ -164,8 +169,8 @@
     <string name="details_description">Cómo se ve cada fondo: idioma, longitud de la sinopsis, qué muestra el pie (la lista de origen, las plataformas) y resolución. Una sinopsis más corta evita que las filas del launcher tapen el texto. En Cabecera eliges qué muestra la línea bajo el título: notas, año, duración, géneros. Idioma de cada parte pone el logo o la sinopsis en otro idioma.</string>
 
     <string name="header_title">Cabecera</string>
-    <string name="header_fit_desc">Si no cabe todo, las 3 primeras notas se ven siempre y se quitan primero los géneros y después la duración. Las demás notas solo salen si queda hueco: oculta datos para que quepan más.</string>
-    <string name="header_show">Mostrar</string>
+    <string name="header_fit_desc">Si la línea no cabe, se quitan primero las notas que pasan del mínimo, después los géneros uno a uno y luego la duración. El año, la edad y la marca de visto se quedan siempre.</string>
+    <string name="header_show">Línea bajo el logo, en este orden</string>
     <string name="header_year">Año</string>
     <string name="header_runtime">Duración o temporadas</string>
     <string name="header_genres">Géneros</string>
@@ -176,6 +181,13 @@
     <string name="header_watched_short">visto</string>
     <string name="header_empty">Nada</string>
     <string name="header_watched_needs">Requiere el historial de Trakt o Simkl</string>
+    <string name="header_certification">Clasificación por edades</string>
+    <string name="header_certification_short">edad</string>
+    <string name="header_certification_desc">La de %1$s, el país de streaming · no se muestra si no la tiene</string>
+    <string name="header_ratings">Notas</string>
+    <string name="header_ratings_short">notas</string>
+    <string name="header_min_ratings">Notas siempre visibles</string>
+    <string name="header_min_ratings_desc">%1$d · el resto solo sale si queda hueco</string>
     <string name="imdb_data_title">Notas de IMDb</string>
     <string name="imdb_data_date">Datos oficiales de IMDb del %1$s · pulsa para actualizar (unos 9 MB)</string>
     <string name="imdb_data_never">Se descargan cuando hagan falta (unos 9 MB) · pulsa para descargarlos ya</string>

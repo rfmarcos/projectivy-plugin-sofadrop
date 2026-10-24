@@ -45,6 +45,7 @@ object Settings {
     private const val KEY_GLOBAL_HITS = "global_hits_only"
     private const val KEY_MAX_AGE = "max_age_months"
     private const val KEY_EXCLUDE_ADULT = "exclude_adult"
+    private const val KEY_MAX_RATING_AGE = "max_rating_age"
     private const val KEY_PROVIDERS = "show_providers"
     private const val KEY_TRAKT_CLIENT_ID = "trakt_client_id"
     private const val KEY_TRAKT_CLIENT_SECRET = "trakt_client_secret"
@@ -52,6 +53,8 @@ object Settings {
     private const val KEY_MDBLIST_LISTS = "mdblist_lists"
     private const val KEY_RATINGS = "rating_sources"
     private const val KEY_HEADER_HIDDEN = "header_hidden"
+    private const val KEY_HEADER_ORDER = "header_order"
+    private const val KEY_MIN_RATINGS = "min_ratings"
     private const val KEY_MDBLIST_ACCESS = "_mdblist_access_token"
     private const val KEY_MDBLIST_REFRESH = "_mdblist_refresh_token"
     private const val KEY_MDBLIST_EXPIRES = "_mdblist_expires_at"
@@ -84,6 +87,8 @@ object Settings {
     const val SELECTION_RANDOM = "random"
     /** Months; 0 means no limit. */
     val MAX_AGE_OPTIONS = listOf(6, 12, 24, 60, 0)
+    /** Years; 0 means no limit. */
+    val MAX_RATING_AGE_OPTIONS = listOf(0, 7, 12, 16)
     const val WATCHED_SHOW = "show"
     const val WATCHED_MARK = "mark"
     const val WATCHED_HIDE = "hide"
@@ -197,6 +202,11 @@ object Settings {
     var excludeAdult: Boolean
         get() = preferences.getBoolean(KEY_EXCLUDE_ADULT, true)
         set(value) = preferences.edit { putBoolean(KEY_EXCLUDE_ADULT, value) }
+
+    /** Skip titles certified for older viewers than this, in every list (see [Certifications.minimumAge]); 0 = no limit. */
+    var maxRatingAge: Int
+        get() = preferences.getInt(KEY_MAX_RATING_AGE, 0)
+        set(value) = preferences.edit { putInt(KEY_MAX_RATING_AGE, value) }
 
     /**
      * Hand Projectivy the wallpapers shuffled (again on every request) instead of list after list, so
@@ -508,13 +518,35 @@ object Settings {
     const val HEADER_RUNTIME = "runtime"
     const val HEADER_GENRES = "genres"
     const val HEADER_WATCHED = "watched"
-    val HEADER_ITEMS = listOf(HEADER_YEAR, HEADER_RUNTIME, HEADER_GENRES, HEADER_WATCHED)
+    /** Drawn right after the year (or in its place), so it has no position of its own. */
+    const val HEADER_CERTIFICATION = "certification"
+    val HEADER_ITEMS = listOf(HEADER_YEAR, HEADER_CERTIFICATION, HEADER_RUNTIME, HEADER_GENRES, HEADER_WATCHED)
 
     var headerHidden: Set<String>
         get() = preferences.getStringSet(KEY_HEADER_HIDDEN, null)?.toSet() ?: emptySet()
         set(value) = preferences.edit { putStringSet(KEY_HEADER_HIDDEN, value) }
 
     fun showsInHeader(item: String) = item !in headerHidden
+
+    /** The ratings, as one block of the header; hidden by choosing no platform. */
+    const val HEADER_RATINGS = "ratings"
+    /** Blocks of the header line in their default order; the user can move them (see [headerOrder]). */
+    val HEADER_BLOCKS = listOf(HEADER_RATINGS, HEADER_WATCHED, HEADER_YEAR, HEADER_RUNTIME, HEADER_GENRES)
+
+    /** [HEADER_BLOCKS] in the user's order (blocks added in later versions go last). */
+    var headerOrder: List<String>
+        get() {
+            val saved = string(KEY_HEADER_ORDER).split(',').filter { it in HEADER_BLOCKS }.distinct()
+            return saved + (HEADER_BLOCKS - saved.toSet())
+        }
+        set(value) = preferences.edit { putString(KEY_HEADER_ORDER, value.joinToString(",")) }
+
+    /** Ratings that stay when the line is full (the details give way first); more only where there's room. */
+    var minRatings: Int
+        get() = preferences.getInt(KEY_MIN_RATINGS, 2)
+        set(value) = preferences.edit { putInt(KEY_MIN_RATINGS, value) }
+
+    val MIN_RATINGS_OPTIONS = listOf(1, 2, 3)
 
     // --- Generation state ---
 
@@ -554,7 +586,10 @@ object Settings {
             "dups".takeIf { !skipDuplicates }, "logo:$logoMode".takeIf { logoMode != LOGO_TEXT }, "synopsis:$synopsisMode".takeIf { synopsisMode != SYNOPSIS_HIDE },
             "titlelang:$titleLanguage".takeIf { titleLanguage != LANGUAGE_AUTO }, "synopsislang:$synopsisLanguage".takeIf { synopsisLanguage != LANGUAGE_AUTO },
             "ratings:$ratingSourcesKey:$mdbListAvailable".takeIf { ratingSourcesKey != RatingSource.TMDB.key },
-            "header:${headerHidden.sorted()}".takeIf { headerHidden.isNotEmpty() })).joinToString("|")
+            "header:${headerHidden.sorted()}".takeIf { headerHidden.isNotEmpty() },
+            "ratingage:$maxRatingAge".takeIf { maxRatingAge > 0 },
+            "order:${headerOrder.joinToString(",")}".takeIf { headerOrder != HEADER_BLOCKS },
+            "minratings:$minRatings".takeIf { minRatings != 2 })).joinToString("|")
 
     /** True when the current wallpapers were generated with different settings. */
     val hasPendingChanges: Boolean

@@ -26,7 +26,8 @@ class WallpaperFactory(context: Context, private val width: Int) {
 
     val client = TmdbClient(Settings.token, context.cacheDir)
     val catalog = TmdbCatalog(client, Settings.language, Settings.region, Settings.showProviders, Settings.partLanguages)
-    private val renderer = WallpaperRenderer(context, width, Languages.texts(Settings.language), Settings.overviewLines)
+    private val renderer = WallpaperRenderer(context, width, Languages.texts(Settings.language), Settings.overviewLines,
+        Settings.headerOrder, Settings.minRatings)
 
     val trakt: TraktClient? = if (Settings.traktConfigured) TraktClient(Settings.traktClientId, Settings.traktClientSecret) else null
     val simkl = SimklClient(Settings.simklClientId, client)
@@ -88,6 +89,7 @@ class WallpaperFactory(context: Context, private val width: Int) {
             year = info.year.takeIf { Settings.showsInHeader(Settings.HEADER_YEAR) }.orEmpty(),
             extraInfo = info.extraInfo.takeIf { Settings.showsInHeader(Settings.HEADER_RUNTIME) }.orEmpty(),
             genres = info.genres.takeIf { Settings.showsInHeader(Settings.HEADER_GENRES) }.orEmpty(),
+            certification = info.certification.takeIf { Settings.showsInHeader(Settings.HEADER_CERTIFICATION) },
         )
     }
 

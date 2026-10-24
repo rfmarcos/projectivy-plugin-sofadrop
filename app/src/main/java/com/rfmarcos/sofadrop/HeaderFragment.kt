@@ -10,9 +10,10 @@ import androidx.leanback.widget.GuidanceStylist.Guidance
 import androidx.leanback.widget.GuidedAction
 
 /**
- * The line under the title: which details it shows and which platforms' scores, in order. Each
- * platform row opens a list of positions (or "don't show"), so any move takes a couple of clicks.
- * Scores use the room the details leave.
+ * The line under the logo: its blocks in order (ratings, watched badge, year
+ * with its age certification, runtime, genres), how many ratings always stay, and which platforms'
+ * scores, in order. Block and platform rows open a list of positions (or "don't show"), so any move
+ * takes a couple of clicks.
  */
 class HeaderFragment : PreviewSettingsFragment() {
 
@@ -41,16 +42,38 @@ class HeaderFragment : PreviewSettingsFragment() {
 
     private fun rows(): List<GuidedAction> {
         val context = requireContext()
-        val items = Settings.HEADER_ITEMS.mapIndexed { index, item ->
+        val shownBlocks = shownBlocks()
+        // Rows go by position (ids too), so a move updates them in place and keeps leanback's state
+        val blocks = blockRows().mapIndexed { index, block ->
+            val position = shownBlocks.indexOf(block)
+            val builder = GuidedAction.Builder(context).id(ID_BLOCK + index).icon(ColorDrawable(Color.TRANSPARENT))
+                .title(blockTitle(context, block))
             // The badge needs a watch history; kept visible (disabled) so rows don't jump
-            val usable = item != Settings.HEADER_WATCHED || Settings.watchSource != null
-            checkbox(ID_ITEM + index, itemTitle(context, item), if (usable) null else getString(R.string.header_watched_needs),
-                Settings.showsInHeader(item)).enabled(usable).build()
+            if (block == Settings.HEADER_WATCHED && Settings.watchSource == null) {
+                return@mapIndexed builder.description(getString(R.string.header_watched_needs)).enabled(false).build()
+            }
+            // Ratings are hidden by choosing no platform below
+            val canHide = block != Settings.HEADER_RATINGS
+            val slots = if (position >= 0) shownBlocks.size else shownBlocks.size + 1
+            val positions = (1..slots).map {
+                getString(if (position < 0 && it == slots) R.string.ratings_option_last else R.string.ratings_option_position, it)
+            }
+            val labels = if (canHide) listOf(getString(R.string.ratings_dont_show)) + positions else positions
+            val current = if (position >= 0) positions[position] else labels.first()
+            builder.description(if (position >= 0) getString(R.string.ratings_position, position + 1, shownBlocks.size) else getString(R.string.ratings_hidden))
+                .subActions(options(ID_BLOCK + index, labels, current)).build()
         }
+        val certification = checkbox(ID_CERTIFICATION, getString(R.string.header_certification),
+            getString(R.string.header_certification_desc, Languages.countryName(Settings.region)),
+            Settings.showsInHeader(Settings.HEADER_CERTIFICATION)).build()
+        val minLabels = Settings.MIN_RATINGS_OPTIONS.map { it.toString() }
+        val minRatings = action(ID_MIN_RATINGS, R.drawable.ic_act_count, getString(R.string.header_min_ratings),
+            getString(R.string.header_min_ratings_desc, Settings.minRatings))
+            .subActions(options(ID_MIN_RATINGS, minLabels, Settings.minRatings.toString())).build()
+
         val source = action(ID_SOURCE, R.drawable.ic_act_info, getString(R.string.ratings_source_title), sourceLabel(context))
             .hasNext(true).build()
         val shown = shownPlatforms()
-        // Rows go by position (ids too), so a move updates them in place and keeps leanback's state
         val platforms = platformRows().mapIndexed { index, platform ->
             val position = shown.indexOf(platform)
             val builder = GuidedAction.Builder(context).id(ID_PLATFORM + index).icon(ColorDrawable(Color.TRANSPARENT))
@@ -63,36 +86,69 @@ class HeaderFragment : PreviewSettingsFragment() {
             builder.description(if (position >= 0) getString(R.string.ratings_position, position + 1, shown.size) else getString(R.string.ratings_hidden))
                 .subActions(options(ID_PLATFORM + index, labels, labels[position + 1])).build()
         }
-        return listOf(header(ID_DETAILS_HEADER, getString(R.string.header_show))) + items +
+        return listOf(header(ID_BLOCKS_HEADER, getString(R.string.header_show))) + blocks + certification + minRatings +
             header(ID_RATINGS_HEADER, getString(R.string.ratings_header)) + source + platforms
     }
 
     override fun onGuidedActionClicked(action: GuidedAction) {
         when (action.id) {
             ID_SOURCE -> add(parentFragmentManager, AccountsFragment.newInstance(SourceProvider.MDBLIST))
-            in ID_ITEM until ID_ITEM + Settings.HEADER_ITEMS.size -> {
-                val item = Settings.HEADER_ITEMS[(action.id - ID_ITEM).toInt()]
-                Settings.headerHidden = if (action.isChecked) Settings.headerHidden - item else Settings.headerHidden + item
+            ID_CERTIFICATION -> {
+                Settings.headerHidden = if (action.isChecked) Settings.headerHidden - Settings.HEADER_CERTIFICATION
+                else Settings.headerHidden + Settings.HEADER_CERTIFICATION
                 schedulePreview()
             }
         }
     }
 
-    /** A position for a platform: it is taken out and put back there (or left out). */
     override fun onSubGuidedActionClicked(action: GuidedAction): Boolean {
-        val platform = platformRows().getOrNull((action.id / SUB_ID_BASE - ID_PLATFORM).toInt()) ?: return true
+        val parent = action.id / SUB_ID_BASE
         val choice = (action.id % SUB_ID_BASE).toInt()
+        when {
+            parent == ID_MIN_RATINGS -> Settings.minRatings = Settings.MIN_RATINGS_OPTIONS[choice]
+            parent >= ID_PLATFORM -> return movePlatform(platformRows().getOrNull((parent - ID_PLATFORM).toInt()) ?: return true, choice)
+            parent >= ID_BLOCK -> return moveBlock(blockRows().getOrNull((parent - ID_BLOCK).toInt()) ?: return true, choice)
+        }
+        collapseSubActions()
+        refreshActions(rows()) { HeaderFragment() }
+        schedulePreview()
+        return true
+    }
+
+    /** A position for a block: it is taken out and put back there (or hidden). */
+    private fun moveBlock(block: String, choice: Int): Boolean {
+        // The ratings row has no "don't show"
+        val position = if (block == Settings.HEADER_RATINGS) choice + 1 else choice
+        val shown = shownBlocks() - block
+        if (position == 0) {
+            Settings.headerHidden = Settings.headerHidden + block
+        } else {
+            Settings.headerHidden = Settings.headerHidden - block
+            val order = shown.toMutableList().apply { add((position - 1).coerceAtMost(size), block) }
+            // Hidden blocks keep their place after the shown ones
+            Settings.headerOrder = order + (Settings.headerOrder - order.toSet())
+        }
+        afterMove(ID_BLOCK + blockRows().indexOf(block))
+        return true
+    }
+
+    /** A position for a platform: it is taken out and put back there (or left out). */
+    private fun movePlatform(platform: RatingSource, choice: Int): Boolean {
         val shown = shownPlatforms() - platform
         val order = if (choice == 0) shown else shown.toMutableList().apply { add((choice - 1).coerceAtMost(size), platform) }
         // Chosen scores that need MDBList stay chosen while it's disconnected
         Settings.ratingSources = order + Settings.ratingSources.filterNot(::available)
+        afterMove(ID_PLATFORM + platformRows().indexOf(platform))
+        return true
+    }
+
+    /** Focus follows the moved row to its new place, once the options have closed. */
+    private fun afterMove(rowId: Long) {
         collapseSubActions()
         refreshActions(rows()) { HeaderFragment() }
-        // Focus follows the platform to its new row, once the options have closed
-        val row = findActionPositionById(ID_PLATFORM + platformRows().indexOf(platform))
+        val row = findActionPositionById(rowId)
         handler.postDelayed({ if (isAdded) setSelectedActionPosition(row) }, 150)
         schedulePreview()
-        return true
     }
 
     private fun available(platform: RatingSource) = !platform.needsMdbList || Settings.mdbListAvailable
@@ -106,15 +162,26 @@ class HeaderFragment : PreviewSettingsFragment() {
         return shown + rest.filter(::available) + rest.filterNot(::available)
     }
 
+    /** Blocks drawn, in order (the badge only with a watch history). */
+    private fun shownBlocks() = Settings.headerOrder.filter { block ->
+        (block == Settings.HEADER_RATINGS || Settings.showsInHeader(block)) && (block != Settings.HEADER_WATCHED || Settings.watchSource != null)
+    }
+
+    /** Shown blocks in order, then the hidden ones. */
+    private fun blockRows(): List<String> = shownBlocks().let { it + (Settings.headerOrder - it.toSet()) }
+
     companion object {
         private const val ID_SOURCE = 1L
-        private const val ID_DETAILS_HEADER = 2L
+        private const val ID_BLOCKS_HEADER = 2L
         private const val ID_RATINGS_HEADER = 3L
-        private const val ID_ITEM = 10L
+        private const val ID_CERTIFICATION = 5L
+        private const val ID_MIN_RATINGS = 6L
+        private const val ID_BLOCK = 10L
         private const val ID_PLATFORM = 100L
 
-        private fun itemTitle(context: Context, item: String, short: Boolean = false) = context.getString(
-            when (item) {
+        private fun blockTitle(context: Context, block: String, short: Boolean = false) = context.getString(
+            when (block) {
+                Settings.HEADER_RATINGS -> if (short) R.string.header_ratings_short else R.string.header_ratings
                 Settings.HEADER_YEAR -> if (short) R.string.header_year_short else R.string.header_year
                 Settings.HEADER_RUNTIME -> if (short) R.string.header_runtime_short else R.string.header_runtime
                 Settings.HEADER_GENRES -> if (short) R.string.header_genres_short else R.string.header_genres
@@ -128,10 +195,20 @@ class HeaderFragment : PreviewSettingsFragment() {
             else -> context.getString(R.string.ratings_source_mdblist)
         }
 
-        /** "IMDb · RT · year · genres" for the details screen. */
-        fun summary(context: Context): String =
-            (Settings.ratingSources.map { it.shortTitle(context) } +
-                Settings.HEADER_ITEMS.filter(Settings::showsInHeader).map { itemTitle(context, it, short = true) })
-                .joinToString(" · ").ifEmpty { context.getString(R.string.header_empty) }
+        /** "IMDb RT · year [age] · runtime" for the details screen, in the header's order. */
+        fun summary(context: Context): String {
+            val parts = Settings.headerOrder.mapNotNull { block ->
+                when (block) {
+                    Settings.HEADER_RATINGS -> Settings.ratingSources.joinToString(" ") { it.shortTitle(context) }.ifEmpty { null }
+                    Settings.HEADER_WATCHED -> blockTitle(context, block, short = true).takeIf { Settings.showsInHeader(block) && Settings.watchSource != null }
+                    Settings.HEADER_YEAR -> listOfNotNull(
+                        blockTitle(context, block, short = true).takeIf { Settings.showsInHeader(block) },
+                        context.getString(R.string.header_certification_short).takeIf { Settings.showsInHeader(Settings.HEADER_CERTIFICATION) },
+                    ).joinToString(" ").ifEmpty { null }
+                    else -> blockTitle(context, block, short = true).takeIf { Settings.showsInHeader(block) }
+                }
+            }
+            return parts.joinToString(" · ").ifEmpty { context.getString(R.string.header_empty) }
+        }
     }
 }

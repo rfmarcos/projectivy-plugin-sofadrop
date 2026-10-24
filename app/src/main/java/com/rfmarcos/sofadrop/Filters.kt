@@ -34,6 +34,10 @@ object Filters {
         else -> context.getString(R.string.filters_age_months, months)
     }
 
+    /** "No limit" or "Up to 12 years old" (age certification). */
+    fun ratingAgeLabel(context: Context, years: Int) =
+        if (years == 0) context.getString(R.string.filters_age_none) else context.getString(R.string.filters_rating_age_up_to, years)
+
     /** "Own filters: no age limit, hide" or "Default filters", for list rows. */
     fun listFiltersSummary(context: Context, source: ListSource): String {
         val custom = Settings.listFilters[source.key]?.takeUnless { it.isDefault }
@@ -50,6 +54,7 @@ object Filters {
     fun summary(context: Context): String = listOfNotNull(
         ageLabel(context, Settings.maxAgeMonths),
         context.getString(R.string.setting_global_hits_title).takeIf { Settings.globalHitsOnly },
+        Settings.maxRatingAge.takeIf { it > 0 }?.let { context.getString(R.string.filters_rating_age_summary, it) },
         context.getString(R.string.watched_summary_hidden).takeIf { Settings.watchSource != null && Settings.watchedMode == Settings.WATCHED_HIDE },
         customised().size.takeIf { it > 0 }?.let { context.resources.getQuantityString(R.plurals.lists_customised, it, it) },
     ).joinToString(" · ")

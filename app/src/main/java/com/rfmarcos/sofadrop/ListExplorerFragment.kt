@@ -50,6 +50,8 @@ class ListExplorerFragment : BaseSettingsFragment() {
                 Filters.watchedLabel(context, Settings.watchedMode)).also { it.isEnabled = Settings.watchSource != null },
             action(ID_ADULT, R.drawable.ic_act_block, getString(R.string.filters_adult_title), null)
                 .checkSetId(GuidedAction.CHECKBOX_CHECK_SET_ID).checked(Settings.excludeAdult).build(),
+            choiceRow(ID_RATING_AGE, R.drawable.ic_act_filter, R.string.filters_rating_age_title,
+                Settings.MAX_RATING_AGE_OPTIONS.map { Filters.ratingAgeLabel(context, it) }, Filters.ratingAgeLabel(context, Settings.maxRatingAge)),
             action(ID_DUPLICATES, R.drawable.ic_act_list, getString(R.string.filters_duplicates_title), null)
                 .checkSetId(GuidedAction.CHECKBOX_CHECK_SET_ID).checked(Settings.skipDuplicates).build(),
         )
@@ -88,6 +90,7 @@ class ListExplorerFragment : BaseSettingsFragment() {
             ID_GLOBAL_HITS -> Settings.globalHitsOnly = index == 1
             ID_WATCH_SOURCE -> Settings.setWatchSource((listOf(Settings.WATCH_NONE) + Settings.connectedTrackers)[index])
             ID_WATCHED -> Settings.watchedMode = Filters.WATCHED_MODES[index]
+            ID_RATING_AGE -> Settings.maxRatingAge = Settings.MAX_RATING_AGE_OPTIONS[index]
         }
         refresh() // the watched row follows the watch history
         return true
@@ -102,12 +105,14 @@ class ListExplorerFragment : BaseSettingsFragment() {
         private const val ID_WATCH_SOURCE = 6L
         private const val ID_HEADER = 7L
         private const val ID_DUPLICATES = 8L
+        private const val ID_RATING_AGE = 9L
         private const val LIST_BASE = 100L
 
         /** Value of a default filter (what it does is shown in the left pane, see [filterExplanations]). */
         private fun describe(context: Context, id: Long): String = when (id) {
             ID_AGE -> Filters.ageLabel(context, Settings.maxAgeMonths)
             ID_GLOBAL_HITS -> Filters.onOff(context)[if (Settings.globalHitsOnly) 1 else 0]
+            ID_RATING_AGE -> Filters.ratingAgeLabel(context, Settings.maxRatingAge)
             ID_WATCH_SOURCE -> if (Settings.connectedTrackers.isEmpty()) context.getString(R.string.watch_source_connect)
                 else Filters.watchSourceLabel(context, Settings.watchSource)
             else -> if (Settings.watchSource == null) context.getString(R.string.watched_need_source)
@@ -123,6 +128,7 @@ class ListExplorerFragment : BaseSettingsFragment() {
                 ID_WATCH_SOURCE to context.getString(R.string.watch_source_explain),
                 ID_WATCHED to context.getString(R.string.watched_explain),
                 ID_ADULT to context.getString(R.string.filters_adult_desc),
+                ID_RATING_AGE to context.getString(R.string.filters_rating_age_desc, Languages.countryName(Settings.region)),
                 ID_DUPLICATES to context.getString(R.string.filters_duplicates_desc),
             )
         }
@@ -257,6 +263,7 @@ class ListContentsFragment : BaseSettingsFragment() {
             Exclusion.LOCAL_MARKET -> R.string.exclusion_local_market
             Exclusion.TOO_OLD -> R.string.exclusion_too_old
             Exclusion.ADULT -> R.string.exclusion_adult
+            Exclusion.AGE_RATING -> R.string.exclusion_rating_age
             Exclusion.NO_LOGO -> R.string.exclusion_no_logo
             Exclusion.NO_SYNOPSIS -> R.string.exclusion_no_synopsis
             Exclusion.WATCHED -> R.string.exclusion_watched
