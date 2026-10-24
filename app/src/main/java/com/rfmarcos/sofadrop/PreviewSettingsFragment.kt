@@ -136,25 +136,42 @@ abstract class PreviewSettingsFragment : BaseSettingsFragment() {
             return pins.mapNotNull { pin -> pinRef(pin)?.let(catalog::build)?.let { pin to it } }
         }
 
+        /** Title the automatic preview picked from a list when there was no generated set, so it stays put. */
+        private var autoPick: Pair<TitleRef, ListSource>? = null
+
         /**
          * Render the pinned title (with its list while it is in the current set; it may be any TMDB id),
-         * else one of the first selected list that has a usable title.
+         * else the first title of the current set whose list is still selected, else one of the first
+         * selected list that has a usable title. Changing a setting redraws the same title.
          */
         fun renderPreview(context: Context): Pair<Bitmap, String>? {
             Settings.init(context)
             val factory = WallpaperFactory(context, PREVIEW_WIDTH)
+            val stored = WallpaperStore(context).current()
             val pin = Settings.previewPin
             pinRef(pin)?.let { ref ->
-                val sourceKey = WallpaperStore(context).current().firstOrNull { "${it.type}:${it.tmdbId}" == pin }?.source
+                val sourceKey = stored.firstOrNull { "${it.type}:${it.tmdbId}" == pin }?.source
                 val source = Sources.available().firstOrNull { it.key == sourceKey }
                 // A pin that fails says so instead of silently showing another title
                 val info = factory.build(ref, source = source) ?: error(context.getString(R.string.preview_pin_not_found, pin))
                 return factory.render(info) to info.title
             }
-            for (source in Sources.selected()) {
+            val selected = Sources.selected()
+            // Sets made before the list was stored have no source: they still came from the user's lists
+            val fromSet = stored.filter { it.source.isEmpty() || selected.any { source -> source.key == it.source } }
+            for (wallpaper in fromSet.take(4)) {
+                val ref = pinRef("${wallpaper.type}:${wallpaper.tmdbId}") ?: continue
+                val info = factory.build(ref, source = selected.firstOrNull { it.key == wallpaper.source }) ?: continue
+                return factory.render(info) to info.title
+            }
+            autoPick?.takeIf { (_, source) -> selected.any { it.key == source.key } }?.let { (ref, source) ->
+                factory.build(ref, source = source)?.let { return factory.render(it) to it.title }
+            }
+            for (source in selected) {
                 val plan = runCatching { factory.plan(source, 3) }.getOrNull() ?: continue
                 for (ref in plan.usable.take(4)) {
                     val info = factory.build(ref, plan) ?: continue
+                    autoPick = ref to source
                     return factory.render(info) to info.title
                 }
             }
