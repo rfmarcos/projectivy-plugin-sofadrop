@@ -98,12 +98,30 @@ class ParsingTest {
     }
 
     @Test
+    fun castInLatinLettersOnly() {
+        // Squid Game's aggregate credits: two of the first five only have their Hangul name
+        val credits = kotlinx.serialization.json.Json.parseToJsonElement(
+            """{"cast":[{"name":"Lee Jung-jae"},{"name":"위하준"},{"name":"Yim Si-wan"},{"name":"강하늘"},{"name":"Zoë Kravitz"},{"name":" "},{"name":"Lee Byung-hun"},{"name":"Park Gyu-young"}]}"""
+        ) as kotlinx.serialization.json.JsonObject
+        assertEquals(listOf("Lee Jung-jae", "Yim Si-wan", "Zoë Kravitz", "Lee Byung-hun"), TmdbCatalog.castNames(credits))
+        assertEquals(emptyList<String>(), TmdbCatalog.castNames(null))
+    }
+
+    @Test
     fun wallpaperSourceLabels() {
         fun source(key: String) = (Sources.TMDB + Sources.TRAKT + Sources.SIMKL).first { it.key == key }
         assertEquals("Anime en tendencia", Languages.sourceLabel("es-ES", source("simkl:trending_anime")))
         assertEquals("Trending", Languages.sourceLabel("en-US", source("simkl:trending_movies")))
         assertEquals("Your watchlist", Languages.sourceLabel("en-GB", source("trakt:watchlist_shows")))
         assertEquals("Im Kino", Languages.sourceLabel("de-DE", source("tmdb:now_playing")))
+        assertEquals("Kesken", Languages.sourceLabel("fi-FI", source("simkl:watching")))
+        assertEquals("Sesong", Languages.texts("no-NO").season)
+        // TMDB's Norwegian genres are blank, some TV genres untranslated, Danish ones with spaces
+        assertEquals("Skrekk", Languages.genreName("no-NO", 27, ""))
+        assertEquals("Action och äventyr", Languages.genreName("sv-SE", 10759, "Action & Adventure"))
+        assertEquals("Historie", Languages.genreName("da-DK", 36, "Historie "))
+        assertEquals(null, Languages.genreName("en-US", 99, " "))
+        assertEquals("no-NO", Languages.defaultFor(java.util.Locale.forLanguageTag("nb-NO")))
         val mdb = ListSource("mdblist:a/b", SourceProvider.MDBLIST, label = "A very long MDBList list name for tests")
         assertEquals("A very long MDBList list na…", Languages.sourceLabel("en-US", mdb))
     }

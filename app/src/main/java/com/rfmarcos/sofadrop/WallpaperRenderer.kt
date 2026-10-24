@@ -88,7 +88,7 @@ class WallpaperRenderer(
         val layerCanvas = Canvas(layer)
         if (logo != null) drawLogo(layerCanvas, logo) else drawTitle(layerCanvas, info.title)
         drawMetadata(layerCanvas, info)
-        val overviewBottom = drawOverview(layerCanvas, info.overview)
+        val overviewBottom = drawCast(layerCanvas, drawOverview(layerCanvas, info.overview), info.cast)
         drawFooter(layerCanvas, overviewBottom + s(40), providerLogos, info)
 
         val offset = IntArray(2)
@@ -181,9 +181,10 @@ class WallpaperRenderer(
     // --- Metadata ---
 
     /**
-     * The header line: its blocks in the user's order. When they don't fit, the ratings beyond
-     * [minRatings] go first, then the genres one by one, then the runtime / seasons; the year, the
-     * age certification and the watched badge always stay.
+     * The header line: its blocks in the user's order, which is also their importance. When they
+     * don't fit, the ratings beyond [minRatings] go first, then whatever is rightmost (the genres
+     * one by one, the rest whole: the year goes with its age certification). The first block and
+     * the [minRatings] ratings always stay.
      */
     private fun drawMetadata(canvas: Canvas, info: WallpaperInfo) {
         val center = s(META_CENTER)
@@ -192,17 +193,17 @@ class WallpaperRenderer(
         val genres = info.genres.split(", ").filter { it.isNotBlank() }
         var ratingCount = ratings.size
         var genreCount = genres.size
-        var runtime = info.extraInfo
+        val dropped = mutableSetOf<String>()
 
-        fun blocks(): List<Block> = headerOrder.mapNotNull { block ->
+        fun blocks(): List<Block> = headerOrder.filter { it !in dropped }.mapNotNull { block ->
             when (block) {
                 Settings.HEADER_RATINGS -> ratings.take(ratingCount).takeIf { it.isNotEmpty() }?.let { RatingsBlock(it) }
                 Settings.HEADER_WATCHED -> info.watchStatus?.let { WatchBlock(it) }
                 Settings.HEADER_YEAR -> YearBlock(info.year, info.certification.orEmpty(), metaPaint).takeIf { it.width > 0 }
-                Settings.HEADER_RUNTIME -> runtime.takeIf { it.isNotEmpty() }?.let { TextBlock(it, metaPaint) }
+                Settings.HEADER_RUNTIME -> info.extraInfo.takeIf { it.isNotEmpty() }?.let { TextBlock(it, metaPaint) }
                 Settings.HEADER_GENRES -> genres.take(genreCount).takeIf { it.isNotEmpty() }?.let { TextBlock(it.joinToString(", "), metaPaint) }
                 else -> null
-            }
+            }?.also { it.key = block }
         }
         // Text blocks read as one phrase joined by dots; ratings and the badge stand apart
         val separator = s(SEPARATOR_PAD) * 2 + metaPaint.measureText("·")
@@ -211,11 +212,12 @@ class WallpaperRenderer(
 
         var line = blocks()
         while (width(line) > s(CONTENT_WIDTH)) {
-            when {
-                ratingCount > minRatings -> ratingCount--
-                genreCount > 0 -> genreCount--
-                runtime.isNotEmpty() -> runtime = ""
-                else -> break
+            if (ratingCount > minRatings && Settings.HEADER_RATINGS in line.map { it.key }) {
+                ratingCount--
+            } else {
+                // The ratings left are the ones the user wants always shown: the next block gives way instead
+                val last = line.drop(1).lastOrNull { it.key != Settings.HEADER_RATINGS }?.key ?: break
+                if (last == Settings.HEADER_GENRES) genreCount-- else dropped += last
             }
             line = blocks()
         }
@@ -234,6 +236,8 @@ class WallpaperRenderer(
 
     /** One block of the header line, see [Settings.HEADER_BLOCKS]. */
     private abstract inner class Block {
+        /** Which of [Settings.HEADER_BLOCKS] it is. */
+        var key = ""
         abstract val width: Float
         /** Text blocks are joined by a dot. */
         open val text: Boolean get() = false
@@ -274,16 +278,29 @@ class WallpaperRenderer(
             val left = x + width - boxWidth
             val h = s(CERT_HEIGHT)
             val stroke = s(3f)
+            // Centred on the digits of the line, not on the font's box (which reaches below the baseline),
+            // and the mark centred on its own letters inside
+            val digits = center + (glyphCenter(paint, "0123456789") - glyphCenter(paint, null))
             // Inset by half the stroke, so the outline stays inside the measured box
-            val box = RectF(left, center - h / 2, left + boxWidth, center + h / 2).apply { inset(stroke / 2, stroke / 2) }
+            val box = RectF(left, digits - h / 2, left + boxWidth, digits + h / 2).apply { inset(stroke / 2, stroke / 2) }
             canvas.drawRoundRect(box, s(8f), s(8f), Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.argb(30, 255, 255, 255) })
             canvas.drawRoundRect(box, s(8f), s(8f), shadowed(Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 style = Paint.Style.STROKE
                 strokeWidth = stroke
                 color = Color.argb(200, 230, 230, 230)
             }))
-            drawCentered(canvas, certification, left + s(CERT_PADDING), center, boxPaint)
+            canvas.drawText(certification, left + s(CERT_PADDING), digits - glyphCenter(boxPaint, certification), boxPaint)
         }
+    }
+
+    /**
+     * Offset from the baseline to the middle of [text]'s glyphs (negative: above it); with null, to the
+     * middle of the font's ascent and descent, which is where [drawCentered] puts the centre.
+     */
+    private fun glyphCenter(paint: Paint, text: String?): Float {
+        if (text == null) return (paint.fontMetrics.ascent + paint.fontMetrics.descent) / 2
+        val bounds = Rect().also { paint.getTextBounds(text, 0, text.length, it) }
+        return (bounds.top + bounds.bottom) / 2f
     }
 
     /** A platform's logo and its score in the brand colour, measured for the header row. */
@@ -396,6 +413,23 @@ class WallpaperRenderer(
         return top
     }
 
+    /** "Name · Name · Name" on one line, as many as fit; returns its bottom, or [top] with no cast. */
+    private fun drawCast(canvas: Canvas, top: Float, cast: List<String>): Float {
+        val paint = textPaint(light, s(44f), Color.rgb(185, 185, 185))
+        val separator = "  ·  "
+        // In order: a shorter name further down the list doesn't jump the queue
+        var line = ""
+        for (name in cast) {
+            val candidate = if (line.isEmpty()) name else "$line$separator$name"
+            if (paint.measureText(candidate) > s(CONTENT_WIDTH)) break
+            line = candidate
+        }
+        if (line.isEmpty()) return top
+        // A little apart from the synopsis, so it reads as its own row
+        canvas.drawText(line, s(MARGIN_LEFT), top + s(CAST_GAP) - paint.fontMetrics.ascent, paint)
+        return top + s(CAST_GAP + 60f)
+    }
+
     /** "Available on [icons]" when there are streaming services, then (dimmer) the list it came from. */
     private fun drawFooter(canvas: Canvas, top: Float, providerLogos: List<Bitmap>, info: WallpaperInfo) {
         if (providerLogos.isEmpty()) {
@@ -494,6 +528,8 @@ class WallpaperRenderer(
         private const val LOGO_BOTTOM = 640
         private const val META_CENTER = 725
         private const val PROVIDER_ICON_SIZE = 88
+        /** Between the synopsis and the cast row. */
+        private const val CAST_GAP = 26f
         private const val CERT_HEIGHT = 56f
         private const val CERT_PADDING = 14f
         /** Between the year and its certification box. */

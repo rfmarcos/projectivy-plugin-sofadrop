@@ -176,7 +176,7 @@
     <string name="enables_mdblist">MDBList account: your own lists, and the Rotten Tomatoes (critics and audience), Metacritic, Letterboxd and MyAnimeList ratings. Free accounts allow 1,000 requests a day; Sofadrop uses one per list each time it generates.</string>
     <string name="enables_imdb">IMDb ratings without MDBList come from IMDb\'s official dataset (about 9 MB). It is downloaded when first needed, again every week, and sooner (at most daily) when a new title is missing. Press to download it now.</string>
     <string name="setting_details_title">Wallpaper details</string>
-    <string name="details_description">How each wallpaper looks: language, synopsis length, what the footer shows (the list it came from, the streaming services) and image resolution. A shorter synopsis keeps the text clear of the launcher rows. Header chooses what the line under the title shows: ratings, year, runtime, genres. Language of each part puts the logo or the synopsis in another language.</string>
+    <string name="details_description">How each wallpaper looks: language, synopsis length, cast, what the footer shows (the list it came from, the streaming services) and image resolution. A shorter synopsis keeps the text clear of the launcher rows. Header chooses what the line under the title shows: ratings, year, runtime, genres. Language of each part puts the logo or the synopsis in another language.</string>
 
     <string name="rating_imdb" translatable="false">IMDb</string>
     <string name="rating_metacritic" translatable="false">Metacritic</string>
@@ -185,7 +185,7 @@
     <string name="rating_trakt" translatable="false">Trakt</string>
     <string name="rating_myanimelist" translatable="false">MyAnimeList</string>
     <string name="header_title">Header</string>
-    <string name="header_fit_desc">When the line doesn\'t fit, the ratings beyond the minimum go first, then the genres one by one, then the runtime. The year, age rating and watched badge always stay.</string>
+    <string name="header_fit_desc">When the line doesn\'t fit, the ratings beyond the minimum go first, then whatever is furthest right (genres one by one). Put first what you don\'t want to lose: the first item and the ratings always shown are never dropped.</string>
     <string name="header_show">Line under the logo, in this order</string>
     <string name="header_year">Year</string>
     <string name="header_runtime">Runtime or seasons</string>
@@ -252,6 +252,10 @@
     <string name="synopsis_hidden">Hidden</string>
     <string name="synopsis_summary_short">short synopsis</string>
     <string name="synopsis_summary_hidden">no synopsis</string>
+    <string name="cast_title">Cast</string>
+    <string name="cast_hidden">Hidden</string>
+    <string name="cast_shown">Under the synopsis</string>
+    <string name="cast_shown_desc">The main actors, as many as fit on one line. It moves the footer down.</string>
     <string name="preview_label_pinned">Preview · %1$s · pinned</string>
     <string name="preview_pinned">Shown in the settings preview · change it in Wallpaper details</string>
     <string name="preview_pin_title">Preview title</string>

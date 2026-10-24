@@ -25,6 +25,9 @@ class DetailsFragment : PreviewSettingsFragment() {
         actions += action(ID_HEADER, R.drawable.ic_act_heart, getString(R.string.header_title), HeaderFragment.summary(context)).hasNext(true).build()
         actions += choice(ID_SYNOPSIS, R.drawable.ic_act_count, R.string.synopsis_title, synopsisLabel(context, Settings.overviewLines),
             Settings.OVERVIEW_OPTIONS.map { synopsisLabel(context, it) })
+        actions += action(ID_CAST, R.drawable.ic_act_account, getString(R.string.cast_title), castLabel(context, Settings.showCast))
+            .subActions(options(ID_CAST, listOf(false, true).map { castLabel(context, it) }, castLabel(context, Settings.showCast),
+                listOf(null, getString(R.string.cast_shown_desc)))).build()
         actions += action(ID_FOOTER, R.drawable.ic_act_list, getString(R.string.footer_title), footerLabel(context, footerIndex()))
             // the fallback option is the one that needs explaining
             .subActions(options(ID_FOOTER, (0..4).map { footerLabel(context, it) }, footerLabel(context, footerIndex()),
@@ -79,6 +82,10 @@ class DetailsFragment : PreviewSettingsFragment() {
                 Settings.overviewLines = Settings.OVERVIEW_OPTIONS[index]
                 updateDescription(ID_SYNOPSIS, synopsisLabel(requireContext(), Settings.overviewLines))
             }
+            ID_CAST -> {
+                Settings.showCast = index == 1
+                updateDescription(ID_CAST, castLabel(requireContext(), Settings.showCast))
+            }
             ID_FOOTER -> {
                 Settings.showSource = index == 1 || index >= 3
                 Settings.showProviders = index >= 2
@@ -108,6 +115,9 @@ class DetailsFragment : PreviewSettingsFragment() {
         private const val ID_PART_LANGUAGES = 6L
         private const val ID_HEADER = 8L
         private const val ID_PREVIEW_PIN = 9L
+        private const val ID_CAST = 10L
+
+        fun castLabel(context: Context, shown: Boolean) = context.getString(if (shown) R.string.cast_shown else R.string.cast_hidden)
 
         /** 0 nothing, 1 list source, 2 streaming services, 3 streaming or list source, 4 both. */
         private fun footerIndex() = when {

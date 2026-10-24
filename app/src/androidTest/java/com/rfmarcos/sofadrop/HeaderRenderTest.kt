@@ -18,6 +18,12 @@ class HeaderRenderTest {
         Settings.init(context)
         Settings.language = "es-ES"
         Settings.regionOverride = ""
+        Settings.titleLanguage = Settings.LANGUAGE_AUTO
+        Settings.synopsisLanguage = Settings.LANGUAGE_AUTO
+        // A killed test run may not have saved the restored values
+        Settings.headerOrder = Settings.HEADER_BLOCKS
+        Settings.minRatings = 2
+        Settings.showCast = false
         val factory = WallpaperFactory(context, 1920)
         val dir = File(context.filesDir, "header_test").apply { mkdirs() }
 
@@ -36,6 +42,35 @@ class HeaderRenderTest {
         ).forEach { (name, info) ->
             val bitmap = factory.render(info)
             File(dir, "$name.jpg").outputStream().use { bitmap.compress(Bitmap.CompressFormat.JPEG, 90, it) }
+        }
+
+        // Cast under the synopsis (Squid Game skips its Hangul-only names), full and short synopsis, and Swedish
+        Settings.showCast = true
+        try {
+            val squidGame = WallpaperFactory(context, 1920).catalog.build(TitleRef(MediaType.TV, 93405))!!
+            listOf(
+                "cast_squid_game" to squidGame,
+                "cast_last_of_us" to WallpaperFactory(context, 1920).catalog.build(TitleRef(MediaType.TV, 100088))!!,
+                "cast_movie" to WallpaperFactory(context, 1920).catalog.build(TitleRef(MediaType.MOVIE, 1061474))!!.copy(ratings = ratings),
+            ).forEach { (name, info) ->
+                val bitmap = WallpaperFactory(context, 1920).render(info)
+                File(dir, "$name.jpg").outputStream().use { bitmap.compress(Bitmap.CompressFormat.JPEG, 90, it) }
+            }
+            Settings.overviewLines = 2
+            WallpaperFactory(context, 1920).render(squidGame).let { bitmap ->
+                File(dir, "cast_short.jpg").outputStream().use { bitmap.compress(Bitmap.CompressFormat.JPEG, 90, it) }
+            }
+            Settings.overviewLines = 4
+            Settings.language = "sv-SE"
+            Settings.regionOverride = ""
+            WallpaperFactory(context, 1920).let { swedish ->
+                val bitmap = swedish.render(swedish.catalog.build(TitleRef(MediaType.TV, 66732))!!)
+                File(dir, "swedish.jpg").outputStream().use { bitmap.compress(Bitmap.CompressFormat.JPEG, 90, it) }
+            }
+        } finally {
+            Settings.showCast = false
+            Settings.overviewLines = 4
+            Settings.language = "es-ES"
         }
 
         // Another order and a single fixed rating: the rest only where there's room

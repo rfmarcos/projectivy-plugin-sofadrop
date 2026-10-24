@@ -166,10 +166,10 @@
     <string name="enables_mdblist">Cuenta de MDBList: tus propias listas y las notas de Rotten Tomatoes (crítica y público), Metacritic, Letterboxd y MyAnimeList. Las cuentas gratuitas permiten 1.000 peticiones al día; Sofadrop usa una por lista cada vez que genera.</string>
     <string name="enables_imdb">Sin MDBList, las notas de IMDb salen del dataset oficial de IMDb (unos 9 MB). Se descarga la primera vez que hace falta, de nuevo cada semana y antes (como mucho a diario) si falta un título nuevo. Pulsa para descargarlo ya.</string>
     <string name="setting_details_title">Detalles del fondo</string>
-    <string name="details_description">Cómo se ve cada fondo: idioma, longitud de la sinopsis, qué muestra el pie (la lista de origen, las plataformas) y resolución. Una sinopsis más corta evita que las filas del launcher tapen el texto. En Cabecera eliges qué muestra la línea bajo el título: notas, año, duración, géneros. Idioma de cada parte pone el logo o la sinopsis en otro idioma.</string>
+    <string name="details_description">Cómo se ve cada fondo: idioma, longitud de la sinopsis, reparto, qué muestra el pie (la lista de origen, las plataformas) y resolución. Una sinopsis más corta evita que las filas del launcher tapen el texto. En Cabecera eliges qué muestra la línea bajo el título: notas, año, duración, géneros. Idioma de cada parte pone el logo o la sinopsis en otro idioma.</string>
 
     <string name="header_title">Cabecera</string>
-    <string name="header_fit_desc">Si la línea no cabe, se quitan primero las notas que pasan del mínimo, después los géneros uno a uno y luego la duración. El año, la edad y la marca de visto se quedan siempre.</string>
+    <string name="header_fit_desc">Si la línea no cabe, se quitan primero las notas que pasan del mínimo y después lo que esté más a la derecha (los géneros, de uno en uno). Pon delante lo que no quieras perder: lo primero y las notas siempre visibles no se quitan nunca.</string>
     <string name="header_show">Línea bajo el logo, en este orden</string>
     <string name="header_year">Año</string>
     <string name="header_runtime">Duración o temporadas</string>
@@ -234,6 +234,10 @@
     <string name="synopsis_hidden">Oculta</string>
     <string name="synopsis_summary_short">sinopsis corta</string>
     <string name="synopsis_summary_hidden">sin sinopsis</string>
+    <string name="cast_title">Reparto</string>
+    <string name="cast_hidden">Oculto</string>
+    <string name="cast_shown">Bajo la sinopsis</string>
+    <string name="cast_shown_desc">Los actores principales, los que quepan en una línea. Baja el pie.</string>
     <string name="preview_label_pinned">Vista previa · %1$s · fijada</string>
     <string name="preview_pinned">Se mostrará en la vista previa de los ajustes · cámbialo en Detalles del fondo</string>
     <string name="preview_pin_title">Título de la vista previa</string>

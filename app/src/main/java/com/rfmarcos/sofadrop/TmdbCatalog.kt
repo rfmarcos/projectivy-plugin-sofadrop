@@ -33,6 +33,8 @@ data class WallpaperInfo(
     val sourceProvider: SourceProvider? = null,
     /** Age certification of the streaming country ("16", "TV-MA"), see [Certifications]. */
     val certification: String? = null,
+    /** Main cast, most important first (see [TmdbCatalog.castNames]); empty unless shown. */
+    val cast: List<String> = emptyList(),
 )
 
 /** Why a title of a list is not used. */
@@ -52,6 +54,7 @@ class TmdbCatalog(
     private val showProviders: Boolean,
     /** The logo and synopsis may use other languages than the rest of the wallpaper. */
     private val parts: PartLanguages = PartLanguages(language, language),
+    private val showCast: Boolean = false,
 ) {
     private val languageCode = Languages.code(language)
     private val texts = Languages.texts(language)
@@ -252,8 +255,7 @@ class TmdbCatalog(
             year = item.str(if (type == MediaType.MOVIE) "release_date" else "first_air_date").orEmpty().take(4),
             rating = item.double("vote_average") ?: 0.0,
             extraInfo = extraInfo,
-            genres = item.objects("genres").mapNotNull { it.str("name") }
-                .map { if (type == MediaType.TV) Languages.translateTvGenre(language, it) else it }
+            genres = item.objects("genres").mapNotNull { Languages.genreName(language, it.int("id"), it.str("name")) }
                 .take(2)
                 .joinToString(", "),
             backdropPath = backdrop,
@@ -261,8 +263,15 @@ class TmdbCatalog(
             providerLogoPaths = if (showProviders) providerLogoPaths(ref) else emptyList(),
             imdbId = item.str("imdb_id") ?: item.obj("external_ids")?.str("imdb_id"),
             certification = Certifications.of(type, item, region)?.let { Certifications.label(region, it) },
+            cast = if (showCast) cast(ref) else emptyList(),
         )
     }
+
+    // Its own request, only for the titles drawn: a series' aggregate credits (whole run, by episodes)
+    // can be 300 KB, and its plain credits only list the latest season (no Pedro Pascal in The Last of Us)
+    private fun cast(ref: TitleRef): List<String> = castNames(
+        client.get("${ref.type.path}/${ref.tmdbId}/${if (ref.type == MediaType.TV) "aggregate_credits" else "credits"}?language=$language")
+    )
 
     /** Prefer a backdrop without baked-in text, so it doesn't clash with the logo. */
     private fun textlessBackdrop(ref: TitleRef, default: String?): String? {
@@ -318,6 +327,20 @@ class TmdbCatalog(
         private const val RANDOM_POOL = 100
         private const val CHECK_BATCH = 8
         private val EXCLUDED_KEYWORDS = setOf("adult")
+        /** Names kept for the cast row; the renderer draws the ones that fit on its line. */
+        private const val MAX_CAST = 4
+
+        /**
+         * First names of TMDB credits (already ordered by importance, or by episodes for a series),
+         * skipping the ones only written in another script: TMDB gives a person's name in Latin letters
+         * when it has it ("Lee Jung-jae") and in Hangul or kanji otherwise, which every wallpaper language
+         * (all in Latin script) would show as foreign text.
+         */
+        fun castNames(credits: JsonObject?): List<String> = credits?.objects("cast").orEmpty()
+            .mapNotNull { it.str("name")?.trim()?.takeIf(String::isNotEmpty) }
+            .filter { name -> name.all { !it.isLetter() || Character.UnicodeScript.of(it.code) == Character.UnicodeScript.LATIN } }
+            .distinct()
+            .take(MAX_CAST)
 
         private val PROVIDER_VARIANT_SUFFIX = Regex(
             "\\s+(amazon channel|apple tv channel|roku premium channel|channel" +
