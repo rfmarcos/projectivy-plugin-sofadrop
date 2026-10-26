@@ -26,12 +26,12 @@ Sofadrop is a wallpaper plugin for [Projectivy Launcher](https://github.com/spoc
 
 | | |
 |---|---|
-| ![Moana on Projectivy's home screen](docs/images/projectivy_home_moana.jpg) | ![Minions & Monsters on Projectivy's home screen](docs/images/projectivy_home_minions.jpg) |
-| ![Clayface on Projectivy's home screen](docs/images/projectivy_home_clayface.jpg) | ![Avengers: Doomsday](docs/images/wallpaper_en_avengers.jpg) |
+| ![Minions & Monsters on Projectivy's home screen](docs/images/projectivy_home_minions.jpg) | ![The Super Mario Galaxy Movie on Projectivy's home screen](docs/images/projectivy_home_mario.jpg) |
+| ![Mutiny on Projectivy's home screen](docs/images/projectivy_home_mutiny.jpg) | ![Avengers: Doomsday](docs/images/wallpaper_en_avengers.jpg) |
 | ![A title marked as watched from your Trakt history](docs/images/wallpaper_en_watched.jpg) | ![Streaming services available in your country](docs/images/wallpaper_en_streaming.jpg) |
 | ![Avatar: Aang, in Spanish](docs/images/wallpaper_es_avatar.jpg) | ![The Mandalorian & Grogu, in Spanish](docs/images/wallpaper_es_mandalorian.jpg) |
 
-*Titles watched on Trakt or Simkl get a badge (or can be hidden), the footer shows where to watch each title, and wallpapers come in six languages (Spanish above).*
+*Ratings come with each platform's logo (IMDb and Trakt above, no account needed; Rotten Tomatoes, Metacritic and more with MDBList), next to the age rating. Titles watched on Trakt or Simkl get a badge (or can be hidden), the footer shows where to watch each title, the cast can go under the synopsis, and wallpapers come in 19 languages (Spanish above).*
 
 ## 📥 Installation
 
