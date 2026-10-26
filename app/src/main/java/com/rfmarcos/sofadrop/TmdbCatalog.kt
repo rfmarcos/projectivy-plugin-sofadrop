@@ -27,7 +27,7 @@ data class WallpaperInfo(
 )
 
 /** Why a title of a list is not used. */
-enum class Exclusion { LOCAL_MARKET, TOO_OLD, ADULT, NO_LOGO, NO_SYNOPSIS, WATCHED, NO_IMAGE, DUPLICATE }
+enum class Exclusion { LOCAL_MARKET, TOO_OLD, ADULT, GENRE, NO_LOGO, NO_SYNOPSIS, WATCHED, NO_IMAGE, DUPLICATE }
 
 /** A title of a list and, when it is filtered out, the reason. */
 data class Candidate(val ref: TitleRef, val exclusion: Exclusion? = null)
@@ -73,7 +73,8 @@ class TmdbCatalog(
             }
         }.distinct()
         if (shuffle) refs = refs.shuffled()
-        val check = cutoff != null || filters.globalHits || Settings.excludeAdult || Settings.requireLogo || Settings.synopsisMode == Settings.SYNOPSIS_SKIP
+        val check = cutoff != null || filters.globalHits || Settings.excludeAdult || Settings.requireLogo ||
+            Settings.synopsisMode == Settings.SYNOPSIS_SKIP || Settings.allowedGenres.isNotEmpty()
         return refs.asSequence()
             .map { Candidate(it, if (check) exclusion(it, cutoff, filters.globalHits) else null) }
             .takeIncluded(pool)
@@ -171,6 +172,7 @@ class TmdbCatalog(
             globalHits && isLocalMarket(item) -> Exclusion.LOCAL_MARKET
             isTooOld(ref.type, item, cutoff) -> Exclusion.TOO_OLD
             Settings.excludeAdult && isAdult(ref, item) -> Exclusion.ADULT
+            Settings.allowedGenres.let { allowed -> allowed.isNotEmpty() && item.objects("genres").mapNotNull { it.int("id") }.none { it in allowed } } -> Exclusion.GENRE
             // Last: it costs an images request per title
             Settings.requireLogo && logoPath(ref, item) == null -> Exclusion.NO_LOGO
             Settings.synopsisMode == Settings.SYNOPSIS_SKIP && localOverview(ref, item).isBlank() -> Exclusion.NO_SYNOPSIS

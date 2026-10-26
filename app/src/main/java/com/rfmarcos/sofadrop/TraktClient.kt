@@ -196,8 +196,9 @@ class TraktClient(private val clientId: String, private val clientSecret: String
         private const val API_URL = "https://api.trakt.tv/"
         private const val USER_AGENT = "Sofadrop/1.0"
         private const val PKCE_BASE64 = Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP
-        // Never opened (device flow), but the token refresh must send the URI registered for the Trakt app
-        const val REDIRECT_URI = "https://github.com/rfmarcos/projectivy-plugin-sofadrop"
+        // Never opened (device flow), but the token refresh must send the URI registered for the Trakt app.
+        // Points at this fork's own repo — must match the Redirect URI set on trakt.tv/oauth/applications.
+        const val REDIRECT_URI = "https://github.com/schumi2004/projectivy-plugin-sofadrop"
 
         /** Items are either `{ "movie": {...} }` / `{ "show": {...} }` or the object itself. */
         fun parseTitles(items: JsonArray, type: MediaType): List<TitleRef> =

@@ -28,6 +28,10 @@ object Filters {
         }
     )
 
+    /** "All genres" or "Custom selection", for the default-filters row. */
+    fun genresLabel(context: Context) =
+        context.getString(if (Settings.allowedGenres.isEmpty()) R.string.genres_summary_all else R.string.genres_summary_custom)
+
     fun ageLabel(context: Context, months: Int) = when {
         months == 0 -> context.getString(R.string.filters_age_none)
         months % 12 == 0 -> context.resources.getQuantityString(R.plurals.filters_age_years, months / 12, months / 12)
@@ -50,6 +54,7 @@ object Filters {
     fun summary(context: Context): String = listOfNotNull(
         ageLabel(context, Settings.maxAgeMonths),
         context.getString(R.string.setting_global_hits_title).takeIf { Settings.globalHitsOnly },
+        genresLabel(context).takeIf { Settings.allowedGenres.isNotEmpty() },
         context.getString(R.string.watched_summary_hidden).takeIf { Settings.watchSource != null && Settings.watchedMode == Settings.WATCHED_HIDE },
         customised().size.takeIf { it > 0 }?.let { context.resources.getQuantityString(R.plurals.lists_customised, it, it) },
     ).joinToString(" · ")
