@@ -48,7 +48,9 @@ class CertificationsTest {
             "FR" to "TP" to 0, "IT" to "VM14" to 14, "IT" to "T" to 0, "DE" to "16" to 16,
             "SE" to "Btl" to 0, "SE" to "11" to 11, "SE" to "Från 15 år" to 15, "NO" to "A" to 0, "NO" to "9" to 9,
             "DK" to "A" to 0, "DK" to "11" to 11, "FI" to "S" to 0, "FI" to "K-12" to 12, "FI" to "K16" to 16, "FI" to "KK" to 18,
-            "NL" to "AL" to 0, "NL" to "14" to 14,
+            "NL" to "AL" to 0, "NL" to "14" to 14, "PL" to "AL" to 0, "PL" to "7" to 7, "CZ" to "U" to 0, "CZ" to "15+" to 15,
+            "HU" to "KN" to 0, "HU" to "X" to 18, "RO" to "AP" to 0, "RO" to "15" to 15, "GR" to "K" to 0, "GR" to "K15" to 15,
+            "TR" to "Genel İzleyici Kitlesi" to 0, "TR" to "Genel İzleyici" to 0, "TR" to "13A" to 13, "RU" to "16+" to 16,
         )
         cases.forEach { (mark, age) -> assertEquals("${mark.first} ${mark.second}", age, Certifications.age(mark.first, mark.second)) }
         assertNull(Certifications.age("US", "NR"))
@@ -58,6 +60,8 @@ class CertificationsTest {
         assertEquals("TP", Certifications.label("ES", "ERI"))
         assertEquals("11", Certifications.label("SE", "Från 11 år"))
         assertEquals("Btl", Certifications.label("SE", "Btl"))
+        assertEquals("Genel", Certifications.label("TR", "Genel İzleyici Kitlesi"))
+        assertNull(Certifications.age("HU", "Unrated"))
         // Denmark's "F" is exempt, not an age
         val danish = obj("""{"release_dates":{"results":[{"iso_3166_1":"DK","release_dates":[{"type":3,"release_date":"2024-01-01T00:00:00.000Z","certification":"F"}]}]}}""")
         assertNull(Certifications.of(MediaType.MOVIE, danish, "DK"))

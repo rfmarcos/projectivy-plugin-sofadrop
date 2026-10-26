@@ -4,6 +4,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -121,9 +122,29 @@ class ParsingTest {
         assertEquals("Action och äventyr", Languages.genreName("sv-SE", 10759, "Action & Adventure"))
         assertEquals("Historie", Languages.genreName("da-DK", 36, "Historie "))
         assertEquals(null, Languages.genreName("en-US", 99, " "))
+        // Russian movie genres come in lower case
+        assertEquals("Ужасы", Languages.genreName("ru-RU", 27, "ужасы"))
         assertEquals("no-NO", Languages.defaultFor(java.util.Locale.forLanguageTag("nb-NO")))
+        assertEquals("uk-UA", Languages.defaultFor(java.util.Locale.forLanguageTag("uk-UA")))
+        // Every language has its own texts and list names, not the English fallback
+        Languages.OPTIONS.keys.filterNot { it.startsWith("en") }.forEach { language ->
+            assertNotEquals(language, Languages.texts("en-US"), Languages.texts(language))
+            assertNotEquals(language, "Watching", Languages.sourceLabel(language, source("simkl:watching")))
+        }
         val mdb = ListSource("mdblist:a/b", SourceProvider.MDBLIST, label = "A very long MDBList list name for tests")
         assertEquals("A very long MDBList list na…", Languages.sourceLabel("en-US", mdb))
+    }
+
+    @Test
+    fun seasonCountsWithEachLanguagesPlurals() {
+        fun count(language: String, vararg n: Int) = n.map { Languages.texts(language).seasonCount(it) }
+        assertEquals(listOf("1 Season", "3 Seasons"), count("en-US", 1, 3))
+        assertEquals(listOf("1 Sezon", "3 Sezony", "5 Sezonów", "12 Sezonów", "22 Sezony"), count("pl-PL", 1, 3, 5, 12, 22))
+        assertEquals(listOf("1 Řada", "4 Řady", "5 Řad", "22 Řad"), count("cs-CZ", 1, 4, 5, 22))
+        assertEquals(listOf("1 Сезон", "2 Сезона", "11 Сезонов", "21 Сезон", "25 Сезонов"), count("ru-RU", 1, 2, 11, 21, 25))
+        assertEquals(listOf("1 Сезон", "3 Сезони", "5 Сезонів"), count("uk-UA", 1, 3, 5))
+        assertEquals(listOf("1 Sezon", "19 Sezoane", "20 de Sezoane", "36 de Sezoane"), count("ro-RO", 1, 19, 20, 36))
+        assertEquals(listOf("1 Évad", "5 Évad"), count("hu-HU", 1, 5))
     }
 
     @Test

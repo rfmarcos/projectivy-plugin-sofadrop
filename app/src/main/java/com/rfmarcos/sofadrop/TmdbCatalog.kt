@@ -243,7 +243,7 @@ class TmdbCatalog(
             if (runtime > 0) "${runtime / 60}h ${runtime % 60}min" else ""
         } else {
             val seasons = item.int("number_of_seasons") ?: 0
-            if (seasons > 0) "$seasons ${if (seasons == 1) texts.season else texts.seasons}" else ""
+            if (seasons > 0) texts.seasonCount(seasons) else ""
         }
 
         // Untranslated synopsis: English only when the user prefers it to none

@@ -10,7 +10,37 @@ data class WallpaperTexts(
     val watched: String,
     /** Format with completed and aired episodes, e.g. "Watching · 3/8". */
     val watching: String,
-)
+    val plural: Plural = Plural.ONE_OTHER,
+    /** Slavic form for 2–4 seasons ("2 sezony"). */
+    val seasonsFew: String? = null,
+) {
+    /** "1 Season", "3 Seasons", with the language's plural forms. */
+    fun seasonCount(n: Int): String {
+        val few = n % 10 in 2..4 && n % 100 !in 12..14
+        val word = when (plural) {
+            Plural.ONE_OTHER -> if (n == 1) season else seasons
+            Plural.POLISH -> if (n == 1) season else if (few) seasonsFew ?: seasons else seasons
+            Plural.CZECH -> if (n == 1) season else if (n in 2..4) seasonsFew ?: seasons else seasons
+            Plural.EAST_SLAVIC -> if (n % 10 == 1 && n % 100 != 11) season else if (few) seasonsFew ?: seasons else seasons
+            Plural.ROMANIAN -> if (n == 1) season else if (n % 100 in 1..19) seasons else "de $seasons"
+        }
+        return "$n $word"
+    }
+}
+
+/** How a language picks the form of a noun after a number. */
+enum class Plural {
+    /** 1 season, 2 seasons. */
+    ONE_OTHER,
+    /** 1 sezon, 2–4 and 22–24… sezony, the rest sezonów. */
+    POLISH,
+    /** 1 řada, 2–4 řady, the rest řad. */
+    CZECH,
+    /** Russian and Ukrainian: 1 and 21… сезон, 2–4 and 22–24… сезона, the rest сезонов. */
+    EAST_SLAVIC,
+    /** 1 sezon, 2–19 sezoane, 20 de sezoane (and 101–119 without "de"). */
+    ROMANIAN,
+}
 
 /** Language of the title (logo or text) and of the synopsis: a TMDB locale, or null for the title's original language. */
 data class PartLanguages(val title: String?, val synopsis: String?)
@@ -33,10 +63,21 @@ object Languages {
         "no-NO" to "Norsk",
         "da-DK" to "Dansk",
         "fi-FI" to "Suomi",
+        "pl-PL" to "Polski",
+        "cs-CZ" to "Čeština",
+        "hu-HU" to "Magyar",
+        "ro-RO" to "Română",
+        "tr-TR" to "Türkçe",
+        "el-GR" to "Ελληνικά",
+        "ru-RU" to "Русский",
+        "uk-UA" to "Українська",
     )
 
     /** Countries offered for streaming services. */
-    val REGIONS = listOf("US", "GB", "CA", "ES", "MX", "AR", "CO", "CL", "BR", "PT", "FR", "IT", "DE", "NL", "SE", "NO", "DK", "FI")
+    val REGIONS = listOf(
+        "US", "GB", "CA", "ES", "MX", "AR", "CO", "CL", "BR", "PT", "FR", "IT", "DE", "NL", "SE", "NO", "DK", "FI",
+        "PL", "CZ", "HU", "RO", "TR", "GR", "RU", "UA",
+    )
 
     /** Original languages that never need the "global hit" vote threshold. */
     val MAINSTREAM = setOf("en", "es", "fr", "it", "de", "pt", "ca", "nl", "sv", "da", "no", "pl")
@@ -53,6 +94,15 @@ object Languages {
         "no" to WallpaperTexts("Tilgjengelig på", "Sesong", "Sesonger", "Sett", "Påbegynt · %d/%d"),
         "da" to WallpaperTexts("Tilgængelig på", "Sæson", "Sæsoner", "Set", "I gang · %d/%d"),
         "fi" to WallpaperTexts("Saatavilla", "Kausi", "Kautta", "Katsottu", "Kesken · %d/%d"),
+        "pl" to WallpaperTexts("Dostępne w", "Sezon", "Sezonów", "Obejrzane", "W trakcie · %d/%d", Plural.POLISH, "Sezony"),
+        "cs" to WallpaperTexts("K dispozici na", "Řada", "Řad", "Zhlédnuto", "Rozkoukáno · %d/%d", Plural.CZECH, "Řady"),
+        // Hungarian and Turkish keep the singular after a number
+        "hu" to WallpaperTexts("Elérhető itt", "Évad", "Évad", "Megnézve", "Folyamatban · %d/%d"),
+        "ro" to WallpaperTexts("Disponibil pe", "Sezon", "Sezoane", "Văzut", "În curs · %d/%d", Plural.ROMANIAN),
+        "tr" to WallpaperTexts("Şurada izleyin", "Sezon", "Sezon", "İzlendi", "İzleniyor · %d/%d"),
+        "el" to WallpaperTexts("Διαθέσιμο σε", "Κύκλος", "Κύκλοι", "Το είδατε", "Σε εξέλιξη · %d/%d"),
+        "ru" to WallpaperTexts("Доступно на", "Сезон", "Сезонов", "Просмотрено", "Смотрю · %d/%d", Plural.EAST_SLAVIC, "Сезона"),
+        "uk" to WallpaperTexts("Доступно на", "Сезон", "Сезонів", "Переглянуто", "Дивлюся · %d/%d", Plural.EAST_SLAVIC, "Сезони"),
     )
 
     /** Short list names for the wallpaper footer ("Trending · TMDB"), by kind of list. */
@@ -79,6 +129,22 @@ object Languages {
             "Biograftoppen", "Valgt til dig", "Din liste", "Dine favoritter", "Trendende anime", "Vil se", "I gang"),
         "fi" to listOf("Nousussa", "Suositut", "Parhaiksi arvioidut", "Elokuvateattereissa", "Tulossa", "Nyt esityksessä", "Odotetuimmat",
             "Lipputulot", "Valittu sinulle", "Katselulistasi", "Suosikkisi", "Nouseva anime", "Aion katsoa", "Kesken"),
+        "pl" to listOf("Na czasie", "Popularne", "Najwyżej oceniane", "W kinach", "Wkrótce", "Na antenie", "Najbardziej oczekiwane",
+            "Box office", "Wybrane dla Ciebie", "Twoja lista", "Twoje ulubione", "Anime na czasie", "Do obejrzenia", "W trakcie"),
+        "cs" to listOf("Trendy", "Populární", "Nejlépe hodnocené", "V kinech", "Připravujeme", "Právě se vysílá", "Nejočekávanější",
+            "Tržby v kinech", "Vybráno pro vás", "Váš seznam", "Vaše oblíbené", "Anime v trendu", "Chci vidět", "Rozkoukané"),
+        "hu" to listOf("Felkapott", "Népszerű", "Legjobbra értékelt", "A mozikban", "Hamarosan", "Most műsoron", "Legvártabb",
+            "Mozibevételek", "Neked válogatva", "Saját listád", "Kedvenceid", "Felkapott anime", "Megnézendő", "Folyamatban"),
+        "ro" to listOf("În tendințe", "Populare", "Cele mai apreciate", "În cinematografe", "În curând", "În difuzare", "Cele mai așteptate",
+            "Box office", "Alese pentru tine", "Lista ta", "Favoritele tale", "Anime în tendințe", "De văzut", "În curs"),
+        "tr" to listOf("Trend", "Popüler", "En beğenilenler", "Sinemalarda", "Yakında", "Yayında", "En çok beklenenler",
+            "Gişe", "Senin için seçildi", "İzleme listen", "Favorilerin", "Trend anime", "İzlenecekler", "İzleniyor"),
+        "el" to listOf("Τάσεις", "Δημοφιλή", "Κορυφαία", "Στους κινηματογράφους", "Προσεχώς", "Προβάλλονται τώρα", "Πολυαναμενόμενα",
+            "Box office", "Επιλογές για εσάς", "Η λίστα σας", "Τα αγαπημένα σας", "Anime σε τάση", "Θα το δω", "Σε εξέλιξη"),
+        "ru" to listOf("В тренде", "Популярное", "Лучшее по оценкам", "В кино", "Скоро", "В эфире", "Самые ожидаемые",
+            "Кассовые сборы", "Подобрано для вас", "Ваш список", "Избранное", "Аниме в тренде", "Буду смотреть", "Смотрю"),
+        "uk" to listOf("У тренді", "Популярне", "Найкраще за оцінками", "У кіно", "Незабаром", "В ефірі", "Найочікуваніші",
+            "Касові збори", "Підібрано для вас", "Ваш список", "Обране", "Аніме в тренді", "Буду дивитися", "Дивлюся"),
     )
 
     /** Same order as each [SOURCE_LABELS] list; matched against the list key without its provider. */
@@ -132,6 +198,21 @@ object Languages {
             10759 to "Actie en avontuur", 10765 to "Sciencefiction en fantasy", 10768 to "Oorlog en politiek",
             10762 to "Kinderen", 10763 to "Nieuws", 10767 to "Talkshow", 10770 to "Tv-film",
         ),
+        "pl" to mapOf(
+            10762 to "Dla dzieci", 10763 to "Wiadomości", 10765 to "Sci-Fi i fantasy", 10766 to "Telenowela",
+            10767 to "Talk-show", 10768 to "Wojna i polityka",
+        ),
+        "cs" to mapOf(
+            10759 to "Akční a dobrodružný", 10762 to "Pro děti", 10763 to "Zprávy", 10765 to "Sci-fi a fantasy",
+            10766 to "Telenovela", 10767 to "Talk show", 10768 to "Válečný a politický",
+        ),
+        "hu" to mapOf(
+            10759 to "Akció és kaland", 10762 to "Gyerek", 10763 to "Hírek", 10764 to "Valóságshow", 10765 to "Sci-fi és fantasy",
+            10766 to "Szappanopera", 10767 to "Talkshow", 10768 to "Háborús és politikai",
+        ),
+        "ro" to mapOf(10766 to "Telenovelă", 10767 to "Talk-show"),
+        "tr" to mapOf(10767 to "Talk şov"),
+        "el" to mapOf(10766 to "Σαπουνόπερα", 10767 to "Talk show"),
     )
 
     fun code(language: String) = language.substringBefore('-').lowercase()
@@ -140,9 +221,12 @@ object Languages {
 
     fun texts(language: String) = TEXTS[code(language)] ?: TEXTS.getValue("en")
 
-    /** Genre name in [language]: TMDB's [name] unless it is missing or untranslated; null when there is none. */
+    /**
+     * Genre name in [language]: TMDB's [name] unless it is missing or untranslated; null when there is
+     * none. Capitalised, since TMDB writes some in lower case (Russian movie genres).
+     */
     fun genreName(language: String, id: Int?, name: String?): String? =
-        (GENRE_NAMES[code(language)]?.get(id) ?: name)?.trim()?.takeIf { it.isNotEmpty() }
+        (GENRE_NAMES[code(language)]?.get(id) ?: name)?.trim()?.takeIf { it.isNotEmpty() }?.replaceFirstChar { it.titlecase() }
 
     fun defaultFor(locale: Locale): String {
         val tag = "${locale.language}-${locale.country}"
