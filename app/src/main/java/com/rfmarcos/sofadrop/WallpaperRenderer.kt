@@ -97,8 +97,10 @@ class WallpaperRenderer(
         if (style == Settings.STYLE_FULL) {
             // With no header line the synopsis moves up into its place
             val overviewTop = s(if (drawMetadata(layerCanvas, info)) META_CENTER + 36 + 52 else LOGO_BOTTOM + 60)
-            val overviewBottom = drawCast(layerCanvas, drawOverview(layerCanvas, info.overview, overviewTop), info.cast)
-            drawFooter(layerCanvas, overviewBottom + s(40), providerLogos, info)
+            val overviewBottom = drawOverview(layerCanvas, info.overview, overviewTop)
+            // Without a synopsis, the cast or the footer starts where it would, not a synopsis gap lower
+            val castBottom = drawCast(layerCanvas, overviewBottom, info.cast, if (overviewBottom > overviewTop) s(CAST_GAP) else 0f)
+            drawFooter(layerCanvas, if (castBottom > overviewTop) castBottom + s(40) else overviewTop, providerLogos, info)
         }
 
         val offset = IntArray(2)
@@ -424,8 +426,8 @@ class WallpaperRenderer(
         return top
     }
 
-    /** "Name · Name · Name" on one line, as many as fit; returns its bottom, or [top] with no cast. */
-    private fun drawCast(canvas: Canvas, top: Float, cast: List<String>): Float {
+    /** "Name · Name · Name" on one line, as many as fit, [gap] below [top]; returns its bottom, or [top] with no cast. */
+    private fun drawCast(canvas: Canvas, top: Float, cast: List<String>, gap: Float): Float {
         val paint = textPaint(light, s(44f), Color.rgb(185, 185, 185))
         val separator = "  ·  "
         // In order: a shorter name further down the list doesn't jump the queue
@@ -436,9 +438,8 @@ class WallpaperRenderer(
             line = candidate
         }
         if (line.isEmpty()) return top
-        // A little apart from the synopsis, so it reads as its own row
-        canvas.drawText(line, s(MARGIN_LEFT), top + s(CAST_GAP) - paint.fontMetrics.ascent, paint)
-        return top + s(CAST_GAP + 60f)
+        canvas.drawText(line, s(MARGIN_LEFT), top + gap - paint.fontMetrics.ascent, paint)
+        return top + gap + s(60f)
     }
 
     /** "Available on [icons]" when there are streaming services, then (dimmer) the list it came from. */
