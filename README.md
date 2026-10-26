@@ -16,7 +16,7 @@ Sofadrop is a wallpaper plugin for [Projectivy Launcher](https://github.com/spoc
 * ⭐ **The ratings you trust**: IMDb, Rotten Tomatoes (critics and audience), Metacritic, Letterboxd, TMDB, Trakt or MyAnimeList, with their logos, in the order you choose. IMDb, TMDB and Trakt work without any account; the others come from MDBList.
 * 📺 **Where to watch it**: the streaming services that have each title in your country, or the list it came from.
 * ✅ **Watched titles**: with your Trakt or Simkl history, mark what you've seen ("✓ Watched", "▶ Watching · 3/8") or hide it.
-* 🎯 **Filters**: maximum age, global hits only, no adult content, no repeats, only (or all but) some genres, and only titles with a logo or a synopsis in your language. Every list can have its own.
+* 🎯 **Filters**: maximum age, global hits only, no adult content, no repeats, skip some genres (or use only some), and only titles with a logo or a synopsis in your language. Every list can have its own.
 * 🔎 **Explore your lists**: see each list's titles in order and which ones are used or skipped, and why.
 * 🔀 **Mixed or in order**: all lists shuffled together, or one after another.
 * 🌍 **Languages**: English, Spanish, Portuguese, French, Italian, German, Dutch, Swedish, Norwegian, Danish, Finnish, Polish, Czech, Hungarian, Romanian, Turkish, Greek, Russian and Ukrainian wallpapers. When TMDB has no logo or synopsis in yours, you choose what to show instead.

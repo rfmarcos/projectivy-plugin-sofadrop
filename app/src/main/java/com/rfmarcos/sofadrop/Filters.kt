@@ -28,11 +28,11 @@ object Filters {
         }
     )
 
-    /** "All genres", "Only 3 genres" or "All but 2 genres". */
+    /** "All genres", "All but 2 genres" or "Only 3 genres". */
     fun genresLabel(context: Context, filter: GenreFilter): String = when {
         filter.isOff -> context.getString(R.string.genres_all)
         else -> context.resources.getQuantityString(
-            if (filter.exclude) R.plurals.genres_except else R.plurals.genres_only, filter.ids.size, filter.ids.size)
+            if (filter.only) R.plurals.genres_only else R.plurals.genres_except, filter.ids.size, filter.ids.size)
     }
 
     fun ageLabel(context: Context, months: Int) = when {

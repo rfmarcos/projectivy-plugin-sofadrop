@@ -19,14 +19,14 @@ import kotlinx.serialization.json.longOrNull
 import java.util.Locale
 
 /**
- * Genre filter: only titles with at least one of [ids] or, with [exclude], none of them. No ids = no
- * filter. Movies and TV shows use different TMDB ids for the same genre (see [Genres]).
+ * Genre filter: titles with none of [ids] or, with [only], only titles with at least one of them. No
+ * ids = no filter. Movies and TV shows use different TMDB ids for the same genre (see [Genres]).
  */
 @Serializable
-data class GenreFilter(val ids: Set<Int> = emptySet(), val exclude: Boolean = false) {
+data class GenreFilter(val ids: Set<Int> = emptySet(), val only: Boolean = false) {
     val isOff: Boolean get() = ids.isEmpty()
 
-    fun allows(genreIds: Collection<Int>): Boolean = isOff || genreIds.any { it in ids } != exclude
+    fun allows(genreIds: Collection<Int>): Boolean = isOff || genreIds.any { it in ids } == only
 }
 
 /** Filters one list overrides; null = use the default. */
@@ -625,7 +625,7 @@ object Settings {
             "ratingage:$maxRatingAge".takeIf { maxRatingAge > 0 },
             "order:${headerOrder.joinToString(",")}".takeIf { headerOrder != HEADER_BLOCKS },
             "minratings:$minRatings".takeIf { minRatings != 2 }, "cast".takeIf { showCast },
-            "genres:${genreFilter.exclude}:${genreFilter.ids.sorted()}".takeIf { !genreFilter.isOff })).joinToString("|")
+            "genres:${genreFilter.only}:${genreFilter.ids.sorted()}".takeIf { !genreFilter.isOff })).joinToString("|")
 
     /** True when the current wallpapers were generated with different settings. */
     val hasPendingChanges: Boolean

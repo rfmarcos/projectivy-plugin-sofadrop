@@ -74,7 +74,7 @@ class WallpaperFactory(context: Context, private val width: Int) {
 
     /** Wallpaper data of a title, with its source list and its watched badge when the user wants it marked. */
     fun build(ref: TitleRef, plan: ListPlan? = null, source: ListSource? = plan?.source): WallpaperInfo? {
-        val genres = source?.let { Settings.filtersFor(it).genres }?.takeUnless { it.exclude }?.ids.orEmpty()
+        val genres = source?.let { Settings.filtersFor(it).genres }?.takeIf { it.only }?.ids.orEmpty()
         val info = catalog.build(ref, genres)?.let { info ->
             // "Streaming, or list source": the source line only when no service has the title
             if (source == null || !Settings.showSource || (Settings.sourceFallback && Settings.showProviders && info.providerLogoPaths.isNotEmpty())) info

@@ -13,14 +13,15 @@ class GenreFilterTest {
         val comedy = 35
         val horror = 27
         assertTrue(GenreFilter().allows(listOf(horror)))
-        assertTrue(GenreFilter(exclude = true).allows(listOf(horror)))
+        assertTrue(GenreFilter(only = true).allows(listOf(horror)))
 
-        val only = GenreFilter(setOf(comedy))
+        val only = GenreFilter(setOf(comedy), only = true)
         assertTrue(only.allows(listOf(horror, comedy)))
         assertFalse(only.allows(listOf(horror)))
         assertFalse(only.allows(emptyList()))
 
-        val allBut = GenreFilter(setOf(horror), exclude = true)
+        // The default: checked genres are skipped
+        val allBut = GenreFilter(setOf(horror))
         assertFalse(allBut.allows(listOf(horror, comedy)))
         assertTrue(allBut.allows(listOf(comedy)))
         assertTrue(allBut.allows(emptyList()))

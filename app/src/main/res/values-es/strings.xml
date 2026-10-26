@@ -118,8 +118,8 @@
     <string name="exclusion_duplicate">Ya lo usa otra lista</string>
     <string name="exclusion_genre">Descartado: filtro de géneros</string>
     <string name="genres_title">Géneros</string>
-    <string name="genres_description">Marca géneros y elige si usar solo títulos con alguno de ellos o todos menos esos. Sin nada marcado: todos los géneros.</string>
-    <string name="genres_explain">Solo títulos de algunos géneros, o de todos menos algunos</string>
+    <string name="genres_description">Marca los géneros que quieres descartar, o elige usar solo los marcados. Sin nada marcado: todos los géneros.</string>
+    <string name="genres_explain">Descarta algunos géneros, o usa solo algunos</string>
     <string name="genres_all">Todos los géneros</string>
     <plurals name="genres_only">
         <item quantity="one">Solo %d género</item>

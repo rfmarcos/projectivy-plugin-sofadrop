@@ -128,8 +128,8 @@
     <string name="exclusion_duplicate">Already used by another list</string>
     <string name="exclusion_genre">Skipped: genre filter</string>
     <string name="genres_title">Genres</string>
-    <string name="genres_description">Check genres and choose whether to use only titles with one of them, or every title except those. Nothing checked: every genre.</string>
-    <string name="genres_explain">Only titles of some genres, or every genre but some</string>
+    <string name="genres_description">Check the genres to skip, or choose to use only the checked ones. Nothing checked: every genre.</string>
+    <string name="genres_explain">Skip some genres, or use only some</string>
     <string name="genres_all">All genres</string>
     <plurals name="genres_only">
         <item quantity="one">Only %d genre</item>

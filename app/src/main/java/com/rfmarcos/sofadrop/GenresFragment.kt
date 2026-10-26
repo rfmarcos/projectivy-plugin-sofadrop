@@ -6,9 +6,9 @@ import androidx.leanback.widget.GuidanceStylist.Guidance
 import androidx.leanback.widget.GuidedAction
 
 /**
- * Genre filter: the default one (no list key) or one list's own. Checked genres are the only ones used
- * or, with "All but the checked genres", the ones skipped; nothing checked means no filter. A list
- * starts on "Default (…)", which shows the default's genres without letting them be changed.
+ * Genre filter: the default one (no list key) or one list's own. Checked genres are skipped or, with
+ * "Only the checked genres", the only ones used; nothing checked means no filter. A list starts on
+ * "Default (…)", which shows the default's genres without letting them be changed.
  */
 class GenresFragment : BaseSettingsFragment() {
 
@@ -49,18 +49,18 @@ class GenresFragment : BaseSettingsFragment() {
         }
     }
 
-    /** "Default (…)" (lists only), "Only the checked genres", "All but the checked genres". */
+    /** "Default (…)" (lists only), "All but the checked genres", "Only the checked genres". */
     private fun modeLabels(): List<String> = listOfNotNull(
         source?.let { getString(R.string.list_filter_default, Filters.genresLabel(requireContext(), default)) },
-        getString(R.string.genres_mode_only),
         getString(R.string.genres_mode_except),
+        getString(R.string.genres_mode_only),
     )
 
     private fun rows(): List<GuidedAction> {
         val labels = modeLabels()
         val custom = own
         val shown = custom ?: default
-        val mode = labels[labels.size - 2 + (if (shown.exclude) 1 else 0)].takeIf { custom != null } ?: labels[0]
+        val mode = labels[labels.size - 2 + (if (shown.only) 1 else 0)].takeIf { custom != null } ?: labels[0]
         return listOf(choice(ID_MODE, R.drawable.ic_act_filter, R.string.genres_mode_title, mode, labels)) +
             options.mapIndexed { index, genre ->
                 checkbox(ID_GENRE_BASE + index, genre.name, null, genre.ids.any { it in shown.ids }).enabled(custom != null).build()
@@ -78,7 +78,7 @@ class GenresFragment : BaseSettingsFragment() {
         val labels = modeLabels()
         val index = (action.id % SUB_ID_BASE).toInt()
         // A list's own filter starts from the default's genres
-        own = if (labels.size == 3 && index == 0) null else (own ?: default).copy(exclude = index == labels.size - 1)
+        own = if (labels.size == 3 && index == 0) null else (own ?: default).copy(only = index == labels.size - 1)
         refreshActions(rows()) { newInstance(listKey) }
         return true
     }
