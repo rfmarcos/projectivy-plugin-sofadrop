@@ -18,14 +18,30 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
 import java.util.Locale
 
+/**
+ * Genre filter: only titles with at least one of [ids] or, with [exclude], none of them. No ids = no
+ * filter. Movies and TV shows use different TMDB ids for the same genre (see [Genres]).
+ */
+@Serializable
+data class GenreFilter(val ids: Set<Int> = emptySet(), val exclude: Boolean = false) {
+    val isOff: Boolean get() = ids.isEmpty()
+
+    fun allows(genreIds: Collection<Int>): Boolean = isOff || genreIds.any { it in ids } != exclude
+}
+
 /** Filters one list overrides; null = use the default. */
 @Serializable
-data class ListFilters(val maxAge: Int? = null, val globalHits: Boolean? = null, val watched: String? = null) {
-    val isDefault: Boolean get() = maxAge == null && globalHits == null && watched == null
+data class ListFilters(
+    val maxAge: Int? = null,
+    val globalHits: Boolean? = null,
+    val watched: String? = null,
+    val genres: GenreFilter? = null,
+) {
+    val isDefault: Boolean get() = maxAge == null && globalHits == null && watched == null && genres == null
 }
 
 /** The filters a list ends up using. */
-data class FilterValues(val maxAgeMonths: Int, val globalHits: Boolean, val watched: String)
+data class FilterValues(val maxAgeMonths: Int, val globalHits: Boolean, val watched: String, val genres: GenreFilter = GenreFilter())
 
 /** An MDBList list: one of the account's (by [id]) or a public one added by its "user/slug" [path]. */
 @Serializable
@@ -46,6 +62,7 @@ object Settings {
     private const val KEY_MAX_AGE = "max_age_months"
     private const val KEY_EXCLUDE_ADULT = "exclude_adult"
     private const val KEY_MAX_RATING_AGE = "max_rating_age"
+    private const val KEY_GENRE_FILTER = "genre_filter"
     private const val KEY_PROVIDERS = "show_providers"
     private const val KEY_TRAKT_CLIENT_ID = "trakt_client_id"
     private const val KEY_TRAKT_CLIENT_SECRET = "trakt_client_secret"
@@ -209,6 +226,15 @@ object Settings {
         get() = preferences.getInt(KEY_MAX_RATING_AGE, 0)
         set(value) = preferences.edit { putInt(KEY_MAX_RATING_AGE, value) }
 
+    /** Default genre filter; like the age, it only applies by default to automatic lists (see [filtersFor]). */
+    var genreFilter: GenreFilter
+        get() = try {
+            json.decodeFromString<GenreFilter>(preferences.getString(KEY_GENRE_FILTER, null) ?: "{}")
+        } catch (_: Exception) {
+            GenreFilter()
+        }
+        set(value) = preferences.edit { putString(KEY_GENRE_FILTER, json.encodeToString(value)) }
+
     /**
      * Hand Projectivy the wallpapers shuffled (again on every request) instead of list after list, so
      * a list of movies isn't followed by a run of shows whichever way Projectivy walks the list.
@@ -280,8 +306,8 @@ object Settings {
         set(value) = preferences.edit { putString(KEY_LIST_FILTERS, json.encodeToString(value.filterValues { !it.isDefault })) }
 
     /**
-     * Filters a list really uses: its overrides, else the defaults. Age and global hits only apply by
-     * default to automatic lists (trending, popular…), so watchlists and favourites aren't emptied.
+     * Filters a list really uses: its overrides, else the defaults. Age, global hits and genres only apply
+     * by default to automatic lists (trending, popular…), so watchlists and favourites aren't emptied.
      */
     fun filtersFor(source: ListSource): FilterValues {
         val custom = listFilters[source.key]
@@ -289,11 +315,13 @@ object Settings {
             maxAgeMonths = custom?.maxAge ?: defaultMaxAge(source),
             globalHits = (custom?.globalHits ?: defaultGlobalHits(source)) && source.localMarketFilter,
             watched = custom?.watched ?: watchedMode,
+            genres = custom?.genres ?: defaultGenres(source),
         )
     }
 
     fun defaultMaxAge(source: ListSource) = if (source.automatic) maxAgeMonths else 0
     fun defaultGlobalHits(source: ListSource) = source.automatic && globalHitsOnly
+    fun defaultGenres(source: ListSource) = if (source.automatic) genreFilter else GenreFilter()
 
     var showProviders: Boolean
         get() = preferences.getBoolean(KEY_PROVIDERS, true)
@@ -586,7 +614,8 @@ object Settings {
         get() = listOf(
             token.hashCode(), language, region, lists.sorted().joinToString(","), titlesPerList,
             outputWidth, globalHitsOnly, showProviders, selectionMode, watchSource?.let { "$it:$watchedMode" }.orEmpty(),
-            maxAgeMonths, excludeAdult, listFilters.toSortedMap(),
+            // Without the genre field lists don't use, so updating doesn't show a pending change
+            maxAgeMonths, excludeAdult, listFilters.toSortedMap().toString().replace(", genres=null", ""),
         // Only when changed, so existing installs don't see a pending change after updating
         ).plus(listOfNotNull(overviewLines.takeIf { it != 4 }, "nosource".takeIf { !showSource }, "fallback".takeIf { showSource && showProviders && sourceFallback },
             "dups".takeIf { !skipDuplicates }, "logo:$logoMode".takeIf { logoMode != LOGO_TEXT }, "synopsis:$synopsisMode".takeIf { synopsisMode != SYNOPSIS_HIDE },
@@ -595,7 +624,8 @@ object Settings {
             "header:${headerHidden.sorted()}".takeIf { headerHidden.isNotEmpty() },
             "ratingage:$maxRatingAge".takeIf { maxRatingAge > 0 },
             "order:${headerOrder.joinToString(",")}".takeIf { headerOrder != HEADER_BLOCKS },
-            "minratings:$minRatings".takeIf { minRatings != 2 }, "cast".takeIf { showCast })).joinToString("|")
+            "minratings:$minRatings".takeIf { minRatings != 2 }, "cast".takeIf { showCast },
+            "genres:${genreFilter.exclude}:${genreFilter.ids.sorted()}".takeIf { !genreFilter.isOff })).joinToString("|")
 
     /** True when the current wallpapers were generated with different settings. */
     val hasPendingChanges: Boolean

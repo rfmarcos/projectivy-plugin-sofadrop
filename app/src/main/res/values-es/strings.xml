@@ -116,6 +116,23 @@
     <string name="exclusion_watched">Oculto: ya lo has visto</string>
     <string name="exclusion_no_image">Descartado: sin imagen</string>
     <string name="exclusion_duplicate">Ya lo usa otra lista</string>
+    <string name="exclusion_genre">Descartado: filtro de géneros</string>
+    <string name="genres_title">Géneros</string>
+    <string name="genres_description">Marca géneros y elige si usar solo títulos con alguno de ellos o todos menos esos. Sin nada marcado: todos los géneros.</string>
+    <string name="genres_explain">Solo títulos de algunos géneros, o de todos menos algunos</string>
+    <string name="genres_all">Todos los géneros</string>
+    <plurals name="genres_only">
+        <item quantity="one">Solo %d género</item>
+        <item quantity="other">Solo %d géneros</item>
+    </plurals>
+    <plurals name="genres_except">
+        <item quantity="one">Todos menos %d género</item>
+        <item quantity="other">Todos menos %d géneros</item>
+    </plurals>
+    <string name="genres_load_failed">No se han podido cargar los géneros de TMDB</string>
+    <string name="genres_mode_title">Usar</string>
+    <string name="genres_mode_only">Solo los géneros marcados</string>
+    <string name="genres_mode_except">Todos menos los marcados</string>
     <string name="tmdb_login_description">Escanea el código QR y aprueba el acceso en themoviedb.org (inicia sesión si hace falta).</string>
     <string name="qr_preparing">Preparando…</string>
     <string name="qr_waiting">Esperando aprobación…</string>

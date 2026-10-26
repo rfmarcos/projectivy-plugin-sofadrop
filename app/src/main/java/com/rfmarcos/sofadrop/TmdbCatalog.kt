@@ -38,7 +38,7 @@ data class WallpaperInfo(
 )
 
 /** Why a title of a list is not used. */
-enum class Exclusion { LOCAL_MARKET, TOO_OLD, ADULT, AGE_RATING, NO_LOGO, NO_SYNOPSIS, WATCHED, NO_IMAGE, DUPLICATE }
+enum class Exclusion { LOCAL_MARKET, TOO_OLD, ADULT, AGE_RATING, GENRE, NO_LOGO, NO_SYNOPSIS, WATCHED, NO_IMAGE, DUPLICATE }
 
 /** A title of a list and, when it is filtered out, the reason. */
 data class Candidate(val ref: TitleRef, val exclusion: Exclusion? = null)
@@ -88,11 +88,11 @@ class TmdbCatalog(
         }.distinct()
         if (shuffle) refs = refs.shuffled()
         val check = cutoff != null || filters.globalHits || Settings.excludeAdult || Settings.maxRatingAge > 0 ||
-            Settings.requireLogo || Settings.synopsisMode == Settings.SYNOPSIS_SKIP
+            !filters.genres.isOff || Settings.requireLogo || Settings.synopsisMode == Settings.SYNOPSIS_SKIP
         // Checked a batch at a time in parallel: at most one batch more than needed
         return refs.asSequence()
             .chunked(CHECK_BATCH)
-            .flatMap { batch -> WallpaperFactory.parallel(batch) { Candidate(it, if (check) exclusion(it, cutoff, filters.globalHits) else null) } }
+            .flatMap { batch -> WallpaperFactory.parallel(batch) { Candidate(it, if (check) exclusion(it, cutoff, filters) else null) } }
             .takeIncluded(pool)
     }
 
@@ -183,14 +183,15 @@ class TmdbCatalog(
 
     // --- Filters (from the TMDB details of each title) ---
 
-    private fun exclusion(ref: TitleRef, cutoff: String?, globalHits: Boolean): Exclusion? {
+    private fun exclusion(ref: TitleRef, cutoff: String?, filters: FilterValues): Exclusion? {
         val item = details(ref) ?: return null
         return when {
-            globalHits && isLocalMarket(item) -> Exclusion.LOCAL_MARKET
+            filters.globalHits && isLocalMarket(item) -> Exclusion.LOCAL_MARKET
             isTooOld(ref.type, item, cutoff) -> Exclusion.TOO_OLD
             Settings.excludeAdult && isAdult(ref, item) -> Exclusion.ADULT
             // Unrated titles (mostly not released yet) pass
             Settings.maxRatingAge > 0 && (Certifications.minimumAge(ref.type, item, region) ?: 0) > Settings.maxRatingAge -> Exclusion.AGE_RATING
+            !filters.genres.allows(item.objects("genres").mapNotNull { it.int("id") }) -> Exclusion.GENRE
             // Last: it costs an images request per title
             Settings.requireLogo && logoPath(ref, item) == null -> Exclusion.NO_LOGO
             Settings.synopsisMode == Settings.SYNOPSIS_SKIP && localOverview(ref, item).isBlank() -> Exclusion.NO_SYNOPSIS
@@ -227,8 +228,11 @@ class TmdbCatalog(
 
     // --- Wallpaper data ---
 
-    /** Build the wallpaper data from TMDB details; null when the title has no usable backdrop. */
-    fun build(ref: TitleRef): WallpaperInfo? {
+    /**
+     * Build the wallpaper data from TMDB details; null when the title has no usable backdrop.
+     * [matchedGenres] (the genres its list only allows) are shown first.
+     */
+    fun build(ref: TitleRef, matchedGenres: Set<Int> = emptySet()): WallpaperInfo? {
         val type = ref.type
         val item = details(ref) ?: return null
         if (item.str(titleKey(type)) == null) return null
@@ -255,7 +259,11 @@ class TmdbCatalog(
             year = item.str(if (type == MediaType.MOVIE) "release_date" else "first_air_date").orEmpty().take(4),
             rating = item.double("vote_average") ?: 0.0,
             extraInfo = extraInfo,
-            genres = item.objects("genres").mapNotNull { Languages.genreName(language, it.int("id"), it.str("name")) }
+            // The genres a list was filtered by first: TMDB's own order is arbitrary, so the ones shown
+            // could otherwise be ones that played no part in it
+            genres = item.objects("genres")
+                .sortedByDescending { it.int("id") in matchedGenres }
+                .mapNotNull { Languages.genreName(language, it.int("id"), it.str("name")) }
                 .take(2)
                 .joinToString(", "),
             backdropPath = backdrop,

@@ -28,6 +28,13 @@ object Filters {
         }
     )
 
+    /** "All genres", "Only 3 genres" or "All but 2 genres". */
+    fun genresLabel(context: Context, filter: GenreFilter): String = when {
+        filter.isOff -> context.getString(R.string.genres_all)
+        else -> context.resources.getQuantityString(
+            if (filter.exclude) R.plurals.genres_except else R.plurals.genres_only, filter.ids.size, filter.ids.size)
+    }
+
     fun ageLabel(context: Context, months: Int) = when {
         months == 0 -> context.getString(R.string.filters_age_none)
         months % 12 == 0 -> context.resources.getQuantityString(R.plurals.filters_age_years, months / 12, months / 12)
@@ -46,6 +53,7 @@ object Filters {
             custom.maxAge?.let { ageLabel(context, it) },
             custom.globalHits?.let { context.getString(if (it) R.string.list_filters_hits_on else R.string.list_filters_hits_off) },
             custom.watched?.takeIf { Settings.watchSource != null }?.let { watchedLabel(context, it) },
+            custom.genres?.let { genresLabel(context, it) },
         )
         return context.getString(R.string.list_filters_custom, parts.joinToString(", "))
     }
@@ -55,6 +63,7 @@ object Filters {
         ageLabel(context, Settings.maxAgeMonths),
         context.getString(R.string.setting_global_hits_title).takeIf { Settings.globalHitsOnly },
         Settings.maxRatingAge.takeIf { it > 0 }?.let { context.getString(R.string.filters_rating_age_summary, it) },
+        Settings.genreFilter.takeUnless { it.isOff }?.let { genresLabel(context, it) },
         context.getString(R.string.watched_summary_hidden).takeIf { Settings.watchSource != null && Settings.watchedMode == Settings.WATCHED_HIDE },
         customised().size.takeIf { it > 0 }?.let { context.resources.getQuantityString(R.plurals.lists_customised, it, it) },
     ).joinToString(" · ")
