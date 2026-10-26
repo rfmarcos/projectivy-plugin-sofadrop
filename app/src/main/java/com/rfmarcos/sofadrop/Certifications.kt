@@ -27,6 +27,7 @@ object Certifications {
         "SE:BTL" to 0, "NO:A" to 0, "DK:A" to 0, "FI:S" to 0, "FI:KK" to 18,
         // Marks that mean the same wherever they're used; "R" and "AA" don't, so they only count per country
         "G" to 0, "U" to 0, "TV-Y" to 0, "TV-G" to 0, "TP" to 0, "T" to 0, "L" to 0, "ATP" to 0, "TE" to 0, "I" to 0,
+        "AL" to 0,
     )
 
     /** The certification of [country] as TMDB writes it, or null when it has none. */

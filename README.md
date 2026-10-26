@@ -19,7 +19,7 @@ Sofadrop is a wallpaper plugin for [Projectivy Launcher](https://github.com/spoc
 * 🎯 **Filters**: maximum age, global hits only, no adult content, no repeats, and only titles with a logo or a synopsis in your language. Every list can have its own.
 * 🔎 **Explore your lists**: see each list's titles in order and which ones are used or skipped, and why.
 * 🔀 **Mixed or in order**: all lists shuffled together, or one after another.
-* 🌍 **Languages**: English, Spanish, Portuguese, French, Italian and German wallpapers.
+* 🌍 **Languages**: English, Spanish, Portuguese, French, Italian, German, Dutch, Swedish, Norwegian, Danish and Finnish wallpapers.
 * 🔄 **Updates itself**: new versions are offered inside the app.
 
 ## 📸 Screenshots

@@ -48,6 +48,7 @@ class CertificationsTest {
             "FR" to "TP" to 0, "IT" to "VM14" to 14, "IT" to "T" to 0, "DE" to "16" to 16,
             "SE" to "Btl" to 0, "SE" to "11" to 11, "SE" to "Från 15 år" to 15, "NO" to "A" to 0, "NO" to "9" to 9,
             "DK" to "A" to 0, "DK" to "11" to 11, "FI" to "S" to 0, "FI" to "K-12" to 12, "FI" to "K16" to 16, "FI" to "KK" to 18,
+            "NL" to "AL" to 0, "NL" to "14" to 14,
         )
         cases.forEach { (mark, age) -> assertEquals("${mark.first} ${mark.second}", age, Certifications.age(mark.first, mark.second)) }
         assertNull(Certifications.age("US", "NR"))

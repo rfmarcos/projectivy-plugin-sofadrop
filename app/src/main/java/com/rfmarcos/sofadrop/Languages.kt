@@ -27,6 +27,7 @@ object Languages {
         "fr-FR" to "Français",
         "it-IT" to "Italiano",
         "de-DE" to "Deutsch",
+        "nl-NL" to "Nederlands",
         "sv-SE" to "Svenska",
         // TMDB keeps Norwegian under "no" (its "nb-NO" has no synopses)
         "no-NO" to "Norsk",
@@ -35,7 +36,7 @@ object Languages {
     )
 
     /** Countries offered for streaming services. */
-    val REGIONS = listOf("US", "GB", "CA", "ES", "MX", "AR", "CO", "CL", "BR", "PT", "FR", "IT", "DE", "SE", "NO", "DK", "FI")
+    val REGIONS = listOf("US", "GB", "CA", "ES", "MX", "AR", "CO", "CL", "BR", "PT", "FR", "IT", "DE", "NL", "SE", "NO", "DK", "FI")
 
     /** Original languages that never need the "global hit" vote threshold. */
     val MAINSTREAM = setOf("en", "es", "fr", "it", "de", "pt", "ca", "nl", "sv", "da", "no", "pl")
@@ -47,6 +48,7 @@ object Languages {
         "fr" to WallpaperTexts("Disponible sur", "Saison", "Saisons", "Vu", "En cours · %d/%d"),
         "it" to WallpaperTexts("Disponibile su", "Stagione", "Stagioni", "Visto", "In corso · %d/%d"),
         "de" to WallpaperTexts("Verfügbar auf", "Staffel", "Staffeln", "Gesehen", "Angefangen · %d/%d"),
+        "nl" to WallpaperTexts("Beschikbaar op", "Seizoen", "Seizoenen", "Bekeken", "Bezig · %d/%d"),
         "sv" to WallpaperTexts("Finns på", "Säsong", "Säsonger", "Sedd", "Påbörjad · %d/%d"),
         "no" to WallpaperTexts("Tilgjengelig på", "Sesong", "Sesonger", "Sett", "Påbegynt · %d/%d"),
         "da" to WallpaperTexts("Tilgængelig på", "Sæson", "Sæsoner", "Set", "I gang · %d/%d"),
@@ -67,6 +69,8 @@ object Languages {
             "Botteghino", "Scelti per te", "La tua lista", "I tuoi preferiti", "Anime di tendenza", "Da vedere", "In corso"),
         "de" to listOf("Im Trend", "Beliebt", "Bestbewertet", "Im Kino", "Demnächst", "Läuft gerade", "Meisterwartet",
             "Kinokassen", "Für dich", "Deine Merkliste", "Deine Favoriten", "Anime im Trend", "Geplant", "Angefangen"),
+        "nl" to listOf("Trending", "Populair", "Best beoordeeld", "In de bioscoop", "Binnenkort", "Nu op tv", "Meest verwacht",
+            "Box office", "Voor jou uitgekozen", "Jouw kijklijst", "Jouw favorieten", "Trending anime", "Nog te kijken", "Bezig"),
         "sv" to listOf("Trendar nu", "Populära", "Högst betyg", "På bio", "Kommer snart", "Sänds nu", "Mest efterlängtade",
             "Biotoppen", "Utvalda för dig", "Din bevakningslista", "Dina favoriter", "Trendande anime", "Vill se", "Påbörjade"),
         "no" to listOf("Trender nå", "Populære", "Best vurdert", "På kino", "Kommer snart", "Sendes nå", "Mest etterlengtet",
@@ -123,6 +127,10 @@ object Languages {
         "fi" to mapOf(
             10770 to "TV-elokuva", 10759 to "Toiminta ja seikkailu", 10765 to "Sci-fi ja fantasia", 10768 to "Sota ja politiikka",
             10766 to "Saippuasarja", 10767 to "Keskusteluohjelma",
+        ),
+        "nl" to mapOf(
+            10759 to "Actie en avontuur", 10765 to "Sciencefiction en fantasy", 10768 to "Oorlog en politiek",
+            10762 to "Kinderen", 10763 to "Nieuws", 10767 to "Talkshow", 10770 to "Tv-film",
         ),
     )
 
