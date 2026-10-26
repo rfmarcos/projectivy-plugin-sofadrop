@@ -25,10 +25,10 @@ class WallpaperFactory(context: Context, private val width: Int) {
     private val appContext = context.applicationContext
 
     val client = TmdbClient(Settings.token, context.cacheDir)
-    val catalog = TmdbCatalog(client, Settings.language, Settings.region, Settings.showProviders, Settings.partLanguages,
-        Settings.showCast)
+    val catalog = TmdbCatalog(client, Settings.language, Settings.region, Settings.drawsDetails && Settings.showProviders,
+        Settings.partLanguages, Settings.drawsDetails && Settings.showCast)
     private val renderer = WallpaperRenderer(context, width, Languages.texts(Settings.language), Settings.overviewLines,
-        Settings.headerOrder, Settings.minRatings)
+        Settings.headerOrder, Settings.minRatings, Settings.style)
 
     val trakt: TraktClient? = if (Settings.traktConfigured) TraktClient(Settings.traktClientId, Settings.traktClientSecret) else null
     val simkl = SimklClient(Settings.simklClientId, client)
@@ -63,7 +63,7 @@ class WallpaperFactory(context: Context, private val width: Int) {
      */
     private fun mdbListRatings(refs: List<TitleRef>): Map<TitleRef, List<Rating>> {
         val client = mdbList ?: return emptyMap()
-        if (refs.isEmpty() || Settings.ratingSources.none { it.needsMdbList }) return emptyMap()
+        if (refs.isEmpty() || !Settings.drawsDetails || Settings.ratingSources.none { it.needsMdbList }) return emptyMap()
         return refs.groupBy { it.type }.flatMap { (type, group) ->
             runCatching { client.ratings(type, group.map { it.tmdbId }) }
                 .onFailure { Log.w(TAG, "MDBList ratings failed", it) }
@@ -75,6 +75,8 @@ class WallpaperFactory(context: Context, private val width: Int) {
     /** Wallpaper data of a title, with its source list and its watched badge when the user wants it marked. */
     fun build(ref: TitleRef, plan: ListPlan? = null, source: ListSource? = plan?.source): WallpaperInfo? {
         val genres = source?.let { Settings.filtersFor(it).genres }?.takeIf { it.only }?.ids.orEmpty()
+        // Logo or backdrop alone: no source line, badge or ratings (nor their requests)
+        if (!Settings.drawsDetails) return catalog.build(ref, genres)
         val info = catalog.build(ref, genres)?.let { info ->
             // "Streaming, or list source": the source line only when no service has the title
             if (source == null || !Settings.showSource || (Settings.sourceFallback && Settings.showProviders && info.providerLogoPaths.isNotEmpty())) info

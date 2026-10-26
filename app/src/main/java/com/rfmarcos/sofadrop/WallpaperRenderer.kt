@@ -39,6 +39,8 @@ class WallpaperRenderer(
     private val headerOrder: List<String> = Settings.HEADER_BLOCKS,
     /** Ratings that stay when the header line is full, see [Settings.minRatings]. */
     private val minRatings: Int = 2,
+    /** What is drawn over the backdrop, see [Settings.STYLES]. */
+    private val style: String = Settings.STYLE_FULL,
 ) {
 
     private val height = width * 9 / 16
@@ -77,9 +79,14 @@ class WallpaperRenderer(
             (6 + Color.green(average) * 0.1f).roundToInt(),
             (6 + Color.blue(average) * 0.1f).roundToInt(),
         )
-        drawGradient(canvas, tint, horizontal = true) { t -> 0.96f * (1 - smoothstep((t - 0.28f) / 0.45f)) }
+        // The left one is there for the text: lighter behind a logo alone, none on the bare backdrop
+        when (style) {
+            Settings.STYLE_FULL -> drawGradient(canvas, tint, horizontal = true) { t -> 0.96f * (1 - smoothstep((t - 0.28f) / 0.45f)) }
+            Settings.STYLE_LOGO -> drawGradient(canvas, tint, horizontal = true) { t -> 0.75f * (1 - smoothstep((t - 0.12f) / 0.45f)) }
+        }
         drawGradient(canvas, tint, horizontal = false) { t -> 0.98f * smoothstep((t - 0.42f) / 0.46f) }
         drawGradient(canvas, tint, horizontal = false) { t -> 0.45f * (1 - smoothstep(t / 0.22f)) }
+        if (style == Settings.STYLE_BACKDROP) return output
 
         // Info block on its own layer, so it can cast a soft shadow
         val layer = Bitmap.createBitmap(
@@ -87,9 +94,12 @@ class WallpaperRenderer(
         )
         val layerCanvas = Canvas(layer)
         if (logo != null) drawLogo(layerCanvas, logo) else drawTitle(layerCanvas, info.title)
-        drawMetadata(layerCanvas, info)
-        val overviewBottom = drawCast(layerCanvas, drawOverview(layerCanvas, info.overview), info.cast)
-        drawFooter(layerCanvas, overviewBottom + s(40), providerLogos, info)
+        if (style == Settings.STYLE_FULL) {
+            // With no header line the synopsis moves up into its place
+            val overviewTop = s(if (drawMetadata(layerCanvas, info)) META_CENTER + 36 + 52 else LOGO_BOTTOM + 60)
+            val overviewBottom = drawCast(layerCanvas, drawOverview(layerCanvas, info.overview, overviewTop), info.cast)
+            drawFooter(layerCanvas, overviewBottom + s(40), providerLogos, info)
+        }
 
         val offset = IntArray(2)
         val shadow = layer.extractAlpha(
@@ -184,9 +194,9 @@ class WallpaperRenderer(
      * The header line: its blocks in the user's order, which is also their importance. When they
      * don't fit, the ratings beyond [minRatings] go first, then whatever is rightmost (the genres
      * one by one, the rest whole: the year goes with its age certification). The first block and
-     * the [minRatings] ratings always stay.
+     * the [minRatings] ratings always stay. Returns false when there was nothing to draw.
      */
-    private fun drawMetadata(canvas: Canvas, info: WallpaperInfo) {
+    private fun drawMetadata(canvas: Canvas, info: WallpaperInfo): Boolean {
         val center = s(META_CENTER)
         val metaPaint = shadowed(textPaint(medium, s(48f), Color.rgb(230, 230, 230)))
         val ratings = info.ratings.map(::ratingItem)
@@ -232,6 +242,7 @@ class WallpaperRenderer(
             block.draw(canvas, x, center)
             x += block.width
         }
+        return line.isNotEmpty()
     }
 
     /** One block of the header line, see [Settings.HEADER_BLOCKS]. */
@@ -402,9 +413,9 @@ class WallpaperRenderer(
         return x + width
     }
 
-    private fun drawOverview(canvas: Canvas, overview: String): Float {
+    private fun drawOverview(canvas: Canvas, overview: String, start: Float): Float {
         val paint = textPaint(regular, s(48f), Color.rgb(220, 220, 220))
-        var top = s(META_CENTER + 36 + 52)
+        var top = start
         if (overviewLines <= 0 || overview.isBlank()) return top // hidden or untranslated: the streaming row moves up
         for (line in wrap(overview, paint, s(CONTENT_WIDTH), overviewLines)) {
             canvas.drawText(line, s(MARGIN_LEFT), top - paint.fontMetrics.ascent, paint)

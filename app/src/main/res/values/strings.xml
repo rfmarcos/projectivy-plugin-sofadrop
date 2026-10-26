@@ -194,7 +194,15 @@
     <string name="enables_mdblist">MDBList account: your own lists, and the Rotten Tomatoes (critics and audience), Metacritic, Letterboxd and MyAnimeList ratings. Free accounts allow 1,000 requests a day; Sofadrop uses one per list each time it generates.</string>
     <string name="enables_imdb">IMDb ratings without MDBList come from IMDb\'s official dataset (about 9 MB). It is downloaded when first needed, again every week, and sooner (at most daily) when a new title is missing. Press to download it now.</string>
     <string name="setting_details_title">Wallpaper details</string>
-    <string name="details_description">How each wallpaper looks: language, synopsis length, cast, what the footer shows (the list it came from, the streaming services) and image resolution. A shorter synopsis keeps the text clear of the launcher rows. Header chooses what the line under the title shows: ratings, year, runtime, genres. Language of each part puts the logo or the synopsis in another language.</string>
+    <string name="style_title">Style</string>
+    <string name="style_full">Complete</string>
+    <string name="style_logo">Logo only</string>
+    <string name="style_backdrop">Backdrop only</string>
+    <string name="style_full_desc">Logo, header, synopsis and footer, as set below</string>
+    <string name="style_logo_desc">The logo (or the title) over the backdrop, nothing else</string>
+    <string name="style_backdrop_desc">Just the image</string>
+    <string name="style_hidden">Hidden with the %1$s style</string>
+    <string name="details_description">How each wallpaper looks: style (everything, the logo alone or just the image), language, synopsis length, cast, what the footer shows (the list it came from, the streaming services) and image resolution. A shorter synopsis keeps the text clear of the launcher rows. Header chooses what the line under the title shows: ratings, year, runtime, genres. Language of each part puts the logo or the synopsis in another language.</string>
 
     <string name="rating_imdb" translatable="false">IMDb</string>
     <string name="rating_metacritic" translatable="false">Metacritic</string>

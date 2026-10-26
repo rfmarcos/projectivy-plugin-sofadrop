@@ -88,7 +88,7 @@ class TmdbCatalog(
         }.distinct()
         if (shuffle) refs = refs.shuffled()
         val check = cutoff != null || filters.globalHits || Settings.excludeAdult || Settings.maxRatingAge > 0 ||
-            !filters.genres.isOff || Settings.requireLogo || Settings.synopsisMode == Settings.SYNOPSIS_SKIP
+            !filters.genres.isOff || Settings.requireLogo || Settings.requireSynopsis
         // Checked a batch at a time in parallel: at most one batch more than needed
         return refs.asSequence()
             .chunked(CHECK_BATCH)
@@ -194,7 +194,7 @@ class TmdbCatalog(
             !filters.genres.allows(item.objects("genres").mapNotNull { it.int("id") }) -> Exclusion.GENRE
             // Last: it costs an images request per title
             Settings.requireLogo && logoPath(ref, item) == null -> Exclusion.NO_LOGO
-            Settings.synopsisMode == Settings.SYNOPSIS_SKIP && localOverview(ref, item).isBlank() -> Exclusion.NO_SYNOPSIS
+            Settings.requireSynopsis && localOverview(ref, item).isBlank() -> Exclusion.NO_SYNOPSIS
             else -> null
         }
     }
@@ -247,7 +247,7 @@ class TmdbCatalog(
         }
 
         // Untranslated synopsis: English only when the user prefers it to none
-        val overview = localOverview(ref, item).ifBlank {
+        val overview = if (!Settings.drawsDetails) "" else localOverview(ref, item).ifBlank {
             if (Settings.synopsisMode == Settings.SYNOPSIS_ENGLISH) translated(translations(ref), "en", "US", "overview") else ""
         }
 
@@ -267,7 +267,7 @@ class TmdbCatalog(
                 .take(2)
                 .joinToString(", "),
             backdropPath = backdrop,
-            logoPath = logoPath(ref, item),
+            logoPath = if (Settings.drawsLogo) logoPath(ref, item) else null,
             providerLogoPaths = if (showProviders) providerLogoPaths(ref) else emptyList(),
             imdbId = item.str("imdb_id") ?: item.obj("external_ids")?.str("imdb_id"),
             certification = Certifications.of(type, item, region)?.let { Certifications.label(region, it) },

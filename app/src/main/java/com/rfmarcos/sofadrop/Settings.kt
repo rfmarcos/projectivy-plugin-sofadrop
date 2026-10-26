@@ -97,6 +97,7 @@ object Settings {
     private const val KEY_SYNOPSIS_MODE = "synopsis_mode"
     private const val KEY_TITLE_LANGUAGE = "title_language"
     private const val KEY_SYNOPSIS_LANGUAGE = "synopsis_language"
+    private const val KEY_STYLE = "style"
     private const val KEY_TMDB_SESSION = "_tmdb_session_id"
     private const val KEY_TMDB_ACCOUNT = "_tmdb_account_id"
     private const val KEY_TMDB_USER = "_tmdb_user"
@@ -128,6 +129,11 @@ object Settings {
     const val LANGUAGE_AUTO = "auto"
     const val LANGUAGE_ORIGINAL = "original"
     val PART_LANGUAGES = listOf(LANGUAGE_AUTO, LANGUAGE_ORIGINAL) + Languages.OPTIONS.keys
+    /** What is drawn over the backdrop: everything, the logo (or title) alone, or nothing. */
+    const val STYLE_FULL = "full"
+    const val STYLE_LOGO = "logo"
+    const val STYLE_BACKDROP = "backdrop"
+    val STYLES = listOf(STYLE_FULL, STYLE_LOGO, STYLE_BACKDROP)
 
     // Internal state, not exported in Projectivy backups
     private const val KEY_LAST_GENERATION = "_last_generation"
@@ -293,8 +299,21 @@ object Settings {
         else -> partLanguage
     }
 
-    val logoFallback: Boolean get() = logoMode == LOGO_ORIGINAL || logoMode == LOGO_ORIGINAL_OR_SKIP
-    val requireLogo: Boolean get() = logoMode == LOGO_ORIGINAL_OR_SKIP || logoMode == LOGO_SKIP
+    /** See [STYLES]; the settings of the parts a style hides are kept for when they come back. */
+    var style: String
+        get() = preferences.getString(KEY_STYLE, null)?.takeIf { it in STYLES } ?: STYLE_FULL
+        set(value) = preferences.edit { putString(KEY_STYLE, value) }
+
+    /** The style draws the logo (or the title instead). */
+    val drawsLogo: Boolean get() = style != STYLE_BACKDROP
+
+    /** The style draws the header, synopsis, cast and footer (each as set). */
+    val drawsDetails: Boolean get() = style == STYLE_FULL
+
+    // A part the style hides doesn't fetch anything or skip titles
+    val logoFallback: Boolean get() = drawsLogo && (logoMode == LOGO_ORIGINAL || logoMode == LOGO_ORIGINAL_OR_SKIP)
+    val requireLogo: Boolean get() = drawsLogo && (logoMode == LOGO_ORIGINAL_OR_SKIP || logoMode == LOGO_SKIP)
+    val requireSynopsis: Boolean get() = drawsDetails && synopsisMode == SYNOPSIS_SKIP
 
     /** Per-list overrides of the default filters (list key -> values), set on each list's page in "Filters & explore lists". */
     var listFilters: Map<String, ListFilters>
@@ -624,7 +643,7 @@ object Settings {
             "header:${headerHidden.sorted()}".takeIf { headerHidden.isNotEmpty() },
             "ratingage:$maxRatingAge".takeIf { maxRatingAge > 0 },
             "order:${headerOrder.joinToString(",")}".takeIf { headerOrder != HEADER_BLOCKS },
-            "minratings:$minRatings".takeIf { minRatings != 2 }, "cast".takeIf { showCast },
+            "minratings:$minRatings".takeIf { minRatings != 2 }, "cast".takeIf { showCast }, "style:$style".takeIf { style != STYLE_FULL },
             "genres:${genreFilter.only}:${genreFilter.ids.sorted()}".takeIf { !genreFilter.isOff })).joinToString("|")
 
     /** True when the current wallpapers were generated with different settings. */

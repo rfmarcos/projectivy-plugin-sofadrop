@@ -48,10 +48,10 @@ class PartLanguagesFragment : PreviewSettingsFragment() {
             languageRow(ID_TITLE_LANGUAGE, R.string.logo_language_title, Settings.titleLanguage),
             fallbackRow(ID_LOGO_MODE, R.string.logo_mode_title, logoModeLabel(context, Settings.logoMode, originalLogo), logoModes,
                 Settings.LOGO_MODES.map { logoModeDescription(context, it, originalLogo) }),
-            languageRow(ID_SYNOPSIS_LANGUAGE, R.string.synopsis_language_title, Settings.synopsisLanguage),
+            languageRow(ID_SYNOPSIS_LANGUAGE, R.string.synopsis_language_title, Settings.synopsisLanguage).hiddenBy(Settings.drawsDetails),
             fallbackRow(ID_SYNOPSIS_MODE, R.string.synopsis_mode_title, synopsisModeLabel(context, synopsisMode),
                 synopsisModes.map { synopsisModeLabel(context, it) },
-                synopsisModes.map { mode -> synopsisModeDescription(context, mode) }),
+                synopsisModes.map { mode -> synopsisModeDescription(context, mode) }).hiddenBy(Settings.drawsDetails),
             action(ID_PREVIEW_PIN, R.drawable.ic_act_preview, getString(R.string.preview_pin_title), PreviewPinFragment.summary(context))
                 .hasNext(true).build(),
         )
@@ -160,7 +160,7 @@ class PartLanguagesFragment : PreviewSettingsFragment() {
                 Settings.titleLanguage.takeIf { it != Settings.LANGUAGE_AUTO }?.let { context.getString(R.string.part_summary_logo, languageLabel(context, it)) },
                 Settings.synopsisLanguage.takeIf { it != Settings.LANGUAGE_AUTO }?.let { context.getString(R.string.part_summary_synopsis, languageLabel(context, it)) },
             ).ifEmpty { listOf(context.getString(R.string.part_summary_all, Languages.displayName(Settings.language))) }
-            val skips = Settings.requireLogo || Settings.synopsisMode == Settings.SYNOPSIS_SKIP
+            val skips = Settings.requireLogo || Settings.requireSynopsis
             return (languages + listOfNotNull(context.getString(R.string.part_summary_skips).takeIf { skips })).joinToString(" · ")
         }
     }

@@ -10,6 +10,7 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.leanback.widget.GuidanceStylist
 import androidx.leanback.widget.GuidanceStylist.Guidance
+import androidx.leanback.widget.GuidedAction
 
 /**
  * Settings screen whose left pane is a live preview of one wallpaper rendered with the current settings
@@ -64,6 +65,15 @@ abstract class PreviewSettingsFragment : BaseSettingsFragment() {
         Settings.token.hashCode(), Settings.language, Settings.region, Settings.signature, Settings.mdbLists.size,
         Settings.tmdbConnected, Settings.previewPin, WallpaperStore(requireContext()).current().size,
     ).joinToString("|")
+
+    /** A part the style doesn't draw: its row stays (so rows don't jump), disabled and saying why. */
+    protected fun GuidedAction.hiddenBy(drawn: Boolean): GuidedAction {
+        if (!drawn) {
+            description = getString(R.string.style_hidden, DetailsFragment.styleLabel(requireContext(), Settings.style))
+            isEnabled = false
+        }
+        return this
+    }
 
     protected fun schedulePreview(delay: Long = 700) {
         refreshPending()
