@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- values-es in main also defines plugin_name, so it is overridden here too -->
+    <string name="plugin_name" translatable="false">Sofadrop Dev</string>
+</resources>

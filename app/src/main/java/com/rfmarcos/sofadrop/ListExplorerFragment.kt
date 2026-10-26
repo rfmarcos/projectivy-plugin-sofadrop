@@ -41,13 +41,19 @@ class ListExplorerFragment : BaseSettingsFragment() {
                 Filters.ageLabel(context, Settings.maxAgeMonths)),
             choiceRow(ID_GLOBAL_HITS, R.drawable.ic_act_public, R.string.setting_global_hits_title, Filters.onOff(context),
                 Filters.onOff(context)[if (Settings.globalHitsOnly) 1 else 0]),
-            choiceRow(ID_WATCH_SOURCE, R.drawable.ic_act_history, R.string.watch_source_title,
+            if (trackers.isEmpty()) action(ID_WATCH_SOURCE, R.drawable.ic_act_history, getString(R.string.watch_source_title),
+                describe(context, ID_WATCH_SOURCE)).hasNext(true).build()
+            else choiceRow(ID_WATCH_SOURCE, R.drawable.ic_act_history, R.string.watch_source_title,
                 (listOf(Settings.WATCH_NONE) + trackers).map { Filters.watchSourceLabel(context, it) },
-                Filters.watchSourceLabel(context, Settings.watchSource)).also { it.isEnabled = trackers.isNotEmpty() },
+                Filters.watchSourceLabel(context, Settings.watchSource)),
             choiceRow(ID_WATCHED, R.drawable.ic_act_visibility, R.string.setting_watched_title, Filters.WATCHED_MODES.map { Filters.watchedLabel(context, it) },
                 Filters.watchedLabel(context, Settings.watchedMode)).also { it.isEnabled = Settings.watchSource != null },
             action(ID_ADULT, R.drawable.ic_act_block, getString(R.string.filters_adult_title), null)
                 .checkSetId(GuidedAction.CHECKBOX_CHECK_SET_ID).checked(Settings.excludeAdult).build(),
+            choiceRow(ID_RATING_AGE, R.drawable.ic_act_filter, R.string.filters_rating_age_title,
+                Settings.MAX_RATING_AGE_OPTIONS.map { Filters.ratingAgeLabel(context, it) }, Filters.ratingAgeLabel(context, Settings.maxRatingAge)),
+            action(ID_GENRES, R.drawable.ic_act_movie, getString(R.string.genres_title), Filters.genresLabel(context, Settings.genreFilter))
+                .hasNext(true).build(),
             action(ID_DUPLICATES, R.drawable.ic_act_list, getString(R.string.filters_duplicates_title), null)
                 .checkSetId(GuidedAction.CHECKBOX_CHECK_SET_ID).checked(Settings.skipDuplicates).build(),
         )
@@ -72,7 +78,9 @@ class ListExplorerFragment : BaseSettingsFragment() {
     override fun onGuidedActionClicked(action: GuidedAction) {
         when (action.id) {
             ID_ADULT -> Settings.excludeAdult = action.isChecked
+            ID_WATCH_SOURCE -> if (Settings.connectedTrackers.isEmpty()) add(parentFragmentManager, AccountsFragment.newInstance(SourceProvider.TRAKT))
             ID_DUPLICATES -> Settings.skipDuplicates = action.isChecked
+            ID_GENRES -> { add(parentFragmentManager, GenresFragment.newInstance(null)); return }
         }
         val source = lists.getOrNull((action.id - LIST_BASE).toInt()) ?: return
         add(parentFragmentManager, ListContentsFragment.newInstance(source.key))
@@ -85,6 +93,7 @@ class ListExplorerFragment : BaseSettingsFragment() {
             ID_GLOBAL_HITS -> Settings.globalHitsOnly = index == 1
             ID_WATCH_SOURCE -> Settings.setWatchSource((listOf(Settings.WATCH_NONE) + Settings.connectedTrackers)[index])
             ID_WATCHED -> Settings.watchedMode = Filters.WATCHED_MODES[index]
+            ID_RATING_AGE -> Settings.maxRatingAge = Settings.MAX_RATING_AGE_OPTIONS[index]
         }
         refresh() // the watched row follows the watch history
         return true
@@ -99,12 +108,15 @@ class ListExplorerFragment : BaseSettingsFragment() {
         private const val ID_WATCH_SOURCE = 6L
         private const val ID_HEADER = 7L
         private const val ID_DUPLICATES = 8L
+        private const val ID_RATING_AGE = 9L
+        private const val ID_GENRES = 10L
         private const val LIST_BASE = 100L
 
         /** Value of a default filter (what it does is shown in the left pane, see [filterExplanations]). */
         private fun describe(context: Context, id: Long): String = when (id) {
             ID_AGE -> Filters.ageLabel(context, Settings.maxAgeMonths)
             ID_GLOBAL_HITS -> Filters.onOff(context)[if (Settings.globalHitsOnly) 1 else 0]
+            ID_RATING_AGE -> Filters.ratingAgeLabel(context, Settings.maxRatingAge)
             ID_WATCH_SOURCE -> if (Settings.connectedTrackers.isEmpty()) context.getString(R.string.watch_source_connect)
                 else Filters.watchSourceLabel(context, Settings.watchSource)
             else -> if (Settings.watchSource == null) context.getString(R.string.watched_need_source)
@@ -120,6 +132,8 @@ class ListExplorerFragment : BaseSettingsFragment() {
                 ID_WATCH_SOURCE to context.getString(R.string.watch_source_explain),
                 ID_WATCHED to context.getString(R.string.watched_explain),
                 ID_ADULT to context.getString(R.string.filters_adult_desc),
+                ID_RATING_AGE to context.getString(R.string.filters_rating_age_desc, Languages.countryName(Settings.region)),
+                ID_GENRES to context.getString(R.string.genres_explain) + "\n\n" + automatic,
                 ID_DUPLICATES to context.getString(R.string.filters_duplicates_desc),
             )
         }
@@ -136,6 +150,8 @@ class ListContentsFragment : BaseSettingsFragment() {
     private val source get() = Sources.available().firstOrNull { it.key == sourceKey }
     private var loadJob = 0
     private var filterActions: List<GuidedAction> = emptyList()
+    /** The genre filter the titles were last loaded with. */
+    private var shownGenres: GenreFilter? = null
 
     override fun onCreateGuidance(savedInstanceState: Bundle?) = Guidance(
         source?.let { Sources.label(requireContext(), it) } ?: sourceKey,
@@ -149,7 +165,23 @@ class ListContentsFragment : BaseSettingsFragment() {
         filterActions = filterRows(list)
         actions += filterActions
         explanations.putAll(ListExplorerFragment.filterExplanations(requireContext()))
+        shownGenres = Settings.filtersFor(list).genres
         loadTitles(list)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Back from this list's genres
+        val list = source ?: return
+        val genres = Settings.filtersFor(list).genres
+        if (shownGenres == null || genres == shownGenres) return
+        shownGenres = genres
+        filterRows(list).forEach { fresh -> updateDescription(fresh.id, fresh.description) }
+        loadTitles(list)
+    }
+
+    override fun onGuidedActionClicked(action: GuidedAction) {
+        if (action.id == ID_GENRES) add(parentFragmentManager, GenresFragment.newInstance(sourceKey))
     }
 
     // --- The list's filters ---
@@ -174,6 +206,9 @@ class ListContentsFragment : BaseSettingsFragment() {
         if (Settings.watchSource != null) rows += filterRow(ID_WATCHED, R.drawable.ic_act_visibility, R.string.setting_watched_title,
             custom.watched?.let { Filters.watchedLabel(context, it) } ?: default(defaultWatched),
             listOf(default(defaultWatched)) + Filters.WATCHED_MODES.map { Filters.watchedLabel(context, it) })
+        rows += action(ID_GENRES, R.drawable.ic_act_movie, getString(R.string.genres_title),
+            custom.genres?.let { Filters.genresLabel(context, it) } ?: default(Filters.genresLabel(context, Settings.defaultGenres(list))))
+            .hasNext(true).build()
         return rows
     }
 
@@ -254,6 +289,8 @@ class ListContentsFragment : BaseSettingsFragment() {
             Exclusion.LOCAL_MARKET -> R.string.exclusion_local_market
             Exclusion.TOO_OLD -> R.string.exclusion_too_old
             Exclusion.ADULT -> R.string.exclusion_adult
+            Exclusion.AGE_RATING -> R.string.exclusion_rating_age
+            Exclusion.GENRE -> R.string.exclusion_genre
             Exclusion.NO_LOGO -> R.string.exclusion_no_logo
             Exclusion.NO_SYNOPSIS -> R.string.exclusion_no_synopsis
             Exclusion.WATCHED -> R.string.exclusion_watched
@@ -268,6 +305,7 @@ class ListContentsFragment : BaseSettingsFragment() {
         private const val ID_AGE = 2L
         private const val ID_HITS = 3L
         private const val ID_WATCHED = 5L
+        private const val ID_GENRES = 10L
         private const val TITLE_BASE = 100L
         private const val TITLES_HEADER = 99L
 

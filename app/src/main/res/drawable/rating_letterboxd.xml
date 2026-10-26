@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Letterboxd dots, the mark of File:Letterboxd-Logo-H-Pos-RGB.svg from Wikimedia Commons, unaltered. Shown next to the score it identifies; the logo belongs to its owner -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="97dp"
+    android:height="36dp"
+    android:viewportWidth="97.237"
+    android:viewportHeight="36">
+    <path
+        android:fillColor="#FF40BCF4"
+        android:pathData="M79.21 0a18.03 18 0 1 0 0 36 18.03 18 0 1 0 0-36"/>
+    <path
+        android:fillColor="#FF00E054"
+        android:pathData="M48.62 0a18.03 18 0 1 0 0 36 18.03 18 0 1 0 0-36"/>
+    <path
+        android:fillColor="#FFFF8000"
+        android:pathData="M18.03 0a18.03 18 0 1 0 0 36 18.03 18 0 1 0 0-36"/>
+    <path
+        android:fillColor="#FF556677"
+        android:pathData="M33.32 27.53A17.9 17.9 0 0 1 30.59 18c0-3.5 1-6.77 2.73-9.53A17.9 17.9 0 0 1 36.05 18c0 3.5-1 6.77-2.73 9.53"/>
+    <path
+        android:fillColor="#FF556677"
+        android:pathData="M63.91 8.47A17.9 17.9 0 0 1 66.65 18c0 3.5-1 6.77-2.74 9.53A17.9 17.9 0 0 1 61.18 18c0-3.5 1-6.77 2.73-9.53"/>
+</vector>

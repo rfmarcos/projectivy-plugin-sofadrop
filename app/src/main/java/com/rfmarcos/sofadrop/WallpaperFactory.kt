@@ -3,6 +3,10 @@ package com.rfmarcos.sofadrop
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.util.Log
+import java.util.concurrent.Callable
+import java.util.concurrent.ExecutionException
+import java.util.concurrent.Executors
 
 /** The titles a list contributes, see [WallpaperFactory.plan]. */
 data class ListPlan(
@@ -11,14 +15,20 @@ data class ListPlan(
     val statuses: Map<TitleRef, WatchStatus>,
     val random: Boolean,
     val source: ListSource,
+    /** MDBList scores of the usable titles, when the chosen ratings need them. */
+    val ratings: Map<TitleRef, List<Rating>> = emptyMap(),
 )
 
 /** Shared pipeline for the background generation, the settings preview and the list explorer. */
 class WallpaperFactory(context: Context, private val width: Int) {
 
+    private val appContext = context.applicationContext
+
     val client = TmdbClient(Settings.token, context.cacheDir)
-    val catalog = TmdbCatalog(client, Settings.language, Settings.region, Settings.showProviders)
-    private val renderer = WallpaperRenderer(context, width, Languages.texts(Settings.language), Settings.overviewLines)
+    val catalog = TmdbCatalog(client, Settings.language, Settings.region, Settings.drawsDetails && Settings.showProviders,
+        Settings.partLanguages, Settings.drawsDetails && Settings.showCast)
+    private val renderer = WallpaperRenderer(context, width, Languages.texts(Settings.language), Settings.overviewLines,
+        Settings.headerOrder, Settings.minRatings, Settings.style)
 
     val trakt: TraktClient? = if (Settings.traktConfigured) TraktClient(Settings.traktClientId, Settings.traktClientSecret) else null
     val simkl = SimklClient(Settings.simklClientId, client)
@@ -44,40 +54,105 @@ class WallpaperFactory(context: Context, private val width: Int) {
             if (hideWatched && status is WatchStatus.Watched) candidate.copy(exclusion = Exclusion.WATCHED) else candidate
         }
         val usable = candidates.filter { it.exclusion == null }.map { it.ref }
-        return ListPlan(candidates, usable, statuses, random, source)
+        return ListPlan(candidates, usable, statuses, random, source, mdbListRatings(usable))
+    }
+
+    /**
+     * MDBList scores of [refs] in one request per type, only when a chosen rating needs them. Any
+     * failure (no account, quota used up, network) leaves the wallpapers with TMDB's score.
+     */
+    private fun mdbListRatings(refs: List<TitleRef>): Map<TitleRef, List<Rating>> {
+        val client = mdbList ?: return emptyMap()
+        if (refs.isEmpty() || !Settings.drawsDetails || Settings.ratingSources.none { it.needsMdbList }) return emptyMap()
+        return refs.groupBy { it.type }.flatMap { (type, group) ->
+            runCatching { client.ratings(type, group.map { it.tmdbId }) }
+                .onFailure { Log.w(TAG, "MDBList ratings failed", it) }
+                .getOrDefault(emptyMap())
+                .map { (id, ratings) -> TitleRef(type, id) to ratings }
+        }.toMap()
     }
 
     /** Wallpaper data of a title, with its source list and its watched badge when the user wants it marked. */
     fun build(ref: TitleRef, plan: ListPlan? = null, source: ListSource? = plan?.source): WallpaperInfo? {
-        val info = catalog.build(ref)?.let { info ->
+        val genres = source?.let { Settings.filtersFor(it).genres }?.takeIf { it.only }?.ids.orEmpty()
+        // Logo or backdrop alone: no source line, badge or ratings (nor their requests)
+        if (!Settings.drawsDetails) return catalog.build(ref, genres)
+        val info = catalog.build(ref, genres)?.let { info ->
             // "Streaming, or list source": the source line only when no service has the title
             if (source == null || !Settings.showSource || (Settings.sourceFallback && Settings.showProviders && info.providerLogoPaths.isNotEmpty())) info
             else info.copy(sourceLabel = Languages.sourceLabel(Settings.language, source), sourceProvider = source.provider)
         } ?: return null
         val status = if (plan != null) plan.statuses[ref] else watched?.status(ref)
         val mode = source?.let { Settings.filtersFor(it).watched } ?: Settings.watchedMode
-        return if (status != null && mode == Settings.WATCHED_MARK) info.copy(watchStatus = status) else info
+        val fromMdbList = if (plan != null) plan.ratings[ref] else mdbListRatings(listOf(ref))[ref]
+        val ratings = Rating.pick(Settings.ratingSources, fromMdbList ?: keylessRatings(ref, info), info.rating)
+        // Header items the user hid are left empty, and the renderer skips empty ones
+        return info.copy(
+            watchStatus = status?.takeIf { mode == Settings.WATCHED_MARK && Settings.showsInHeader(Settings.HEADER_WATCHED) },
+            ratings = ratings,
+            year = info.year.takeIf { Settings.showsInHeader(Settings.HEADER_YEAR) }.orEmpty(),
+            extraInfo = info.extraInfo.takeIf { Settings.showsInHeader(Settings.HEADER_RUNTIME) }.orEmpty(),
+            genres = info.genres.takeIf { Settings.showsInHeader(Settings.HEADER_GENRES) }.orEmpty(),
+            certification = info.certification.takeIf { Settings.showsInHeader(Settings.HEADER_CERTIFICATION) },
+        )
     }
 
-    /** Download the images of [info] and draw the wallpaper. */
-    fun render(info: WallpaperInfo): Bitmap {
-        val backdrop = client.image(info.backdropPath)?.let { decode(it, width) } ?: error("No backdrop for ${info.title}")
-        val logo = info.logoPath
-            ?.let { client.image(it, if (width > 1920) "original" else "w500") }
-            ?.let { decode(it, 0) }
-            ?.let { WallpaperRenderer.brightenDarkLogo(WallpaperRenderer.trimTransparent(it)) }
-        val providers = info.providerLogoPaths.mapNotNull { path -> client.image(path, "w154")?.let { decode(it, 0) } }
+    /** IMDb (its public dataset) and Trakt scores, for titles MDBList didn't give: no account needed. */
+    private fun keylessRatings(ref: TitleRef, info: WallpaperInfo): List<Rating> {
+        val selected = Settings.ratingSources
+        val imdb = info.imdbId?.takeIf { RatingSource.IMDB in selected }
+            ?.let { id -> runCatching { ImdbRatings.rating(appContext, id) }.getOrNull() }
+        val trakt = trakt?.takeIf { RatingSource.TRAKT in selected }
+            ?.let { client -> runCatching { client.rating(ref) }.onFailure { Log.w(TAG, "Trakt rating failed", it) }.getOrNull() }
+        return listOfNotNull(imdb?.let { Rating(RatingSource.IMDB, it) }, trakt?.let { Rating(RatingSource.TRAKT, it * 10) })
+    }
 
-        return try {
-            renderer.render(info, backdrop, logo, providers)
-        } finally {
-            backdrop.recycle()
-            logo?.recycle()
-            providers.forEach { it.recycle() }
+    /**
+     * Download the images of [info] and draw the wallpaper. Downloads overlap other titles; decoding and
+     * drawing go one at a time: in the background Android runs the app on a single core of the TV.
+     */
+    fun render(info: WallpaperInfo): Bitmap {
+        // Previews are 1280 px wide: TMDB's 1280 size instead of decoding the (often 4K) original
+        val backdropBytes = client.image(info.backdropPath, if (width <= 1280) "w1280" else "original")
+        val logoBytes = info.logoPath?.let { client.image(it, if (width > 1920) "original" else "w500") }
+        val providerBytes = info.providerLogoPaths.mapNotNull { client.image(it, "w154") }
+
+        synchronized(drawing) {
+            val backdrop = backdropBytes?.let { decode(it, width) } ?: error("No backdrop for ${info.title}")
+            val logo = logoBytes?.let { decode(it, 0) }?.let { WallpaperRenderer.brightenDarkLogo(WallpaperRenderer.trimTransparent(it)) }
+            val providers = providerBytes.mapNotNull { decode(it, 0) }
+            return try {
+                renderer.render(info, backdrop, logo, providers)
+            } finally {
+                backdrop.recycle()
+                logo?.recycle()
+                providers.forEach { it.recycle() }
+            }
         }
     }
 
     companion object {
+        private const val TAG = "WallpaperFactory"
+
+        /** Shared by every factory; only callers outside it may wait on it (a task waiting on another could deadlock). */
+        private val pool = Executors.newFixedThreadPool(4)
+        private val drawing = Any()
+
+        /**
+         * [transform] of every item on [pool], in the items' order; each result is returned as soon as
+         * it and the ones before it are done. Errors are thrown as they were thrown inside.
+         */
+        fun <T, R> parallel(items: List<T>, transform: (T) -> R): Sequence<R> {
+            val futures = items.map { item -> pool.submit(Callable { transform(item) }) }
+            return futures.asSequence().map { future ->
+                try {
+                    future.get()
+                } catch (e: ExecutionException) {
+                    throw e.cause ?: e
+                }
+            }
+        }
+
         /** Decode an image, subsampling large backdrops close to the target width to save memory. */
         fun decode(bytes: ByteArray, targetWidth: Int): Bitmap? {
             val options = BitmapFactory.Options()

@@ -21,10 +21,10 @@ class MdbListFragment : BaseSettingsFragment() {
         AppCompatResources.getDrawable(requireActivity(), R.mipmap.ic_launcher),
     )
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        // The QR login is shown in this fragment's own manager so the main screen keeps its listener
-        childFragmentManager.setFragmentResultListener(QrDialog.RESULT_KEY, this) { _, _ -> refreshRows() }
+    // Back from Accounts: the account's own lists appear (or go)
+    override fun onResume() {
+        super.onResume()
+        refreshRows()
     }
 
     override fun onCreateActions(actions: MutableList<GuidedAction>, savedInstanceState: Bundle?) {
@@ -42,14 +42,9 @@ class MdbListFragment : BaseSettingsFragment() {
         }
     }
 
-    private fun accountAction(): GuidedAction {
-        val builder = action(ID_ACCOUNT, R.drawable.ic_act_account, getString(R.string.mdblist_account_title), accountDescription())
-        if (Settings.mdbListAvailable) builder.subActions(listOf(
-            GuidedAction.Builder(requireContext()).id(ID_ACCOUNT * SUB_ID_BASE).title(R.string.mdblist_refresh).build(),
-            GuidedAction.Builder(requireContext()).id(ID_ACCOUNT * SUB_ID_BASE + 1).title(R.string.tmdb_disconnect).build(),
-        ))
-        return builder.build()
-    }
+    /** The account is managed in Accounts; this row shows its state and goes there. */
+    private fun accountAction(): GuidedAction =
+        action(ID_ACCOUNT, R.drawable.ic_act_account, getString(R.string.mdblist_account_title), accountDescription()).hasNext(true).build()
 
     private fun publicActions(): List<GuidedAction> {
         val added = Settings.mdbLists.filter { it.path.isNotEmpty() }
@@ -66,10 +61,7 @@ class MdbListFragment : BaseSettingsFragment() {
 
     override fun onGuidedActionClicked(action: GuidedAction) {
         when {
-            action.id == ID_ACCOUNT -> if (!Settings.mdbListAvailable) {
-                if (Settings.mdbListLoginAvailable) MdbListLoginDialog().show(childFragmentManager, "MdbListLoginDialog")
-                else Toast.makeText(requireContext(), R.string.mdblist_unavailable, Toast.LENGTH_LONG).show()
-            }
+            action.id == ID_ACCOUNT -> add(parentFragmentManager, AccountsFragment.newInstance(SourceProvider.MDBLIST))
             action.id >= ID_OWN_BASE -> {
                 val key = ownOptions.getOrNull((action.id - ID_OWN_BASE).toInt())?.key ?: return
                 Settings.lists = if (action.isChecked) Settings.lists + key else Settings.lists - key
@@ -102,25 +94,6 @@ class MdbListFragment : BaseSettingsFragment() {
     private fun setPublic(list: MdbListRef, enabled: Boolean) {
         Settings.mdbLists = Settings.mdbLists.filterNot { it.key == list.key } + listOfNotNull(list.takeIf { enabled })
         Settings.lists = if (enabled) Settings.lists + list.key else Settings.lists - list.key
-    }
-
-    override fun onSubGuidedActionClicked(action: GuidedAction): Boolean {
-        if (action.id / SUB_ID_BASE != ID_ACCOUNT) return true
-        if (action.id % SUB_ID_BASE == 0L) {
-            background({ MdbListClient.fromSettings()?.userLists().orEmpty() }) { result ->
-                result.onSuccess { lists -> Settings.mdbLists = (lists + Settings.mdbLists).distinctBy { it.key } }
-                refreshRows()
-            }
-        } else {
-            // Disconnect: drop the account's lists, keep the public ones
-            val accountKeys = Settings.mdbLists.filter { it.path.isEmpty() }.map { it.key }.toSet()
-            Settings.clearMdbListSession()
-            Settings.mdbListKey = ""
-            Settings.mdbLists = Settings.mdbLists.filter { it.path.isNotEmpty() }
-            Settings.lists -= accountKeys
-            refreshRows()
-        }
-        return true
     }
 
     private fun accountDescription(): String {

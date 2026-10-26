@@ -15,12 +15,13 @@
     <string name="status_error">Last update failed: %1$s</string>
     <string name="status_pending">%1$d wallpapers · changes not applied yet</string>
     <string name="pending_notice">Not applied yet · applies when you exit</string>
+    <string name="projectivy_delay_notice">Projectivy can take up to 15 minutes to show new wallpapers.</string>
 
     <!-- Actions -->
     <string name="action_generate_now">Update now</string>
     <string name="generation_started">Generating wallpapers in the background…</string>
     <string name="action_preview">View wallpapers</string>
-    <string name="action_preview_desc">The current set full screen · OK picks the preview</string>
+    <string name="action_preview_desc">The current set full screen</string>
     <string name="preview_empty">No wallpapers yet. Use \"Update now\" first.</string>
 
     <!-- Live preview -->
@@ -79,9 +80,9 @@
     <string name="mdblist_refresh">Reload my lists</string>
     <string name="mdblist_add">Add a public list</string>
     <string name="mdblist_add_desc">Type user/list or the list URL</string>
-    <string name="mdblist_screen_description">Add any public MDBList list, no account needed: tick a suggested one or type user/list (or its URL). Connect your account to also load your own lists.</string>
+    <string name="mdblist_screen_description">Add any public MDBList list, no account needed: tick a suggested one or type user/list (or its URL). Connect your account (in Accounts) to also load your own lists. Connecting it also adds Rotten Tomatoes, Metacritic and Letterboxd scores to the wallpapers (Wallpaper details → Header).</string>
     <string name="mdblist_account_title">Your MDBList account</string>
-    <string name="mdblist_account_hint">Optional. Scan a QR code to load your own lists</string>
+    <string name="mdblist_account_hint">Optional · connect it in Accounts for your own lists and more ratings</string>
     <string name="mdblist_summary_empty">Optional. Add public lists or connect your account</string>
     <string name="mdblist_added">Added: %1$s</string>
     <string name="mdblist_not_found">List not found</string>
@@ -125,6 +126,23 @@
     <string name="exclusion_watched">Hidden: already watched</string>
     <string name="exclusion_no_image">Skipped: no image</string>
     <string name="exclusion_duplicate">Already used by another list</string>
+    <string name="exclusion_genre">Skipped: genre filter</string>
+    <string name="genres_title">Genres</string>
+    <string name="genres_description">Check the genres to skip, or choose to use only the checked ones. Nothing checked: every genre.</string>
+    <string name="genres_explain">Skip some genres, or use only some</string>
+    <string name="genres_all">All genres</string>
+    <plurals name="genres_only">
+        <item quantity="one">Only %d genre</item>
+        <item quantity="other">Only %d genres</item>
+    </plurals>
+    <plurals name="genres_except">
+        <item quantity="one">All but %d genre</item>
+        <item quantity="other">All but %d genres</item>
+    </plurals>
+    <string name="genres_load_failed">Couldn\'t load the genres from TMDB</string>
+    <string name="genres_mode_title">Use</string>
+    <string name="genres_mode_only">Only the checked genres</string>
+    <string name="genres_mode_except">All but the checked genres</string>
     <string name="tmdb_login_description">Scan the QR code and approve the access on themoviedb.org (log in if needed).</string>
     <string name="qr_preparing">Preparing…</string>
     <string name="qr_waiting">Waiting for approval…</string>
@@ -145,6 +163,11 @@
     <string name="filters_adult_title">Exclude adult content</string>
     <string name="filters_adult_desc">Skips titles marked as adult on TMDB, in every list</string>
     <string name="exclusion_adult">Skipped: adult content</string>
+    <string name="filters_rating_age_title">Age rating</string>
+    <string name="filters_rating_age_up_to">Up to %1$d years old</string>
+    <string name="filters_rating_age_summary">rated up to %1$d</string>
+    <string name="filters_rating_age_desc">Skips titles rated for older viewers in %1$s (the streaming country), or in the US when it has no rating there. Titles with no rating anywhere, mostly not released yet, are kept. In every list.</string>
+    <string name="exclusion_rating_age">Skipped: rated for older viewers</string>
     <string name="mdblist_unavailable">Not available in this version</string>
 
     <!-- About -->
@@ -157,10 +180,77 @@
     <string name="about_source">Source code</string>
     <string name="about_source_scan">Scan it with your phone to open the project page.</string>
     <string name="about_credits">Credits</string>
-    <string name="about_credits_desc">This product uses the TMDB API but is not endorsed or certified by TMDB. Sofadrop uses Trakt but is not endorsed or certified by Trakt. Lists and watch history from Simkl (simkl.com). Trakt, Simkl and MDBList names and logos belong to their owners. Lists from MDBList. Wallpapers for Projectivy Launcher.</string>
+    <string name="about_credits_desc">This product uses the TMDB API but is not endorsed or certified by TMDB. Sofadrop uses Trakt but is not endorsed or certified by Trakt. Lists and watch history from Simkl (simkl.com). Trakt, Simkl and MDBList names and logos belong to their owners. Lists from MDBList. Wallpapers for Projectivy Launcher. Scores from MDBList and Trakt. Information courtesy of IMDb (imdb.com), used with permission; IMDb, Rotten Tomatoes, Metacritic, Letterboxd and MyAnimeList names and logos belong to their owners.</string>
     <string name="qr_link_hint">Scan the code with your phone</string>
+    <string name="setting_accounts_title">Accounts</string>
+    <string name="accounts_description">Connect services by scanning a QR code with your phone. None is required: TMDB lists and the TMDB, IMDb and Trakt ratings work without an account. Disconnecting a service also unticks the lists that need it.</string>
+    <string name="accounts_summary">Connected: %1$s</string>
+    <string name="accounts_none">Optional · more lists, ratings and watch history</string>
+    <string name="accounts_no_account">No account needed</string>
+    <string name="accounts_api_key">Connected with an API key</string>
+    <string name="enables_tmdb">TMDB account: adds your watchlist and favourites as lists. TMDB\'s lists and ratings work without it.</string>
+    <string name="enables_trakt">Trakt account: your recommendations and watchlist as lists, and your watch history for the watched / watching badge and to hide what you\'ve seen. Trakt\'s rating works without it.</string>
+    <string name="enables_simkl">Simkl account: your Plan to watch and Watching lists, and your watch history for the watched / watching badge and to hide what you\'ve seen.</string>
+    <string name="enables_mdblist">MDBList account: your own lists, and the Rotten Tomatoes (critics and audience), Metacritic, Letterboxd and MyAnimeList ratings. Free accounts allow 1,000 requests a day; Sofadrop uses one per list each time it generates.</string>
+    <string name="enables_imdb">IMDb ratings without MDBList come from IMDb\'s official dataset (about 9 MB). It is downloaded when first needed, again every week, and sooner (at most daily) when a new title is missing. Press to download it now.</string>
     <string name="setting_details_title">Wallpaper details</string>
-    <string name="details_description">How each wallpaper looks: language, synopsis length, what the footer shows (the list it came from, the streaming services) and image resolution. A shorter synopsis keeps the text clear of the launcher rows.</string>
+    <string name="style_title">Style</string>
+    <string name="style_full">Complete</string>
+    <string name="style_logo">Logo only</string>
+    <string name="style_backdrop">Backdrop only</string>
+    <string name="style_full_desc">Logo, header, synopsis and footer, as set below</string>
+    <string name="style_logo_desc">The logo (or the title) over the backdrop, nothing else</string>
+    <string name="style_backdrop_desc">Just the image</string>
+    <string name="style_hidden">Hidden with the %1$s style</string>
+    <string name="details_description">How each wallpaper looks: style (everything, the logo alone or just the image), language, synopsis length, cast, what the footer shows (the list it came from, the streaming services) and image resolution. A shorter synopsis keeps the text clear of the launcher rows. Header chooses what the line under the title shows: ratings, year, runtime, genres. Language of each part puts the logo or the synopsis in another language.</string>
+
+    <string name="rating_imdb" translatable="false">IMDb</string>
+    <string name="rating_metacritic" translatable="false">Metacritic</string>
+    <string name="rating_letterboxd" translatable="false">Letterboxd</string>
+    <string name="rating_tmdb" translatable="false">TMDB</string>
+    <string name="rating_trakt" translatable="false">Trakt</string>
+    <string name="rating_myanimelist" translatable="false">MyAnimeList</string>
+    <string name="header_title">Header</string>
+    <string name="header_fit_desc">When the line doesn\'t fit, the ratings beyond the minimum go first, then whatever is furthest right (genres one by one). Put first what you don\'t want to lose: the first item and the ratings always shown are never dropped.</string>
+    <string name="header_show">Line under the logo, in this order</string>
+    <string name="header_year">Year</string>
+    <string name="header_runtime">Runtime or seasons</string>
+    <string name="header_genres">Genres</string>
+    <string name="header_watched">Watched / watching badge</string>
+    <string name="header_year_short">year</string>
+    <string name="header_runtime_short">runtime</string>
+    <string name="header_genres_short">genres</string>
+    <string name="header_watched_short">watched</string>
+    <string name="header_empty">Nothing</string>
+    <string name="header_watched_needs">Needs Trakt or Simkl history</string>
+    <string name="header_certification">Age rating</string>
+    <string name="header_certification_short">age rating</string>
+    <string name="header_certification_desc">The one for %1$s, the streaming country · not shown when it has none</string>
+    <string name="header_ratings">Ratings</string>
+    <string name="header_ratings_short">ratings</string>
+    <string name="header_min_ratings">Ratings always shown</string>
+    <string name="header_min_ratings_desc">%1$d · more only appear where there\'s room left</string>
+    <string name="imdb_data_title">IMDb ratings</string>
+    <string name="imdb_data_date">Official IMDb data from %1$s · press to update (about 9 MB)</string>
+    <string name="imdb_data_never">Downloaded when first needed (about 9 MB) · press to download now</string>
+    <string name="imdb_data_unused">Only used for IMDb without MDBList</string>
+    <string name="imdb_data_downloading">Downloading…</string>
+    <string name="imdb_data_failed">Couldn\'t download them (%1$s)</string>
+    <string name="ratings_source_title">Source</string>
+    <string name="ratings_source_mdblist">MDBList</string>
+    <string name="ratings_source_mdblist_user">MDBList · connected as %1$s</string>
+    <string name="ratings_source_tmdb">No MDBList: IMDb, TMDB and Trakt · connect it for Rotten Tomatoes, Metacritic and more</string>
+    <string name="ratings_header">Ratings, in this order</string>
+    <string name="ratings_position">Position %1$d of %2$d</string>
+    <string name="ratings_hidden">Not shown</string>
+    <string name="ratings_dont_show">Don\'t show</string>
+    <string name="ratings_option_position">Position %1$d</string>
+    <string name="ratings_option_last">Position %1$d (last)</string>
+    <string name="ratings_needs_mdblist">Needs MDBList</string>
+    <string name="rating_tomatoes">Rotten Tomatoes (critics)</string>
+    <string name="rating_tomatoes_short">RT</string>
+    <string name="rating_popcorn">Rotten Tomatoes (audience)</string>
+    <string name="rating_popcorn_short">RT audience</string>
     <string name="streaming_summary_none">no streaming services</string>
     <string name="streaming_summary">streaming in %1$s</string>
     <string name="lists_hub_description">How many titles to take from each list and in what order, then the lists themselves and, at the end, the filters. A title in several lists is only used once.</string>
@@ -188,8 +278,24 @@
     <string name="synopsis_hidden">Hidden</string>
     <string name="synopsis_summary_short">short synopsis</string>
     <string name="synopsis_summary_hidden">no synopsis</string>
+    <string name="cast_title">Cast</string>
+    <string name="cast_hidden">Hidden</string>
+    <string name="cast_shown">Under the synopsis</string>
+    <string name="cast_shown_desc">The main actors, as many as fit on one line. It moves the footer down.</string>
     <string name="preview_label_pinned">Preview · %1$s · pinned</string>
-    <string name="preview_pinned">Shown in the settings preview</string>
+    <string name="preview_pinned">Shown in the settings preview · change it in Wallpaper details</string>
+    <string name="preview_pin_title">Preview title</string>
+    <string name="preview_pin_automatic">Automatic</string>
+    <string name="preview_pin_not_found">%1$s is not on TMDB or has no background image</string>
+    <string name="preview_pin_desc">The title the preview shows, to try the settings on it. It stays until you change it, even when the wallpapers are updated.</string>
+    <string name="preview_pin_auto_desc">A title from your first list</string>
+    <string name="preview_pin_auto_on">In use · a title from your first list</string>
+    <string name="preview_pin_pick">Pick from your wallpapers</string>
+    <string name="preview_pin_pick_desc">Full screen · OK picks one</string>
+    <string name="preview_pin_id">TMDB id</string>
+    <string name="preview_pin_id_desc">603, tv 1399 or a TMDB link</string>
+    <string name="preview_pin_movie">Movie</string>
+    <string name="preview_pin_series">Series</string>
     <string name="preview_unpinned">Preview back to automatic</string>
     <string name="setting_simkl_title">Simkl</string>
     <string name="account_title_simkl">Your Simkl account</string>
@@ -243,7 +349,7 @@
     <string name="watch_source_title">Watch history</string>
     <string name="watch_source_off">Don\'t use</string>
     <string name="watch_source_explain">The Trakt or Simkl account whose watched titles can be marked or hidden</string>
-    <string name="watch_source_connect">Connect Trakt or Simkl in Lists to use your watch history</string>
+    <string name="watch_source_connect">Connect Trakt or Simkl in Accounts to use your watch history</string>
     <string name="watched_need_source">Choose a watch history first</string>
     <string name="explore_lists_header">Your lists</string>
     <string name="filters_duplicates_title">Skip repeated titles</string>
@@ -254,22 +360,38 @@
     <string name="filters_automatic_note">By default this only applies to trending, popular and similar lists, so your watchlists and favourites aren\'t emptied.</string>
     <string name="explore_titles_header">Titles · %1$d</string>
     <string name="about_credits_short">TMDB · Trakt · Simkl · MDBList</string>
-    <string name="logo_mode_title">Logo not in your language</string>
+    <string name="part_languages_title">Language of each part</string>
+    <string name="part_languages_desc">The logo and the synopsis can use another language than the rest of the wallpaper. Automatic follows the wallpaper Language: %1$s. Each one says what to do when TMDB has nothing in its language.</string>
+    <string name="part_summary_all">All in %1$s</string>
+    <string name="part_summary_logo">Logo: %1$s</string>
+    <string name="part_summary_synopsis">Synopsis: %1$s</string>
+    <string name="part_summary_skips">skips titles</string>
+    <string name="logo_language_title">Logo language</string>
+    <string name="synopsis_language_title">Synopsis language</string>
+    <string name="language_auto">Automatic</string>
+    <string name="language_auto_current">Automatic · %1$s</string>
+    <string name="language_original">Original language</string>
+    <string name="language_original_desc">The one it was made in</string>
+    <string name="logo_mode_title">If there\'s no logo in it</string>
     <string name="logo_mode_text">Write the title</string>
     <string name="logo_mode_text_desc">The title as plain text</string>
     <string name="logo_mode_original">Original logo, or the title</string>
     <string name="logo_mode_original_desc">The original-language (or English) logo; with none, the title as text</string>
     <string name="logo_mode_original_skip">Original logo, or skip</string>
     <string name="logo_mode_original_skip_desc">The original-language (or English) logo; with none, the title isn\'t used</string>
+    <string name="logo_mode_english">English logo, or the title</string>
+    <string name="logo_mode_english_desc">The English logo; with none, the title as text</string>
+    <string name="logo_mode_english_skip">English logo, or skip</string>
+    <string name="logo_mode_english_skip_desc">The English logo; with none, the title isn\'t used</string>
     <string name="logo_mode_skip">Skip the title</string>
-    <string name="logo_mode_skip_desc">Only titles with a logo in your language</string>
-    <string name="synopsis_mode_title">Synopsis not in your language</string>
+    <string name="logo_mode_skip_desc">Another title takes its place; fewer to choose from</string>
+    <string name="synopsis_mode_title">If there\'s no synopsis in it</string>
     <string name="synopsis_mode_hide">Leave it out</string>
-    <string name="synopsis_mode_hide_desc">After looking for it in other countries that speak your language</string>
+    <string name="synopsis_mode_hide_desc">After looking for it in other countries that speak that language</string>
     <string name="synopsis_mode_english">Show it in English</string>
     <string name="synopsis_mode_skip">Skip the title</string>
-    <string name="synopsis_mode_skip_desc">Only titles with a synopsis in your language</string>
-    <string name="exclusion_no_synopsis">Skipped: no synopsis in your language</string>
+    <string name="synopsis_mode_skip_desc">Another title takes its place; fewer to choose from</string>
+    <string name="exclusion_no_synopsis">Skipped: no synopsis in the chosen language</string>
     <string name="setting_mix_title">Order in the launcher</string>
     <string name="mix_on">All lists mixed</string>
     <string name="mix_off">One list after another</string>

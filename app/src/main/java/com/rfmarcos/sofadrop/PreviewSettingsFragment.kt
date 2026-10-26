@@ -10,6 +10,7 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.leanback.widget.GuidanceStylist
 import androidx.leanback.widget.GuidanceStylist.Guidance
+import androidx.leanback.widget.GuidedAction
 
 /**
  * Settings screen whose left pane is a live preview of one wallpaper rendered with the current settings
@@ -24,6 +25,9 @@ abstract class PreviewSettingsFragment : BaseSettingsFragment() {
     private var previewJob = 0
     private val previewRunnable = Runnable { startPreview() }
 
+    /** Show the "Projectivy may take a few minutes" line under the preview. */
+    protected open val showsProjectivyNotice = false
+
     override fun onCreateGuidanceStylist(): GuidanceStylist = object : GuidanceStylist() {
         override fun onProvideLayoutId() = R.layout.settings_guidance
 
@@ -34,6 +38,7 @@ abstract class PreviewSettingsFragment : BaseSettingsFragment() {
             previewLabel = view.findViewById(R.id.preview_label)
             pendingNotice = view.findViewById(R.id.pending_notice)
             view.findViewById<View>(R.id.preview_frame).clipToOutline = true
+            if (showsProjectivyNotice) view.findViewById<View>(R.id.projectivy_notice).visibility = View.VISIBLE
             cachedPreview?.let { (key, bitmap, title) -> if (key == previewKey()) showPreview(bitmap, title) }
             return view
         }
@@ -61,6 +66,15 @@ abstract class PreviewSettingsFragment : BaseSettingsFragment() {
         Settings.tmdbConnected, Settings.previewPin, WallpaperStore(requireContext()).current().size,
     ).joinToString("|")
 
+    /** A part the style doesn't draw: its row stays (so rows don't jump), disabled and saying why. */
+    protected fun GuidedAction.hiddenBy(drawn: Boolean): GuidedAction {
+        if (!drawn) {
+            description = getString(R.string.style_hidden, DetailsFragment.styleLabel(requireContext(), Settings.style))
+            isEnabled = false
+        }
+        return this
+    }
+
     protected fun schedulePreview(delay: Long = 700) {
         refreshPending()
         handler.removeCallbacks(previewRunnable)
@@ -74,7 +88,7 @@ abstract class PreviewSettingsFragment : BaseSettingsFragment() {
             showPreviewMessage(getString(R.string.preview_no_token))
             return
         }
-        if (Sources.selected().isEmpty()) {
+        if (Sources.selected().isEmpty() && Settings.previewPin.isEmpty()) {
             showPreviewMessage(getString(R.string.error_no_lists))
             return
         }
@@ -117,30 +131,61 @@ abstract class PreviewSettingsFragment : BaseSettingsFragment() {
         /** Last preview (key, image, title), kept while the process lives so reopening is instant. */
         private var cachedPreview: Triple<String, Bitmap, String>? = null
 
-        /** The pinned title while it is still in the current set; a pin left behind by a new set is dropped. */
-        private fun pinnedRef(context: Context): Pair<TitleRef, String>? {
-            val pin = Settings.previewPin.ifEmpty { return null }
-            val stored = WallpaperStore(context).current().firstOrNull { "${it.type}:${it.tmdbId}" == pin }
-            val type = MediaType.entries.firstOrNull { it.path == stored?.type }
-            if (stored == null || type == null) {
-                Settings.previewPin = ""
-                return null
-            }
-            return TitleRef(type, stored.tmdbId) to stored.source
+        /** "type:tmdbId" pins for what the user typed: "tv 1399", "tv:1399" or a TMDB URL; a bare number may be either type. */
+        fun pinCandidates(text: String): List<String> {
+            Regex("(?i)(?<![a-z])(tv|movie)(?![a-z])\\W*(\\d+)").find(text)?.let { return listOf("${it.groupValues[1].lowercase()}:${it.groupValues[2]}") }
+            val id = Regex("\\d+").find(text)?.value ?: return emptyList()
+            return MediaType.entries.map { "${it.path}:$id" }
         }
 
-        /** Render the pinned wallpaper, else one of the first selected list that has a usable title. */
+        private fun pinRef(pin: String): TitleRef? {
+            val (type, id) = pin.split(':').takeIf { it.size == 2 } ?: return null
+            return TitleRef(MediaType.entries.firstOrNull { it.path == type } ?: return null, id.toIntOrNull() ?: return null)
+        }
+
+        /** [pins] that can be a wallpaper (the id exists and has a backdrop), with their TMDB details. */
+        fun pinInfos(context: Context, pins: List<String>): List<Pair<String, WallpaperInfo>> {
+            Settings.init(context)
+            val catalog = WallpaperFactory(context, PREVIEW_WIDTH).catalog
+            return pins.mapNotNull { pin -> pinRef(pin)?.let(catalog::build)?.let { pin to it } }
+        }
+
+        /** Title the automatic preview picked from a list when there was no generated set, so it stays put. */
+        private var autoPick: Pair<TitleRef, ListSource>? = null
+
+        /**
+         * Render the pinned title (with its list while it is in the current set; it may be any TMDB id),
+         * else the first title of the current set whose list is still selected, else one of the first
+         * selected list that has a usable title. Changing a setting redraws the same title.
+         */
         fun renderPreview(context: Context): Pair<Bitmap, String>? {
             Settings.init(context)
             val factory = WallpaperFactory(context, PREVIEW_WIDTH)
-            pinnedRef(context)?.let { (ref, sourceKey) ->
+            val stored = WallpaperStore(context).current()
+            val pin = Settings.previewPin
+            pinRef(pin)?.let { ref ->
+                val sourceKey = stored.firstOrNull { "${it.type}:${it.tmdbId}" == pin }?.source
                 val source = Sources.available().firstOrNull { it.key == sourceKey }
-                factory.build(ref, source = source)?.let { info -> return factory.render(info) to info.title }
+                // A pin that fails says so instead of silently showing another title
+                val info = factory.build(ref, source = source) ?: error(context.getString(R.string.preview_pin_not_found, pin))
+                return factory.render(info) to info.title
             }
-            for (source in Sources.selected()) {
+            val selected = Sources.selected()
+            // Sets made before the list was stored have no source: they still came from the user's lists
+            val fromSet = stored.filter { it.source.isEmpty() || selected.any { source -> source.key == it.source } }
+            for (wallpaper in fromSet.take(4)) {
+                val ref = pinRef("${wallpaper.type}:${wallpaper.tmdbId}") ?: continue
+                val info = factory.build(ref, source = selected.firstOrNull { it.key == wallpaper.source }) ?: continue
+                return factory.render(info) to info.title
+            }
+            autoPick?.takeIf { (_, source) -> selected.any { it.key == source.key } }?.let { (ref, source) ->
+                factory.build(ref, source = source)?.let { return factory.render(it) to it.title }
+            }
+            for (source in selected) {
                 val plan = runCatching { factory.plan(source, 3) }.getOrNull() ?: continue
                 for (ref in plan.usable.take(4)) {
                     val info = factory.build(ref, plan) ?: continue
+                    autoPick = ref to source
                     return factory.render(info) to info.title
                 }
             }

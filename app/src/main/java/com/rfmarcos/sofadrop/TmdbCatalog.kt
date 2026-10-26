@@ -1,9 +1,11 @@
 package com.rfmarcos.sofadrop
 
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
+import java.util.concurrent.ConcurrentHashMap
 
 enum class MediaType(val path: String) { MOVIE("movie"), TV("tv") }
 
@@ -14,6 +16,7 @@ data class WallpaperInfo(
     val title: String,
     val overview: String,
     val year: String,
+    /** TMDB's own score, 0-10. */
     val rating: Double,
     val extraInfo: String,
     val genres: String,
@@ -21,13 +24,21 @@ data class WallpaperInfo(
     val logoPath: String?,
     val providerLogoPaths: List<String>,
     val watchStatus: WatchStatus? = null,
+    /** Scores drawn on the wallpaper, in order (see [Rating.pick]). */
+    val ratings: List<Rating> = emptyList(),
+    /** For the IMDb rating without MDBList. */
+    val imdbId: String? = null,
     /** List the title was taken from, for the footer ("Trending · TMDB"). */
     val sourceLabel: String? = null,
     val sourceProvider: SourceProvider? = null,
+    /** Age certification of the streaming country ("16", "TV-MA"), see [Certifications]. */
+    val certification: String? = null,
+    /** Main cast, most important first (see [TmdbCatalog.castNames]); empty unless shown. */
+    val cast: List<String> = emptyList(),
 )
 
 /** Why a title of a list is not used. */
-enum class Exclusion { LOCAL_MARKET, TOO_OLD, ADULT, NO_LOGO, NO_SYNOPSIS, WATCHED, NO_IMAGE, DUPLICATE }
+enum class Exclusion { LOCAL_MARKET, TOO_OLD, ADULT, AGE_RATING, GENRE, NO_LOGO, NO_SYNOPSIS, WATCHED, NO_IMAGE, DUPLICATE }
 
 /** A title of a list and, when it is filtered out, the reason. */
 data class Candidate(val ref: TitleRef, val exclusion: Exclusion? = null)
@@ -41,11 +52,14 @@ class TmdbCatalog(
     private val language: String,
     private val region: String,
     private val showProviders: Boolean,
+    /** The logo and synopsis may use other languages than the rest of the wallpaper. */
+    private val parts: PartLanguages = PartLanguages(language, language),
+    private val showCast: Boolean = false,
 ) {
     private val languageCode = Languages.code(language)
-    private val country = Languages.regionOf(language)
     private val texts = Languages.texts(language)
-    private val details = mutableMapOf<TitleRef, JsonObject>()
+    private val details = ConcurrentHashMap<TitleRef, JsonObject>()
+    private val translations = ConcurrentHashMap<TitleRef, List<JsonObject>>()
 
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
     private val today = dateFormat.format(Calendar.getInstance().time)
@@ -73,9 +87,12 @@ class TmdbCatalog(
             }
         }.distinct()
         if (shuffle) refs = refs.shuffled()
-        val check = cutoff != null || filters.globalHits || Settings.excludeAdult || Settings.requireLogo || Settings.synopsisMode == Settings.SYNOPSIS_SKIP
+        val check = cutoff != null || filters.globalHits || Settings.excludeAdult || Settings.maxRatingAge > 0 ||
+            !filters.genres.isOff || Settings.requireLogo || Settings.requireSynopsis
+        // Checked a batch at a time in parallel: at most one batch more than needed
         return refs.asSequence()
-            .map { Candidate(it, if (check) exclusion(it, cutoff, filters.globalHits) else null) }
+            .chunked(CHECK_BATCH)
+            .flatMap { batch -> WallpaperFactory.parallel(batch) { Candidate(it, if (check) exclusion(it, cutoff, filters) else null) } }
             .takeIncluded(pool)
     }
 
@@ -126,8 +143,9 @@ class TmdbCatalog(
         // Both sources overlap, so read about as many pages of each as the list needs (20 titles per page)
         val pageCount = ((count + 19) / 20).coerceIn(1, 5)
         for (page in 1..pageCount) {
-            listOf("trending/${type.path}/week?language=$language&page=$page", "$discover&page=$page").forEach { query ->
-                client.get(query)?.objects("results")?.forEach { item ->
+            val queries = listOf("trending/${type.path}/week?language=$language&page=$page", "$discover&page=$page")
+            WallpaperFactory.parallel(queries) { client.get(it) }.forEach { page ->
+                page?.objects("results")?.forEach { item ->
                     item.int("id")?.let { items.putIfAbsent(it, item) }
                 }
             }
@@ -140,9 +158,9 @@ class TmdbCatalog(
     private fun pages(path: String, type: MediaType, count: Int): List<TitleRef> {
         val separator = if ('?' in path) '&' else '?'
         val pageCount = ((count + 19) / 20).coerceIn(1, 5)
-        return (1..pageCount).flatMap { page ->
+        return WallpaperFactory.parallel((1..pageCount).toList()) { page ->
             client.get("$path${separator}language=$language&page=$page")?.objects("results").orEmpty()
-        }.mapNotNull { item -> item.int("id")?.let { TitleRef(type, it) } }
+        }.flatten().toList().mapNotNull { item -> item.int("id")?.let { TitleRef(type, it) } }
     }
 
     /** Keep candidates until [count] of them are usable (filtered ones are kept to explain them). */
@@ -165,15 +183,18 @@ class TmdbCatalog(
 
     // --- Filters (from the TMDB details of each title) ---
 
-    private fun exclusion(ref: TitleRef, cutoff: String?, globalHits: Boolean): Exclusion? {
+    private fun exclusion(ref: TitleRef, cutoff: String?, filters: FilterValues): Exclusion? {
         val item = details(ref) ?: return null
         return when {
-            globalHits && isLocalMarket(item) -> Exclusion.LOCAL_MARKET
+            filters.globalHits && isLocalMarket(item) -> Exclusion.LOCAL_MARKET
             isTooOld(ref.type, item, cutoff) -> Exclusion.TOO_OLD
             Settings.excludeAdult && isAdult(ref, item) -> Exclusion.ADULT
+            // Unrated titles (mostly not released yet) pass
+            Settings.maxRatingAge > 0 && (Certifications.minimumAge(ref.type, item, region) ?: 0) > Settings.maxRatingAge -> Exclusion.AGE_RATING
+            !filters.genres.allows(item.objects("genres").mapNotNull { it.int("id") }) -> Exclusion.GENRE
             // Last: it costs an images request per title
             Settings.requireLogo && logoPath(ref, item) == null -> Exclusion.NO_LOGO
-            Settings.synopsisMode == Settings.SYNOPSIS_SKIP && localOverview(ref, item).isBlank() -> Exclusion.NO_SYNOPSIS
+            Settings.requireSynopsis && localOverview(ref, item).isBlank() -> Exclusion.NO_SYNOPSIS
             else -> null
         }
     }
@@ -194,20 +215,27 @@ class TmdbCatalog(
     }
 
     private fun isAdult(ref: TitleRef, item: JsonObject): Boolean =
-        item.bool("adult") == true || client.get("${ref.type.path}/${ref.tmdbId}/keywords")
+        item.bool("adult") == true || item.obj("keywords")
             ?.objects(if (ref.type == MediaType.MOVIE) "keywords" else "results")
             ?.any { it.str("name")?.lowercase() in EXCLUDED_KEYWORDS } == true
 
+    // Series only have their IMDb id in external_ids (movies carry imdb_id); keywords for the adult filter;
+    // release dates and content ratings for the age certification
     private fun details(ref: TitleRef): JsonObject? =
-        details[ref] ?: client.get("${ref.type.path}/${ref.tmdbId}?language=$language")?.also { details[ref] = it }
+        details[ref] ?: client.get("${ref.type.path}/${ref.tmdbId}?language=$language&append_to_response=keywords," +
+            if (ref.type == MediaType.TV) "external_ids,content_ratings" else "release_dates")
+            ?.also { details[ref] = it }
 
     // --- Wallpaper data ---
 
-    /** Build the wallpaper data from TMDB details; null when the title has no usable backdrop. */
-    fun build(ref: TitleRef): WallpaperInfo? {
+    /**
+     * Build the wallpaper data from TMDB details; null when the title has no usable backdrop.
+     * [matchedGenres] (the genres its list only allows) are shown first.
+     */
+    fun build(ref: TitleRef, matchedGenres: Set<Int> = emptySet()): WallpaperInfo? {
         val type = ref.type
         val item = details(ref) ?: return null
-        val title = item.str(if (type == MediaType.MOVIE) "title" else "name") ?: return null
+        if (item.str(titleKey(type)) == null) return null
         val backdrop = textlessBackdrop(ref, item.str("backdrop_path")) ?: return null
 
         val extraInfo = if (type == MediaType.MOVIE) {
@@ -215,31 +243,43 @@ class TmdbCatalog(
             if (runtime > 0) "${runtime / 60}h ${runtime % 60}min" else ""
         } else {
             val seasons = item.int("number_of_seasons") ?: 0
-            if (seasons > 0) "$seasons ${if (seasons == 1) texts.season else texts.seasons}" else ""
+            if (seasons > 0) texts.seasonCount(seasons) else ""
         }
 
         // Untranslated synopsis: English only when the user prefers it to none
-        val overview = localOverview(ref, item).ifBlank {
-            if (Settings.synopsisMode == Settings.SYNOPSIS_ENGLISH) client.get("${type.path}/${ref.tmdbId}?language=en-US")?.str("overview").orEmpty() else ""
+        val overview = if (!Settings.drawsDetails) "" else localOverview(ref, item).ifBlank {
+            if (Settings.synopsisMode == Settings.SYNOPSIS_ENGLISH) translated(translations(ref), "en", "US", "overview") else ""
         }
 
         return WallpaperInfo(
             type = type,
             id = ref.tmdbId,
-            title = title,
+            title = titleIn(type, item, { translations(ref) }, parts.title, language),
             overview = overview,
             year = item.str(if (type == MediaType.MOVIE) "release_date" else "first_air_date").orEmpty().take(4),
             rating = item.double("vote_average") ?: 0.0,
             extraInfo = extraInfo,
-            genres = item.objects("genres").mapNotNull { it.str("name") }
-                .map { if (type == MediaType.TV) Languages.translateTvGenre(language, it) else it }
+            // The genres a list was filtered by first: TMDB's own order is arbitrary, so the ones shown
+            // could otherwise be ones that played no part in it
+            genres = item.objects("genres")
+                .sortedByDescending { it.int("id") in matchedGenres }
+                .mapNotNull { Languages.genreName(language, it.int("id"), it.str("name")) }
                 .take(2)
                 .joinToString(", "),
             backdropPath = backdrop,
-            logoPath = logoPath(ref, item),
+            logoPath = if (Settings.drawsLogo) logoPath(ref, item) else null,
             providerLogoPaths = if (showProviders) providerLogoPaths(ref) else emptyList(),
+            imdbId = item.str("imdb_id") ?: item.obj("external_ids")?.str("imdb_id"),
+            certification = Certifications.of(type, item, region)?.let { Certifications.label(region, it) },
+            cast = if (showCast) cast(ref) else emptyList(),
         )
     }
+
+    // Its own request, only for the titles drawn: a series' aggregate credits (whole run, by episodes)
+    // can be 300 KB, and its plain credits only list the latest season (no Pedro Pascal in The Last of Us)
+    private fun cast(ref: TitleRef): List<String> = castNames(
+        client.get("${ref.type.path}/${ref.tmdbId}/${if (ref.type == MediaType.TV) "aggregate_credits" else "credits"}?language=$language")
+    )
 
     /** Prefer a backdrop without baked-in text, so it doesn't clash with the logo. */
     private fun textlessBackdrop(ref: TitleRef, default: String?): String? {
@@ -252,52 +292,20 @@ class TmdbCatalog(
     }
 
     private fun logoPath(ref: TitleRef, item: JsonObject): String? {
-        val type = ref.type
-        val title = item.str(if (type == MediaType.MOVIE) "title" else "name").orEmpty()
-        val original = item.str(if (type == MediaType.MOVIE) "original_title" else "original_name").orEmpty()
         val originalLanguage = item.str("original_language").orEmpty()
-        val logos = client.get("${type.path}/${ref.tmdbId}/images?include_image_language=$languageCode,$originalLanguage,en")
-            ?.objects("logos")?.filter { it.str("file_path")?.endsWith(".png") == true }.orEmpty()
-        fun inLanguage(code: String) = logos.filter { it.str("iso_639_1") == code }
-
-        var logo = localLogo(ref, inLanguage(languageCode), title)
-        // An untranslated title reads the same on the original-language logo
-        if (logo == null && similarity(title, original) > 0.9) logo = inLanguage(originalLanguage).firstOrNull()?.str("file_path")
-        if (logo == null && originalLanguage != "en") {
-            val english = client.get("${type.path}/${ref.tmdbId}?language=en-US")
-                ?.str(if (type == MediaType.MOVIE) "title" else "name")
-                .orEmpty()
-            if (similarity(title, english) > 0.9) logo = inLanguage("en").firstOrNull()?.str("file_path")
-        }
-        // Optional: a logo in another language beats the title written as plain text
-        if (logo == null && Settings.logoFallback) logo = (inLanguage(originalLanguage) + inLanguage("en")).firstOrNull()?.str("file_path")
-        return logo
+        val code = parts.title?.let(Languages::code) ?: originalLanguage
+        val logos = client.get("${ref.type.path}/${ref.tmdbId}/images?include_image_language=$code,$originalLanguage,en")
+            ?.objects("logos").orEmpty()
+        return pickLogo(logos, item, ref.type, { translations(ref) }, parts.title, language, Settings.logoFallback)
     }
 
-    /**
-     * A logo in the configured language: one made for the configured country (or for none) first. One
-     * made for another country only when that country's title is ours too: an "es-MX" logo can read
-     * "Código: Venganza" where Spain's title is "El motín".
-     */
-    private fun localLogo(ref: TitleRef, logos: List<JsonObject>, title: String): String? {
-        logos.firstOrNull { it.str("iso_3166_1").let { c -> c == null || c == country } }?.let { return it.str("file_path") }
-        if (logos.isEmpty()) return null
-        val titles = translations(ref)
-            .mapNotNull { t ->
-                val name = t.obj("data")?.str(if (ref.type == MediaType.MOVIE) "title" else "name")?.takeIf { it.isNotBlank() }
-                t.str("iso_3166_1")?.let { c -> name?.let { c to it } }
-            }.toMap()
-        return logos.firstOrNull { logo -> titles[logo.str("iso_3166_1")]?.let { similarity(it, title) > 0.9 } == true }?.str("file_path")
-    }
+    /** Synopsis in the synopsis language, from another country if needed (es-MX for es-ES); empty when there is none. */
+    private fun localOverview(ref: TitleRef, item: JsonObject): String = overviewIn(item, { translations(ref) }, parts.synopsis, language)
 
-    /** Synopsis in the configured language, from another country if needed (es-MX for es-ES); empty when there is none. */
-    private fun localOverview(ref: TitleRef, item: JsonObject): String = item.str("overview").orEmpty()
-        .ifBlank { translations(ref).firstNotNullOfOrNull { it.obj("data")?.str("overview")?.takeIf(String::isNotBlank) }.orEmpty() }
-
-    /** TMDB translations of a title in the configured language, one per country. */
-    private fun translations(ref: TitleRef): List<JsonObject> =
+    /** TMDB translations of a title (title and synopsis), one per language and country. */
+    private fun translations(ref: TitleRef): List<JsonObject> = translations.getOrPut(ref) {
         client.get("${ref.type.path}/${ref.tmdbId}/translations")?.objects("translations").orEmpty()
-            .filter { it.str("iso_639_1") == languageCode }
+    }
 
     private fun providerLogoPaths(ref: TitleRef): List<String> {
         val providers = client.get("${ref.type.path}/${ref.tmdbId}/watch/providers")
@@ -325,7 +333,22 @@ class TmdbCatalog(
         private const val MIN_VOTES_OTHER_LANGUAGES = 1000
         private const val MAX_PROVIDERS = 4
         private const val RANDOM_POOL = 100
+        private const val CHECK_BATCH = 8
         private val EXCLUDED_KEYWORDS = setOf("adult")
+        /** Names kept for the cast row; the renderer draws the ones that fit on its line. */
+        private const val MAX_CAST = 4
+
+        /**
+         * First names of TMDB credits (already ordered by importance, or by episodes for a series),
+         * skipping the ones only written in another script: TMDB gives a person's name in Latin letters
+         * when it has it ("Lee Jung-jae") and in Hangul or kanji otherwise, which every wallpaper language
+         * (all in Latin script) would show as foreign text.
+         */
+        fun castNames(credits: JsonObject?): List<String> = credits?.objects("cast").orEmpty()
+            .mapNotNull { it.str("name")?.trim()?.takeIf(String::isNotEmpty) }
+            .filter { name -> name.all { !it.isLetter() || Character.UnicodeScript.of(it.code) == Character.UnicodeScript.LATIN } }
+            .distinct()
+            .take(MAX_CAST)
 
         private val PROVIDER_VARIANT_SUFFIX = Regex(
             "\\s+(amazon channel|apple tv channel|roku premium channel|channel" +
@@ -340,6 +363,79 @@ class TmdbCatalog(
                 if (stripped == base) return base
                 base = stripped
             }
+        }
+
+        private fun titleKey(type: MediaType) = if (type == MediaType.MOVIE) "title" else "name"
+
+        private fun originalKey(type: MediaType) = if (type == MediaType.MOVIE) "original_title" else "original_name"
+
+        /** Language of the title's own translation: TMDB marks Cantonese titles "cn" and translates them as "zh". */
+        private fun originalCode(item: JsonObject) = item.str("original_language").orEmpty().let { if (it == "cn") "zh" else it }
+
+        /** First non-blank [field] of the translations in [code], those made for [country] first. */
+        fun translated(translations: List<JsonObject>, code: String, country: String?, field: String): String =
+            translations.filter { it.str("iso_639_1") == code }
+                .sortedByDescending { country != null && it.str("iso_3166_1") == country }
+                .firstNotNullOfOrNull { it.obj("data")?.str(field)?.takeIf(String::isNotBlank) }.orEmpty()
+
+        /**
+         * Title in [locale] (null: the original title). Like TMDB's own `?language=`, an untranslated
+         * title is the original one; [general] is the language [item] was fetched in.
+         */
+        fun titleIn(type: MediaType, item: JsonObject, translations: () -> List<JsonObject>, locale: String?, general: String): String {
+            val title = item.str(titleKey(type)).orEmpty()
+            val original = item.str(originalKey(type)).orEmpty()
+            return when (locale) {
+                general -> title
+                null -> original
+                else -> translations()
+                    .firstOrNull { it.str("iso_639_1") == Languages.code(locale) && it.str("iso_3166_1") == Languages.regionOf(locale) }
+                    ?.obj("data")?.str(titleKey(type))?.takeIf(String::isNotBlank) ?: original
+            }.ifBlank { title }
+        }
+
+        /** Synopsis in [locale] (null: the original language), from another country if needed; empty when there is none. */
+        fun overviewIn(item: JsonObject, translations: () -> List<JsonObject>, locale: String?, general: String): String = when (locale) {
+            general -> item.str("overview").orEmpty().ifBlank { translated(translations(), Languages.code(general), null, "overview") }
+            null -> translated(translations(), originalCode(item), (item.array("origin_country").firstOrNull() as? JsonPrimitive)?.content, "overview")
+            else -> translated(translations(), Languages.code(locale), Languages.regionOf(locale), "overview")
+        }
+
+        /**
+         * Logo in [locale] (null: the original language), else one in another language whose title reads
+         * the same, else with [fallback] the original-language or English one; null to write the title.
+         */
+        fun pickLogo(
+            logos: List<JsonObject>, item: JsonObject, type: MediaType, translations: () -> List<JsonObject>,
+            locale: String?, general: String, fallback: Boolean,
+        ): String? {
+            val original = item.str(originalKey(type)).orEmpty()
+            val originalLanguage = item.str("original_language").orEmpty()
+            val code = locale?.let(Languages::code) ?: originalLanguage
+            val title = titleIn(type, item, translations, locale, general)
+            val pngs = logos.filter { it.str("file_path")?.endsWith(".png") == true }
+            fun inLanguage(code: String) = pngs.filter { it.str("iso_639_1") == code }
+
+            val local = inLanguage(code)
+            // Made for the locale's country (or for none), any country for the original language
+            var logo = local.firstOrNull { it.str("iso_3166_1").let { c -> c == null || locale == null || c == Languages.regionOf(locale) } }
+                ?.str("file_path")
+            // Another country's only when its title is ours too: an "es-MX" logo can read "Código: Venganza" where Spain's title is "El motín"
+            if (logo == null && local.isNotEmpty()) {
+                val titles = translations().filter { it.str("iso_639_1") == code }.mapNotNull { t ->
+                    val name = t.obj("data")?.str(titleKey(type))?.takeIf { it.isNotBlank() }
+                    t.str("iso_3166_1")?.let { c -> name?.let { c to it } }
+                }.toMap()
+                logo = local.firstOrNull { l -> titles[l.str("iso_3166_1")]?.let { similarity(it, title) > 0.9 } == true }?.str("file_path")
+            }
+            // An untranslated title reads the same on the original-language logo
+            if (logo == null && similarity(title, original) > 0.9) logo = inLanguage(originalLanguage).firstOrNull()?.str("file_path")
+            if (logo == null && originalLanguage != "en" && similarity(title, titleIn(type, item, translations, "en-US", general)) > 0.9) {
+                logo = inLanguage("en").firstOrNull()?.str("file_path")
+            }
+            // Optional: a logo in another language beats the title written as plain text
+            if (logo == null && fallback) logo = (inLanguage(originalLanguage) + inLanguage("en")).firstOrNull()?.str("file_path")
+            return logo
         }
 
         /** Similarity ratio in [0, 1] based on the Levenshtein distance. */

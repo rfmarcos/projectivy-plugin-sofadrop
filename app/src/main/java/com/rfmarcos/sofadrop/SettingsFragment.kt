@@ -11,6 +11,8 @@ import androidx.leanback.widget.GuidedAction
 /** Main settings: what to do now, where titles come from, and how often. Details live in sub-screens. */
 class SettingsFragment : PreviewSettingsFragment() {
 
+    override val showsProjectivyNotice = true
+
     private val statusRefresher = object : Runnable {
         override fun run() {
             refreshStatus()
@@ -47,6 +49,8 @@ class SettingsFragment : PreviewSettingsFragment() {
             .hasNext(true).build()
         actions += action(ID_DETAILS, R.drawable.ic_act_tv, getString(R.string.setting_details_title), DetailsFragment.summary(context))
             .hasNext(true).build()
+        actions += action(ID_ACCOUNTS, R.drawable.ic_act_account, getString(R.string.setting_accounts_title), AccountsFragment.summary(context))
+            .hasNext(true).build()
         actions += choice(ID_REFRESH, R.drawable.ic_act_schedule, R.string.setting_refresh_title, refreshLabel(Settings.refreshHours),
             Settings.REFRESH_OPTIONS.map(::refreshLabel))
         actions += action(ID_ABOUT, R.drawable.ic_act_info, getString(R.string.setting_about_title),
@@ -59,6 +63,7 @@ class SettingsFragment : PreviewSettingsFragment() {
         val context = requireContext()
         updateDescription(ID_LISTS, ListsFragment.summary(context))
         updateDescription(ID_DETAILS, DetailsFragment.summary(context))
+        updateDescription(ID_ACCOUNTS, AccountsFragment.summary(context))
         handler.post(statusRefresher)
         // Back from the system installer (cancelled, or blocked by Play Protect): offer the update again
         updateDescription(ID_APP_UPDATE, getString(R.string.update_desc, Settings.updateVersion, BuildConfig.VERSION_NAME))
@@ -90,6 +95,7 @@ class SettingsFragment : PreviewSettingsFragment() {
             ID_USE_IN_PROJECTIVY -> Projectivy.openWallpaperSettings(requireContext())
             ID_LISTS -> add(parentFragmentManager, ListsFragment())
             ID_DETAILS -> add(parentFragmentManager, DetailsFragment())
+            ID_ACCOUNTS -> add(parentFragmentManager, AccountsFragment())
             ID_ABOUT -> add(parentFragmentManager, AboutFragment())
         }
     }
@@ -180,5 +186,6 @@ class SettingsFragment : PreviewSettingsFragment() {
         private const val ID_DETAILS = 20L
         private const val ID_APP_UPDATE = 21L
         private const val ID_USE_IN_PROJECTIVY = 22L
+        private const val ID_ACCOUNTS = 23L
     }
 }

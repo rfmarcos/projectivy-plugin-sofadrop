@@ -5,5 +5,12 @@
         <receiver
             android:name=".DebugNotifyReceiver"
             android:exported="true" />
+
+        <!-- Projectivy resolves the relative settingsActivity (".SettingsActivity") against the package,
+             com.rfmarcos.sofadrop.dev, but the class stays in com.rfmarcos.sofadrop -->
+        <activity-alias
+            android:name="com.rfmarcos.sofadrop.dev.SettingsActivity"
+            android:targetActivity="com.rfmarcos.sofadrop.SettingsActivity"
+            android:exported="true" />
     </application>
 </manifest>

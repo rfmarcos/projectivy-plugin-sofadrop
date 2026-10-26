@@ -20,11 +20,11 @@ import android.graphics.Typeface
 import android.graphics.drawable.Drawable
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.res.ResourcesCompat
-import kotlin.math.cos
+import kotlin.math.ceil
+import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
-import kotlin.math.sin
 
 /**
  * Draws a wallpaper with the same layout as TMDB.py. All sizes are defined for a 3840 px wide
@@ -35,6 +35,12 @@ class WallpaperRenderer(
     private val width: Int,
     private val texts: WallpaperTexts,
     private val overviewLines: Int = 4,
+    /** Blocks of the header line in order, see [Settings.headerOrder]. */
+    private val headerOrder: List<String> = Settings.HEADER_BLOCKS,
+    /** Ratings that stay when the header line is full, see [Settings.minRatings]. */
+    private val minRatings: Int = 2,
+    /** What is drawn over the backdrop, see [Settings.STYLES]. */
+    private val style: String = Settings.STYLE_FULL,
 ) {
 
     private val height = width * 9 / 16
@@ -49,6 +55,12 @@ class WallpaperRenderer(
     private val traktLogo: Drawable = AppCompatResources.getDrawable(context, R.drawable.logo_trakt)!!
     private val simklLogo: Bitmap = BitmapFactory.decodeResource(context.resources, R.drawable.logo_simkl)
     private val mdbListLogo: Bitmap = BitmapFactory.decodeResource(context.resources, R.drawable.logo_mdblist)
+    // Official marks of the rating platforms, unaltered (sources in each drawable)
+    private val ratingLogos: Map<Int, Drawable> = listOf(
+        R.drawable.rating_imdb, R.drawable.rating_tomatoes_fresh, R.drawable.rating_tomatoes_rotten, R.drawable.rating_popcorn_up,
+        R.drawable.rating_popcorn_down, R.drawable.rating_metacritic, R.drawable.rating_letterboxd, R.drawable.rating_tmdb,
+        R.drawable.badge_trakt, R.drawable.rating_myanimelist,
+    ).associateWith { AppCompatResources.getDrawable(context, it)!! }
 
     private fun s(value: Float) = value * scale
     private fun s(value: Int) = value * scale
@@ -67,9 +79,14 @@ class WallpaperRenderer(
             (6 + Color.green(average) * 0.1f).roundToInt(),
             (6 + Color.blue(average) * 0.1f).roundToInt(),
         )
-        drawGradient(canvas, tint, horizontal = true) { t -> 0.96f * (1 - smoothstep((t - 0.28f) / 0.45f)) }
+        // The left one is there for the text: lighter behind a logo alone, none on the bare backdrop
+        when (style) {
+            Settings.STYLE_FULL -> drawGradient(canvas, tint, horizontal = true) { t -> 0.96f * (1 - smoothstep((t - 0.28f) / 0.45f)) }
+            Settings.STYLE_LOGO -> drawGradient(canvas, tint, horizontal = true) { t -> 0.75f * (1 - smoothstep((t - 0.12f) / 0.45f)) }
+        }
         drawGradient(canvas, tint, horizontal = false) { t -> 0.98f * smoothstep((t - 0.42f) / 0.46f) }
         drawGradient(canvas, tint, horizontal = false) { t -> 0.45f * (1 - smoothstep(t / 0.22f)) }
+        if (style == Settings.STYLE_BACKDROP) return output
 
         // Info block on its own layer, so it can cast a soft shadow
         val layer = Bitmap.createBitmap(
@@ -77,9 +94,14 @@ class WallpaperRenderer(
         )
         val layerCanvas = Canvas(layer)
         if (logo != null) drawLogo(layerCanvas, logo) else drawTitle(layerCanvas, info.title)
-        drawMetadata(layerCanvas, info)
-        val overviewBottom = drawOverview(layerCanvas, info.overview)
-        drawFooter(layerCanvas, overviewBottom + s(40), providerLogos, info)
+        if (style == Settings.STYLE_FULL) {
+            // With no header line the synopsis moves up into its place
+            val overviewTop = s(if (drawMetadata(layerCanvas, info)) META_CENTER + 36 + 52 else LOGO_BOTTOM + 60)
+            val overviewBottom = drawOverview(layerCanvas, info.overview, overviewTop)
+            // Without a synopsis, the cast or the footer starts where it would, not a synopsis gap lower
+            val castBottom = drawCast(layerCanvas, overviewBottom, info.cast, if (overviewBottom > overviewTop) s(CAST_GAP) else 0f)
+            drawFooter(layerCanvas, if (castBottom > overviewTop) castBottom + s(40) else overviewTop, providerLogos, info)
+        }
 
         val offset = IntArray(2)
         val shadow = layer.extractAlpha(
@@ -123,10 +145,19 @@ class WallpaperRenderer(
         } else {
             LinearGradient(0f, 0f, 0f, height.toFloat(), colors, positions, Shader.TileMode.CLAMP)
         }
-        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), Paint().apply {
+        // Only the band where the gradient isn't fully transparent: the slowest step on the TV, and it
+        // covers most of the screen at alpha 0 (same shader, so the pixels drawn don't change)
+        val first = colors.indexOfFirst { Color.alpha(it) > 0 }.takeIf { it >= 0 } ?: return
+        val last = colors.indexOfLast { Color.alpha(it) > 0 }
+        val length = if (horizontal) width else height
+        val start = floor(positions[max(first - 1, 0)] * length)
+        val end = ceil(positions[min(last + 1, stops - 1)] * length)
+        val paint = Paint().apply {
             this.shader = shader
             isDither = true
-        })
+        }
+        if (horizontal) canvas.drawRect(start, 0f, end, height.toFloat(), paint)
+        else canvas.drawRect(0f, start, width.toFloat(), end, paint)
     }
 
     // --- Title / logo ---
@@ -161,50 +192,200 @@ class WallpaperRenderer(
 
     // --- Metadata ---
 
-    private fun drawMetadata(canvas: Canvas, info: WallpaperInfo) {
-        var x = s(MARGIN_LEFT)
+    /**
+     * The header line: its blocks in the user's order, which is also their importance. When they
+     * don't fit, the ratings beyond [minRatings] go first, then whatever is rightmost (the genres
+     * one by one, the rest whole: the year goes with its age certification). The first block and
+     * the [minRatings] ratings always stay. Returns false when there was nothing to draw.
+     */
+    private fun drawMetadata(canvas: Canvas, info: WallpaperInfo): Boolean {
         val center = s(META_CENTER)
+        val metaPaint = shadowed(textPaint(medium, s(48f), Color.rgb(230, 230, 230)))
+        val ratings = info.ratings.map(::ratingItem)
+        val genres = info.genres.split(", ").filter { it.isNotBlank() }
+        var ratingCount = ratings.size
+        var genreCount = genres.size
+        val dropped = mutableSetOf<String>()
 
-        if (info.rating > 0) {
-            val ratingPaint = textPaint(medium, s(46f), Color.WHITE)
-            val ratingText = String.format(java.util.Locale.US, "%.1f", info.rating)
-            val pad = s(24f)
-            val star = s(22f)
-            val gap = s(14f)
-            val pillHeight = s(72f)
-            val pillWidth = pad + star * 2 + gap + ratingPaint.measureText(ratingText) + pad
-            canvas.drawRoundRect(
-                RectF(x, center - pillHeight / 2, x + pillWidth, center + pillHeight / 2),
-                pillHeight / 2, pillHeight / 2,
-                Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.argb(46, 255, 255, 255) },
-            )
-            canvas.drawPath(starPath(x + pad + star, center, star, star * 0.45f), Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = Color.rgb(245, 197, 24)
-            })
-            drawCentered(canvas, ratingText, x + pad + star * 2 + gap, center, ratingPaint)
-            x += pillWidth + s(20f)
+        fun blocks(): List<Block> = headerOrder.filter { it !in dropped }.mapNotNull { block ->
+            when (block) {
+                Settings.HEADER_RATINGS -> ratings.take(ratingCount).takeIf { it.isNotEmpty() }?.let { RatingsBlock(it) }
+                Settings.HEADER_WATCHED -> info.watchStatus?.let { WatchBlock(it) }
+                Settings.HEADER_YEAR -> YearBlock(info.year, info.certification.orEmpty(), metaPaint).takeIf { it.width > 0 }
+                Settings.HEADER_RUNTIME -> info.extraInfo.takeIf { it.isNotEmpty() }?.let { TextBlock(it, metaPaint) }
+                Settings.HEADER_GENRES -> genres.take(genreCount).takeIf { it.isNotEmpty() }?.let { TextBlock(it.joinToString(", "), metaPaint) }
+                else -> null
+            }?.also { it.key = block }
+        }
+        // Text blocks read as one phrase joined by dots; ratings and the badge stand apart
+        val separator = s(SEPARATOR_PAD) * 2 + metaPaint.measureText("·")
+        fun gap(before: Block, after: Block) = if (before.text && after.text) separator else s(BLOCK_GAP)
+        fun width(line: List<Block>) = line.sumOf { it.width.toDouble() }.toFloat() + line.zipWithNext(::gap).sum()
+
+        var line = blocks()
+        while (width(line) > s(CONTENT_WIDTH)) {
+            if (ratingCount > minRatings && Settings.HEADER_RATINGS in line.map { it.key }) {
+                ratingCount--
+            } else {
+                // The ratings left are the ones the user wants always shown: the next block gives way instead
+                val last = line.drop(1).lastOrNull { it.key != Settings.HEADER_RATINGS }?.key ?: break
+                if (last == Settings.HEADER_GENRES) genreCount-- else dropped += last
+            }
+            line = blocks()
         }
 
-        info.watchStatus?.let { x = drawWatchBadge(canvas, it, x, center) + s(14f) }
-        if (info.rating > 0 || info.watchStatus != null) x += s(14f)
+        var x = s(MARGIN_LEFT)
+        line.forEachIndexed { index, block ->
+            if (index > 0) {
+                val before = line[index - 1]
+                if (before.text && block.text) drawCentered(canvas, "·", x + s(SEPARATOR_PAD), center, metaPaint)
+                x += gap(before, block)
+            }
+            block.draw(canvas, x, center)
+            x += block.width
+        }
+        return line.isNotEmpty()
+    }
 
-        val meta = listOf(info.year, info.extraInfo, info.genres).filter { it.isNotEmpty() }.joinToString("   ·   ")
-        drawCentered(canvas, meta, x, center, textPaint(medium, s(48f), Color.rgb(230, 230, 230)))
+    /** One block of the header line, see [Settings.HEADER_BLOCKS]. */
+    private abstract inner class Block {
+        /** Which of [Settings.HEADER_BLOCKS] it is. */
+        var key = ""
+        abstract val width: Float
+        /** Text blocks are joined by a dot. */
+        open val text: Boolean get() = false
+        abstract fun draw(canvas: Canvas, x: Float, center: Float)
+    }
+
+    private inner class RatingsBlock(val items: List<RatingItem>) : Block() {
+        override val width = items.sumOf { it.width.toDouble() }.toFloat() + s(RATING_SPACING) * (items.size - 1)
+        override fun draw(canvas: Canvas, x: Float, center: Float) {
+            drawRatings(canvas, items, x, center)
+        }
+    }
+
+    private inner class WatchBlock(val status: WatchStatus) : Block() {
+        override val width = watchBadgeWidth(status)
+        override fun draw(canvas: Canvas, x: Float, center: Float) {
+            drawWatchBadge(canvas, status, x, center)
+        }
+    }
+
+    private inner class TextBlock(val value: String, val paint: Paint) : Block() {
+        override val width = paint.measureText(value)
+        override val text get() = true
+        override fun draw(canvas: Canvas, x: Float, center: Float) = drawCentered(canvas, value, x, center, paint)
+    }
+
+    /** "2024 [16]": the certification boxed right after the year, no dot between (the box already separates). */
+    private inner class YearBlock(val year: String, val certification: String, val paint: Paint) : Block() {
+        private val boxPaint = textPaint(medium, s(36f), Color.rgb(230, 230, 230))
+        private val boxWidth = if (certification.isEmpty()) 0f else boxPaint.measureText(certification) + s(CERT_PADDING) * 2
+        private val yearWidth = if (year.isEmpty()) 0f else paint.measureText(year)
+        override val width = yearWidth + boxWidth + if (year.isNotEmpty() && certification.isNotEmpty()) s(CERT_GAP) else 0f
+        override val text get() = true
+
+        override fun draw(canvas: Canvas, x: Float, center: Float) {
+            if (year.isNotEmpty()) drawCentered(canvas, year, x, center, paint)
+            if (certification.isEmpty()) return
+            val left = x + width - boxWidth
+            val h = s(CERT_HEIGHT)
+            val stroke = s(3f)
+            // Centred on the digits of the line, not on the font's box (which reaches below the baseline),
+            // and the mark centred on its own letters inside
+            val digits = center + (glyphCenter(paint, "0123456789") - glyphCenter(paint, null))
+            // Inset by half the stroke, so the outline stays inside the measured box
+            val box = RectF(left, digits - h / 2, left + boxWidth, digits + h / 2).apply { inset(stroke / 2, stroke / 2) }
+            canvas.drawRoundRect(box, s(8f), s(8f), Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.argb(30, 255, 255, 255) })
+            canvas.drawRoundRect(box, s(8f), s(8f), shadowed(Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                style = Paint.Style.STROKE
+                strokeWidth = stroke
+                color = Color.argb(200, 230, 230, 230)
+            }))
+            canvas.drawText(certification, left + s(CERT_PADDING), digits - glyphCenter(boxPaint, certification), boxPaint)
+        }
+    }
+
+    /**
+     * Offset from the baseline to the middle of [text]'s glyphs (negative: above it); with null, to the
+     * middle of the font's ascent and descent, which is where [drawCentered] puts the centre.
+     */
+    private fun glyphCenter(paint: Paint, text: String?): Float {
+        if (text == null) return (paint.fontMetrics.ascent + paint.fontMetrics.descent) / 2
+        val bounds = Rect().also { paint.getTextBounds(text, 0, text.length, it) }
+        return (bounds.top + bounds.bottom) / 2f
+    }
+
+    /** A platform's logo and its score in the brand colour, measured for the header row. */
+    private class RatingItem(val logo: Drawable, val logoWidth: Float, val logoHeight: Float, val text: String, val paint: Paint, val gap: Float) {
+        val width: Float get() = logoWidth + gap + paint.measureText(text)
+    }
+
+    private fun ratingItem(rating: Rating): RatingItem {
+        val logo = ratingLogos.getValue(ratingLogo(rating))
+        // Same optical size: wide wordmarks shorter than round icons
+        val height = s(
+            when (rating.source) {
+                RatingSource.IMDB -> 40f
+                RatingSource.TMDB -> 44f
+                RatingSource.MYANIMELIST -> 42f
+                RatingSource.LETTERBOXD -> 26f
+                else -> 50f
+            }
+        )
+        // White: the logos already bring the colour, and the score stays a step above the grey details
+        val paint = shadowed(textPaint(bold, s(48f), Color.WHITE))
+        return RatingItem(logo, height * logo.intrinsicWidth / logo.intrinsicHeight, height, rating.text, paint, s(14f))
+    }
+
+    /** Logos and scores in a row, no background (as Nuvio does); returns where they end. */
+    private fun drawRatings(canvas: Canvas, items: List<RatingItem>, x: Float, center: Float): Float {
+        var left = x
+        items.forEachIndexed { index, item ->
+            if (index > 0) left += s(RATING_SPACING)
+            item.logo.setBounds(left.roundToInt(), (center - item.logoHeight / 2).roundToInt(),
+                (left + item.logoWidth).roundToInt(), (center + item.logoHeight / 2).roundToInt())
+            item.logo.draw(canvas)
+            drawCentered(canvas, item.text, left + item.logoWidth + item.gap, center, item.paint)
+            left += item.width
+        }
+        return left
+    }
+
+    private fun ratingLogo(rating: Rating) = when (rating.source) {
+        RatingSource.IMDB -> R.drawable.rating_imdb
+        RatingSource.TOMATOES -> if (rating.positive) R.drawable.rating_tomatoes_fresh else R.drawable.rating_tomatoes_rotten
+        RatingSource.POPCORN -> if (rating.positive) R.drawable.rating_popcorn_up else R.drawable.rating_popcorn_down
+        RatingSource.METACRITIC -> R.drawable.rating_metacritic
+        RatingSource.LETTERBOXD -> R.drawable.rating_letterboxd
+        RatingSource.TMDB -> R.drawable.rating_tmdb
+        RatingSource.TRAKT -> R.drawable.badge_trakt
+        RatingSource.MYANIMELIST -> R.drawable.rating_myanimelist
+    }
+
+    /** Soft shadow that keeps the header text readable over bright backdrops. */
+    private fun shadowed(paint: Paint) = paint.apply { setShadowLayer(s(10f), 0f, s(2f), Color.argb(150, 0, 0, 0)) }
+
+    private fun watchBadgeWidth(status: WatchStatus): Float {
+        val text = watchBadgeText(status)
+        return s(24f) * 2 + s(26f) + s(14f) + textPaint(medium, s(40f), Color.WHITE).measureText(text)
+    }
+
+    private fun watchBadgeText(status: WatchStatus) = when (status) {
+        is WatchStatus.Watched -> texts.watched
+        is WatchStatus.InProgress -> String.format(texts.watching, status.completed, status.aired)
     }
 
     /** "✓ Watched" (green) or "▶ Watching · 3/8" (blue) pill; returns where it ends. */
     private fun drawWatchBadge(canvas: Canvas, status: WatchStatus, x: Float, center: Float): Float {
         val watched = status is WatchStatus.Watched
-        val text = when (status) {
-            is WatchStatus.Watched -> texts.watched
-            is WatchStatus.InProgress -> String.format(texts.watching, status.completed, status.aired)
-        }
-        val textPaint = textPaint(medium, s(44f), Color.WHITE)
+        val text = watchBadgeText(status)
+        val textPaint = textPaint(medium, s(40f), Color.WHITE)
         val pad = s(24f)
-        val icon = s(30f)
+        val icon = s(26f)
         val gap = s(14f)
-        val height = s(72f)
-        val width = pad + icon + gap + textPaint.measureText(text) + pad
+        val height = s(64f)
+        val width = watchBadgeWidth(status)
         val color = if (watched) Color.rgb(46, 160, 87) else Color.rgb(59, 130, 246)
         canvas.drawRoundRect(
             RectF(x, center - height / 2, x + width, center + height / 2), height / 2, height / 2,
@@ -234,15 +415,31 @@ class WallpaperRenderer(
         return x + width
     }
 
-    private fun drawOverview(canvas: Canvas, overview: String): Float {
+    private fun drawOverview(canvas: Canvas, overview: String, start: Float): Float {
         val paint = textPaint(regular, s(48f), Color.rgb(220, 220, 220))
-        var top = s(META_CENTER + 36 + 52)
+        var top = start
         if (overviewLines <= 0 || overview.isBlank()) return top // hidden or untranslated: the streaming row moves up
         for (line in wrap(overview, paint, s(CONTENT_WIDTH), overviewLines)) {
             canvas.drawText(line, s(MARGIN_LEFT), top - paint.fontMetrics.ascent, paint)
             top += s(66f)
         }
         return top
+    }
+
+    /** "Name · Name · Name" on one line, as many as fit, [gap] below [top]; returns its bottom, or [top] with no cast. */
+    private fun drawCast(canvas: Canvas, top: Float, cast: List<String>, gap: Float): Float {
+        val paint = textPaint(light, s(44f), Color.rgb(185, 185, 185))
+        val separator = "  ·  "
+        // In order: a shorter name further down the list doesn't jump the queue
+        var line = ""
+        for (name in cast) {
+            val candidate = if (line.isEmpty()) name else "$line$separator$name"
+            if (paint.measureText(candidate) > s(CONTENT_WIDTH)) break
+            line = candidate
+        }
+        if (line.isEmpty()) return top
+        canvas.drawText(line, s(MARGIN_LEFT), top + gap - paint.fontMetrics.ascent, paint)
+        return top + gap + s(60f)
     }
 
     /** "Available on [icons]" when there are streaming services, then (dimmer) the list it came from. */
@@ -319,17 +516,6 @@ class WallpaperRenderer(
         canvas.drawText(text, x, centerY - (metrics.ascent + metrics.descent) / 2, paint)
     }
 
-    private fun starPath(cx: Float, cy: Float, outer: Float, inner: Float) = Path().apply {
-        for (i in 0 until 10) {
-            val radius = if (i % 2 == 0) outer else inner
-            val angle = -Math.PI / 2 + i * Math.PI / 5
-            val px = cx + radius * cos(angle).toFloat()
-            val py = cy + radius * sin(angle).toFloat()
-            if (i == 0) moveTo(px, py) else lineTo(px, py)
-        }
-        close()
-    }
-
     private fun roundedSquare(source: Bitmap, size: Int, radius: Float): Bitmap {
         val result = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(result)
@@ -344,11 +530,22 @@ class WallpaperRenderer(
     companion object {
         private const val MARGIN_LEFT = 210
         private const val CONTENT_WIDTH = 1550
+        private const val RATING_SPACING = 44f
+        /** Between header blocks that aren't both text (ratings, the watched badge). */
+        private const val BLOCK_GAP = 60f
+        /** Each side of the dot between text blocks. */
+        private const val SEPARATOR_PAD = 22f
         private const val LOGO_MAX_WIDTH = 1350
         private const val LOGO_MAX_HEIGHT = 420
         private const val LOGO_BOTTOM = 640
         private const val META_CENTER = 725
         private const val PROVIDER_ICON_SIZE = 88
+        /** Between the synopsis and the cast row. */
+        private const val CAST_GAP = 26f
+        private const val CERT_HEIGHT = 56f
+        private const val CERT_PADDING = 14f
+        /** Between the year and its certification box. */
+        private const val CERT_GAP = 24f
 
         private fun font(context: Context, id: Int): Typeface =
             ResourcesCompat.getFont(context, id) ?: Typeface.DEFAULT
@@ -412,14 +609,15 @@ class WallpaperRenderer(
             var count = 0
             var valueSum = 0f
             var saturationSum = 0f
-            val hsv = FloatArray(3)
             var i = 0
             while (i < pixels.size) {
                 val pixel = pixels[i]
                 if (Color.alpha(pixel) > 128) {
-                    Color.colorToHSV(pixel, hsv)
-                    saturationSum += hsv[1]
-                    valueSum += hsv[2]
+                    // Saturation and value as Color.colorToHSV (Skia) computes them, without its native call per pixel (~130 ms a logo on the TV)
+                    val high = max(Color.red(pixel), max(Color.green(pixel), Color.blue(pixel)))
+                    val low = min(Color.red(pixel), min(Color.green(pixel), Color.blue(pixel)))
+                    if (high > low) saturationSum += (high - low).toFloat() / high
+                    valueSum += high.toFloat() / 255
                     count++
                 }
                 i += step

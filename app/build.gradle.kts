@@ -70,6 +70,9 @@ android {
 
     buildTypes {
         getByName("debug") {
+            // "Sofadrop Dev": installs next to the release on the TV, with its own plugin uuid (src/debug/res)
+            applicationIdSuffix = ".dev"
+            versionNameSuffix = "-dev"
             buildConfigField("String", "DEFAULT_TMDB_TOKEN", "\"$defaultTmdbToken\"")
             buildConfigField("String", "DEFAULT_MDBLIST_KEY", "\"$defaultMdbListKey\"")
         }

@@ -13,24 +13,25 @@ Sofadrop is a wallpaper plugin for [Projectivy Launcher](https://github.com/spoc
 * 🎬 **Your lists**: TMDB trending, popular, in cinemas, upcoming, top rated and on the air (no account needed); Trakt, Simkl and MDBList lists, including your watchlists and any public MDBList list.
 * 📱 **Nothing to type on the TV**: accounts connect by scanning a QR code with your phone.
 * 🖼️ **Clean, readable wallpapers**: textless backdrops with the title's logo, rating, year, runtime or seasons, genres and synopsis, kept clear of the launcher rows.
+* ⭐ **The ratings you trust**: IMDb, Rotten Tomatoes (critics and audience), Metacritic, Letterboxd, TMDB, Trakt or MyAnimeList, with their logos, in the order you choose. IMDb, TMDB and Trakt work without any account; the others come from MDBList.
 * 📺 **Where to watch it**: the streaming services that have each title in your country, or the list it came from.
 * ✅ **Watched titles**: with your Trakt or Simkl history, mark what you've seen ("✓ Watched", "▶ Watching · 3/8") or hide it.
-* 🎯 **Filters**: maximum age, global hits only, no adult content, no repeats, and only titles with a logo or a synopsis in your language. Every list can have its own.
+* 🎯 **Filters**: maximum age, global hits only, no adult content, no repeats, skip some genres (or use only some), and only titles with a logo or a synopsis in your language. Every list can have its own.
 * 🔎 **Explore your lists**: see each list's titles in order and which ones are used or skipped, and why.
 * 🔀 **Mixed or in order**: all lists shuffled together, or one after another.
-* 🌍 **Languages**: English, Spanish, Portuguese, French, Italian and German wallpapers.
+* 🌍 **Languages**: English, Spanish, Portuguese, French, Italian, German, Dutch, Swedish, Norwegian, Danish, Finnish, Polish, Czech, Hungarian, Romanian, Turkish, Greek, Russian and Ukrainian wallpapers. When TMDB has no logo or synopsis in yours, you choose what to show instead.
 * 🔄 **Updates itself**: new versions are offered inside the app.
 
 ## 📸 Screenshots
 
 | | |
 |---|---|
-| ![Moana on Projectivy's home screen](docs/images/projectivy_home_moana.jpg) | ![Minions & Monsters on Projectivy's home screen](docs/images/projectivy_home_minions.jpg) |
-| ![Clayface on Projectivy's home screen](docs/images/projectivy_home_clayface.jpg) | ![Avengers: Doomsday](docs/images/wallpaper_en_avengers.jpg) |
+| ![Minions & Monsters on Projectivy's home screen](docs/images/projectivy_home_minions.jpg) | ![The Super Mario Galaxy Movie on Projectivy's home screen](docs/images/projectivy_home_mario.jpg) |
+| ![Mutiny on Projectivy's home screen](docs/images/projectivy_home_mutiny.jpg) | ![Avengers: Doomsday](docs/images/wallpaper_en_avengers.jpg) |
 | ![A title marked as watched from your Trakt history](docs/images/wallpaper_en_watched.jpg) | ![Streaming services available in your country](docs/images/wallpaper_en_streaming.jpg) |
 | ![Avatar: Aang, in Spanish](docs/images/wallpaper_es_avatar.jpg) | ![The Mandalorian & Grogu, in Spanish](docs/images/wallpaper_es_mandalorian.jpg) |
 
-*Titles watched on Trakt or Simkl get a badge (or can be hidden), the footer shows where to watch each title, and wallpapers come in six languages (Spanish above).*
+*Ratings come with each platform's logo (IMDb and Trakt above, no account needed; Rotten Tomatoes, Metacritic and more with MDBList), next to the age rating. Titles watched on Trakt or Simkl get a badge (or can be hidden), the footer shows where to watch each title, the cast can go under the synopsis, and wallpapers come in 19 languages (Spanish above).*
 
 ## 📥 Installation
 
@@ -54,14 +55,15 @@ The left side of the settings shows a **live preview** of a wallpaper with your 
   * *Titles per list*, *Title picking* (at random or the top of each list) and *Order in the launcher* (mixed or one list after another).
   * One screen per service, **TMDB**, **Trakt**, **Simkl** and **MDBList**, to tick lists and connect your account.
   * **Filters & explore lists**: the filters for every list, then your lists. Open one to see its titles and give it its own filters.
-* **Wallpaper details**: language, synopsis length, the footer (streaming services and/or the list source), the streaming country, what to do when the logo or synopsis isn't in your language, and resolution (1080p or 4K).
+* **Wallpaper details**: language, the header under the title (which ratings, in what order, and whether to show the year, runtime, genres and watched badge; hiding details leaves room for more ratings), synopsis length, the footer (streaming services and/or the list source), the streaming country, what to do when the logo or synopsis isn't in your language, and resolution (1080p or 4K).
+* **Accounts**: connect TMDB, Trakt, Simkl and MDBList with a QR code, see what each one adds, and update the IMDb ratings data.
 * **Update every**: how often a new set is generated (6 hours to 7 days). How often the wallpaper *changes on screen* is set in Projectivy itself.
 
 ### Connecting your accounts (optional)
 
-* **Trakt**: *Lists → Trakt → Your Trakt account*, then scan the QR code. Adds your recommendations and watchlist, and your history can mark or hide watched titles.
+* **Trakt**: *Accounts → Trakt*, then scan the QR code. Adds your recommendations and watchlist, and your history can mark or hide watched titles.
 * **Simkl**: trending anime, movies and shows work without an account. Connect it to add your *Plan to watch* and *Watching* lists and your history.
-* **MDBList**: tick a suggested public list or add any public one by `user/list` or its URL, no account needed. Connect your account to load your own lists, private ones included.
+* **MDBList**: tick a suggested public list or add any public one by `user/list` or its URL, no account needed. Connect your account to load your own lists, private ones included, and to show Rotten Tomatoes, Metacritic, Letterboxd and MyAnimeList ratings (*Wallpaper details → Header*). Ratings take one request per list from your MDBList daily quota.
 
 ## 🔄 Updates
 
@@ -80,7 +82,7 @@ Bug reports and ideas are welcome in the [issues](../../issues). Want to build i
 * Based on the official [Projectivy wallpaper provider template](https://github.com/spocky/projectivy-plugin-wallpaper-provider) by spocky (Apache 2.0).
 * Movie and TV data, images and logos from [TMDB](https://www.themoviedb.org/). *This product uses the TMDB API but is not endorsed or certified by TMDB.*
 * Lists and watch history from [Trakt](https://trakt.tv/), [Simkl](https://simkl.com/) and [MDBList](https://mdblist.com/). *Sofadrop uses Trakt but is not endorsed or certified by Trakt.*
-* The Trakt logo is the official dark-background logo from [trakt.tv/branding](https://trakt.tv/branding), used unaltered; the Simkl and MDBList logos come from their own sites. All names and logos belong to their owners.
+* The Trakt logo is the official dark-background logo from [trakt.tv/branding](https://trakt.tv/branding), used unaltered; the Simkl and MDBList logos come from their own sites. Ratings come from MDBList and Trakt; without MDBList, IMDb ratings come from IMDb's official [dataset](https://developer.imdb.com/non-commercial-datasets/) (about 9 MB, refreshed weekly). *Information courtesy of IMDb (https://www.imdb.com). Used with permission.* The IMDb, Rotten Tomatoes, Metacritic, Letterboxd and MyAnimeList logos are the versions on [Wikimedia Commons](https://commons.wikimedia.org/), used unaltered next to each score. All names and logos belong to their owners.
 * Streaming availability from TMDB Watch Providers, powered by [JustWatch](https://www.justwatch.com/).
 * [Roboto](https://github.com/googlefonts/roboto) (Apache 2.0) and [Nunito](https://github.com/googlefonts/nunito) (SIL Open Font License 1.1) fonts, and Material Icons (Apache 2.0).
 * Thanks to [adelatour11/androidtvbackground](https://github.com/adelatour11/androidtvbackground), the script that started [androidtvbackground-reddit](https://github.com/rfmarcos/androidtvbackground-reddit) and, through it, this plugin.

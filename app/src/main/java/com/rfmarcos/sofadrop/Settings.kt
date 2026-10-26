@@ -18,14 +18,30 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
 import java.util.Locale
 
+/**
+ * Genre filter: titles with none of [ids] or, with [only], only titles with at least one of them. No
+ * ids = no filter. Movies and TV shows use different TMDB ids for the same genre (see [Genres]).
+ */
+@Serializable
+data class GenreFilter(val ids: Set<Int> = emptySet(), val only: Boolean = false) {
+    val isOff: Boolean get() = ids.isEmpty()
+
+    fun allows(genreIds: Collection<Int>): Boolean = isOff || genreIds.any { it in ids } == only
+}
+
 /** Filters one list overrides; null = use the default. */
 @Serializable
-data class ListFilters(val maxAge: Int? = null, val globalHits: Boolean? = null, val watched: String? = null) {
-    val isDefault: Boolean get() = maxAge == null && globalHits == null && watched == null
+data class ListFilters(
+    val maxAge: Int? = null,
+    val globalHits: Boolean? = null,
+    val watched: String? = null,
+    val genres: GenreFilter? = null,
+) {
+    val isDefault: Boolean get() = maxAge == null && globalHits == null && watched == null && genres == null
 }
 
 /** The filters a list ends up using. */
-data class FilterValues(val maxAgeMonths: Int, val globalHits: Boolean, val watched: String)
+data class FilterValues(val maxAgeMonths: Int, val globalHits: Boolean, val watched: String, val genres: GenreFilter = GenreFilter())
 
 /** An MDBList list: one of the account's (by [id]) or a public one added by its "user/slug" [path]. */
 @Serializable
@@ -45,17 +61,24 @@ object Settings {
     private const val KEY_GLOBAL_HITS = "global_hits_only"
     private const val KEY_MAX_AGE = "max_age_months"
     private const val KEY_EXCLUDE_ADULT = "exclude_adult"
+    private const val KEY_MAX_RATING_AGE = "max_rating_age"
+    private const val KEY_GENRE_FILTER = "genre_filter"
     private const val KEY_PROVIDERS = "show_providers"
     private const val KEY_TRAKT_CLIENT_ID = "trakt_client_id"
     private const val KEY_TRAKT_CLIENT_SECRET = "trakt_client_secret"
     private const val KEY_MDBLIST_KEY = "mdblist_api_key"
     private const val KEY_MDBLIST_LISTS = "mdblist_lists"
+    private const val KEY_RATINGS = "rating_sources"
+    private const val KEY_HEADER_HIDDEN = "header_hidden"
+    private const val KEY_HEADER_ORDER = "header_order"
+    private const val KEY_MIN_RATINGS = "min_ratings"
     private const val KEY_MDBLIST_ACCESS = "_mdblist_access_token"
     private const val KEY_MDBLIST_REFRESH = "_mdblist_refresh_token"
     private const val KEY_MDBLIST_EXPIRES = "_mdblist_expires_at"
     private const val KEY_MDBLIST_USER = "_mdblist_user"
     private const val KEY_SELECTION = "selection_mode"
     private const val KEY_OVERVIEW_LINES = "overview_lines"
+    private const val KEY_CAST = "show_cast"
     private const val KEY_SHOW_SOURCE = "show_source"
     private const val KEY_LIST_FILTERS = "list_filters"
     private val OLD_FILTER_KEYS = listOf("filter_scope", "age_all_lists", "global_hits_all_lists", "adult_all_lists", "filtered_lists",
@@ -63,6 +86,7 @@ object Settings {
     private const val KEY_SOURCE_FALLBACK = "source_fallback"
     private const val KEY_PROGRESS = "_generation_progress"
     private const val KEY_PREVIEW_PIN = "_preview_pin"
+    private const val KEY_PREVIEW_PIN_TITLE = "_preview_pin_title"
     private const val KEY_WATCHED = "watched_mode"
     private const val KEY_WATCH_SOURCE = "watch_source"
     private const val KEY_SKIP_DUPLICATES = "skip_duplicates"
@@ -71,6 +95,9 @@ object Settings {
     private const val KEY_LOGO_FALLBACK = "logo_fallback"
     private const val KEY_LOGO_MODE = "logo_mode"
     private const val KEY_SYNOPSIS_MODE = "synopsis_mode"
+    private const val KEY_TITLE_LANGUAGE = "title_language"
+    private const val KEY_SYNOPSIS_LANGUAGE = "synopsis_language"
+    private const val KEY_STYLE = "style"
     private const val KEY_TMDB_SESSION = "_tmdb_session_id"
     private const val KEY_TMDB_ACCOUNT = "_tmdb_account_id"
     private const val KEY_TMDB_USER = "_tmdb_user"
@@ -79,23 +106,34 @@ object Settings {
     const val SELECTION_RANDOM = "random"
     /** Months; 0 means no limit. */
     val MAX_AGE_OPTIONS = listOf(6, 12, 24, 60, 0)
+    /** Years; 0 means no limit. */
+    val MAX_RATING_AGE_OPTIONS = listOf(0, 7, 12, 16)
     const val WATCHED_SHOW = "show"
     const val WATCHED_MARK = "mark"
     const val WATCHED_HIDE = "hide"
     const val WATCH_TRAKT = "trakt"
     const val WATCH_SIMKL = "simkl"
     const val WATCH_NONE = "none"
-    /** With no logo in the configured language: write the title, use the original-language (or English) one, or skip the title. */
+    /** With no logo in the logo language: write the title, use the original-language (or English) one, or skip the title. */
     const val LOGO_TEXT = "text"
     const val LOGO_ORIGINAL = "original"
     const val LOGO_ORIGINAL_OR_SKIP = "original_skip"
     const val LOGO_SKIP = "skip"
     val LOGO_MODES = listOf(LOGO_TEXT, LOGO_ORIGINAL, LOGO_ORIGINAL_OR_SKIP, LOGO_SKIP)
-    /** With no synopsis in the configured language (any country): leave it out, use the English one, or skip the title. */
+    /** With no synopsis in the synopsis language (any country): leave it out, use the English one, or skip the title. */
     const val SYNOPSIS_HIDE = "hide"
     const val SYNOPSIS_ENGLISH = "english"
     const val SYNOPSIS_SKIP = "skip"
     val SYNOPSIS_MODES = listOf(SYNOPSIS_HIDE, SYNOPSIS_ENGLISH, SYNOPSIS_SKIP)
+    /** Language of the logo (and of the title written instead) and of the synopsis: the general one, the title's own or a locale. */
+    const val LANGUAGE_AUTO = "auto"
+    const val LANGUAGE_ORIGINAL = "original"
+    val PART_LANGUAGES = listOf(LANGUAGE_AUTO, LANGUAGE_ORIGINAL) + Languages.OPTIONS.keys
+    /** What is drawn over the backdrop: everything, the logo (or title) alone, or nothing. */
+    const val STYLE_FULL = "full"
+    const val STYLE_LOGO = "logo"
+    const val STYLE_BACKDROP = "backdrop"
+    val STYLES = listOf(STYLE_FULL, STYLE_LOGO, STYLE_BACKDROP)
 
     // Internal state, not exported in Projectivy backups
     private const val KEY_LAST_GENERATION = "_last_generation"
@@ -189,6 +227,20 @@ object Settings {
         get() = preferences.getBoolean(KEY_EXCLUDE_ADULT, true)
         set(value) = preferences.edit { putBoolean(KEY_EXCLUDE_ADULT, value) }
 
+    /** Skip titles certified for older viewers than this, in every list (see [Certifications.minimumAge]); 0 = no limit. */
+    var maxRatingAge: Int
+        get() = preferences.getInt(KEY_MAX_RATING_AGE, 0)
+        set(value) = preferences.edit { putInt(KEY_MAX_RATING_AGE, value) }
+
+    /** Default genre filter; like the age, it only applies by default to automatic lists (see [filtersFor]). */
+    var genreFilter: GenreFilter
+        get() = try {
+            json.decodeFromString<GenreFilter>(preferences.getString(KEY_GENRE_FILTER, null) ?: "{}")
+        } catch (_: Exception) {
+            GenreFilter()
+        }
+        set(value) = preferences.edit { putString(KEY_GENRE_FILTER, json.encodeToString(value)) }
+
     /**
      * Hand Projectivy the wallpapers shuffled (again on every request) instead of list after list, so
      * a list of movies isn't followed by a run of shows whichever way Projectivy walks the list.
@@ -223,8 +275,45 @@ object Settings {
             ?: if (preferences.getBoolean(KEY_LOGO_FALLBACK, false)) SYNOPSIS_ENGLISH else SYNOPSIS_HIDE
         set(value) = preferences.edit { putString(KEY_SYNOPSIS_MODE, value) }
 
-    val logoFallback: Boolean get() = logoMode == LOGO_ORIGINAL || logoMode == LOGO_ORIGINAL_OR_SKIP
-    val requireLogo: Boolean get() = logoMode == LOGO_ORIGINAL_OR_SKIP || logoMode == LOGO_SKIP
+    /** See [PART_LANGUAGES]; [logoMode] applies when there is no logo in this language. */
+    var titleLanguage: String
+        get() = partLanguage(KEY_TITLE_LANGUAGE)
+        set(value) = preferences.edit { putString(KEY_TITLE_LANGUAGE, value) }
+
+    /** See [PART_LANGUAGES]; [synopsisMode] applies when there is no synopsis in this language. */
+    var synopsisLanguage: String
+        get() = partLanguage(KEY_SYNOPSIS_LANGUAGE)
+        set(value) = preferences.edit { putString(KEY_SYNOPSIS_LANGUAGE, value) }
+
+    private fun partLanguage(key: String) =
+        preferences.getString(key, null)?.takeIf { it == LANGUAGE_ORIGINAL || it in Languages.OPTIONS } ?: LANGUAGE_AUTO
+
+    /** [titleLanguage] and [synopsisLanguage] as TMDB locales. */
+    val partLanguages: PartLanguages
+        get() = PartLanguages(resolve(titleLanguage), resolve(synopsisLanguage))
+
+    /** A [PART_LANGUAGES] value as a TMDB locale; null for the title's original language. */
+    fun resolve(partLanguage: String): String? = when (partLanguage) {
+        LANGUAGE_AUTO -> language
+        LANGUAGE_ORIGINAL -> null
+        else -> partLanguage
+    }
+
+    /** See [STYLES]; the settings of the parts a style hides are kept for when they come back. */
+    var style: String
+        get() = preferences.getString(KEY_STYLE, null)?.takeIf { it in STYLES } ?: STYLE_FULL
+        set(value) = preferences.edit { putString(KEY_STYLE, value) }
+
+    /** The style draws the logo (or the title instead). */
+    val drawsLogo: Boolean get() = style != STYLE_BACKDROP
+
+    /** The style draws the header, synopsis, cast and footer (each as set). */
+    val drawsDetails: Boolean get() = style == STYLE_FULL
+
+    // A part the style hides doesn't fetch anything or skip titles
+    val logoFallback: Boolean get() = drawsLogo && (logoMode == LOGO_ORIGINAL || logoMode == LOGO_ORIGINAL_OR_SKIP)
+    val requireLogo: Boolean get() = drawsLogo && (logoMode == LOGO_ORIGINAL_OR_SKIP || logoMode == LOGO_SKIP)
+    val requireSynopsis: Boolean get() = drawsDetails && synopsisMode == SYNOPSIS_SKIP
 
     /** Per-list overrides of the default filters (list key -> values), set on each list's page in "Filters & explore lists". */
     var listFilters: Map<String, ListFilters>
@@ -236,8 +325,8 @@ object Settings {
         set(value) = preferences.edit { putString(KEY_LIST_FILTERS, json.encodeToString(value.filterValues { !it.isDefault })) }
 
     /**
-     * Filters a list really uses: its overrides, else the defaults. Age and global hits only apply by
-     * default to automatic lists (trending, popular…), so watchlists and favourites aren't emptied.
+     * Filters a list really uses: its overrides, else the defaults. Age, global hits and genres only apply
+     * by default to automatic lists (trending, popular…), so watchlists and favourites aren't emptied.
      */
     fun filtersFor(source: ListSource): FilterValues {
         val custom = listFilters[source.key]
@@ -245,11 +334,13 @@ object Settings {
             maxAgeMonths = custom?.maxAge ?: defaultMaxAge(source),
             globalHits = (custom?.globalHits ?: defaultGlobalHits(source)) && source.localMarketFilter,
             watched = custom?.watched ?: watchedMode,
+            genres = custom?.genres ?: defaultGenres(source),
         )
     }
 
     fun defaultMaxAge(source: ListSource) = if (source.automatic) maxAgeMonths else 0
     fun defaultGlobalHits(source: ListSource) = source.automatic && globalHitsOnly
+    fun defaultGenres(source: ListSource) = if (source.automatic) genreFilter else GenreFilter()
 
     var showProviders: Boolean
         get() = preferences.getBoolean(KEY_PROVIDERS, true)
@@ -366,6 +457,11 @@ object Settings {
 
     val OVERVIEW_OPTIONS = listOf(4, 2, 0)
 
+    /** Main cast under the synopsis; off by default, it pushes the footer down. */
+    var showCast: Boolean
+        get() = preferences.getBoolean(KEY_CAST, false)
+        set(value) = preferences.edit { putBoolean(KEY_CAST, value) }
+
     /**
      * With both footer parts on, show the list source only when the title has no streaming service.
      * Default for new installs; existing installs keep showing both (decided once, on first read).
@@ -401,9 +497,15 @@ object Settings {
         set(value) = preferences.edit { putLong(KEY_UPDATE_CHECKED, value) }
 
     /** Wallpaper shown by the settings preview as "type:tmdbId" (e.g. "movie:123"); empty = automatic. */
-    var previewPin: String
-        get() = string(KEY_PREVIEW_PIN)
-        set(value) = preferences.edit { putString(KEY_PREVIEW_PIN, value) }
+    val previewPin: String get() = string(KEY_PREVIEW_PIN)
+
+    /** Name of [previewPin], for the settings rows; empty for pins saved before it existed. */
+    val previewPinTitle: String get() = string(KEY_PREVIEW_PIN_TITLE)
+
+    fun pinPreview(pin: String, title: String) = preferences.edit {
+        putString(KEY_PREVIEW_PIN, pin)
+        putString(KEY_PREVIEW_PIN_TITLE, title)
+    }
 
     /** What to do with titles in the watch history: "show", "mark" or "hide". */
     var watchedMode: String
@@ -456,6 +558,49 @@ object Settings {
         }
         set(value) = preferences.edit { putString(KEY_MDBLIST_LISTS, json.encodeToString(value)) }
 
+    /** Scores shown on the wallpapers, in order; by default TMDB's, as before they could be chosen. */
+    var ratingSources: List<RatingSource>
+        get() = ratingSourcesKey.split(',').mapNotNull(RatingSource::of)
+        set(value) = preferences.edit { putString(KEY_RATINGS, value.joinToString(",") { it.key }) }
+
+    // Read without string(): empty means "no ratings", not the default
+    private val ratingSourcesKey: String get() = preferences.getString(KEY_RATINGS, null) ?: RatingSource.TMDB.key
+
+    /** Header items under the title: everything is shown unless hidden here. */
+    const val HEADER_YEAR = "year"
+    const val HEADER_RUNTIME = "runtime"
+    const val HEADER_GENRES = "genres"
+    const val HEADER_WATCHED = "watched"
+    /** Drawn right after the year (or in its place), so it has no position of its own. */
+    const val HEADER_CERTIFICATION = "certification"
+    val HEADER_ITEMS = listOf(HEADER_YEAR, HEADER_CERTIFICATION, HEADER_RUNTIME, HEADER_GENRES, HEADER_WATCHED)
+
+    var headerHidden: Set<String>
+        get() = preferences.getStringSet(KEY_HEADER_HIDDEN, null)?.toSet() ?: emptySet()
+        set(value) = preferences.edit { putStringSet(KEY_HEADER_HIDDEN, value) }
+
+    fun showsInHeader(item: String) = item !in headerHidden
+
+    /** The ratings, as one block of the header; hidden by choosing no platform. */
+    const val HEADER_RATINGS = "ratings"
+    /** Blocks of the header line in their default order; the user can move them (see [headerOrder]). */
+    val HEADER_BLOCKS = listOf(HEADER_RATINGS, HEADER_WATCHED, HEADER_YEAR, HEADER_RUNTIME, HEADER_GENRES)
+
+    /** [HEADER_BLOCKS] in the user's order (blocks added in later versions go last). */
+    var headerOrder: List<String>
+        get() {
+            val saved = string(KEY_HEADER_ORDER).split(',').filter { it in HEADER_BLOCKS }.distinct()
+            return saved + (HEADER_BLOCKS - saved.toSet())
+        }
+        set(value) = preferences.edit { putString(KEY_HEADER_ORDER, value.joinToString(",")) }
+
+    /** Ratings that stay when the line is full (the details give way first); more only where there's room. */
+    var minRatings: Int
+        get() = preferences.getInt(KEY_MIN_RATINGS, 2)
+        set(value) = preferences.edit { putInt(KEY_MIN_RATINGS, value) }
+
+    val MIN_RATINGS_OPTIONS = listOf(1, 2, 3)
+
     // --- Generation state ---
 
     var lastGeneration: Long
@@ -488,10 +633,18 @@ object Settings {
         get() = listOf(
             token.hashCode(), language, region, lists.sorted().joinToString(","), titlesPerList,
             outputWidth, globalHitsOnly, showProviders, selectionMode, watchSource?.let { "$it:$watchedMode" }.orEmpty(),
-            maxAgeMonths, excludeAdult, listFilters.toSortedMap(),
+            // Without the genre field lists don't use, so updating doesn't show a pending change
+            maxAgeMonths, excludeAdult, listFilters.toSortedMap().toString().replace(", genres=null", ""),
         // Only when changed, so existing installs don't see a pending change after updating
         ).plus(listOfNotNull(overviewLines.takeIf { it != 4 }, "nosource".takeIf { !showSource }, "fallback".takeIf { showSource && showProviders && sourceFallback },
-            "dups".takeIf { !skipDuplicates }, "logo:$logoMode".takeIf { logoMode != LOGO_TEXT }, "synopsis:$synopsisMode".takeIf { synopsisMode != SYNOPSIS_HIDE })).joinToString("|")
+            "dups".takeIf { !skipDuplicates }, "logo:$logoMode".takeIf { logoMode != LOGO_TEXT }, "synopsis:$synopsisMode".takeIf { synopsisMode != SYNOPSIS_HIDE },
+            "titlelang:$titleLanguage".takeIf { titleLanguage != LANGUAGE_AUTO }, "synopsislang:$synopsisLanguage".takeIf { synopsisLanguage != LANGUAGE_AUTO },
+            "ratings:$ratingSourcesKey:$mdbListAvailable".takeIf { ratingSourcesKey != RatingSource.TMDB.key },
+            "header:${headerHidden.sorted()}".takeIf { headerHidden.isNotEmpty() },
+            "ratingage:$maxRatingAge".takeIf { maxRatingAge > 0 },
+            "order:${headerOrder.joinToString(",")}".takeIf { headerOrder != HEADER_BLOCKS },
+            "minratings:$minRatings".takeIf { minRatings != 2 }, "cast".takeIf { showCast }, "style:$style".takeIf { style != STYLE_FULL },
+            "genres:${genreFilter.only}:${genreFilter.ids.sorted()}".takeIf { !genreFilter.isOff })).joinToString("|")
 
     /** True when the current wallpapers were generated with different settings. */
     val hasPendingChanges: Boolean
