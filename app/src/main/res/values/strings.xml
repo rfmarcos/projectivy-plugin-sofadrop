@@ -15,6 +15,7 @@
     <string name="status_error">Last update failed: %1$s</string>
     <string name="status_pending">%1$d wallpapers · changes not applied yet</string>
     <string name="pending_notice">Not applied yet · applies when you exit</string>
+    <string name="projectivy_delay_notice">Projectivy can take up to 15 minutes to show new wallpapers.</string>
 
     <!-- Actions -->
     <string name="action_generate_now">Update now</string>

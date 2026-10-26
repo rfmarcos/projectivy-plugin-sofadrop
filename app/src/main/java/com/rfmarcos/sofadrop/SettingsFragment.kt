@@ -11,6 +11,8 @@ import androidx.leanback.widget.GuidedAction
 /** Main settings: what to do now, where titles come from, and how often. Details live in sub-screens. */
 class SettingsFragment : PreviewSettingsFragment() {
 
+    override val showsProjectivyNotice = true
+
     private val statusRefresher = object : Runnable {
         override fun run() {
             refreshStatus()

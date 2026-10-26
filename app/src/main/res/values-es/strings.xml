@@ -13,6 +13,7 @@
     <string name="status_error">La última actualización falló: %1$s</string>
     <string name="status_pending">%1$d fondos · cambios sin aplicar</string>
     <string name="pending_notice">Sin aplicar · se aplica al salir</string>
+    <string name="projectivy_delay_notice">Projectivy puede tardar hasta 15 min en mostrar los fondos nuevos.</string>
 
     <string name="action_generate_now">Actualizar ahora</string>
     <string name="generation_started">Generando fondos en segundo plano…</string>

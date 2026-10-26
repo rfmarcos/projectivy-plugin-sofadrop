@@ -104,6 +104,17 @@
             app:drawableStartCompat="@drawable/pending_dot" />
     </LinearLayout>
 
+    <!-- Main screen only: Projectivy picks up a new set when it asks again, not right away -->
+    <TextView
+        android:id="@+id/projectivy_notice"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="@string/projectivy_delay_notice"
+        android:textColor="#99FFFFFF"
+        android:textSize="14sp"
+        android:visibility="gone" />
+
     <TextView
         android:id="@id/guidance_description"
         android:visibility="gone"
