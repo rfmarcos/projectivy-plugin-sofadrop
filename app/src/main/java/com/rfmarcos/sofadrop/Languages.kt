@@ -24,10 +24,11 @@ object Languages {
         "fr-FR" to "Français",
         "it-IT" to "Italiano",
         "de-DE" to "Deutsch",
+        "nl-NL" to "Nederlands",
     )
 
     /** Countries offered for streaming services. */
-    val REGIONS = listOf("US", "GB", "CA", "ES", "MX", "AR", "CO", "CL", "BR", "PT", "FR", "IT", "DE")
+    val REGIONS = listOf("US", "GB", "CA", "ES", "MX", "AR", "CO", "CL", "BR", "PT", "FR", "IT", "DE", "NL")
 
     /** Original languages that never need the "global hit" vote threshold. */
     val MAINSTREAM = setOf("en", "es", "fr", "it", "de", "pt", "ca", "nl", "sv", "da", "no", "pl")
@@ -39,6 +40,7 @@ object Languages {
         "fr" to WallpaperTexts("Disponible sur", "Saison", "Saisons", "Vu", "En cours · %d/%d"),
         "it" to WallpaperTexts("Disponibile su", "Stagione", "Stagioni", "Visto", "In corso · %d/%d"),
         "de" to WallpaperTexts("Verfügbar auf", "Staffel", "Staffeln", "Gesehen", "Angefangen · %d/%d"),
+        "nl" to WallpaperTexts("Beschikbaar op", "Seizoen", "Seizoenen", "Bekeken", "Bezig · %d/%d"),
     )
 
     /** Short list names for the wallpaper footer ("Trending · TMDB"), by kind of list. */
@@ -55,6 +57,8 @@ object Languages {
             "Botteghino", "Scelti per te", "La tua lista", "I tuoi preferiti", "Anime di tendenza", "Da vedere", "In corso"),
         "de" to listOf("Im Trend", "Beliebt", "Bestbewertet", "Im Kino", "Demnächst", "Läuft gerade", "Meisterwartet",
             "Kinokassen", "Für dich", "Deine Merkliste", "Deine Favoriten", "Anime im Trend", "Geplant", "Angefangen"),
+        "nl" to listOf("Trending", "Populair", "Best beoordeeld", "In de bioscoop", "Binnenkort", "Nu op tv", "Meest verwacht",
+            "Box office", "Voor jou uitgekozen", "Jouw kijklijst", "Jouw favorieten", "Trending anime", "Nog te kijken", "Bezig"),
     )
 
     /** Same order as each [SOURCE_LABELS] list; matched against the list key without its provider. */
@@ -92,6 +96,14 @@ object Languages {
             "Kids" to "Infantil",
             "Soap" to "Novela",
             "Talk" to "Entrevistas",
+        ),
+        "nl" to mapOf(
+            "Action & Adventure" to "Actie en Avontuur",
+            "Sci-Fi & Fantasy" to "Sciencefiction en Fantasy",
+            "War & Politics" to "Oorlog en Politiek",
+            "Kids" to "Kinderen",
+            "Soap" to "Soap",
+            "Talk" to "Talkshow",
         ),
     )
 
