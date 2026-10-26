@@ -382,6 +382,11 @@
     <string name="update_downloading">Descargando la versión %1$s…</string>
     <string name="update_failed">No se pudo actualizar: %1$s</string>
     <string name="update_allow">Permite que Sofadrop instale aplicaciones y vuelve a elegir la actualización</string>
+    <string name="update_desc_notes">Versión %1$s (tienes la %2$s) · mira las novedades e instálala</string>
+    <string name="update_notes_title">Versión %1$s</string>
+    <string name="update_notes_desc">Novedades de esta versión (en inglés). Tienes la %1$s; tus ajustes se conservan.\n\nSi Play Protect la bloquea: Más detalles → Instalar de todos modos</string>
+    <string name="update_install">Instalar</string>
+    <string name="update_not_now">Ahora no</string>
     <string name="about_version_update">%1$s · disponible la %2$s</string>
     <string name="use_in_projectivy_title">Usar en Projectivy</string>
     <string name="use_in_projectivy_desc">Abre los ajustes de Projectivy: Apariencia › Fondo de pantalla › Fondo de pantalla del launcher › 🔌 Sofadrop</string>

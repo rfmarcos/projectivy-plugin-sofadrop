@@ -27,6 +27,12 @@ class SettingsFragment : PreviewSettingsFragment() {
         AppCompatResources.getDrawable(requireActivity(), R.mipmap.ic_launcher),
     )
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        // Delivered on the way back from the notes, before onResume resets the update row: install after it
+        parentFragmentManager.setFragmentResultListener(UpdateFragment.RESULT_INSTALL, this) { _, _ -> handler.post { installUpdate() } }
+    }
+
     override fun onCreateActions(actions: MutableList<GuidedAction>, savedInstanceState: Bundle?) {
         val context = requireContext()
         Settings.init(context)
@@ -37,8 +43,8 @@ class SettingsFragment : PreviewSettingsFragment() {
                 getString(R.string.use_in_projectivy_desc)).multilineDescription(true).build()
         }
         if (Updater.available) {
-            actions += action(ID_APP_UPDATE, R.drawable.ic_act_refresh, getString(R.string.update_title),
-                getString(R.string.update_desc, Settings.updateVersion, BuildConfig.VERSION_NAME)).multilineDescription(true).build()
+            actions += action(ID_APP_UPDATE, R.drawable.ic_act_refresh, getString(R.string.update_title), updateText())
+                .multilineDescription(true).build()
         }
         // "Update now" also carries the status, so there is a single place to look
         actions += action(ID_GENERATE, R.drawable.ic_act_refresh, getString(R.string.action_generate_now), statusText())
@@ -66,7 +72,7 @@ class SettingsFragment : PreviewSettingsFragment() {
         updateDescription(ID_ACCOUNTS, AccountsFragment.summary(context))
         handler.post(statusRefresher)
         // Back from the system installer (cancelled, or blocked by Play Protect): offer the update again
-        updateDescription(ID_APP_UPDATE, getString(R.string.update_desc, Settings.updateVersion, BuildConfig.VERSION_NAME))
+        updateDescription(ID_APP_UPDATE, updateText())
         background({ Updater.check() }) { }
     }
 
@@ -91,7 +97,8 @@ class SettingsFragment : PreviewSettingsFragment() {
                 refreshStatus()
             }
             ID_PREVIEW -> startActivity(Intent(requireContext(), PreviewActivity::class.java))
-            ID_APP_UPDATE -> installUpdate()
+            // What's new first, when the release says
+            ID_APP_UPDATE -> if (hasNotes()) add(parentFragmentManager, UpdateFragment()) else installUpdate()
             ID_USE_IN_PROJECTIVY -> Projectivy.openWallpaperSettings(requireContext())
             ID_LISTS -> add(parentFragmentManager, ListsFragment())
             ID_DETAILS -> add(parentFragmentManager, DetailsFragment())
@@ -118,6 +125,11 @@ class SettingsFragment : PreviewSettingsFragment() {
         refreshStatus()
         schedulePreview()
     }
+
+    private fun hasNotes() = Updater.releaseNotes(Settings.updateNotes).isNotEmpty()
+
+    private fun updateText() = getString(if (hasNotes()) R.string.update_desc_notes else R.string.update_desc,
+        Settings.updateVersion, BuildConfig.VERSION_NAME)
 
     /** Download and install the new version; Android first asks to allow Sofadrop to install apps. */
     private fun installUpdate() {

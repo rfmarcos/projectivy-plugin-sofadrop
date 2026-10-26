@@ -400,6 +400,11 @@
     <string name="update_downloading">Downloading version %1$s…</string>
     <string name="update_failed">Couldn\'t update: %1$s</string>
     <string name="update_allow">Allow Sofadrop to install apps, then choose the update again</string>
+    <string name="update_desc_notes">Version %1$s (you have %2$s) · see what\'s new and install it</string>
+    <string name="update_notes_title">Version %1$s</string>
+    <string name="update_notes_desc">What\'s new in this version (in English). You have %1$s; your settings are kept.\n\nIf Play Protect blocks it: More details → Install anyway</string>
+    <string name="update_install">Install</string>
+    <string name="update_not_now">Not now</string>
     <string name="about_version_update">%1$s · version %2$s available</string>
     <string name="use_in_projectivy_title">Use in Projectivy</string>
     <string name="use_in_projectivy_desc">Opens Projectivy\'s settings: Appearance › Wallpaper › Launcher wallpaper › 🔌 Sofadrop</string>

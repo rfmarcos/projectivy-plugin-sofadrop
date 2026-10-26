@@ -62,11 +62,49 @@ object Updater {
             val apk = release.objects("assets").firstOrNull { it.str("name")?.endsWith(".apk") == true }
             Settings.updateVersion = release.str("tag_name").orEmpty().removePrefix("v")
             Settings.updateApkUrl = apk?.str("browser_download_url").orEmpty()
+            Settings.updateNotes = release.str("body").orEmpty()
             Settings.updateCheckedAt = System.currentTimeMillis()
         } catch (e: Exception) {
             Log.w(TAG, "Update check failed", e)
         }
     }
+
+    /** A line of the release notes: a section [heading] ("New"), or an item with its bold lead ("Cast") as [title], if any. */
+    data class Note(val title: String, val text: String = "", val heading: Boolean = false)
+
+    private val SKIPPED = Regex("(?i)sha-?256\\b.*|.*\\bdownloader code\\b.*|\\**full changelog\\b.*")
+    private val BULLET = Regex("^[-*+]\\s+")
+    private val LEAD = Regex("^(\\*\\*[^:]+):\\s+(.*)")
+    private val LINK = Regex("!?\\[([^\\]]*)]\\([^)]*\\)")
+    private val CODE = Regex("`+([^`]*)`+")
+    private val BOLD = Regex("(\\*\\*|__)(.+?)\\1")
+    private val ITALIC = Regex("\\*(\\S(?:.*?\\S)?)\\*|(?<!\\w)_(\\S(?:.*?\\S)?)_(?!\\w)")
+
+    /**
+     * The release notes' markdown as plain text for the update screen: headings and items without
+     * formatting, links or code marks. The install line (Downloader code) and the APK's checksum are left out.
+     */
+    fun releaseNotes(markdown: String): List<Note> = markdown.lines().mapNotNull { raw ->
+        val line = raw.trim()
+        when {
+            line.isEmpty() || SKIPPED.matches(line) -> null
+            line.startsWith("#") -> Note(plain(line.trimStart('#')), heading = true)
+            else -> {
+                val item = line.replaceFirst(BULLET, "")
+                val lead = LEAD.find(item)
+                // "**Cast**: optionally, …" reads as a title and a sentence of its own
+                if (lead != null) Note(plain(lead.groupValues[1]), plain(lead.groupValues[2]).replaceFirstChar { it.uppercase() })
+                else Note("", plain(item))
+            }
+        }
+    }
+
+    private fun plain(text: String) = text
+        .replace(LINK, "$1")
+        .replace(CODE, "$1")
+        .replace(BOLD, "$2")
+        .replace(ITALIC) { it.groupValues[1].ifEmpty { it.groupValues[2] } }
+        .trim()
 
     /**
      * Download the new APK and start the system installer (blocking: call it off the main thread).

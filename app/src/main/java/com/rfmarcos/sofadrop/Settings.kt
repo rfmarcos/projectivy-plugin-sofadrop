@@ -143,6 +143,7 @@ object Settings {
     private const val KEY_UPDATE_VERSION = "_update_version"
     private const val KEY_PROJECTIVY_ASKED = "_projectivy_asked_at"
     private const val KEY_UPDATE_APK = "_update_apk"
+    private const val KEY_UPDATE_NOTES = "_update_notes"
     private const val KEY_UPDATE_CHECKED = "_update_checked_at"
     private const val KEY_TRAKT_ACCESS = "_trakt_access_token"
     private const val KEY_TRAKT_REFRESH = "_trakt_refresh_token"
@@ -483,7 +484,10 @@ object Settings {
         get() = preferences.getLong(KEY_PROJECTIVY_ASKED, 0)
         set(value) = preferences.edit { putLong(KEY_PROJECTIVY_ASKED, value) }
 
-    /** Latest release found by [Updater.check] ("1.0.1", empty until checked), its APK and when it was checked. */
+    /**
+     * Latest release found by [Updater.check] ("1.0.1", empty until checked), its APK, its release notes
+     * (GitHub markdown, may be empty) and when it was checked.
+     */
     var updateVersion: String
         get() = string(KEY_UPDATE_VERSION)
         set(value) = preferences.edit { putString(KEY_UPDATE_VERSION, value) }
@@ -491,6 +495,10 @@ object Settings {
     var updateApkUrl: String
         get() = string(KEY_UPDATE_APK)
         set(value) = preferences.edit { putString(KEY_UPDATE_APK, value) }
+
+    var updateNotes: String
+        get() = string(KEY_UPDATE_NOTES)
+        set(value) = preferences.edit { putString(KEY_UPDATE_NOTES, value) }
 
     var updateCheckedAt: Long
         get() = preferences.getLong(KEY_UPDATE_CHECKED, 0)
