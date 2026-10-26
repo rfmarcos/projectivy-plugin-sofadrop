@@ -15,7 +15,7 @@ Sofadrop is a wallpaper plugin for [Projectivy Launcher](https://github.com/spoc
 * 🖼️ **Clean, readable wallpapers**: textless backdrops with the title's logo, rating, year, runtime or seasons, genres and synopsis, kept clear of the launcher rows.
 * 📺 **Where to watch it**: the streaming services that have each title in your country, or the list it came from.
 * ✅ **Watched titles**: with your Trakt or Simkl history, mark what you've seen ("✓ Watched", "▶ Watching · 3/8") or hide it.
-* 🎯 **Filters**: maximum age, global hits only, no adult content, no repeats, and only titles with a logo or a synopsis in your language. Every list can have its own.
+* 🎯 **Filters**: maximum age, global hits only, no adult content, no repeats, specific genres only, and only titles with a logo or a synopsis in your language. Every list can have its own.
 * 🔎 **Explore your lists**: see each list's titles in order and which ones are used or skipped, and why.
 * 🔀 **Mixed or in order**: all lists shuffled together, or one after another.
 * 🌍 **Languages**: English, Spanish, Portuguese, French, Italian and German wallpapers.

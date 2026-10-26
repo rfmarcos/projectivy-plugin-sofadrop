@@ -45,6 +45,8 @@ object Settings {
     private const val KEY_GLOBAL_HITS = "global_hits_only"
     private const val KEY_MAX_AGE = "max_age_months"
     private const val KEY_EXCLUDE_ADULT = "exclude_adult"
+    private const val KEY_ALLOWED_GENRES = "allowed_genres"
+    private const val KEY_EXCLUDE_GENRES = "exclude_selected_genres"
     private const val KEY_PROVIDERS = "show_providers"
     private const val KEY_TRAKT_CLIENT_ID = "trakt_client_id"
     private const val KEY_TRAKT_CLIENT_SECRET = "trakt_client_secret"
@@ -188,6 +190,20 @@ object Settings {
     var excludeAdult: Boolean
         get() = preferences.getBoolean(KEY_EXCLUDE_ADULT, true)
         set(value) = preferences.edit { putBoolean(KEY_EXCLUDE_ADULT, value) }
+
+    /**
+     * TMDB genre ids a title must have at least one of to be used; empty means no genre filter (every
+     * genre allowed). Movies and TV shows use different ids for the same genre, so a selection usually
+     * holds one id per media type (see [Genres]).
+     */
+    var allowedGenres: Set<Int>
+        get() = preferences.getStringSet(KEY_ALLOWED_GENRES, null)?.mapNotNull { it.toIntOrNull() }?.toSet().orEmpty()
+        set(value) = preferences.edit { putStringSet(KEY_ALLOWED_GENRES, value.map(Int::toString).toSet()) }
+
+    /** False (default): only the checked genres are used. True: every genre except the checked ones. */
+    var excludeSelectedGenres: Boolean
+        get() = preferences.getBoolean(KEY_EXCLUDE_GENRES, false)
+        set(value) = preferences.edit { putBoolean(KEY_EXCLUDE_GENRES, value) }
 
     /**
      * Hand Projectivy the wallpapers shuffled (again on every request) instead of list after list, so

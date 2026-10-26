@@ -125,6 +125,17 @@
     <string name="exclusion_watched">Hidden: already watched</string>
     <string name="exclusion_no_image">Skipped: no image</string>
     <string name="exclusion_duplicate">Already used by another list</string>
+    <string name="exclusion_genre">Skipped: none of your selected genres</string>
+    <string name="setting_genres_title">Genres</string>
+    <string name="genres_description">Only titles with at least one of the checked genres are used. Nothing checked means every genre is allowed.</string>
+    <string name="filters_genres_desc">Restricts every list to titles that have (or, in "Except" mode, don\'t have) at least one of your selected genres</string>
+    <string name="genres_summary_all">All genres</string>
+    <string name="genres_summary_custom">Custom selection</string>
+    <string name="genres_summary_custom_except">Except: custom selection</string>
+    <string name="genres_load_failed">Couldn\'t load the genre list from TMDB</string>
+    <string name="genres_mode_title">Mode</string>
+    <string name="genres_mode_only">Only these genres</string>
+    <string name="genres_mode_except">Except these genres</string>
     <string name="tmdb_login_description">Scan the QR code and approve the access on themoviedb.org (log in if needed).</string>
     <string name="qr_preparing">Preparing…</string>
     <string name="qr_waiting">Waiting for approval…</string>

@@ -27,7 +27,7 @@ data class WallpaperInfo(
 )
 
 /** Why a title of a list is not used. */
-enum class Exclusion { LOCAL_MARKET, TOO_OLD, ADULT, NO_LOGO, NO_SYNOPSIS, WATCHED, NO_IMAGE, DUPLICATE }
+enum class Exclusion { LOCAL_MARKET, TOO_OLD, ADULT, GENRE, NO_LOGO, NO_SYNOPSIS, WATCHED, NO_IMAGE, DUPLICATE }
 
 /** A title of a list and, when it is filtered out, the reason. */
 data class Candidate(val ref: TitleRef, val exclusion: Exclusion? = null)
@@ -73,7 +73,8 @@ class TmdbCatalog(
             }
         }.distinct()
         if (shuffle) refs = refs.shuffled()
-        val check = cutoff != null || filters.globalHits || Settings.excludeAdult || Settings.requireLogo || Settings.synopsisMode == Settings.SYNOPSIS_SKIP
+        val check = cutoff != null || filters.globalHits || Settings.excludeAdult || Settings.requireLogo ||
+            Settings.synopsisMode == Settings.SYNOPSIS_SKIP || Settings.allowedGenres.isNotEmpty()
         return refs.asSequence()
             .map { Candidate(it, if (check) exclusion(it, cutoff, filters.globalHits) else null) }
             .takeIncluded(pool)
@@ -171,6 +172,13 @@ class TmdbCatalog(
             globalHits && isLocalMarket(item) -> Exclusion.LOCAL_MARKET
             isTooOld(ref.type, item, cutoff) -> Exclusion.TOO_OLD
             Settings.excludeAdult && isAdult(ref, item) -> Exclusion.ADULT
+            Settings.allowedGenres.let { selected ->
+                if (selected.isEmpty()) false
+                else {
+                    val matches = item.objects("genres").mapNotNull { it.int("id") }.any { it in selected }
+                    if (Settings.excludeSelectedGenres) matches else !matches
+                }
+            } -> Exclusion.GENRE
             // Last: it costs an images request per title
             Settings.requireLogo && logoPath(ref, item) == null -> Exclusion.NO_LOGO
             Settings.synopsisMode == Settings.SYNOPSIS_SKIP && localOverview(ref, item).isBlank() -> Exclusion.NO_SYNOPSIS
@@ -231,7 +239,11 @@ class TmdbCatalog(
             year = item.str(if (type == MediaType.MOVIE) "release_date" else "first_air_date").orEmpty().take(4),
             rating = item.double("vote_average") ?: 0.0,
             extraInfo = extraInfo,
-            genres = item.objects("genres").mapNotNull { it.str("name") }
+            // When a genre filter is active, show a genre it matched on first; TMDB's own order is
+            // otherwise arbitrary, so the two shown here could easily be ones that played no part in it.
+            genres = item.objects("genres")
+                .let { list -> if (Settings.allowedGenres.isEmpty()) list else list.sortedByDescending { it.int("id") in Settings.allowedGenres } }
+                .mapNotNull { it.str("name") }
                 .map { if (type == MediaType.TV) Languages.translateTvGenre(language, it) else it }
                 .take(2)
                 .joinToString(", "),
