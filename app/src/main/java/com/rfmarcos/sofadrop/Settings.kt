@@ -655,9 +655,44 @@ object Settings {
 
     // --- Projectivy backup (getPreferences / setPreferences) ---
 
-    fun export(): String = buildJsonObject {
-        preferences.all.forEach { (key, value) ->
-            if (key.startsWith("_")) return@forEach
+    /**
+     * API keys and app credentials, never in a backup. The service that answers getPreferences and
+     * setPreferences is exported for Projectivy, so any installed app can call it: it must not hand
+     * these out, nor let them be replaced. Connections (tokens, "_" keys) aren't backed up either.
+     */
+    private val SECRET_KEYS = setOf(KEY_TOKEN, KEY_TRAKT_CLIENT_ID, KEY_TRAKT_CLIENT_SECRET, KEY_MDBLIST_KEY)
+
+    /** True for the preferences a Projectivy backup carries: the user's choices, not internal state or keys. */
+    fun inBackup(key: String): Boolean = !key.startsWith("_") && key !in SECRET_KEYS
+
+    fun export(): String = exportJson(preferences.all)
+
+    fun import(prefs: String): Boolean {
+        val values = try {
+            importValues(prefs)
+        } catch (e: Exception) {
+            Log.e("Settings", "Error importing preferences", e)
+            return false
+        }
+        preferences.edit {
+            values.forEach { (key, value) ->
+                @Suppress("UNCHECKED_CAST")
+                when (value) {
+                    is Set<*> -> putStringSet(key, value as Set<String>)
+                    is String -> putString(key, value)
+                    is Boolean -> putBoolean(key, value)
+                    is Int -> putInt(key, value)
+                    is Long -> putLong(key, value)
+                }
+            }
+        }
+        return true
+    }
+
+    /** The backup of [values] (the stored preferences) as JSON. */
+    fun exportJson(values: Map<String, *>): String = buildJsonObject {
+        values.forEach { (key, value) ->
+            if (!inBackup(key)) return@forEach
             when (value) {
                 is Int -> put(key, JsonPrimitive(value))
                 is Long -> put(key, JsonPrimitive(value))
@@ -668,24 +703,19 @@ object Settings {
         }
     }.toString()
 
-    fun import(prefs: String): Boolean = try {
+    /** The preferences to restore from the backup [prefs], by key; throws when it isn't a valid backup. */
+    fun importValues(prefs: String): Map<String, Any> {
         val root = json.parseToJsonElement(prefs) as JsonObject
-        preferences.edit {
-            root.forEach { (key, value) ->
-                if (key.startsWith("_")) return@forEach
-                when {
-                    value is JsonArray -> putStringSet(key, value.map { it.jsonPrimitive.content }.toSet())
-                    value !is JsonPrimitive -> Unit
-                    value.isString -> putString(key, value.content)
-                    value.booleanOrNull != null -> putBoolean(key, value.booleanOrNull!!)
-                    value.intOrNull != null -> putInt(key, value.intOrNull!!)
-                    value.longOrNull != null -> putLong(key, value.longOrNull!!)
-                }
-            }
-        }
-        true
-    } catch (e: Exception) {
-        Log.e("Settings", "Error importing preferences", e)
-        false
+        return root.filterKeys(::inBackup).mapNotNull { (key, value) ->
+            when {
+                value is JsonArray -> value.map { it.jsonPrimitive.content }.toSet()
+                value !is JsonPrimitive -> null
+                value.isString -> value.content
+                value.booleanOrNull != null -> value.booleanOrNull!!
+                value.intOrNull != null -> value.intOrNull!!
+                value.longOrNull != null -> value.longOrNull!!
+                else -> null
+            }?.let { key to it }
+        }.toMap()
     }
 }
