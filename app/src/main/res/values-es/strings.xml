@@ -383,6 +383,11 @@
     <string name="update_failed">No se pudo actualizar: %1$s</string>
     <string name="update_allow">Permite que Sofadrop instale aplicaciones y vuelve a elegir la actualización</string>
     <string name="about_version_update">%1$s · disponible la %2$s</string>
+    <string name="about_version_check">%1$s · pulsa para buscar actualizaciones</string>
+    <string name="update_checking">Buscando actualizaciones…</string>
+    <string name="update_found">Disponible la versión %1$s: instálala desde el principio de los ajustes</string>
+    <string name="update_none">Tienes la versión más reciente</string>
+    <string name="update_check_failed">No se pudo buscar actualizaciones</string>
     <string name="use_in_projectivy_title">Usar en Projectivy</string>
     <string name="use_in_projectivy_desc">Abre los ajustes de Projectivy: Apariencia › Fondo de pantalla › Fondo de pantalla del launcher › 🔌 Sofadrop</string>
     <string name="use_in_projectivy_path">En Projectivy: Apariencia › Fondo de pantalla › Fondo de pantalla del launcher › 🔌 Sofadrop</string>
