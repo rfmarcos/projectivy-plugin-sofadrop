@@ -442,26 +442,26 @@ class WallpaperRenderer(
         return top + gap + s(60f)
     }
 
-    /** "Available on [icons]" when there are streaming services, then (dimmer) the list it came from. */
+    /** "Available on [icons]" when there are streaming services, then the list it came from, as large. */
     private fun drawFooter(canvas: Canvas, top: Float, providerLogos: List<Bitmap>, info: WallpaperInfo) {
         if (providerLogos.isEmpty()) {
-            drawSource(canvas, top + s(PROVIDER_ICON_SIZE) / 2, info, primary = true)
+            drawSource(canvas, top + s(PROVIDER_ICON_SIZE) / 2, info)
             return
         }
         drawProviders(canvas, top, providerLogos)
-        drawSource(canvas, top + s(PROVIDER_ICON_SIZE) + s(52f), info, primary = false)
+        drawSource(canvas, top + s(PROVIDER_ICON_SIZE) + s(58f), info)
     }
 
     /** "Trending · [TMDB logo]", "Your watchlist · Trakt", "Netflix Movies · MDBList". */
-    private fun drawSource(canvas: Canvas, center: Float, info: WallpaperInfo, primary: Boolean) {
+    private fun drawSource(canvas: Canvas, center: Float, info: WallpaperInfo) {
         val label = info.sourceLabel ?: return
-        val grey = if (primary) 205 else 165
-        val size = if (primary) 50f else 40f
-        val labelPaint = textPaint(light, s(size), Color.rgb(grey, grey, grey))
+        // Same size and colour as "Available on" (drawProviders), also when it's the second line
+        val size = 50f
+        val labelPaint = textPaint(light, s(size), Color.rgb(205, 205, 205))
         val text = "$label  ·  "
         drawCentered(canvas, text, s(MARGIN_LEFT), center, labelPaint)
         val x = s(MARGIN_LEFT) + labelPaint.measureText(text)
-        val h = s(if (primary) 46f else 37f)
+        val h = s(46f)
         val bitmapPaint = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
         fun drawBitmap(bitmap: Bitmap, height: Float, left: Float): Float {
             val w = bitmap.width * height / bitmap.height
