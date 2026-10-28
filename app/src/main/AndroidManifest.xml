@@ -47,6 +47,28 @@
             android:exported="false"
             android:theme="@style/Theme.Sofadrop.Preview" />
 
+        <!-- Sofascreen: the wallpapers as Android's screensaver (see Sofascreen.kt) -->
+        <service
+            android:name=".SofascreenService"
+            android:exported="true"
+            android:label="@string/screensaver_name"
+            android:icon="@mipmap/ic_launcher"
+            android:permission="android.permission.BIND_DREAM_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.dreams.DreamService" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.dream"
+                android:resource="@xml/sofascreen" />
+        </service>
+
+        <!-- Sofascreen started from the settings to try it -->
+        <activity
+            android:name=".SofascreenActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Sofadrop.Preview" />
+
 
         <service
             android:name=".WallpaperProviderService"

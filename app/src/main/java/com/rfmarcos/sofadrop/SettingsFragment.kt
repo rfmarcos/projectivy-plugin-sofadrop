@@ -53,6 +53,8 @@ class SettingsFragment : PreviewSettingsFragment() {
             .hasNext(true).build()
         actions += choice(ID_REFRESH, R.drawable.ic_act_schedule, R.string.setting_refresh_title, refreshLabel(Settings.refreshHours),
             Settings.REFRESH_OPTIONS.map(::refreshLabel))
+        actions += action(ID_SCREENSAVER, R.drawable.ic_act_preview, getString(R.string.screensaver_title), ScreensaverFragment.summary(context))
+            .hasNext(true).build()
         actions += action(ID_ABOUT, R.drawable.ic_act_info, getString(R.string.setting_about_title),
             getString(R.string.setting_about_desc, BuildConfig.VERSION_NAME)).hasNext(true).build()
     }
@@ -64,6 +66,7 @@ class SettingsFragment : PreviewSettingsFragment() {
         updateDescription(ID_LISTS, ListsFragment.summary(context))
         updateDescription(ID_DETAILS, DetailsFragment.summary(context))
         updateDescription(ID_ACCOUNTS, AccountsFragment.summary(context))
+        updateDescription(ID_SCREENSAVER, ScreensaverFragment.summary(context))
         handler.post(statusRefresher)
         // Back from the system installer (cancelled, or blocked by Play Protect): offer the update again
         updateDescription(ID_APP_UPDATE, getString(R.string.update_desc, Settings.updateVersion, BuildConfig.VERSION_NAME))
@@ -97,6 +100,7 @@ class SettingsFragment : PreviewSettingsFragment() {
             ID_DETAILS -> add(parentFragmentManager, DetailsFragment())
             ID_ACCOUNTS -> add(parentFragmentManager, AccountsFragment())
             ID_ABOUT -> add(parentFragmentManager, AboutFragment())
+            ID_SCREENSAVER -> add(parentFragmentManager, ScreensaverFragment())
         }
     }
 
@@ -187,5 +191,6 @@ class SettingsFragment : PreviewSettingsFragment() {
         private const val ID_APP_UPDATE = 21L
         private const val ID_USE_IN_PROJECTIVY = 22L
         private const val ID_ACCOUNTS = 23L
+        private const val ID_SCREENSAVER = 24L
     }
 }

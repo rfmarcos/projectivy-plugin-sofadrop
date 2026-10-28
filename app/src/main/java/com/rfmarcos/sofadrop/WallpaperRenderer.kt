@@ -65,7 +65,8 @@ class WallpaperRenderer(
     private fun s(value: Float) = value * scale
     private fun s(value: Int) = value * scale
 
-    fun render(info: WallpaperInfo, backdrop: Bitmap, logo: Bitmap?, providerLogos: List<Bitmap>): Bitmap {
+    /** [infoBottom]: the info block moved down to the bottom left (the screensaver's copy, which has no launcher rows over it). */
+    fun render(info: WallpaperInfo, backdrop: Bitmap, logo: Bitmap?, providerLogos: List<Bitmap>, infoBottom: Boolean = false): Bitmap {
         val output = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(output)
 
@@ -94,25 +95,32 @@ class WallpaperRenderer(
         )
         val layerCanvas = Canvas(layer)
         if (logo != null) drawLogo(layerCanvas, logo) else drawTitle(layerCanvas, info.title)
+        // Where the drawn block ends, to move it down for the screensaver
+        var bottom = s(LOGO_BOTTOM)
         if (style == Settings.STYLE_FULL) {
             // With no header line the synopsis moves up into its place
-            val overviewTop = s(if (drawMetadata(layerCanvas, info)) META_CENTER + 36 + 52 else LOGO_BOTTOM + 60)
+            val metadata = drawMetadata(layerCanvas, info)
+            if (metadata) bottom = s(META_CENTER + 36)
+            val overviewTop = s(if (metadata) META_CENTER + 36 + 52 else LOGO_BOTTOM + 60)
             val overviewBottom = drawOverview(layerCanvas, info.overview, overviewTop)
+            if (overviewBottom > overviewTop) bottom = overviewBottom
             // Without a synopsis, the cast or the footer starts where it would, not a synopsis gap lower
             val castBottom = drawCast(layerCanvas, overviewBottom, info.cast, if (overviewBottom > overviewTop) s(CAST_GAP) else 0f)
-            drawFooter(layerCanvas, if (castBottom > overviewTop) castBottom + s(40) else overviewTop, providerLogos, info)
+            if (castBottom > overviewBottom) bottom = castBottom
+            drawFooter(layerCanvas, if (castBottom > overviewTop) castBottom + s(40) else overviewTop, providerLogos, info)?.let { bottom = it }
         }
+        val shift = if (infoBottom) (height - s(INFO_BOTTOM_MARGIN) - bottom).coerceAtLeast(0f) else 0f
 
         val offset = IntArray(2)
         val shadow = layer.extractAlpha(
             Paint().apply { maskFilter = BlurMaskFilter(s(18f).coerceAtLeast(1f), BlurMaskFilter.Blur.NORMAL) },
             offset,
         )
-        canvas.drawBitmap(shadow, offset[0].toFloat(), offset[1].toFloat(), Paint().apply {
+        canvas.drawBitmap(shadow, offset[0].toFloat(), offset[1] + shift, Paint().apply {
             color = Color.BLACK
             alpha = 153
         })
-        canvas.drawBitmap(layer, 0f, 0f, Paint(Paint.FILTER_BITMAP_FLAG))
+        canvas.drawBitmap(layer, 0f, shift, Paint(Paint.FILTER_BITMAP_FLAG))
         shadow.recycle()
         layer.recycle()
         return output
@@ -442,19 +450,23 @@ class WallpaperRenderer(
         return top + gap + s(60f)
     }
 
-    /** "Available on [icons]" when there are streaming services, then (dimmer) the list it came from. */
-    private fun drawFooter(canvas: Canvas, top: Float, providerLogos: List<Bitmap>, info: WallpaperInfo) {
+    /**
+     * "Available on [icons]" when there are streaming services, then (dimmer) the list it came from.
+     * Returns its bottom, or null when there was nothing to draw.
+     */
+    private fun drawFooter(canvas: Canvas, top: Float, providerLogos: List<Bitmap>, info: WallpaperInfo): Float? {
         if (providerLogos.isEmpty()) {
-            drawSource(canvas, top + s(PROVIDER_ICON_SIZE) / 2, info, primary = true)
-            return
+            val center = top + s(PROVIDER_ICON_SIZE) / 2
+            return if (drawSource(canvas, center, info, primary = true)) center + s(25f) else null
         }
         drawProviders(canvas, top, providerLogos)
-        drawSource(canvas, top + s(PROVIDER_ICON_SIZE) + s(52f), info, primary = false)
+        val center = top + s(PROVIDER_ICON_SIZE) + s(52f)
+        return if (drawSource(canvas, center, info, primary = false)) center + s(20f) else top + s(PROVIDER_ICON_SIZE)
     }
 
-    /** "Trending · [TMDB logo]", "Your watchlist · Trakt", "Netflix Movies · MDBList". */
-    private fun drawSource(canvas: Canvas, center: Float, info: WallpaperInfo, primary: Boolean) {
-        val label = info.sourceLabel ?: return
+    /** "Trending · [TMDB logo]", "Your watchlist · Trakt", "Netflix Movies · MDBList"; false without a source. */
+    private fun drawSource(canvas: Canvas, center: Float, info: WallpaperInfo, primary: Boolean): Boolean {
+        val label = info.sourceLabel ?: return false
         val grey = if (primary) 205 else 165
         val size = if (primary) 50f else 40f
         val labelPaint = textPaint(light, s(size), Color.rgb(grey, grey, grey))
@@ -484,6 +496,7 @@ class WallpaperRenderer(
             }
             else -> drawBitmap(tmdbLogo, h, x)
         }
+        return true
     }
 
     private fun drawProviders(canvas: Canvas, top: Float, providerLogos: List<Bitmap>) {
@@ -546,6 +559,8 @@ class WallpaperRenderer(
         private const val CERT_PADDING = 14f
         /** Between the year and its certification box. */
         private const val CERT_GAP = 24f
+        /** Below the info block when it is at the bottom (the screensaver's copy). */
+        private const val INFO_BOTTOM_MARGIN = 190
 
         private fun font(context: Context, id: Int): Typeface =
             ResourcesCompat.getFont(context, id) ?: Typeface.DEFAULT

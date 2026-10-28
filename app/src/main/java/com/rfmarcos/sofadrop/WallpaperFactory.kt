@@ -111,7 +111,23 @@ class WallpaperFactory(context: Context, private val width: Int) {
      * Download the images of [info] and draw the wallpaper. Downloads overlap other titles; decoding and
      * drawing go one at a time: in the background Android runs the app on a single core of the TV.
      */
+    /** The screensaver's copies: its own style and synopsis (see [Settings.screensaverDiffers]). */
+    private val screensaverRenderer by lazy {
+        WallpaperRenderer(appContext, width, Languages.texts(Settings.language), Settings.screensaverEffectiveOverviewLines,
+            Settings.headerOrder, Settings.minRatings, Settings.screensaverEffectiveStyle)
+    }
+
     fun render(info: WallpaperInfo): Bitmap {
+        var bitmap: Bitmap? = null
+        render(info, screensaverCopy = false) { _, it -> bitmap = it }
+        return bitmap!!
+    }
+
+    /**
+     * Draw [info], and with [screensaverCopy] the screensaver's copy after it, from one download and
+     * decoding; [each] gets every bitmap in turn (true for the copy) and owns it.
+     */
+    fun render(info: WallpaperInfo, screensaverCopy: Boolean, each: (Boolean, Bitmap) -> Unit) {
         // Previews are 1280 px wide: TMDB's 1280 size instead of decoding the (often 4K) original
         val backdropBytes = client.image(info.backdropPath, if (width <= 1280) "w1280" else "original")
         val logoBytes = info.logoPath?.let { client.image(it, if (width > 1920) "original" else "w500") }
@@ -121,8 +137,15 @@ class WallpaperFactory(context: Context, private val width: Int) {
             val backdrop = backdropBytes?.let { decode(it, width) } ?: error("No backdrop for ${info.title}")
             val logo = logoBytes?.let { decode(it, 0) }?.let { WallpaperRenderer.brightenDarkLogo(WallpaperRenderer.trimTransparent(it)) }
             val providers = providerBytes.mapNotNull { decode(it, 0) }
-            return try {
-                renderer.render(info, backdrop, logo, providers)
+            try {
+                // One at a time: a finished 4K wallpaper is ~33 MB
+                each(false, renderer.render(info, backdrop, logo, providers))
+                if (screensaverCopy) {
+                    val footer = Settings.screensaverFooter
+                    val copy = info.copy(cast = info.cast.takeIf { Settings.screensaverCast }.orEmpty(),
+                        sourceLabel = info.sourceLabel.takeIf { footer })
+                    each(true, screensaverRenderer.render(copy, backdrop, logo, if (footer) providers else emptyList(), Settings.screensaverInfoBottom))
+                }
             } finally {
                 backdrop.recycle()
                 logo?.recycle()
