@@ -1,5 +1,4 @@
 <resources>
-    <string name="plugin_name">Sofadrop</string>
     <string name="plugin_description">Achtergronden van films en series uit lijsten van TMDB, Trakt, Simkl of MDBList, gemaakt op dit apparaat.</string>
 
     <string name="projectivy_not_installed">Let op: deze plug-in heeft Projectivy Launcher nodig, en die lijkt niet geïnstalleerd te zijn.</string>
