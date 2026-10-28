@@ -38,7 +38,7 @@ data class WallpaperInfo(
 )
 
 /** Why a title of a list is not used. */
-enum class Exclusion { LOCAL_MARKET, TOO_OLD, ADULT, AGE_RATING, GENRE, NO_LOGO, NO_SYNOPSIS, WATCHED, NO_IMAGE, DUPLICATE }
+enum class Exclusion { BLOCKED, LOCAL_MARKET, TOO_OLD, ADULT, AGE_RATING, GENRE, NO_LOGO, NO_SYNOPSIS, WATCHED, NO_IMAGE, DUPLICATE }
 
 /** A title of a list and, when it is filtered out, the reason. */
 data class Candidate(val ref: TitleRef, val exclusion: Exclusion? = null)
@@ -87,12 +87,13 @@ class TmdbCatalog(
             }
         }.distinct()
         if (shuffle) refs = refs.shuffled()
+        val blocked = Settings.blockedTitles
         val check = cutoff != null || filters.globalHits || Settings.excludeAdult || Settings.maxRatingAge > 0 ||
-            !filters.genres.isOff || Settings.requireLogo || Settings.requireSynopsis
+            !filters.genres.isOff || Settings.requireLogo || Settings.requireSynopsis || blocked.isNotEmpty()
         // Checked a batch at a time in parallel: at most one batch more than needed
         return refs.asSequence()
             .chunked(CHECK_BATCH)
-            .flatMap { batch -> WallpaperFactory.parallel(batch) { Candidate(it, if (check) exclusion(it, cutoff, filters) else null) } }
+            .flatMap { batch -> WallpaperFactory.parallel(batch) { Candidate(it, if (check) exclusion(it, cutoff, filters, blocked) else null) } }
             .takeIncluded(pool)
     }
 
@@ -183,7 +184,9 @@ class TmdbCatalog(
 
     // --- Filters (from the TMDB details of each title) ---
 
-    private fun exclusion(ref: TitleRef, cutoff: String?, filters: FilterValues): Exclusion? {
+    private fun exclusion(ref: TitleRef, cutoff: String?, filters: FilterValues, blocked: Set<TitleRef>): Exclusion? {
+        // First, and without its TMDB details
+        if (ref in blocked) return Exclusion.BLOCKED
         val item = details(ref) ?: return null
         return when {
             filters.globalHits && isLocalMarket(item) -> Exclusion.LOCAL_MARKET

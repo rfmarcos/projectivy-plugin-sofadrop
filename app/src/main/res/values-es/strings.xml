@@ -386,4 +386,20 @@
     <string name="use_in_projectivy_title">Usar en Projectivy</string>
     <string name="use_in_projectivy_desc">Abre los ajustes de Projectivy: Apariencia › Fondo de pantalla › Fondo de pantalla del launcher › 🔌 Sofadrop</string>
     <string name="use_in_projectivy_path">En Projectivy: Apariencia › Fondo de pantalla › Fondo de pantalla del launcher › 🔌 Sofadrop</string>
+    <string name="filters_blocked_title">Títulos bloqueados</string>
+    <plurals name="filters_blocked_count">
+        <item quantity="one">%d título bloqueado</item>
+        <item quantity="other">%d títulos bloqueados</item>
+    </plurals>
+    <string name="filters_blocked_unblock">Desbloquear</string>
+    <string name="filters_blocked_clear">Borrar todos</string>
+    <string name="filters_blocked_desc">Los títulos bloqueados desde la página de una lista (abre una lista y luego un título) o desde Ver fondos (▼) no se muestran nunca, vengan de la lista que vengan. Elige uno aquí para desbloquearlo.</string>
+    <string name="exclusion_blocked">Descartado: bloqueado</string>
+    <string name="explore_block">Bloquear este título</string>
+    <string name="explore_unblock">Desbloquear este título</string>
+    <string name="viewer_block">Bloquear</string>
+    <string name="viewer_unblock">Desbloquear</string>
+    <string name="viewer_blocked">BLOQUEADO</string>
+    <string name="viewer_blocked_toast">Bloqueado: no estará en el próximo conjunto (se crea al salir de los ajustes)</string>
+    <string name="viewer_unblocked_toast">Desbloqueado: puede volver a aparecer desde el próximo conjunto</string>
 </resources>

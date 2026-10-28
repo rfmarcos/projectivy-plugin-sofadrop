@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The blocklist in Dutch, in its own file so it doesn't collide with the app's Dutch translation (strings.xml) -->
+<resources>
+    <string name="filters_blocked_title">Geblokkeerde titels</string>
+    <plurals name="filters_blocked_count">
+        <item quantity="one">%d titel geblokkeerd</item>
+        <item quantity="other">%d titels geblokkeerd</item>
+    </plurals>
+    <string name="filters_blocked_unblock">Deblokkeren</string>
+    <string name="filters_blocked_clear">Alles wissen</string>
+    <string name="filters_blocked_desc">Titels die je blokkeert op de pagina van een lijst (open een lijst en dan een titel) of in Wallpapers bekijken (▼) komen nooit meer terug, uit welke lijst ze ook komen. Kies er hier een om hem te deblokkeren.</string>
+    <string name="exclusion_blocked">Overgeslagen: geblokkeerd</string>
+    <string name="explore_block">Deze titel blokkeren</string>
+    <string name="explore_unblock">Deze titel deblokkeren</string>
+    <string name="viewer_block">Blokkeren</string>
+    <string name="viewer_unblock">Deblokkeren</string>
+    <string name="viewer_blocked">GEBLOKKEERD</string>
+    <string name="viewer_blocked_toast">Geblokkeerd: niet meer in de volgende set (die wordt gemaakt als je de instellingen verlaat)</string>
+    <string name="viewer_unblocked_toast">Gedeblokkeerd: kan vanaf de volgende set weer verschijnen</string>
+</resources>
