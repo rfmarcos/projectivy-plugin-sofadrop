@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The year filter in Dutch, in its own file so it doesn't collide with the app's Dutch translation (strings.xml) -->
+<resources>
+    <string name="filters_age_from_year">Vanaf %1$d</string>
+    <string name="filters_year_title">Vanaf jaar</string>
+    <string name="filters_year_explain">Alleen titels vanaf dit jaar: vul een jaar in (zoals 2000), of laat het leeg om terug te gaan naar de maximale leeftijd hierboven. Anders dan de leeftijd schuift dit niet op: een serie telt vanaf de eerste aflevering, dus een serie uit 1963 die nog loopt is niet \"vanaf 2000\".</string>
+    <string name="filters_year_invalid">\"%1$s\" is geen jaartal</string>
+</resources>

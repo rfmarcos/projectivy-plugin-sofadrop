@@ -2,6 +2,7 @@ package com.rfmarcos.sofadrop
 
 import android.content.Context
 import android.os.Bundle
+import android.widget.Toast
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.leanback.widget.GuidanceStylist.Guidance
 import androidx.leanback.widget.GuidedAction
@@ -37,8 +38,9 @@ class ListExplorerFragment : BaseSettingsFragment() {
         val context = requireContext()
         val trackers = Settings.connectedTrackers
         val rows = mutableListOf(
-            choiceRow(ID_AGE, R.drawable.ic_act_schedule, R.string.filters_age_title, Settings.MAX_AGE_OPTIONS.map { Filters.ageLabel(context, it) },
+            choiceRow(ID_AGE, R.drawable.ic_act_schedule, R.string.filters_age_title, ageOptions(Settings.maxAgeMonths).map { Filters.ageLabel(context, it) },
                 Filters.ageLabel(context, Settings.maxAgeMonths)),
+            yearRow(ID_FROM_YEAR, Settings.maxAgeMonths),
             choiceRow(ID_GLOBAL_HITS, R.drawable.ic_act_public, R.string.setting_global_hits_title, Filters.onOff(context),
                 Filters.onOff(context)[if (Settings.globalHitsOnly) 1 else 0]),
             if (trackers.isEmpty()) action(ID_WATCH_SOURCE, R.drawable.ic_act_history, getString(R.string.watch_source_title),
@@ -86,10 +88,18 @@ class ListExplorerFragment : BaseSettingsFragment() {
         add(parentFragmentManager, ListContentsFragment.newInstance(source.key))
     }
 
+    /** A typed year becomes the age limit; emptied, a year limit goes. */
+    override fun onGuidedActionEditedAndProceed(action: GuidedAction): Long {
+        if (action.id != ID_FROM_YEAR) return GuidedAction.ACTION_ID_CURRENT
+        typedYear(requireContext(), action, Settings.maxAgeMonths)?.let { Settings.maxAgeMonths = it.getOrNull() ?: 0 }
+        refresh()
+        return GuidedAction.ACTION_ID_CURRENT
+    }
+
     override fun onSubGuidedActionClicked(action: GuidedAction): Boolean {
         val index = (action.id % SUB_ID_BASE).toInt()
         when (action.id / SUB_ID_BASE) {
-            ID_AGE -> Settings.maxAgeMonths = Settings.MAX_AGE_OPTIONS[index]
+            ID_AGE -> Settings.maxAgeMonths = ageOptions(Settings.maxAgeMonths)[index]
             ID_GLOBAL_HITS -> Settings.globalHitsOnly = index == 1
             ID_WATCH_SOURCE -> Settings.setWatchSource((listOf(Settings.WATCH_NONE) + Settings.connectedTrackers)[index])
             ID_WATCHED -> Settings.watchedMode = Filters.WATCHED_MODES[index]
@@ -110,7 +120,24 @@ class ListExplorerFragment : BaseSettingsFragment() {
         private const val ID_DUPLICATES = 8L
         private const val ID_RATING_AGE = 9L
         private const val ID_GENRES = 10L
+        private const val ID_FROM_YEAR = 11L
         private const val LIST_BASE = 100L
+
+        /** The age limits to choose from, with the typed year when [current] is one. */
+        fun ageOptions(current: Int?) = Settings.MAX_AGE_OPTIONS + listOfNotNull(current?.takeIf { Settings.isYear(it) })
+
+        /**
+         * The year typed in [action] (which is then emptied): success with the year, success with null when
+         * emptied while [current] is a year, or null to change nothing (with a message when it isn't a year).
+         */
+        fun typedYear(context: Context, action: GuidedAction, current: Int?): Result<Int?>? {
+            val text = action.editDescription?.toString().orEmpty().trim()
+            action.editDescription = ""
+            if (text.isEmpty()) return if (current != null && Settings.isYear(current)) Result.success(null) else null
+            val year = Settings.parseYear(text)
+            if (year == null) Toast.makeText(context, context.getString(R.string.filters_year_invalid, text), Toast.LENGTH_LONG).show()
+            return year?.let { Result.success(it) }
+        }
 
         /** Value of a default filter (what it does is shown in the left pane, see [filterExplanations]). */
         private fun describe(context: Context, id: Long): String = when (id) {
@@ -128,6 +155,7 @@ class ListExplorerFragment : BaseSettingsFragment() {
             val automatic = context.getString(R.string.filters_automatic_note)
             return mapOf(
                 ID_AGE to context.getString(R.string.filters_age_explain) + "\n\n" + automatic,
+                ID_FROM_YEAR to context.getString(R.string.filters_year_explain) + "\n\n" + automatic,
                 ID_GLOBAL_HITS to context.getString(R.string.setting_global_hits_desc) + "\n\n" + automatic,
                 ID_WATCH_SOURCE to context.getString(R.string.watch_source_explain),
                 ID_WATCHED to context.getString(R.string.watched_explain),
@@ -184,6 +212,28 @@ class ListContentsFragment : BaseSettingsFragment() {
         if (action.id == ID_GENRES) add(parentFragmentManager, GenresFragment.newInstance(sourceKey))
     }
 
+    /** A typed year becomes this list's age limit; emptied, its year limit goes back to the default. */
+    override fun onGuidedActionEditedAndProceed(action: GuidedAction): Long {
+        val list = source ?: return GuidedAction.ACTION_ID_CURRENT
+        if (action.id != ID_FROM_YEAR) return GuidedAction.ACTION_ID_CURRENT
+        val current = Settings.listFilters[list.key] ?: ListFilters()
+        val typed = ListExplorerFragment.typedYear(requireContext(), action, current.maxAge)
+        if (typed != null) Settings.listFilters = Settings.listFilters + (list.key to current.copy(maxAge = typed.getOrNull()))
+        updateFilterRows(list)
+        if (typed != null) loadTitles(list)
+        return GuidedAction.ACTION_ID_CURRENT
+    }
+
+    /** The filter rows' values and options, in place (replacing them would break the sub-action expansion). */
+    private fun updateFilterRows(list: ListSource) {
+        for (fresh in filterRows(list)) {
+            val row = findActionById(fresh.id) ?: continue
+            row.description = fresh.description
+            row.subActions = fresh.subActions
+            notifyActionChanged(findActionPositionById(fresh.id))
+        }
+    }
+
     // --- The list's filters ---
 
     private fun filterRows(list: ListSource): List<GuidedAction> {
@@ -196,7 +246,8 @@ class ListContentsFragment : BaseSettingsFragment() {
         val rows = mutableListOf(
             filterRow(ID_AGE, R.drawable.ic_act_schedule, R.string.filters_age_title,
                 custom.maxAge?.let { Filters.ageLabel(context, it) } ?: default(defaultAge),
-                listOf(default(defaultAge)) + Settings.MAX_AGE_OPTIONS.map { Filters.ageLabel(context, it) }),
+                listOf(default(defaultAge)) + ListExplorerFragment.ageOptions(custom.maxAge).map { Filters.ageLabel(context, it) }),
+            yearRow(ID_FROM_YEAR, custom.maxAge),
         )
         // Global hits never applies to lists that are niche on purpose (anime)
         if (list.localMarketFilter) rows += filterRow(ID_HITS, R.drawable.ic_act_public, R.string.setting_global_hits_title,
@@ -223,14 +274,13 @@ class ListContentsFragment : BaseSettingsFragment() {
         val current = Settings.listFilters[list.key] ?: ListFilters()
         // Option 0 is always "Default (…)"
         val updated = when (action.id / SUB_ID_BASE) {
-            ID_AGE -> current.copy(maxAge = if (index == 0) null else Settings.MAX_AGE_OPTIONS[index - 1])
+            ID_AGE -> current.copy(maxAge = if (index == 0) null else ListExplorerFragment.ageOptions(current.maxAge)[index - 1])
             ID_HITS -> current.copy(globalHits = if (index == 0) null else index == 2)
             ID_WATCHED -> current.copy(watched = if (index == 0) null else Filters.WATCHED_MODES[index - 1])
             else -> return true
         }
         Settings.listFilters = Settings.listFilters + (list.key to updated)
-        // Update the rows in place (replacing them would break the sub-action expansion)
-        filterRows(list).forEach { fresh -> updateDescription(fresh.id, fresh.description) }
+        updateFilterRows(list)
         loadTitles(list)
         return true
     }
@@ -306,6 +356,7 @@ class ListContentsFragment : BaseSettingsFragment() {
         private const val ID_HITS = 3L
         private const val ID_WATCHED = 5L
         private const val ID_GENRES = 10L
+        private const val ID_FROM_YEAR = 11L
         private const val TITLE_BASE = 100L
         private const val TITLES_HEADER = 99L
 

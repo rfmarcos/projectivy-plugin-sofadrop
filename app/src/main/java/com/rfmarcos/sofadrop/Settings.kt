@@ -104,8 +104,16 @@ object Settings {
 
     const val SELECTION_ORDER = "order"
     const val SELECTION_RANDOM = "random"
-    /** Months; 0 means no limit. */
-    val MAX_AGE_OPTIONS = listOf(6, 12, 24, 60, 0)
+    /** Months; 0 means no limit. A year (see [isYear]) can be typed as well. */
+    val MAX_AGE_OPTIONS = listOf(6, 12, 24, 60, 120, 0)
+    private const val FIRST_YEAR = 1900
+
+    /** True when an age limit is a year ("from 2000") rather than months. */
+    fun isYear(maxAge: Int) = maxAge >= FIRST_YEAR
+
+    /** A typed year, when it is one (1900 to next year). */
+    fun parseYear(text: String): Int? =
+        text.trim().toIntOrNull()?.takeIf { it in FIRST_YEAR..java.util.Calendar.getInstance().get(java.util.Calendar.YEAR) + 1 }
     /** Years; 0 means no limit. */
     val MAX_RATING_AGE_OPTIONS = listOf(0, 7, 12, 16)
     const val WATCHED_SHOW = "show"
@@ -218,7 +226,10 @@ object Settings {
 
     // --- Filters ---
 
-    /** Skip titles released (or, for TV, last aired) longer ago than this; 0 = no limit. */
+    /**
+     * Skip titles released (or, for TV, last aired) longer ago than this many months, or released
+     * before this year (see [isYear]); 0 = no limit.
+     */
     var maxAgeMonths: Int
         get() = preferences.getInt(KEY_MAX_AGE, 0)
         set(value) = preferences.edit { putInt(KEY_MAX_AGE, value) }

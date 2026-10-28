@@ -103,12 +103,18 @@ abstract class BaseSettingsFragment : GuidedStepSupportFragment() {
         }
 
     /** Text field edited with the on-screen keyboard; [shown] is what the row displays. */
-    protected fun editable(id: Long, icon: Int, title: CharSequence, value: String, shown: CharSequence) =
-        action(id, icon, title, shown)
-            .editDescription(value)
-            .descriptionEditable(true)
-            .descriptionEditInputType(InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD)
-            .build()
+    protected fun editable(
+        id: Long, icon: Int, title: CharSequence, value: String, shown: CharSequence,
+        inputType: Int = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD,
+    ) = action(id, icon, title, shown)
+        .editDescription(value)
+        .descriptionEditable(true)
+        .descriptionEditInputType(inputType)
+        .build()
+
+    /** "From year" row under an age limit: the year typed, if any, else "Not set". */
+    protected fun yearRow(id: Long, maxAge: Int?) = editable(id, R.drawable.ic_act_schedule, getString(R.string.filters_year_title), "",
+        maxAge?.takeIf { Settings.isYear(it) }?.toString() ?: getString(R.string.not_set), InputType.TYPE_CLASS_NUMBER)
 
     /**
      * Show [fresh] rows. Leanback stops expanding sub-actions once rows that have them are swapped for
