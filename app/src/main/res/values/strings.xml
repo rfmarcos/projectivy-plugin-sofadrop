@@ -404,4 +404,9 @@
     <string name="use_in_projectivy_title">Use in Projectivy</string>
     <string name="use_in_projectivy_desc">Opens Projectivy\'s settings: Appearance › Wallpaper › Launcher wallpaper › 🔌 Sofadrop</string>
     <string name="use_in_projectivy_path">In Projectivy: Appearance › Wallpaper › Launcher wallpaper › 🔌 Sofadrop</string>
+    <string name="filters_min_rating_title">Minimum rating</string>
+    <string name="filters_min_rating_value">%1$.1f+</string>
+    <string name="filters_min_rating_summary">rating %1$s</string>
+    <string name="filters_min_rating_explain">Skips titles with a lower TMDB score. Titles with too few votes to tell (new or not out yet) are kept.</string>
+    <string name="exclusion_low_rating">Skipped: rating too low</string>
 </resources>

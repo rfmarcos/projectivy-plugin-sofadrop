@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The minimum rating filter in Dutch, in its own file so it doesn't collide with the app's Dutch translation (strings.xml) -->
+<resources>
+    <string name="filters_min_rating_title">Minimale score</string>
+    <string name="filters_min_rating_value">%1$.1f+</string>
+    <string name="filters_min_rating_summary">score %1$s</string>
+    <string name="filters_min_rating_explain">Slaat titels over met een lagere TMDB-score. Titels met te weinig stemmen om dat te zeggen (nieuw of nog niet uit) blijven staan.</string>
+    <string name="exclusion_low_rating">Overgeslagen: score te laag</string>
+</resources>

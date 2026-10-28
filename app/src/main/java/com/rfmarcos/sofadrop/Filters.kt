@@ -41,6 +41,10 @@ object Filters {
         else -> context.getString(R.string.filters_age_months, months)
     }
 
+    /** "No limit" or "7.5+" (TMDB score). */
+    fun ratingLabel(context: Context, rating: Double) =
+        if (rating <= 0) context.getString(R.string.filters_age_none) else context.getString(R.string.filters_min_rating_value, rating)
+
     /** "No limit" or "Up to 12 years old" (age certification). */
     fun ratingAgeLabel(context: Context, years: Int) =
         if (years == 0) context.getString(R.string.filters_age_none) else context.getString(R.string.filters_rating_age_up_to, years)
@@ -54,6 +58,7 @@ object Filters {
             custom.globalHits?.let { context.getString(if (it) R.string.list_filters_hits_on else R.string.list_filters_hits_off) },
             custom.watched?.takeIf { Settings.watchSource != null }?.let { watchedLabel(context, it) },
             custom.genres?.let { genresLabel(context, it) },
+            custom.minRating?.let { context.getString(R.string.filters_min_rating_summary, ratingLabel(context, it)) },
         )
         return context.getString(R.string.list_filters_custom, parts.joinToString(", "))
     }
@@ -64,6 +69,7 @@ object Filters {
         context.getString(R.string.setting_global_hits_title).takeIf { Settings.globalHitsOnly },
         Settings.maxRatingAge.takeIf { it > 0 }?.let { context.getString(R.string.filters_rating_age_summary, it) },
         Settings.genreFilter.takeUnless { it.isOff }?.let { genresLabel(context, it) },
+        Settings.minRating.takeIf { it > 0 }?.let { context.getString(R.string.filters_min_rating_summary, ratingLabel(context, it)) },
         context.getString(R.string.watched_summary_hidden).takeIf { Settings.watchSource != null && Settings.watchedMode == Settings.WATCHED_HIDE },
         customised().size.takeIf { it > 0 }?.let { context.resources.getQuantityString(R.plurals.lists_customised, it, it) },
     ).joinToString(" · ")
