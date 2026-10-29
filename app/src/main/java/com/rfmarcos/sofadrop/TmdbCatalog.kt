@@ -63,9 +63,11 @@ class TmdbCatalog(
 
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
     private val today = dateFormat.format(Calendar.getInstance().time)
-    /** Oldest release / last air date allowed for an age limit, or null without one. */
-    private fun cutoff(months: Int): String? = months.takeIf { it > 0 }?.let {
-        dateFormat.format(Calendar.getInstance().apply { add(Calendar.MONTH, -it) }.time)
+    /** Oldest release / air date allowed for an age limit (months, or a year), or null without one. */
+    private fun cutoff(maxAge: Int): String? = when {
+        maxAge <= 0 -> null
+        Settings.isYear(maxAge) -> "$maxAge-01-01"
+        else -> dateFormat.format(Calendar.getInstance().apply { add(Calendar.MONTH, -maxAge) }.time)
     }
 
     /**
@@ -187,7 +189,7 @@ class TmdbCatalog(
         val item = details(ref) ?: return null
         return when {
             filters.globalHits && isLocalMarket(item) -> Exclusion.LOCAL_MARKET
-            isTooOld(ref.type, item, cutoff) -> Exclusion.TOO_OLD
+            isTooOld(ref.type, item, cutoff, Settings.isYear(filters.maxAgeMonths)) -> Exclusion.TOO_OLD
             Settings.excludeAdult && isAdult(ref, item) -> Exclusion.ADULT
             // Unrated titles (mostly not released yet) pass
             Settings.maxRatingAge > 0 && (Certifications.minimumAge(ref.type, item, region) ?: 0) > Settings.maxRatingAge -> Exclusion.AGE_RATING
@@ -207,10 +209,17 @@ class TmdbCatalog(
             (item.int("vote_count") ?: 0) < MIN_VOTES_OTHER_LANGUAGES
     }
 
-    /** Released (movies) or last aired (TV) before the age limit. */
-    private fun isTooOld(type: MediaType, item: JsonObject, cutoff: String?): Boolean {
+    /**
+     * Released (movies) or last aired (TV) before the age limit. From a year, TV counts from its first
+     * air date, the year the wallpaper shows: a show from 1963 that still airs isn't "from 2000".
+     */
+    private fun isTooOld(type: MediaType, item: JsonObject, cutoff: String?, fromYear: Boolean): Boolean {
         val limit = cutoff ?: return false
-        val date = item.str(if (type == MediaType.MOVIE) "release_date" else "last_air_date")
+        val date = item.str(when {
+            type == MediaType.MOVIE -> "release_date"
+            fromYear -> "first_air_date"
+            else -> "last_air_date"
+        })
         return !date.isNullOrEmpty() && date < limit
     }
 

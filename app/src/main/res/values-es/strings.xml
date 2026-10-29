@@ -386,4 +386,8 @@
     <string name="use_in_projectivy_title">Usar en Projectivy</string>
     <string name="use_in_projectivy_desc">Abre los ajustes de Projectivy: Apariencia › Fondo de pantalla › Fondo de pantalla del launcher › 🔌 Sofadrop</string>
     <string name="use_in_projectivy_path">En Projectivy: Apariencia › Fondo de pantalla › Fondo de pantalla del launcher › 🔌 Sofadrop</string>
+    <string name="filters_age_from_year">Desde %1$d</string>
+    <string name="filters_year_title">Desde el año</string>
+    <string name="filters_year_explain">Solo títulos de este año en adelante: escribe un año (como 2000), o déjalo vacío para volver a la antigüedad de arriba. A diferencia de la antigüedad, no se mueve: una serie cuenta desde su primer episodio, así que una serie de 1963 que sigue emitiéndose no es \"desde 2000\".</string>
+    <string name="filters_year_invalid">\"%1$s\" no es un año</string>
 </resources>
