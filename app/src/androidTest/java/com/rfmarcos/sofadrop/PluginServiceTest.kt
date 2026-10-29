@@ -8,9 +8,12 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.IBinder
 import android.util.Log
+import androidx.core.content.edit
+import androidx.preference.PreferenceManager
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -66,6 +69,31 @@ class PluginServiceTest {
         assertEquals(5, Settings.titlesPerList)
         assertEquals(Settings.DEFAULT_LISTS, Settings.lists)
         Settings.titlesPerList = 3
+    }
+
+    /** Any installed app can call getPreferences / setPreferences: keys and connections never go through them. */
+    @Test
+    fun backupLeavesOutKeysAndConnections() {
+        Settings.init(context)
+        val prefs = PreferenceManager.getDefaultSharedPreferences(context)
+        val secrets = listOf("tmdb_token", "trakt_client_id", "trakt_client_secret", "mdblist_api_key",
+            "_trakt_access_token", "_simkl_access_token", "_mdblist_access_token", "_tmdb_session_id")
+            .associateWith { "test-secret-$it" }
+        val saved = secrets.keys.associateWith { prefs.getString(it, null) }
+        prefs.edit(commit = true) { secrets.forEach { (key, value) -> putString(key, value) } }
+        Settings.titlesPerList = Settings.titlesPerList
+        try {
+            val service = bind()
+            val exported = service.preferences
+            Log.i(TAG, "Backup: $exported")
+            secrets.keys.forEach { assertFalse("$it exported", exported.contains("\"$it\"")) }
+            assertFalse(exported.contains("test-secret"))
+
+            service.setPreferences(exported.removeSuffix("}") + secrets.keys.joinToString("") { ",\"$it\":\"injected\"" } + "}")
+            secrets.forEach { (key, value) -> assertEquals(key, value, prefs.getString(key, null)) }
+        } finally {
+            prefs.edit(commit = true) { saved.forEach { (key, value) -> if (value == null) remove(key) else putString(key, value) } }
+        }
     }
 
     private fun bind(): IWallpaperProviderService {
