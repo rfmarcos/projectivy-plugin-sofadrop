@@ -404,4 +404,20 @@
     <string name="use_in_projectivy_title">Use in Projectivy</string>
     <string name="use_in_projectivy_desc">Opens Projectivy\'s settings: Appearance › Wallpaper › Launcher wallpaper › 🔌 Sofadrop</string>
     <string name="use_in_projectivy_path">In Projectivy: Appearance › Wallpaper › Launcher wallpaper › 🔌 Sofadrop</string>
+    <string name="filters_blocked_title">Blocked titles</string>
+    <plurals name="filters_blocked_count">
+        <item quantity="one">%d title blocked</item>
+        <item quantity="other">%d titles blocked</item>
+    </plurals>
+    <string name="filters_blocked_unblock">Unblock</string>
+    <string name="filters_blocked_clear">Clear all</string>
+    <string name="filters_blocked_desc">Titles blocked from a list\'s own page (open a list, then a title) or from View wallpapers (▼) never show, whichever list they come from. Choose one here to unblock it.</string>
+    <string name="exclusion_blocked">Skipped: blocked</string>
+    <string name="explore_block">Block this title</string>
+    <string name="explore_unblock">Unblock this title</string>
+    <string name="viewer_block">Block</string>
+    <string name="viewer_unblock">Unblock</string>
+    <string name="viewer_blocked">BLOCKED</string>
+    <string name="viewer_blocked_toast">Blocked: left out of the next set (made when you leave the settings)</string>
+    <string name="viewer_unblocked_toast">Unblocked: it can show again from the next set</string>
 </resources>
