@@ -4,6 +4,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.IBinder
@@ -20,6 +21,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import tv.projectivy.plugin.wallpaperprovider.api.Event
 import tv.projectivy.plugin.wallpaperprovider.api.IWallpaperProviderService
+import java.io.File
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
@@ -85,6 +87,42 @@ class PluginServiceTest {
         assertEquals(5, Settings.titlesPerList)
         assertEquals(Settings.DEFAULT_LISTS, Settings.lists)
         Settings.titlesPerList = 3
+    }
+
+    /**
+     * The trailer stored with a wallpaper reaches Projectivy as actionUri, from an index.json written by hand
+     * (no TMDB key or network): one entry with a trailer, one in the format of sets made before it.
+     */
+    @Test
+    fun servesTrailersAsActionUri() {
+        Settings.init(context)
+        val store = WallpaperStore(context)
+        val generation = store.newGeneration()
+        for (name in listOf("movie-1.jpg", "movie-2.jpg")) {
+            File(generation, name).outputStream().use { Bitmap.createBitmap(16, 9, Bitmap.Config.ARGB_8888).compress(Bitmap.CompressFormat.JPEG, 80, it) }
+        }
+        store.publish(generation, emptyList())
+        File(generation, "index.json").writeText(
+            """[{"file":"movie-1.jpg","title":"With trailer","type":"movie","tmdbId":1,"source":"tmdb:trending_movies","trailerKey":"dQw4w9WgXcQ"},""" +
+                """{"file":"movie-2.jpg","title":"Older set","type":"movie","tmdbId":2}]"""
+        )
+        val lastGeneration = Settings.lastGeneration
+        Settings.lastGeneration = System.currentTimeMillis() // not stale: no generation from getWallpapers
+        try {
+            val service = bind()
+            val wallpapers = service.getWallpapers(Event.TimeElapsed).associateBy { it.title }
+            Log.i(TAG, "actionUri: ${wallpapers.mapValues { it.value.actionUri }}")
+            assertEquals(null, wallpapers.getValue("Older set").actionUri)
+            val intent = Intent.parseUri(wallpapers.getValue("With trailer").actionUri, Intent.URI_INTENT_SCHEME)
+            assertEquals(Intent.ACTION_VIEW, intent.action)
+            assertEquals("https://www.youtube.com/watch?v=dQw4w9WgXcQ", intent.dataString)
+
+            Settings.clickAction = Settings.CLICK_NONE
+            assertTrue(service.getWallpapers(Event.TimeElapsed).all { it.actionUri == null })
+        } finally {
+            Settings.clickAction = Settings.CLICK_TRAILER
+            Settings.lastGeneration = lastGeneration
+        }
     }
 
     /** Any installed app can call getPreferences / setPreferences: keys and connections never go through them. */
