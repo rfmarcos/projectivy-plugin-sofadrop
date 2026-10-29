@@ -401,6 +401,11 @@
     <string name="update_failed">Couldn\'t update: %1$s</string>
     <string name="update_allow">Allow Sofadrop to install apps, then choose the update again</string>
     <string name="about_version_update">%1$s · version %2$s available</string>
+    <string name="about_version_check">%1$s · press to check for updates</string>
+    <string name="update_checking">Checking for updates…</string>
+    <string name="update_found">Version %1$s is available: install it from the top of the settings</string>
+    <string name="update_none">You have the latest version</string>
+    <string name="update_check_failed">Couldn\'t check for updates</string>
     <string name="use_in_projectivy_title">Use in Projectivy</string>
     <string name="use_in_projectivy_desc">Opens Projectivy\'s settings: Appearance › Wallpaper › Launcher wallpaper › 🔌 Sofadrop</string>
     <string name="use_in_projectivy_path">In Projectivy: Appearance › Wallpaper › Launcher wallpaper › 🔌 Sofadrop</string>
