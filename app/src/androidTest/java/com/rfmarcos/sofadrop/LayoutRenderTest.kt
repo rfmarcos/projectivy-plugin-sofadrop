@@ -14,15 +14,22 @@ import org.junit.runner.RunWith
 import java.io.File
 
 /**
- * Renders one title with combinations of the Wallpaper details parts (header line, synopsis length, cast,
- * footer) into files/layout_test/, plus contact sheets of the info area, to check the spacing between parts.
+ * Renders one title with combinations of the Wallpaper details parts (header line, synopsis length, cast and
+ * its photos, footer) into files/layout_test/, plus contact sheets of the info area, to check the spacing between parts.
  */
 @RunWith(AndroidJUnit4::class)
 class LayoutRenderTest {
 
-    /** [header]: "all", "ratings" or "none"; [footer]: "both", "providers", "source" or "none". */
-    private data class Combo(val header: String, val lines: Int, val cast: Boolean, val footer: String, val logo: Boolean = true) {
-        val label get() = "cab:$header · sinopsis:$lines · reparto:${if (cast) "sí" else "no"} · pie:$footer" + if (logo) "" else " · sin logo"
+    /**
+     * [header]: "all", "ratings" or "none"; [footer]: "both", "providers", "source" or "none"; [photos]: cast photos,
+     * with the second actor's missing when [noPhoto].
+     */
+    private data class Combo(
+        val header: String, val lines: Int, val cast: Boolean, val footer: String, val logo: Boolean = true,
+        val photos: Boolean = false, val noPhoto: Boolean = false, val style: String = Settings.STYLE_FULL,
+    ) {
+        val label get() = "cab:$header · sinopsis:$lines · reparto:${if (photos) "fotos" else if (cast) "sí" else "no"} · pie:$footer" +
+            (if (logo) "" else " · sin logo") + (if (noPhoto) " · 2º sin foto" else "") + (if (style == Settings.STYLE_FULL) "" else " · estilo:$style")
     }
 
     @Test
@@ -62,13 +69,21 @@ class LayoutRenderTest {
             Combo("ratings", 0, false, "none"),
             Combo("all", 4, true, "both", logo = false),
             Combo("none", 0, true, "none", logo = false),
+            Combo("all", 4, true, "both", photos = true),
+            Combo("all", 2, true, "both", photos = true),
+            Combo("all", 0, true, "both", photos = true),
+            Combo("none", 0, true, "none", photos = true),
+            Combo("ratings", 4, true, "source", photos = true),
+            Combo("all", 4, true, "both", photos = true, noPhoto = true),
+            Combo("all", 4, true, "both", logo = false, photos = true),
+            Combo("all", 4, true, "both", photos = true, style = Settings.STYLE_LOGO),
         )
 
         try {
             val base = WallpaperFactory(context, 1920).catalog.build(TitleRef(MediaType.TV, 1399))
             assertNotNull(base)
             assertTrue("needs streaming services in Spain", base!!.providerLogoPaths.isNotEmpty())
-            assertTrue("needs cast", base.cast.isNotEmpty())
+            assertTrue("needs cast with photos", base.cast.size >= 3 && base.cast.take(3).all { it.profilePath != null })
             val ratings = listOf(Rating(RatingSource.IMDB, 9.2), Rating(RatingSource.TOMATOES, 89.0), Rating(RatingSource.POPCORN, 85.0))
 
             val crops = combos.mapIndexed { index, combo ->
@@ -78,13 +93,17 @@ class LayoutRenderTest {
                     extraInfo = base.extraInfo.takeIf { combo.header == "all" }.orEmpty(),
                     genres = base.genres.takeIf { combo.header == "all" }.orEmpty(),
                     certification = base.certification.takeIf { combo.header == "all" },
-                    cast = if (combo.cast) base.cast else emptyList(),
+                    cast = if (!combo.cast) emptyList()
+                    else if (combo.noPhoto) base.cast.mapIndexed { i, member -> if (i == 1) member.copy(profilePath = null) else member }
+                    else base.cast,
                     providerLogoPaths = if (combo.footer == "both" || combo.footer == "providers") base.providerLogoPaths else emptyList(),
                     sourceLabel = if (combo.footer == "both" || combo.footer == "source") "Tendencias" else null,
                     sourceProvider = SourceProvider.TMDB,
                     logoPath = base.logoPath.takeIf { combo.logo },
                 )
                 Settings.overviewLines = combo.lines
+                Settings.showCastPhotos = combo.photos
+                Settings.style = combo.style
                 val bitmap = WallpaperFactory(context, 1920).render(info)
                 val name = "%02d".format(index + 1)
                 File(dir, "$name.jpg").outputStream().use { bitmap.compress(Bitmap.CompressFormat.JPEG, 90, it) }
@@ -112,6 +131,8 @@ class LayoutRenderTest {
             }
         } finally {
             Settings.showCast = false
+            Settings.showCastPhotos = true
+            Settings.style = Settings.STYLE_FULL
             Settings.overviewLines = 4
         }
     }

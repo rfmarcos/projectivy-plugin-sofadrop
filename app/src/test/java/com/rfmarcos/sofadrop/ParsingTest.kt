@@ -102,10 +102,13 @@ class ParsingTest {
     fun castInLatinLettersOnly() {
         // Squid Game's aggregate credits: two of the first five only have their Hangul name
         val credits = kotlinx.serialization.json.Json.parseToJsonElement(
-            """{"cast":[{"name":"Lee Jung-jae"},{"name":"위하준"},{"name":"Yim Si-wan"},{"name":"강하늘"},{"name":"Zoë Kravitz"},{"name":" "},{"name":"Lee Byung-hun"},{"name":"Park Gyu-young"}]}"""
+            """{"cast":[{"name":"Lee Jung-jae","profile_path":"/lee.jpg"},{"name":"위하준"},{"name":"Yim Si-wan","profile_path":null},{"name":"강하늘"},{"name":"Zoë Kravitz","profile_path":"/zoe.jpg"},{"name":" "},{"name":"Lee Byung-hun"},{"name":"Park Gyu-young"}]}"""
         ) as kotlinx.serialization.json.JsonObject
-        assertEquals(listOf("Lee Jung-jae", "Yim Si-wan", "Zoë Kravitz", "Lee Byung-hun"), TmdbCatalog.castNames(credits))
-        assertEquals(emptyList<String>(), TmdbCatalog.castNames(null))
+        assertEquals(
+            listOf(CastMember("Lee Jung-jae", "/lee.jpg"), CastMember("Yim Si-wan"), CastMember("Zoë Kravitz", "/zoe.jpg"), CastMember("Lee Byung-hun")),
+            TmdbCatalog.castNames(credits),
+        )
+        assertEquals(emptyList<CastMember>(), TmdbCatalog.castNames(null))
     }
 
     @Test

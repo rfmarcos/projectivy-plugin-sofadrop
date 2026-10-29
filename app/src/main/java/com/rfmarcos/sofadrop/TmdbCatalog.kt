@@ -34,10 +34,13 @@ data class WallpaperInfo(
     /** Age certification of the streaming country ("16", "TV-MA"), see [Certifications]. */
     val certification: String? = null,
     /** Main cast, most important first (see [TmdbCatalog.castNames]); empty unless shown. */
-    val cast: List<String> = emptyList(),
+    val cast: List<CastMember> = emptyList(),
     /** YouTube video opened from the wallpaper (see [TmdbCatalog.trailerKey]). */
     val trailerKey: String? = null,
 )
+
+/** An actor of the cast row, with their TMDB profile photo when there is one. */
+data class CastMember(val name: String, val profilePath: String? = null)
 
 /** Why a title of a list is not used. */
 enum class Exclusion { LOCAL_MARKET, TOO_OLD, ADULT, AGE_RATING, GENRE, NO_LOGO, NO_SYNOPSIS, WATCHED, NO_IMAGE, DUPLICATE }
@@ -283,7 +286,7 @@ class TmdbCatalog(
 
     // Its own request, only for the titles drawn: a series' aggregate credits (whole run, by episodes)
     // can be 300 KB, and its plain credits only list the latest season (no Pedro Pascal in The Last of Us)
-    private fun cast(ref: TitleRef): List<String> = castNames(
+    private fun cast(ref: TitleRef): List<CastMember> = castNames(
         client.get("${ref.type.path}/${ref.tmdbId}/${if (ref.type == MediaType.TV) "aggregate_credits" else "credits"}?language=$language")
     )
 
@@ -345,15 +348,15 @@ class TmdbCatalog(
         private const val MAX_CAST = 4
 
         /**
-         * First names of TMDB credits (already ordered by importance, or by episodes for a series),
+         * First actors of TMDB credits, with their photo (already ordered by importance, or by episodes for a series),
          * skipping the ones only written in another script: TMDB gives a person's name in Latin letters
          * when it has it ("Lee Jung-jae") and in Hangul or kanji otherwise, which every wallpaper language
          * (all in Latin script) would show as foreign text.
          */
-        fun castNames(credits: JsonObject?): List<String> = credits?.objects("cast").orEmpty()
-            .mapNotNull { it.str("name")?.trim()?.takeIf(String::isNotEmpty) }
-            .filter { name -> name.all { !it.isLetter() || Character.UnicodeScript.of(it.code) == Character.UnicodeScript.LATIN } }
-            .distinct()
+        fun castNames(credits: JsonObject?): List<CastMember> = credits?.objects("cast").orEmpty()
+            .mapNotNull { person -> person.str("name")?.trim()?.takeIf(String::isNotEmpty)?.let { CastMember(it, person.str("profile_path")) } }
+            .filter { member -> member.name.all { !it.isLetter() || Character.UnicodeScript.of(it.code) == Character.UnicodeScript.LATIN } }
+            .distinctBy { it.name }
             .take(MAX_CAST)
 
         /**

@@ -79,6 +79,7 @@ object Settings {
     private const val KEY_SELECTION = "selection_mode"
     private const val KEY_OVERVIEW_LINES = "overview_lines"
     private const val KEY_CAST = "show_cast"
+    private const val KEY_CAST_PHOTOS = "cast_photos"
     private const val KEY_SHOW_SOURCE = "show_source"
     private const val KEY_LIST_FILTERS = "list_filters"
     private val OLD_FILTER_KEYS = listOf("filter_scope", "age_all_lists", "global_hits_all_lists", "adult_all_lists", "filtered_lists",
@@ -474,6 +475,11 @@ object Settings {
         get() = preferences.getBoolean(KEY_CAST, false)
         set(value) = preferences.edit { putBoolean(KEY_CAST, value) }
 
+    /** Faces of the first actors next to their names (on by default); only images, no API requests. */
+    var showCastPhotos: Boolean
+        get() = preferences.getBoolean(KEY_CAST_PHOTOS, true)
+        set(value) = preferences.edit { putBoolean(KEY_CAST_PHOTOS, value) }
+
     /**
      * With both footer parts on, show the list source only when the title has no streaming service.
      * Default for new installs; existing installs keep showing both (decided once, on first read).
@@ -667,7 +673,7 @@ object Settings {
             "header:${headerHidden.sorted()}".takeIf { headerHidden.isNotEmpty() },
             "ratingage:$maxRatingAge".takeIf { maxRatingAge > 0 },
             "order:${headerOrder.joinToString(",")}".takeIf { headerOrder != HEADER_BLOCKS },
-            "minratings:$minRatings".takeIf { minRatings != 2 }, "cast".takeIf { showCast }, "style:$style".takeIf { style != STYLE_FULL },
+            "minratings:$minRatings".takeIf { minRatings != 2 }, "cast".takeIf { showCast }, "nocastphotos".takeIf { showCast && !showCastPhotos }, "style:$style".takeIf { style != STYLE_FULL },
             "genres:${genreFilter.only}:${genreFilter.ids.sorted()}".takeIf { !genreFilter.isOff })).joinToString("|")
 
     /** True when the current wallpapers were generated with different settings. */
