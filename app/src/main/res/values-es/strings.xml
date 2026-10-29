@@ -82,6 +82,10 @@
     <string name="error_no_token">Falta la clave de TMDB</string>
     <string name="error_no_lists">No hay listas elegidas · se mantienen los fondos actuales</string>
     <string name="error_no_titles">Las listas elegidas no devolvieron títulos</string>
+    <string name="error_memory">No hay memoria suficiente · prueba con 1080p</string>
+    <string name="error_network">Sin conexión: revisa el internet de la TV</string>
+    <string name="error_tmdb_key">TMDB ha rechazado la clave</string>
+    <string name="notice_memory_1080">algunos en 1080p: no hay memoria suficiente para 4K</string>
 
     <!-- QR, accounts, selection, watched, explorer -->
     <string name="close">Cerrar</string>
@@ -391,4 +395,11 @@
     <string name="use_in_projectivy_title">Usar en Projectivy</string>
     <string name="use_in_projectivy_desc">Abre los ajustes de Projectivy: Apariencia › Fondo de pantalla › Fondo de pantalla del launcher › 🔌 Sofadrop</string>
     <string name="use_in_projectivy_path">En Projectivy: Apariencia › Fondo de pantalla › Fondo de pantalla del launcher › 🔌 Sofadrop</string>
+    <string name="resolution_low_memory">Puede que esta TV no tenga memoria suficiente para 4K</string>
+    <string name="about_log">Registro de la última generación</string>
+    <string name="about_log_none">Todavía no se han generado fondos</string>
+    <string name="log_desc">Qué hizo la última actualización: listas, fallos y cuánto tardó. Si algo salió mal, mándalo con tu aviso.</string>
+    <string name="log_qr">Enviar desde el móvil</string>
+    <string name="log_qr_desc">Un código QR con el resumen, para pegarlo en un aviso</string>
+    <string name="log_qr_scan">Escanéalo con el móvil: verás el resumen como texto, listo para copiarlo en un aviso de error.</string>
 </resources>

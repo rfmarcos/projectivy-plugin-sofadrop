@@ -18,6 +18,7 @@ import android.graphics.RectF
 import android.graphics.Shader
 import android.graphics.Typeface
 import android.graphics.drawable.Drawable
+import android.util.Size
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.res.ResourcesCompat
 import kotlin.math.ceil
@@ -67,6 +68,17 @@ class WallpaperRenderer(
 
     fun render(info: WallpaperInfo, backdrop: Bitmap, logo: Bitmap?, providerLogos: List<Bitmap>): Bitmap {
         val output = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        try {
+            draw(output, info, backdrop, logo, providerLogos)
+        } catch (e: Throwable) {
+            // A 4K wallpaper is ~33 MB: don't keep it waiting for the collector after running out of memory
+            output.recycle()
+            throw e
+        }
+        return output
+    }
+
+    private fun draw(output: Bitmap, info: WallpaperInfo, backdrop: Bitmap, logo: Bitmap?, providerLogos: List<Bitmap>) {
         val canvas = Canvas(output)
 
         // Full-bleed backdrop
@@ -86,12 +98,20 @@ class WallpaperRenderer(
         }
         drawGradient(canvas, tint, horizontal = false) { t -> 0.98f * smoothstep((t - 0.42f) / 0.46f) }
         drawGradient(canvas, tint, horizontal = false) { t -> 0.45f * (1 - smoothstep(t / 0.22f)) }
-        if (style == Settings.STYLE_BACKDROP) return output
+        if (style == Settings.STYLE_BACKDROP) return
 
         // Info block on its own layer, so it can cast a soft shadow
         val layer = Bitmap.createBitmap(
             min(width, s(2100).roundToInt()), min(height, s(1500).roundToInt()), Bitmap.Config.ARGB_8888
         )
+        try {
+            drawInfo(canvas, layer, info, logo, providerLogos)
+        } finally {
+            layer.recycle()
+        }
+    }
+
+    private fun drawInfo(canvas: Canvas, layer: Bitmap, info: WallpaperInfo, logo: Bitmap?, providerLogos: List<Bitmap>) {
         val layerCanvas = Canvas(layer)
         if (logo != null) drawLogo(layerCanvas, logo) else drawTitle(layerCanvas, info.title)
         if (style == Settings.STYLE_FULL) {
@@ -114,8 +134,6 @@ class WallpaperRenderer(
         })
         canvas.drawBitmap(layer, 0f, 0f, Paint(Paint.FILTER_BITMAP_FLAG))
         shadow.recycle()
-        layer.recycle()
-        return output
     }
 
     // --- Background ---
@@ -577,6 +595,9 @@ class WallpaperRenderer(
             kept[kept.lastIndex] = last.trimEnd(',', '.', ';', ':') + "…"
             return kept
         }
+
+        /** The box a logo is drawn in on a [width]-pixel wallpaper. */
+        fun logoBox(width: Int) = Size(LOGO_MAX_WIDTH * width / 3840, LOGO_MAX_HEIGHT * width / 3840)
 
         /** Remove transparent padding around a logo. */
         fun trimTransparent(bitmap: Bitmap): Bitmap {

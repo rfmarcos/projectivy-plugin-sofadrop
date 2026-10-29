@@ -19,7 +19,8 @@ import java.io.File
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
-class TmdbException(message: String) : IOException(message)
+/** An error no retry fixes; [keyRejected] when TMDB refuses the key. */
+class TmdbException(message: String, val keyRejected: Boolean = false) : IOException(message)
 
 /**
  * Minimal TMDB client. Accepts either a v3 API key (32 hex chars, easy to type with a remote)
@@ -75,7 +76,7 @@ class TmdbClient(token: String, cacheDir: File) {
                     when {
                         response.isSuccessful -> return response.body?.bytes()
                         response.code == 404 -> return null
-                        response.code == 401 -> throw TmdbException("TMDB rejected the API key (401)")
+                        response.code == 401 -> throw TmdbException("TMDB rejected the API key (401)", keyRejected = true)
                         response.code == 429 || response.code >= 500 ->
                             lastError = IOException("HTTP ${response.code} for $label")
                         else -> throw IOException("HTTP ${response.code} for $label")

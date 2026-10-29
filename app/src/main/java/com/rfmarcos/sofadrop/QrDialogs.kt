@@ -349,3 +349,21 @@ class LinkQrDialog : QrDialog() {
         }
     }
 }
+
+/** Static QR code with plain text (the generation log's summary), for the phone to copy it. */
+class TextQrDialog : QrDialog() {
+    override val titleRes = R.string.log_qr
+    override val iconRes = R.drawable.ic_act_phone
+    override val buttonRes = R.string.close
+
+    override fun start() {
+        showQr(requireArguments().getString(ARG_TEXT).orEmpty(), getString(R.string.log_qr_scan), null, "", null)
+        setStatus(getString(R.string.qr_link_hint), working = false)
+    }
+
+    companion object {
+        private const val ARG_TEXT = "text"
+
+        fun newInstance(text: String) = TextQrDialog().apply { arguments = bundleOf(ARG_TEXT to text) }
+    }
+}
