@@ -55,11 +55,27 @@ class PluginServiceTest {
         val wallpapers = service.getWallpapers(Event.TimeElapsed)
         assertEquals(6, wallpapers.size)
         for (wallpaper in wallpapers) {
-            Log.i(TAG, "${wallpaper.title} -> ${wallpaper.uri} (${wallpaper.source})")
+            Log.i(TAG, "${wallpaper.title} -> ${wallpaper.uri} (${wallpaper.source}) action=${wallpaper.actionUri}")
             val bitmap = context.contentResolver.openInputStream(Uri.parse(wallpaper.uri)).use { BitmapFactory.decodeStream(it) }
             assertNotNull("cannot decode ${wallpaper.uri}", bitmap)
             assertEquals(1920, bitmap.width)
             assertEquals(1080, bitmap.height)
+        }
+
+        // Trailers: "Watch" in Projectivy opens YouTube; a title without one has no action
+        assertEquals(Settings.CLICK_TRAILER, Settings.clickAction)
+        val trailers = wallpapers.mapNotNull { it.actionUri }
+        assertTrue("no wallpaper has a trailer", trailers.isNotEmpty())
+        for (actionUri in trailers) {
+            val intent = Intent.parseUri(actionUri, Intent.URI_INTENT_SCHEME)
+            assertEquals(Intent.ACTION_VIEW, intent.action)
+            assertTrue(actionUri, intent.dataString.orEmpty().startsWith("https://www.youtube.com/watch?v="))
+        }
+        Settings.clickAction = Settings.CLICK_NONE
+        try {
+            assertTrue(service.getWallpapers(Event.TimeElapsed).all { it.actionUri == null })
+        } finally {
+            Settings.clickAction = Settings.CLICK_TRAILER
         }
 
         // Projectivy backup round-trip

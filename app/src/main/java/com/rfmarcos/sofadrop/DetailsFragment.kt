@@ -48,6 +48,9 @@ class DetailsFragment : PreviewSettingsFragment() {
             countryAction().hiddenBy(Settings.drawsDetails),
             choice(ID_RESOLUTION, R.drawable.ic_act_hd, R.string.setting_resolution_title, resolutionLabel(context, Settings.outputWidth),
                 Settings.WIDTH_OPTIONS.map { resolutionLabel(context, it) }),
+            action(ID_CLICK, R.drawable.ic_act_movie, getString(R.string.click_action_title), clickLabel(context, Settings.clickAction))
+                .subActions(options(ID_CLICK, Settings.CLICK_ACTIONS.map { clickLabel(context, it) }, clickLabel(context, Settings.clickAction),
+                    listOf(getString(R.string.click_trailer_desc), null))).build(),
             action(ID_PREVIEW_PIN, R.drawable.ic_act_preview, getString(R.string.preview_pin_title), PreviewPinFragment.summary(context))
                 .hasNext(true).build(),
         )
@@ -120,6 +123,12 @@ class DetailsFragment : PreviewSettingsFragment() {
                 Settings.outputWidth = Settings.WIDTH_OPTIONS[index]
                 updateDescription(ID_RESOLUTION, resolutionLabel(requireContext(), Settings.outputWidth))
             }
+            ID_CLICK -> {
+                // Projectivy gets it with the next request; nothing to preview or regenerate
+                Settings.clickAction = Settings.CLICK_ACTIONS[index]
+                updateDescription(ID_CLICK, clickLabel(requireContext(), Settings.clickAction))
+                return true
+            }
         }
         schedulePreview(300)
         return true
@@ -136,6 +145,7 @@ class DetailsFragment : PreviewSettingsFragment() {
         private const val ID_PREVIEW_PIN = 9L
         private const val ID_CAST = 10L
         private const val ID_STYLE = 11L
+        private const val ID_CLICK = 12L
 
         fun styleLabel(context: Context, style: String) = context.getString(
             when (style) {
@@ -152,6 +162,9 @@ class DetailsFragment : PreviewSettingsFragment() {
                 else -> R.string.style_full_desc
             }
         )
+
+        fun clickLabel(context: Context, action: String) =
+            context.getString(if (action == Settings.CLICK_TRAILER) R.string.click_trailer else R.string.click_none)
 
         fun castLabel(context: Context, shown: Boolean) = context.getString(if (shown) R.string.cast_shown else R.string.cast_hidden)
 

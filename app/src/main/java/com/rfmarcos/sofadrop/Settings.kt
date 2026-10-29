@@ -98,6 +98,7 @@ object Settings {
     private const val KEY_TITLE_LANGUAGE = "title_language"
     private const val KEY_SYNOPSIS_LANGUAGE = "synopsis_language"
     private const val KEY_STYLE = "style"
+    private const val KEY_CLICK_ACTION = "click_action"
     private const val KEY_TMDB_SESSION = "_tmdb_session_id"
     private const val KEY_TMDB_ACCOUNT = "_tmdb_account_id"
     private const val KEY_TMDB_USER = "_tmdb_user"
@@ -134,6 +135,10 @@ object Settings {
     const val STYLE_LOGO = "logo"
     const val STYLE_BACKDROP = "backdrop"
     val STYLES = listOf(STYLE_FULL, STYLE_LOGO, STYLE_BACKDROP)
+    /** What Projectivy opens from a wallpaper ("Watch" in About this wallpaper, play on its status bar). */
+    const val CLICK_TRAILER = "trailer"
+    const val CLICK_NONE = "none"
+    val CLICK_ACTIONS = listOf(CLICK_TRAILER, CLICK_NONE)
 
     // Internal state, not exported in Projectivy backups
     private const val KEY_LAST_GENERATION = "_last_generation"
@@ -304,6 +309,11 @@ object Settings {
     var style: String
         get() = preferences.getString(KEY_STYLE, null)?.takeIf { it in STYLES } ?: STYLE_FULL
         set(value) = preferences.edit { putString(KEY_STYLE, value) }
+
+    /** See [CLICK_ACTIONS]; applied when Projectivy asks for the wallpapers, so it needs no new set. */
+    var clickAction: String
+        get() = preferences.getString(KEY_CLICK_ACTION, null)?.takeIf { it in CLICK_ACTIONS } ?: CLICK_TRAILER
+        set(value) = preferences.edit { putString(KEY_CLICK_ACTION, value) }
 
     /** The style draws the logo (or the title instead). */
     val drawsLogo: Boolean get() = style != STYLE_BACKDROP

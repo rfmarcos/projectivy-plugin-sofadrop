@@ -35,6 +35,8 @@ data class WallpaperInfo(
     val certification: String? = null,
     /** Main cast, most important first (see [TmdbCatalog.castNames]); empty unless shown. */
     val cast: List<String> = emptyList(),
+    /** YouTube video opened from the wallpaper (see [TmdbCatalog.trailerKey]). */
+    val trailerKey: String? = null,
 )
 
 /** Why a title of a list is not used. */
@@ -58,6 +60,8 @@ class TmdbCatalog(
 ) {
     private val languageCode = Languages.code(language)
     private val texts = Languages.texts(language)
+    /** Trailers asked for with the details: in the synopsis language (the general one when it's the original, unknown until then). */
+    private val videoLanguage = parts.synopsis?.let(Languages::code) ?: languageCode
     private val details = ConcurrentHashMap<TitleRef, JsonObject>()
     private val translations = ConcurrentHashMap<TitleRef, List<JsonObject>>()
 
@@ -220,10 +224,11 @@ class TmdbCatalog(
             ?.any { it.str("name")?.lowercase() in EXCLUDED_KEYWORDS } == true
 
     // Series only have their IMDb id in external_ids (movies carry imdb_id); keywords for the adult filter;
-    // release dates and content ratings for the age certification
+    // release dates and content ratings for the age certification; videos for the trailer
     private fun details(ref: TitleRef): JsonObject? =
-        details[ref] ?: client.get("${ref.type.path}/${ref.tmdbId}?language=$language&append_to_response=keywords," +
-            if (ref.type == MediaType.TV) "external_ids,content_ratings" else "release_dates")
+        details[ref] ?: client.get("${ref.type.path}/${ref.tmdbId}?language=$language&append_to_response=keywords,videos," +
+            (if (ref.type == MediaType.TV) "external_ids,content_ratings" else "release_dates") +
+            "&include_video_language=$videoLanguage,en,null")
             ?.also { details[ref] = it }
 
     // --- Wallpaper data ---
@@ -272,6 +277,7 @@ class TmdbCatalog(
             imdbId = item.str("imdb_id") ?: item.obj("external_ids")?.str("imdb_id"),
             certification = Certifications.of(type, item, region)?.let { Certifications.label(region, it) },
             cast = if (showCast) cast(ref) else emptyList(),
+            trailerKey = trailerKey(item.obj("videos"), parts.synopsis?.let(Languages::code) ?: originalCode(item)),
         )
     }
 
@@ -349,6 +355,22 @@ class TmdbCatalog(
             .filter { name -> name.all { !it.isLetter() || Character.UnicodeScript.of(it.code) == Character.UnicodeScript.LATIN } }
             .distinct()
             .take(MAX_CAST)
+
+        /**
+         * YouTube key of the video to open from the wallpaper: an official trailer in [language] (a language
+         * code, "es"), else an official one in English, else any trailer, else a teaser; the newest of each.
+         */
+        fun trailerKey(videos: JsonObject?, language: String): String? {
+            val youTube = videos?.objects("results").orEmpty()
+                .filter { it.str("site") == "YouTube" && !it.str("key").isNullOrBlank() }
+                .sortedByDescending { it.str("published_at").orEmpty() }
+            fun JsonObject.isOfficialTrailer() = str("type") == "Trailer" && bool("official") == true
+            return (youTube.firstOrNull { it.isOfficialTrailer() && it.str("iso_639_1") == language }
+                ?: youTube.firstOrNull { it.isOfficialTrailer() && it.str("iso_639_1") == "en" }
+                ?: youTube.firstOrNull { it.str("type") == "Trailer" }
+                ?: youTube.firstOrNull { it.str("type") == "Teaser" })
+                ?.str("key")
+        }
 
         private val PROVIDER_VARIANT_SUFFIX = Regex(
             "\\s+(amazon channel|apple tv channel|roku premium channel|channel" +

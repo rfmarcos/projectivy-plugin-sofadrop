@@ -192,7 +192,7 @@
     <string name="style_logo_desc">El logo (o el título) sobre el fondo, nada más</string>
     <string name="style_backdrop_desc">Solo la imagen</string>
     <string name="style_hidden">Oculto con el estilo %1$s</string>
-    <string name="details_description">Cómo se ve cada fondo: estilo (todo, solo el logo o solo la imagen), idioma, longitud de la sinopsis, reparto, qué muestra el pie (la lista de origen, las plataformas) y resolución. Una sinopsis más corta evita que las filas del launcher tapen el texto. En Cabecera eliges qué muestra la línea bajo el título: notas, año, duración, géneros. Idioma de cada parte pone el logo o la sinopsis en otro idioma.</string>
+    <string name="details_description">Cómo se ve cada fondo: estilo (todo, solo el logo o solo la imagen), idioma, longitud de la sinopsis, reparto, qué muestra el pie (la lista de origen, las plataformas) y resolución. Una sinopsis más corta evita que las filas del launcher tapen el texto. En Cabecera eliges qué muestra la línea bajo el título: notas, año, duración, géneros. Idioma de cada parte pone el logo o la sinopsis en otro idioma. Al pulsar el fondo elige qué abre Projectivy desde él.</string>
 
     <string name="header_title">Cabecera</string>
     <string name="header_fit_desc">Si la línea no cabe, se quitan primero las notas que pasan del mínimo y después lo que esté más a la derecha (los géneros, de uno en uno). Pon delante lo que no quieras perder: lo primero y las notas siempre visibles no se quitan nunca.</string>
@@ -264,6 +264,10 @@
     <string name="cast_hidden">Oculto</string>
     <string name="cast_shown">Bajo la sinopsis</string>
     <string name="cast_shown_desc">Los actores principales, los que quepan en una línea. Baja el pie.</string>
+    <string name="click_action_title">Al pulsar el fondo</string>
+    <string name="click_trailer">Ver el tráiler</string>
+    <string name="click_trailer_desc">En YouTube, desde el botón de reproducir de Projectivy o «Acerca de este fondo». Necesita Projectivy 4.73 o posterior.</string>
+    <string name="click_none">Nada</string>
     <string name="preview_label_pinned">Vista previa · %1$s · fijada</string>
     <string name="preview_pinned">Se mostrará en la vista previa de los ajustes · cámbialo en Detalles del fondo</string>
     <string name="preview_pin_title">Título de la vista previa</string>

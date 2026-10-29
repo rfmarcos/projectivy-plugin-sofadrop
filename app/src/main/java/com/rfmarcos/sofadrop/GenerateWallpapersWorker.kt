@@ -113,7 +113,7 @@ class GenerateWallpapersWorker(context: Context, params: WorkerParameters) : Wor
                 val name = "${info.type.path}-${info.id}.jpg"
                 FileOutputStream(File(generation, name)).use { bitmap.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, it) }
                 bitmap.recycle()
-                StoredWallpaper(name, info.title, info.type.path, info.id, plan.source.key)
+                StoredWallpaper(name, info.title, info.type.path, info.id, plan.source.key, info.trailerKey)
             }
         } catch (e: TmdbException) {
             throw e

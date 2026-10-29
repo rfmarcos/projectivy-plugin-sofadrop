@@ -15,6 +15,8 @@ data class StoredWallpaper(
     val tmdbId: Int,
     /** Key of the list it came from (empty in sets made before it was stored). */
     val source: String = "",
+    /** YouTube trailer opened from Projectivy (null: none, or a set made before it was stored). */
+    val trailerKey: String? = null,
 )
 
 /**
