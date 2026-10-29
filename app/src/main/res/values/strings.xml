@@ -206,7 +206,7 @@
     <string name="style_logo_desc">The logo (or the title) over the backdrop, nothing else</string>
     <string name="style_backdrop_desc">Just the image</string>
     <string name="style_hidden">Hidden with the %1$s style</string>
-    <string name="details_description">How each wallpaper looks: style (everything, the logo alone or just the image), language, synopsis length, cast, what the footer shows (the list it came from, the streaming services) and image resolution. A shorter synopsis keeps the text clear of the launcher rows. Header chooses what the line under the title shows: ratings, year, runtime, genres. Language of each part puts the logo or the synopsis in another language.</string>
+    <string name="details_description">How each wallpaper looks: style (everything, the logo alone or just the image), language, synopsis length, cast, what the footer shows (the list it came from, the streaming services) and image resolution. A shorter synopsis keeps the text clear of the launcher rows. Header chooses what the line under the title shows: ratings, year, runtime, genres. Language of each part puts the logo or the synopsis in another language. On wallpaper click chooses what Projectivy opens from it.</string>
 
     <string name="rating_imdb" translatable="false">IMDb</string>
     <string name="rating_metacritic" translatable="false">Metacritic</string>
@@ -286,6 +286,10 @@
     <string name="cast_hidden">Hidden</string>
     <string name="cast_shown">Under the synopsis</string>
     <string name="cast_shown_desc">The main actors, as many as fit on one line. It moves the footer down.</string>
+    <string name="click_action_title">On wallpaper click</string>
+    <string name="click_trailer">Watch the trailer</string>
+    <string name="click_trailer_desc">On YouTube, from Projectivy\'s play button or “About this wallpaper”. Needs Projectivy 4.73 or later.</string>
+    <string name="click_none">Nothing</string>
     <string name="preview_label_pinned">Preview · %1$s · pinned</string>
     <string name="preview_pinned">Shown in the settings preview · change it in Wallpaper details</string>
     <string name="preview_pin_title">Preview title</string>

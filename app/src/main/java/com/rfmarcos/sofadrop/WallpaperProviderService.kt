@@ -4,6 +4,7 @@ import android.app.Service
 import android.content.Intent
 import android.os.IBinder
 import android.util.Log
+import androidx.core.net.toUri
 import tv.projectivy.plugin.wallpaperprovider.api.Event
 import tv.projectivy.plugin.wallpaperprovider.api.IWallpaperProviderService
 import tv.projectivy.plugin.wallpaperprovider.api.Wallpaper
@@ -48,6 +49,8 @@ class WallpaperProviderService : Service() {
                     title = wallpaper.title,
                     source = "https://www.themoviedb.org/${wallpaper.type}/${wallpaper.tmdbId}",
                     author = "TMDB",
+                    // "Watch" in Projectivy's "About this wallpaper" and a play button on its status bar
+                    actionUri = actionUri(wallpaper),
                 )
             }
         }
@@ -62,5 +65,13 @@ class WallpaperProviderService : Service() {
 
     companion object {
         private const val TAG = "SofadropService"
+
+        /** What Projectivy opens from [wallpaper] (see [Settings.clickAction]); applied when served, without regenerating. */
+        fun actionUri(wallpaper: StoredWallpaper): String? = when (Settings.clickAction) {
+            Settings.CLICK_TRAILER -> wallpaper.trailerKey?.let {
+                Intent(Intent.ACTION_VIEW, "https://www.youtube.com/watch?v=$it".toUri()).toUri(Intent.URI_INTENT_SCHEME)
+            }
+            else -> null
+        }
     }
 }
