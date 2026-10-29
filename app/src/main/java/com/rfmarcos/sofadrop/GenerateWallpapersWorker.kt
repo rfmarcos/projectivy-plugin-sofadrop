@@ -13,6 +13,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.Worker
 import androidx.work.WorkerParameters
+import androidx.work.workDataOf
 import tv.projectivy.plugin.wallpaperprovider.api.WallpaperProviderContract
 import java.io.File
 import java.io.FileOutputStream
@@ -20,6 +21,11 @@ import java.util.concurrent.TimeUnit
 
 /** Downloads TMDB data, renders the wallpapers and publishes them to Projectivy. */
 class GenerateWallpapersWorker(context: Context, params: WorkerParameters) : Worker(context, params) {
+
+    /** Draw the screensaver's copies in this generation (see [Settings.screensaverDiffers]). */
+    private val screensaverCopies by lazy {
+        Settings.screensaverDiffers && (inputData.getBoolean(INPUT_SCREENSAVER, false) || SofascreenService.isChosen(applicationContext))
+    }
 
     override fun doWork(): Result {
         Settings.init(applicationContext)
@@ -109,11 +115,15 @@ class GenerateWallpapersWorker(context: Context, params: WorkerParameters) : Wor
     private fun store(factory: WallpaperFactory, plan: ListPlan, ref: TitleRef, generation: File): StoredWallpaper? =
         try {
             factory.build(ref, plan)?.let { info ->
-                val bitmap = factory.render(info)
                 val name = "${info.type.path}-${info.id}.jpg"
-                FileOutputStream(File(generation, name)).use { bitmap.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, it) }
-                bitmap.recycle()
-                StoredWallpaper(name, info.title, info.type.path, info.id, plan.source.key)
+                // The screensaver's copy, when it looks different and Sofascreen is the screensaver
+                val screensaverName = "${info.type.path}-${info.id}-screensaver.jpg".takeIf { screensaverCopies }
+                factory.render(info, screensaverName != null) { copy, bitmap ->
+                    val file = File(generation, if (copy) screensaverName!! else name)
+                    FileOutputStream(file).use { bitmap.compress(Bitmap.CompressFormat.JPEG, JPEG_QUALITY, it) }
+                    bitmap.recycle()
+                }
+                StoredWallpaper(name, info.title, info.type.path, info.id, plan.source.key, screensaverName.orEmpty())
             }
         } catch (e: TmdbException) {
             throw e
@@ -126,6 +136,8 @@ class GenerateWallpapersWorker(context: Context, params: WorkerParameters) : Wor
         private const val TAG = "GenerateWallpapers"
         private const val JPEG_QUALITY = 90
         private const val UNIQUE_NOW = "generate-now"
+        /** Asked by the running screensaver: draw its copies even when Android doesn't say it is chosen. */
+        private const val INPUT_SCREENSAVER = "screensaver"
         private const val UNIQUE_PERIODIC = "generate-periodic"
         private const val PROJECTIVY_PACKAGE = "com.spocky.projengmenu"
 
@@ -134,10 +146,11 @@ class GenerateWallpapersWorker(context: Context, params: WorkerParameters) : Wor
             .build()
 
         /** Generate as soon as possible. [replace] restarts a generation already running. */
-        fun runNow(context: Context, replace: Boolean = false) {
+        fun runNow(context: Context, replace: Boolean = false, screensaver: Boolean = false) {
             Settings.init(context)
             Settings.generating = true
             val request = OneTimeWorkRequestBuilder<GenerateWallpapersWorker>()
+                .setInputData(workDataOf(INPUT_SCREENSAVER to screensaver))
                 .setConstraints(networkConstraint)
                 .build()
             WorkManager.getInstance(context).enqueueUniqueWork(

@@ -15,6 +15,8 @@ data class StoredWallpaper(
     val tmdbId: Int,
     /** Key of the list it came from (empty in sets made before it was stored). */
     val source: String = "",
+    /** The screensaver's copy, with the text at the bottom (empty when not drawn, see [Settings.screensaverInfoBottom]). */
+    val screensaverFile: String = "",
 )
 
 /**
@@ -71,6 +73,11 @@ class WallpaperStore(private val context: Context) {
     }
 
     fun fileOf(wallpaper: StoredWallpaper): File? = currentDir()?.let { File(it, wallpaper.file) }
+
+    /** The screensaver's copy of [wallpaper] when there is one, else the wallpaper itself. */
+    fun screensaverFileOf(wallpaper: StoredWallpaper): File? =
+        wallpaper.screensaverFile.takeIf { it.isNotEmpty() }?.let { name -> currentDir()?.let { File(it, name) } }?.takeIf { it.isFile }
+            ?: fileOf(wallpaper)
 
     /** content:// URI of a current wallpaper, served by [WallpaperContentProvider]. */
     fun uriOf(wallpaper: StoredWallpaper): Uri? {

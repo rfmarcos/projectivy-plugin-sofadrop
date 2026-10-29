@@ -3,4 +3,5 @@
     <!-- Dev build: a separate plugin in Projectivy, next to the release one -->
     <string name="plugin_name" translatable="false">Sofadrop Dev</string>
     <string name="plugin_uuid" translatable="false">4e19c432-c8cd-45a7-bb6b-d6a3f56db727</string>
+    <string name="screensaver_name" translatable="false">Sofascreen Dev</string>
 </resources>
