@@ -28,12 +28,17 @@ class AboutFragment : BaseSettingsFragment() {
         if (BuildConfig.SOURCE_URL.isNotBlank()) {
             actions += action(ID_SOURCE, R.drawable.ic_act_code, getString(R.string.about_source), BuildConfig.SOURCE_URL.removePrefix("https://")).build()
         }
+        // The log's last line says how it ended ("Generated 40 wallpapers · 95 s")
+        val log = GenerationLog.read(requireContext())
+        actions += action(ID_LOG, R.drawable.ic_act_status, getString(R.string.about_log),
+            log?.lines()?.lastOrNull() ?: getString(R.string.about_log_none)).hasNext(log != null).enabled(log != null).build()
         actions += action(ID_CREDITS, R.drawable.ic_act_movie, getString(R.string.about_credits), getString(R.string.about_credits_short)).build()
         explanations[ID_CREDITS] = getString(R.string.about_credits_desc)
     }
 
     override fun onGuidedActionClicked(action: GuidedAction) {
         when (action.id) {
+            ID_LOG -> add(parentFragmentManager, GenerationLogFragment())
             ID_USE_IN_PROJECTIVY -> Projectivy.openWallpaperSettings(requireContext())
             ID_SUPPORT -> LinkQrDialog.newInstance(BuildConfig.SUPPORT_URL, R.string.about_support, R.string.about_support_scan)
                 .show(parentFragmentManager, "support")
@@ -48,5 +53,6 @@ class AboutFragment : BaseSettingsFragment() {
         private const val ID_SOURCE = 3L
         private const val ID_CREDITS = 4L
         private const val ID_USE_IN_PROJECTIVY = 5L
+        private const val ID_LOG = 6L
     }
 }

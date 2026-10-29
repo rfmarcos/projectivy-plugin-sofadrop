@@ -139,6 +139,7 @@ object Settings {
     private const val KEY_LAST_GENERATION = "_last_generation"
     private const val KEY_LAST_SIGNATURE = "_last_signature"
     private const val KEY_LAST_ERROR = "_last_error"
+    private const val KEY_LAST_NOTICE = "_last_notice"
     private const val KEY_GENERATING = "_generating"
     private const val KEY_UPDATE_VERSION = "_update_version"
     private const val KEY_PROJECTIVY_ASKED = "_projectivy_asked_at"
@@ -623,6 +624,11 @@ object Settings {
     var lastError: String
         get() = preferences.getString(KEY_LAST_ERROR, "") ?: ""
         set(value) = preferences.edit { putString(KEY_LAST_ERROR, value) }
+
+    /** Something to know about the last generation that went well (e.g. drawn in 1080p for lack of memory). */
+    var lastNotice: String
+        get() = preferences.getString(KEY_LAST_NOTICE, "") ?: ""
+        set(value) = preferences.edit { putString(KEY_LAST_NOTICE, value) }
 
     var generating: Boolean
         get() = preferences.getBoolean(KEY_GENERATING, false)

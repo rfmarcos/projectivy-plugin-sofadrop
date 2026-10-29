@@ -180,7 +180,7 @@ class SettingsFragment : PreviewSettingsFragment() {
                 if (System.currentTimeMillis() - Settings.lastGeneration < DateUtils.MINUTE_IN_MILLIS) getString(R.string.time_just_now)
                 else DateUtils.getRelativeTimeSpanString(Settings.lastGeneration, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS)
                     .toString().replaceFirstChar { it.lowercase() },
-            )
+            ) + Settings.lastNotice.takeIf { it.isNotEmpty() }?.let { " · $it" }.orEmpty()
         }
     }
 

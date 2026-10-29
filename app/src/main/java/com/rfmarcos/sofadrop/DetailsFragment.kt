@@ -46,8 +46,12 @@ class DetailsFragment : PreviewSettingsFragment() {
                 .subActions(options(ID_FOOTER, (0..4).map { footerLabel(context, it) }, footerLabel(context, footerIndex()),
                     listOf(null, null, null, getString(R.string.footer_fallback_desc)))).build().hiddenBy(Settings.drawsDetails),
             countryAction().hiddenBy(Settings.drawsDetails),
-            choice(ID_RESOLUTION, R.drawable.ic_act_hd, R.string.setting_resolution_title, resolutionLabel(context, Settings.outputWidth),
-                Settings.WIDTH_OPTIONS.map { resolutionLabel(context, it) }),
+            action(ID_RESOLUTION, R.drawable.ic_act_hd, getString(R.string.setting_resolution_title), resolutionLabel(context, Settings.outputWidth))
+                .subActions(options(ID_RESOLUTION, Settings.WIDTH_OPTIONS.map { resolutionLabel(context, it) }, resolutionLabel(context, Settings.outputWidth),
+                    Settings.WIDTH_OPTIONS.map { width ->
+                        if (width > 1920 && DeviceMemory.tightFor4k(context)) getString(R.string.resolution_low_memory) else null
+                    }))
+                .build(),
             action(ID_PREVIEW_PIN, R.drawable.ic_act_preview, getString(R.string.preview_pin_title), PreviewPinFragment.summary(context))
                 .hasNext(true).build(),
         )
