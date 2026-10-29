@@ -36,12 +36,15 @@ data class ListFilters(
     val globalHits: Boolean? = null,
     val watched: String? = null,
     val genres: GenreFilter? = null,
+    val minRating: Double? = null,
 ) {
-    val isDefault: Boolean get() = maxAge == null && globalHits == null && watched == null && genres == null
+    val isDefault: Boolean get() = maxAge == null && globalHits == null && watched == null && genres == null && minRating == null
 }
 
 /** The filters a list ends up using. */
-data class FilterValues(val maxAgeMonths: Int, val globalHits: Boolean, val watched: String, val genres: GenreFilter = GenreFilter())
+data class FilterValues(
+    val maxAgeMonths: Int, val globalHits: Boolean, val watched: String, val genres: GenreFilter = GenreFilter(), val minRating: Double = 0.0,
+)
 
 /** An MDBList list: one of the account's (by [id]) or a public one added by its "user/slug" [path]. */
 @Serializable
@@ -62,6 +65,7 @@ object Settings {
     private const val KEY_MAX_AGE = "max_age_months"
     private const val KEY_EXCLUDE_ADULT = "exclude_adult"
     private const val KEY_MAX_RATING_AGE = "max_rating_age"
+    private const val KEY_MIN_RATING = "min_rating"
     private const val KEY_GENRE_FILTER = "genre_filter"
     private const val KEY_PROVIDERS = "show_providers"
     private const val KEY_TRAKT_CLIENT_ID = "trakt_client_id"
@@ -108,6 +112,8 @@ object Settings {
     val MAX_AGE_OPTIONS = listOf(6, 12, 24, 60, 0)
     /** Years; 0 means no limit. */
     val MAX_RATING_AGE_OPTIONS = listOf(0, 7, 12, 16)
+    /** TMDB score out of 10; 0 means no limit. */
+    val MIN_RATING_OPTIONS = listOf(5.0, 6.0, 6.5, 7.0, 7.5, 8.0, 0.0)
     const val WATCHED_SHOW = "show"
     const val WATCHED_MARK = "mark"
     const val WATCHED_HIDE = "hide"
@@ -232,6 +238,11 @@ object Settings {
         get() = preferences.getInt(KEY_MAX_RATING_AGE, 0)
         set(value) = preferences.edit { putInt(KEY_MAX_RATING_AGE, value) }
 
+    /** Skip titles with a lower TMDB score (titles with too few votes to tell pass); 0 = no limit. */
+    var minRating: Double
+        get() = preferences.getFloat(KEY_MIN_RATING, 0f).toDouble()
+        set(value) = preferences.edit { putFloat(KEY_MIN_RATING, value.toFloat()) }
+
     /** Default genre filter; like the age, it only applies by default to automatic lists (see [filtersFor]). */
     var genreFilter: GenreFilter
         get() = try {
@@ -335,12 +346,14 @@ object Settings {
             globalHits = (custom?.globalHits ?: defaultGlobalHits(source)) && source.localMarketFilter,
             watched = custom?.watched ?: watchedMode,
             genres = custom?.genres ?: defaultGenres(source),
+            minRating = custom?.minRating ?: defaultMinRating(source),
         )
     }
 
     fun defaultMaxAge(source: ListSource) = if (source.automatic) maxAgeMonths else 0
     fun defaultGlobalHits(source: ListSource) = source.automatic && globalHitsOnly
     fun defaultGenres(source: ListSource) = if (source.automatic) genreFilter else GenreFilter()
+    fun defaultMinRating(source: ListSource) = if (source.automatic) minRating else 0.0
 
     var showProviders: Boolean
         get() = preferences.getBoolean(KEY_PROVIDERS, true)
@@ -634,14 +647,14 @@ object Settings {
             token.hashCode(), language, region, lists.sorted().joinToString(","), titlesPerList,
             outputWidth, globalHitsOnly, showProviders, selectionMode, watchSource?.let { "$it:$watchedMode" }.orEmpty(),
             // Without the genre field lists don't use, so updating doesn't show a pending change
-            maxAgeMonths, excludeAdult, listFilters.toSortedMap().toString().replace(", genres=null", ""),
+            maxAgeMonths, excludeAdult, listFilters.toSortedMap().toString().replace(", genres=null", "").replace(", minRating=null", ""),
         // Only when changed, so existing installs don't see a pending change after updating
         ).plus(listOfNotNull(overviewLines.takeIf { it != 4 }, "nosource".takeIf { !showSource }, "fallback".takeIf { showSource && showProviders && sourceFallback },
             "dups".takeIf { !skipDuplicates }, "logo:$logoMode".takeIf { logoMode != LOGO_TEXT }, "synopsis:$synopsisMode".takeIf { synopsisMode != SYNOPSIS_HIDE },
             "titlelang:$titleLanguage".takeIf { titleLanguage != LANGUAGE_AUTO }, "synopsislang:$synopsisLanguage".takeIf { synopsisLanguage != LANGUAGE_AUTO },
             "ratings:$ratingSourcesKey:$mdbListAvailable".takeIf { ratingSourcesKey != RatingSource.TMDB.key },
             "header:${headerHidden.sorted()}".takeIf { headerHidden.isNotEmpty() },
-            "ratingage:$maxRatingAge".takeIf { maxRatingAge > 0 },
+            "ratingage:$maxRatingAge".takeIf { maxRatingAge > 0 }, "minrating:$minRating".takeIf { minRating > 0 },
             "order:${headerOrder.joinToString(",")}".takeIf { headerOrder != HEADER_BLOCKS },
             "minratings:$minRatings".takeIf { minRatings != 2 }, "cast".takeIf { showCast }, "style:$style".takeIf { style != STYLE_FULL },
             "genres:${genreFilter.only}:${genreFilter.ids.sorted()}".takeIf { !genreFilter.isOff })).joinToString("|")

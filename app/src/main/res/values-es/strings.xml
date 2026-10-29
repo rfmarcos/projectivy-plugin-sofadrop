@@ -386,4 +386,9 @@
     <string name="use_in_projectivy_title">Usar en Projectivy</string>
     <string name="use_in_projectivy_desc">Abre los ajustes de Projectivy: Apariencia › Fondo de pantalla › Fondo de pantalla del launcher › 🔌 Sofadrop</string>
     <string name="use_in_projectivy_path">En Projectivy: Apariencia › Fondo de pantalla › Fondo de pantalla del launcher › 🔌 Sofadrop</string>
+    <string name="filters_min_rating_title">Puntuación mínima</string>
+    <string name="filters_min_rating_value">%1$.1f+</string>
+    <string name="filters_min_rating_summary">puntuación %1$s</string>
+    <string name="filters_min_rating_explain">Descarta los títulos con una puntuación de TMDB más baja. Los que tienen muy pocos votos para saberlo (nuevos o aún sin estrenar) se mantienen.</string>
+    <string name="exclusion_low_rating">Descartado: puntuación demasiado baja</string>
 </resources>
