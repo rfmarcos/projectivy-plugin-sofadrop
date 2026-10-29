@@ -467,19 +467,22 @@ class WallpaperRenderer(
             return
         }
         drawProviders(canvas, top, providerLogos)
-        drawSource(canvas, top + s(PROVIDER_ICON_SIZE) + s(52f), info, primary = false)
+        drawSource(canvas, top + s(PROVIDER_ICON_SIZE) + s(48f), info, primary = false)
     }
 
-    /** "Trending · [TMDB logo]", "Your watchlist · Trakt", "Netflix Movies · MDBList". */
+    /**
+     * "Trending · [TMDB logo]", "Your watchlist · Trakt", "Netflix Movies · MDBList". Regular, not Light:
+     * under the streaming row it's smaller and dimmer, and Light was too thin to read there.
+     */
     private fun drawSource(canvas: Canvas, center: Float, info: WallpaperInfo, primary: Boolean) {
         val label = info.sourceLabel ?: return
-        val grey = if (primary) 205 else 165
-        val size = if (primary) 50f else 40f
-        val labelPaint = textPaint(light, s(size), Color.rgb(grey, grey, grey))
+        val grey = if (primary) 195 else 175
+        val size = if (primary) 46f else 42f
+        val labelPaint = textPaint(regular, s(size), Color.rgb(grey, grey, grey))
         val text = "$label  ·  "
         drawCentered(canvas, text, s(MARGIN_LEFT), center, labelPaint)
         val x = s(MARGIN_LEFT) + labelPaint.measureText(text)
-        val h = s(if (primary) 46f else 37f)
+        val h = s(if (primary) 42f else 38f)
         val bitmapPaint = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
         fun drawBitmap(bitmap: Bitmap, height: Float, left: Float): Float {
             val w = bitmap.width * height / bitmap.height
@@ -508,9 +511,10 @@ class WallpaperRenderer(
         val iconSize = s(PROVIDER_ICON_SIZE)
         val center = top + iconSize / 2
         val label = texts.availableOn
-        val labelPaint = textPaint(light, s(50f), Color.rgb(205, 205, 205))
-        drawCentered(canvas, label, s(MARGIN_LEFT), center, labelPaint)
-        var x = s(MARGIN_LEFT) + labelPaint.measureText(label) + s(32f)
+        val labelPaint = textPaint(light, s(46f), Color.rgb(195, 195, 195))
+        // A touch higher: next to the icons, its lowercase letters look low on the font's centre
+        drawCentered(canvas, label, s(MARGIN_LEFT), center - s(2f), labelPaint)
+        var x = s(MARGIN_LEFT) + labelPaint.measureText(label) + s(30f)
 
         val paint = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
         for (logo in providerLogos.take(4)) {
@@ -557,7 +561,7 @@ class WallpaperRenderer(
         private const val LOGO_MAX_HEIGHT = 420
         private const val LOGO_BOTTOM = 640
         private const val META_CENTER = 725
-        private const val PROVIDER_ICON_SIZE = 88
+        private const val PROVIDER_ICON_SIZE = 92
         /** Between the synopsis and the cast row. */
         private const val CAST_GAP = 26f
         private const val CERT_HEIGHT = 56f
