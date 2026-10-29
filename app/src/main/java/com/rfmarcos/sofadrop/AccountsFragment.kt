@@ -110,7 +110,13 @@ class AccountsFragment : BaseSettingsFragment() {
     /** Sign out and drop the lists that only work with that account, so wallpapers don't keep using them. */
     private fun disconnect(provider: SourceProvider) {
         when (provider) {
-            SourceProvider.TRAKT -> Settings.clearTraktSession()
+            SourceProvider.TRAKT -> {
+                Settings.clearTraktSession()
+                // Like MDBList: the account's own lists go, the public ones stay
+                val own = Settings.traktLists.filter { it.own }
+                Settings.traktLists -= own.toSet()
+                Settings.lists -= own.map { it.key }.toSet()
+            }
             SourceProvider.SIMKL -> Settings.clearSimklSession()
             SourceProvider.TMDB -> Settings.clearTmdbSession()
             SourceProvider.MDBLIST -> {

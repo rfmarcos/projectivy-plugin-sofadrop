@@ -60,12 +60,20 @@
     <string name="list_trakt_watchlist_movies">Trakt · Tu watchlist (películas)</string>
     <string name="list_trakt_watchlist_shows">Trakt · Tu watchlist (series)</string>
     <string name="list_mdblist">MDBList · %1$s</string>
+    <string name="list_trakt_user">Trakt · %1$s</string>
 
     <string name="setting_trakt_title">Trakt</string>
     <string name="trakt_login_ok">Trakt conectado como %1$s</string>
     <string name="trakt_login_failed">No se pudo conectar con Trakt (%1$s)</string>
     <string name="trakt_login_expired">El código ha caducado, inténtalo de nuevo</string>
     <string name="trakt_login_denied">Se denegó el acceso en Trakt</string>
+    <string name="trakt_user_lists_title">Listas de usuarios de Trakt</string>
+    <string name="trakt_user_lists_summary">Listas públicas y las tuyas · %1$s</string>
+    <string name="trakt_user_lists_description">Añade cualquier lista pública de Trakt sin cuenta: marca una sugerida o escribe usuario/lista (o la URL de la lista en trakt.tv o app.trakt.tv). Conecta tu cuenta (en Cuentas) para ver también tus propias listas, incluidas las privadas.</string>
+    <string name="trakt_user_lists_account_hint">Opcional · conéctala en Cuentas para ver tus listas</string>
+    <string name="trakt_add_desc">Escribe usuario/lista o la URL de la lista</string>
+    <string name="trakt_list_not_found">No se encontró la lista: no existe o es privada</string>
+    <string name="trakt_failed">Error de Trakt: %1$s</string>
 
     <string name="setting_mdblist_title">MDBList</string>
     <string name="mdblist_refresh">Recargar mis listas</string>
@@ -86,6 +94,8 @@
     <string name="error_network">Sin conexión: revisa el internet de la TV</string>
     <string name="error_tmdb_key">TMDB ha rechazado la clave</string>
     <string name="notice_memory_1080">algunos en 1080p: no hay memoria suficiente para 4K</string>
+    <string name="error_list_unavailable">La lista «%1$s» de Trakt se ha borrado o es privada</string>
+    <string name="notice_list_unavailable">borrada o privada en Trakt: %1$s</string>
 
     <!-- QR, accounts, selection, watched, explorer -->
     <string name="close">Cerrar</string>
@@ -249,7 +259,7 @@
     <string name="account_title_trakt">Tu cuenta de Trakt</string>
     <string name="account_not_connected">Sin conectar · escanea un QR</string>
     <string name="tmdb_lists_description">Listas de TMDB. Conecta tu cuenta de TMDB para usar también tu watchlist y tus favoritos.</string>
-    <string name="trakt_lists_description">Listas de Trakt. Conecta tu cuenta para tus recomendaciones y tu watchlist; su historial puede marcar u ocultar lo que has visto (Historial de vistos, en Filtros y explorar listas).</string>
+    <string name="trakt_lists_description">Listas de Trakt y cualquier lista pública de sus usuarios. Conecta tu cuenta para tus recomendaciones y tu watchlist; su historial puede marcar u ocultar lo que has visto (Historial de vistos, en Filtros y explorar listas).</string>
     <string name="list_needs_account">Conecta tu cuenta para usarla</string>
     <string name="mdblist_own_list">Tu lista</string>
     <plurals name="lists_count">

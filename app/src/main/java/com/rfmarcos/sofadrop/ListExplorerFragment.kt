@@ -279,7 +279,9 @@ class ListContentsFragment : BaseSettingsFragment() {
                     action(TITLE_BASE + index, icon, title, status).multilineDescription(true).focusable(true).build()
                 })
             }.onFailure {
-                setGuidanceText(getString(R.string.preview_error, it.message ?: it.javaClass.simpleName))
+                // A deleted or private Trakt list says so, without the "preview" wording
+                setGuidanceText(if (it is ListUnavailableException) GenerateWallpapersWorker.errorMessage(requireContext(), it)
+                    else getString(R.string.preview_error, it.message ?: it.javaClass.simpleName))
             }
         }
     }

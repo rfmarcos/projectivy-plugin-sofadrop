@@ -153,9 +153,9 @@ object Languages {
         "boxoffice", "recommended", "watchlist", "favorite", "trending_anime", "plantowatch", "watching",
     )
 
-    /** "Trending", "Your watchlist", or an MDBList list's own name, in the wallpaper language. */
+    /** "Trending", "Your watchlist", or an MDBList or Trakt user's list's own name, in the wallpaper language. */
     fun sourceLabel(language: String, source: ListSource): String {
-        if (source.provider == SourceProvider.MDBLIST) {
+        if (source.label != null) {
             val name = source.label.orEmpty()
             return if (name.length > 28) name.take(27).trimEnd() + "…" else name
         }

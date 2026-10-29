@@ -67,6 +67,7 @@
     <string name="list_trakt_watchlist_movies">Trakt · Your watchlist (movies)</string>
     <string name="list_trakt_watchlist_shows">Trakt · Your watchlist (shows)</string>
     <string name="list_mdblist">MDBList · %1$s</string>
+    <string name="list_trakt_user">Trakt · %1$s</string>
 
     <!-- Trakt -->
     <string name="setting_trakt_title">Trakt</string>
@@ -74,6 +75,13 @@
     <string name="trakt_login_failed">Could not connect to Trakt (%1$s)</string>
     <string name="trakt_login_expired">The code expired, try again</string>
     <string name="trakt_login_denied">Access was denied on Trakt</string>
+    <string name="trakt_user_lists_title">Lists by Trakt users</string>
+    <string name="trakt_user_lists_summary">Public lists and your own · %1$s</string>
+    <string name="trakt_user_lists_description">Add any public Trakt list, no account needed: tick a suggested one or type user/list (or the list\'s URL on trakt.tv or app.trakt.tv). Connect your account (in Accounts) to also see your own lists, private ones included.</string>
+    <string name="trakt_user_lists_account_hint">Optional · connect it in Accounts for your own lists</string>
+    <string name="trakt_add_desc">Type user/list or the list URL</string>
+    <string name="trakt_list_not_found">List not found: it doesn\'t exist or is private</string>
+    <string name="trakt_failed">Trakt error: %1$s</string>
 
     <!-- MDBList -->
     <string name="setting_mdblist_title">MDBList</string>
@@ -96,6 +104,8 @@
     <string name="error_network">No connection: check the TV\'s internet</string>
     <string name="error_tmdb_key">TMDB rejected the key</string>
     <string name="notice_memory_1080">some in 1080p: not enough memory for 4K</string>
+    <string name="error_list_unavailable">The Trakt list “%1$s” was deleted or is private</string>
+    <string name="notice_list_unavailable">deleted or private on Trakt: %1$s</string>
 
     <!-- QR, accounts, selection, watched, explorer -->
     <string name="close">Close</string>
@@ -265,7 +275,7 @@
     <string name="account_title_trakt">Your Trakt account</string>
     <string name="account_not_connected">Not connected · scan a QR code</string>
     <string name="tmdb_lists_description">Lists from TMDB. Connect your TMDB account to also use your watchlist and favourites.</string>
-    <string name="trakt_lists_description">Lists from Trakt. Connect your account for your recommendations and watchlist; its history can mark or hide what you\'ve watched (Watch history, in Filters &amp; explore lists).</string>
+    <string name="trakt_lists_description">Lists from Trakt, and any public list made by its users. Connect your account for your recommendations and watchlist; its history can mark or hide what you\'ve watched (Watch history, in Filters &amp; explore lists).</string>
     <string name="list_needs_account">Connect your account to use it</string>
     <string name="mdblist_own_list">Your list</string>
     <string name="resolution_short_1080" translatable="false">1080p</string>

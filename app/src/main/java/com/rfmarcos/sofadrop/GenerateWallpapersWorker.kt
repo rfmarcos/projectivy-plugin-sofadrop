@@ -60,7 +60,12 @@ class GenerateWallpapersWorker(context: Context, params: WorkerParameters) : Wor
             Settings.lastGeneration = System.currentTimeMillis()
             Settings.lastSignature = signature
             Settings.lastError = ""
-            Settings.lastNotice = if (memoryErrors.get() > 0) applicationContext.getString(R.string.notice_memory_1080) else ""
+            // A deleted or private Trakt list doesn't fail the generation, but the status says which one it was
+            val unavailable = listErrors.filterIsInstance<ListUnavailableException>().map { it.name }
+            Settings.lastNotice = listOfNotNull(
+                applicationContext.getString(R.string.notice_memory_1080).takeIf { memoryErrors.get() > 0 },
+                applicationContext.getString(R.string.notice_list_unavailable, unavailable.joinToString(", ")).takeIf { unavailable.isNotEmpty() },
+            ).joinToString(" · ")
             notifyProjectivy(applicationContext)
             Log.i(TAG, "Generated ${stored.size} wallpapers (${Settings.language}) in ${System.currentTimeMillis() - start} ms, Projectivy notified")
             log.finish("Generated ${stored.size} wallpapers")
@@ -71,7 +76,7 @@ class GenerateWallpapersWorker(context: Context, params: WorkerParameters) : Wor
             store.discard(generation)
             Settings.lastError = errorMessage(applicationContext, e)
             log.finish("Failed: ${GenerationLog.describe(e)}")
-            if (e is Exception && e !is TmdbException && runAttemptCount < 2) Result.retry() else Result.failure()
+            if (e is Exception && e !is TmdbException && e !is ListUnavailableException && runAttemptCount < 2) Result.retry() else Result.failure()
         } finally {
             Settings.generating = false
             Settings.generationProgress = null
@@ -243,6 +248,7 @@ class GenerateWallpapersWorker(context: Context, params: WorkerParameters) : Wor
             error is OutOfMemoryError -> context.getString(R.string.error_memory)
             error is TmdbException && error.keyRejected -> context.getString(R.string.error_tmdb_key)
             error is TmdbException -> error.message.orEmpty()
+            error is ListUnavailableException -> context.getString(R.string.error_list_unavailable, error.name)
             error is UnknownHostException || error is ConnectException || error is SocketTimeoutException || error is SSLException ->
                 context.getString(R.string.error_network)
             else -> GenerationLog.describe(error)
