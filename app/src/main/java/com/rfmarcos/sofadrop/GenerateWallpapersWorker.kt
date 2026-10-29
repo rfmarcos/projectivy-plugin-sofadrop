@@ -67,14 +67,30 @@ class GenerateWallpapersWorker(context: Context, params: WorkerParameters) : Wor
         val perList = Settings.titlesPerList
         // Finished 4K wallpapers are ~33 MB each until compressed: one title at a time there
         val parallelTitles = if (Settings.outputWidth > 1920) 1 else perList
-        val seen = mutableSetOf<TitleRef>()
+        // Titles that became a wallpaper; later lists skip them (unless duplicates are allowed)
+        val taken = mutableSetOf<TitleRef>()
         val stored = mutableListOf<StoredWallpaper>()
-
         val sources = Sources.selected()
+
+        /** Draw each title with its list's plan, in parallel; how many became a wallpaper. */
+        fun draw(titles: List<Pair<ListPlan, TitleRef>>, list: Int): Int {
+            var made = 0
+            for ((ref, wallpaper) in WallpaperFactory.parallel(titles) { (plan, ref) -> ref to store(factory, plan, ref, generation) }) {
+                if (wallpaper == null) continue
+                // Only a title that really became a wallpaper is taken: a failed one stays free for other lists
+                taken += ref
+                stored += wallpaper
+                made++
+                Settings.generationProgress = Triple(stored.size, list, sources.size)
+            }
+            return made
+        }
+
+        val plans = linkedMapOf<ListSource, ListPlan>()
         for ((index, source) in sources.withIndex()) {
             Settings.generationProgress = Triple(stored.size, index + 1, sources.size)
             val plan = try {
-                factory.plan(source, perList, seen)
+                factory.plan(source, perList, taken)
             } catch (e: TmdbException) {
                 throw e
             } catch (e: Exception) {
@@ -82,27 +98,64 @@ class GenerateWallpapersWorker(context: Context, params: WorkerParameters) : Wor
                 Log.w(TAG, "Could not read list ${source.key}", e)
                 continue
             }
+            plans[source] = plan
             var added = 0
             var next = 0
             // In parallel, as many titles as still missing: the same ones a title-by-title loop would pick
             while (added < perList && next < plan.usable.size) {
                 if (isStopped) return stored
-                val batch = mutableListOf<TitleRef>()
+                val batch = mutableListOf<Pair<ListPlan, TitleRef>>()
                 while (added + batch.size < perList && batch.size < parallelTitles && next < plan.usable.size) {
                     val ref = plan.usable[next++]
                     // Without skipping duplicates, a title already drawn for another list still counts for this one
-                    if (seen.add(ref)) batch += ref else added++
+                    if (ref in taken) added++ else batch += plan to ref
                 }
-                for (wallpaper in WallpaperFactory.parallel(batch) { ref -> store(factory, plan, ref, generation) }) {
-                    if (wallpaper == null) continue
-                    stored += wallpaper
-                    added++
-                    Settings.generationProgress = Triple(stored.size, index + 1, sources.size)
-                }
+                added += draw(batch, index + 1)
             }
-            Log.i(TAG, "${source.key}: $added wallpapers")
+            Log.i(TAG, if (added < perList) "${source.key}: $added of $perList wallpapers (${plan.usable.size} usable titles)"
+                else "${source.key}: $added wallpapers")
         }
-        return stored
+        topUp(factory, plans, perList * sources.size - stored.size, perList, taken) { titles ->
+            // As many at a time as above (one at 4K)
+            titles.chunked(parallelTitles).sumOf { draw(it, sources.size) }
+        }
+        // "One list after another" keeps each list's wallpapers together, extra ones included
+        return stored.sortedBy { wallpaper -> sources.indexOfFirst { it.key == wallpaper.source } }
+    }
+
+    /**
+     * Lists that came up short (too few titles left after filters and duplicates) are made up for by
+     * the other lists, one extra title from each in turn, so the set still has about "titles per list"
+     * x lists wallpapers. With "All" there is no number to reach.
+     */
+    private fun topUp(
+        factory: WallpaperFactory, plans: Map<ListSource, ListPlan>, missing: Int, perList: Int, taken: Set<TitleRef>,
+        draw: (List<Pair<ListPlan, TitleRef>>) -> Int,
+    ) {
+        if (missing <= 0 || perList >= Settings.COUNT_ALL || plans.isEmpty()) return
+        Log.i(TAG, "$missing wallpapers short, topping up from the other lists")
+        // Each list read further than its own share; titles already in the set are skipped
+        val extra = plans.map { (source, plan) ->
+            val bigger = try {
+                factory.plan(source, perList + missing, taken)
+            } catch (e: TmdbException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w(TAG, "Could not read list ${source.key} again", e)
+                plan
+            }
+            bigger to bigger.usable.iterator()
+        }
+        var left = missing
+        while (left > 0 && !isStopped) {
+            // One title from each list that has one left, drawn together
+            val round = extra.mapNotNull { (plan, refs) ->
+                generateSequence { if (refs.hasNext()) refs.next() else null }.firstOrNull { it !in taken }?.let { plan to it }
+            }.take(left)
+            if (round.isEmpty()) break
+            left -= draw(round)
+        }
+        if (left > 0) Log.i(TAG, "Still $left wallpapers short: the lists have no more usable titles")
     }
 
     /** Render one title into [generation]; null when it can't be drawn. */

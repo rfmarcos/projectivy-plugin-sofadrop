@@ -70,30 +70,46 @@ class TmdbCatalog(
 
     /**
      * Candidate titles of a list, in the order they should be tried, including the ones filtered out
-     * (with the reason), using the list's own filters (see [Settings.filtersFor]).
-     * With [shuffle] the whole list is shuffled first (random selection).
+     * (with the reason), using the list's own filters (see [Settings.filtersFor]) and then [runExclusion]
+     * (titles an earlier list took, hidden watched titles), so both count against the same pool.
+     * With [shuffle] the whole list is shuffled first (random selection). A list that comes up short is
+     * read further, up to [MAX_FETCH] titles.
      */
-    fun candidates(source: ListSource, pool: Int, trakt: TraktClient?, simkl: SimklClient?, mdbList: MdbListClient?, shuffle: Boolean = false): List<Candidate> {
-        val fetch = if (shuffle) RANDOM_POOL else pool + 5
+    fun candidates(
+        source: ListSource, pool: Int, trakt: TraktClient?, simkl: SimklClient?, mdbList: MdbListClient?,
+        shuffle: Boolean = false, runExclusion: ((TitleRef) -> Exclusion?)? = null,
+    ): List<Candidate> {
         val filters = Settings.filtersFor(source)
         val cutoff = cutoff(filters.maxAgeMonths)
-        var refs = when (source.provider) {
-            SourceProvider.TMDB -> tmdbRefs(source.key, fetch, cutoff)
-            SourceProvider.TRAKT -> trakt?.titles(source.key, fetch).orEmpty()
-            SourceProvider.SIMKL -> simkl?.titles(source.key, fetch).orEmpty()
+        fun load(count: Int) = when (source.provider) {
+            SourceProvider.TMDB -> tmdbRefs(source.key, count, cutoff)
+            SourceProvider.TRAKT -> trakt?.titles(source.key, count).orEmpty()
+            SourceProvider.SIMKL -> simkl?.titles(source.key, count).orEmpty()
             SourceProvider.MDBLIST -> source.key.removePrefix("mdblist:").let { list ->
-                if ('/' in list) MdbListClient.publicTitles(list, fetch)
-                else list.toLongOrNull()?.let { mdbList?.titles(it, fetch, client) }.orEmpty()
+                if ('/' in list) MdbListClient.publicTitles(list, count)
+                else list.toLongOrNull()?.let { mdbList?.titles(it, count, client) }.orEmpty()
             }
         }.distinct()
-        if (shuffle) refs = refs.shuffled()
         val check = cutoff != null || filters.globalHits || Settings.excludeAdult || Settings.maxRatingAge > 0 ||
             !filters.genres.isOff || Settings.requireLogo || Settings.requireSynopsis
-        // Checked a batch at a time in parallel: at most one batch more than needed
-        return refs.asSequence()
-            .chunked(CHECK_BATCH)
-            .flatMap { batch -> WallpaperFactory.parallel(batch) { Candidate(it, if (check) exclusion(it, cutoff, filters) else null) } }
-            .takeIncluded(pool)
+        // Each title is checked once, also when the list is read again further
+        val checked = ConcurrentHashMap<TitleRef, Candidate>()
+        val filter = if (check) { ref: TitleRef -> checked.getOrPut(ref) { Candidate(ref, exclusion(ref, cutoff, filters)) }.exclusion } else null
+        var fetch = fetchCount(pool, shuffle, strict = check || runExclusion != null)
+        var refs = load(fetch)
+        if (shuffle) refs = refs.shuffled()
+        while (true) {
+            val selected = select(refs, pool, filter, runExclusion)
+            // Short on usable titles (strict filters, or a later list whose titles earlier lists took):
+            // read further into the list, until it has enough or has no more titles
+            if (selected.count { it.exclusion == null } >= pool) return selected
+            val bigger = grow(fetch) ?: return selected
+            val more = load(bigger)
+            if (more.size <= refs.size) return selected
+            fetch = bigger
+            // The titles already in order stay first; only the new ones are shuffled behind them
+            refs = if (shuffle) refs + (more - refs.toSet()).shuffled() else more
+        }
     }
 
     /** Title and year of a title in the configured language (for listing a list's contents). */
@@ -141,7 +157,7 @@ class TmdbCatalog(
         }
         val items = linkedMapOf<Int, JsonObject>()
         // Both sources overlap, so read about as many pages of each as the list needs (20 titles per page)
-        val pageCount = ((count + 19) / 20).coerceIn(1, 5)
+        val pageCount = ((count + 19) / 20).coerceIn(1, MAX_PAGES)
         for (page in 1..pageCount) {
             val queries = listOf("trending/${type.path}/week?language=$language&page=$page", "$discover&page=$page")
             WallpaperFactory.parallel(queries) { client.get(it) }.forEach { page ->
@@ -157,21 +173,10 @@ class TmdbCatalog(
     /** Pages of a paginated TMDB list (20 titles per page). */
     private fun pages(path: String, type: MediaType, count: Int): List<TitleRef> {
         val separator = if ('?' in path) '&' else '?'
-        val pageCount = ((count + 19) / 20).coerceIn(1, 5)
+        val pageCount = ((count + 19) / 20).coerceIn(1, MAX_PAGES)
         return WallpaperFactory.parallel((1..pageCount).toList()) { page ->
             client.get("$path${separator}language=$language&page=$page")?.objects("results").orEmpty()
         }.flatten().toList().mapNotNull { item -> item.int("id")?.let { TitleRef(type, it) } }
-    }
-
-    /** Keep candidates until [count] of them are usable (filtered ones are kept to explain them). */
-    private fun Sequence<Candidate>.takeIncluded(count: Int): List<Candidate> {
-        val result = mutableListOf<Candidate>()
-        var included = 0
-        for (candidate in this) {
-            result += candidate
-            if (candidate.exclusion == null && ++included >= count) break
-        }
-        return result
     }
 
     /** Bayesian average: few votes pull the score towards a typical TMDB rating. */
@@ -333,7 +338,42 @@ class TmdbCatalog(
         private const val MIN_VOTES_OTHER_LANGUAGES = 1000
         private const val MAX_PROVIDERS = 4
         private const val RANDOM_POOL = 100
+        /** Titles read beyond the pool, for the ones a filter or an earlier list takes. */
+        private const val DEFAULT_MARGIN = 5
+        private const val FILTERED_MARGIN = 20
+        /** Most titles read from one list that comes up short (TMDB: 20 a page). */
+        private const val MAX_FETCH = 200
+        private const val MAX_PAGES = MAX_FETCH / 20
         private const val CHECK_BATCH = 8
+
+        /** Titles to read from a list: a bigger margin when filters or the run can reject part of it. */
+        fun fetchCount(pool: Int, shuffle: Boolean, strict: Boolean): Int =
+            if (shuffle) RANDOM_POOL else pool + (if (strict) FILTERED_MARGIN else DEFAULT_MARGIN)
+
+        /** The next, bigger number of titles to read from a list that came up short; null at the limit. */
+        fun grow(fetch: Int): Int? = if (fetch >= MAX_FETCH) null else minOf(fetch * 2, MAX_FETCH)
+
+        /**
+         * Candidates of [refs] in order until [pool] of them are usable (filtered ones are kept to explain
+         * them). The list's own [filter] goes before the run's exclusions ([runExclusion]), so an old title
+         * stays "too old" rather than "duplicate". Checked [batch] titles at a time in parallel: at most one
+         * batch more than needed.
+         */
+        fun select(
+            refs: List<TitleRef>, pool: Int, filter: ((TitleRef) -> Exclusion?)?, runExclusion: ((TitleRef) -> Exclusion?)?,
+            batch: Int = CHECK_BATCH,
+        ): List<Candidate> {
+            val result = mutableListOf<Candidate>()
+            var included = 0
+            val checked = refs.asSequence().chunked(batch).flatMap { titles ->
+                WallpaperFactory.parallel(titles) { Candidate(it, filter?.invoke(it) ?: runExclusion?.invoke(it)) }
+            }
+            for (candidate in checked) {
+                result += candidate
+                if (candidate.exclusion == null && ++included >= pool) break
+            }
+            return result
+        }
         private val EXCLUDED_KEYWORDS = setOf("adult")
         /** Names kept for the cast row; the renderer draws the ones that fit on its line. */
         private const val MAX_CAST = 4

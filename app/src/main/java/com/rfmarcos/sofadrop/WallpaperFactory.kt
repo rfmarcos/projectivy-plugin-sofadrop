@@ -46,12 +46,20 @@ class WallpaperFactory(context: Context, private val width: Int) {
         val watchedMode = Settings.filtersFor(source).watched
         val hideWatched = watchedMode == Settings.WATCHED_HIDE
         val statuses = mutableMapOf<TitleRef, WatchStatus>()
-        val candidates = catalog.candidates(source, perList * 2, trakt, simkl, mdbList, shuffle = random).map { candidate ->
-            if (candidate.exclusion != null) return@map candidate
-            if (Settings.skipDuplicates && candidate.ref in taken) return@map candidate.copy(exclusion = Exclusion.DUPLICATE)
-            // History is only loaded when some list shows or hides watched titles
-            val status = if (watchedMode == Settings.WATCHED_SHOW) null else watched?.status(candidate.ref)?.also { statuses[candidate.ref] = it }
-            if (hideWatched && status is WatchStatus.Watched) candidate.copy(exclusion = Exclusion.WATCHED) else candidate
+        val skipTaken = Settings.skipDuplicates && taken.isNotEmpty()
+        // Titles an earlier list took and hidden watched ones are excluded inside the catalog's pool, so a
+        // list makes up for them instead of coming up short
+        val runExclusion = { ref: TitleRef ->
+            when {
+                skipTaken && ref in taken -> Exclusion.DUPLICATE
+                hideWatched && watched?.status(ref) is WatchStatus.Watched -> Exclusion.WATCHED
+                else -> null
+            }
+        }.takeIf { skipTaken || hideWatched }
+        val candidates = catalog.candidates(source, perList * 2, trakt, simkl, mdbList, shuffle = random, runExclusion = runExclusion)
+        // History is only loaded when some list shows or hides watched titles
+        if (watchedMode != Settings.WATCHED_SHOW) candidates.forEach { candidate ->
+            if (candidate.exclusion == null) watched?.status(candidate.ref)?.let { statuses[candidate.ref] = it }
         }
         val usable = candidates.filter { it.exclusion == null }.map { it.ref }
         return ListPlan(candidates, usable, statuses, random, source, mdbListRatings(usable))
