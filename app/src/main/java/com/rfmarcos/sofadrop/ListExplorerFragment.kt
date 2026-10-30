@@ -125,7 +125,11 @@ class ListExplorerFragment : BaseSettingsFragment() {
             ID_WATCHED -> Settings.watchedMode = Filters.WATCHED_MODES[index]
             ID_RATING_AGE -> Settings.maxRatingAge = Settings.MAX_RATING_AGE_OPTIONS[index]
             ID_MIN_RATING -> Settings.minRating = Settings.MIN_RATING_OPTIONS[index]
-            ID_BLOCKED -> blocked.getOrNull(index - 1)?.let { Settings.setBlocked(it, false) } ?: Settings.clearBlocked()
+            ID_BLOCKED -> {
+                // Close the expanded titles first: the last one gone, the row loses them and leanback would leave them drawn
+                collapseSubActions()
+                blocked.getOrNull(index - 1)?.let { Settings.setBlocked(it, false) } ?: Settings.clearBlocked()
+            }
         }
         refresh() // the watched row follows the watch history
         return true
