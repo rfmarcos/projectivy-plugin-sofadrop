@@ -19,6 +19,9 @@ import java.util.concurrent.TimeUnit
 /** A title found on an external list, resolved to TMDB. */
 data class TitleRef(val type: MediaType, val tmdbId: Int)
 
+/** A Trakt user's list that was deleted or made private ([name] as it was added). */
+class ListUnavailableException(val name: String, code: Int) : IOException("Trakt list \"$name\" was deleted or is private (HTTP $code)")
+
 /**
  * Trakt API v2 (https://trakt.docs.apiary.io). Public lists only need the app's client id;
  * personal lists (recommendations, watchlist) need the user to connect with the device flow.
@@ -78,6 +81,7 @@ class TraktClient(private val clientId: String, private val clientSecret: String
             200 -> {
                 saveTokens(body as JsonObject)
                 Settings.traktUser = username().orEmpty()
+                runCatching { refreshOwnLists() }
                 Poll.Connected
             }
             400 -> Poll.Pending
@@ -113,8 +117,13 @@ class TraktClient(private val clientId: String, private val clientSecret: String
 
     // --- Lists ---
 
-    /** TMDB ids of a Trakt list key such as "trakt:trending_movies". */
+    /** TMDB ids of a Trakt list key such as "trakt:trending_movies" or "trakt:list:user/slug". */
     fun titles(listKey: String, limit: Int): List<TitleRef> {
+        if (listKey.startsWith(USER_LIST)) {
+            val list = Settings.traktLists.firstOrNull { it.key == listKey } ?: TraktListRef(listKey.removePrefix(USER_LIST), listKey.removePrefix(USER_LIST))
+            // The account's own lists may be private: read them as their owner
+            return listTitles(list, limit, auth = list.own && Settings.traktConnected)
+        }
         val (path, type, auth) = when (listKey) {
             "trakt:trending_movies" -> Triple("movies/trending", MediaType.MOVIE, false)
             "trakt:trending_shows" -> Triple("shows/trending", MediaType.TV, false)
@@ -134,6 +143,58 @@ class TraktClient(private val clientId: String, private val clientSecret: String
         val separator = if ('?' in path) '&' else '?'
         val items = get("$path${separator}limit=${limit * 2}", auth) as? JsonArray ?: return emptyList()
         return parseTitles(items, type)
+    }
+
+    /**
+     * Movies and shows of a user's list, a page at a time until [limit] of them have a TMDB id.
+     * Throws [ListUnavailableException] when it was deleted or made private.
+     */
+    fun listTitles(list: TraktListRef, limit: Int, auth: Boolean = false): List<TitleRef> {
+        val titles = LinkedHashSet<TitleRef>()
+        val pageSize = limit.coerceIn(1, PAGE_SIZE)
+        var page = 1
+        do {
+            val (items, pages) = listGet("${apiPath(list.path)}/items/movie,show?page=$page&limit=$pageSize", list, auth)
+            titles += parseListItems(items as? JsonArray ?: break)
+            page++
+        } while (titles.size < limit && page <= pages)
+        return titles.take(limit)
+    }
+
+    /** A public list from its URL or "user/slug", with its name; null when it doesn't exist or is private. */
+    fun findList(reference: String): TraktListRef? {
+        val path = listPath(reference) ?: return null
+        return try {
+            parseList(listGet(apiPath(path), TraktListRef(path, path), auth = false).first as? JsonObject ?: return null)
+        } catch (_: ListUnavailableException) {
+            null
+        }
+    }
+
+    /** The connected account's own lists, private ones included. */
+    fun ownLists(): List<TraktListRef> =
+        (get("users/me/lists", auth = true) as? JsonArray).orEmpty().filterIsInstance<JsonObject>()
+            .mapNotNull { parseList(it)?.copy(own = true) }
+
+    /** Reload the account's lists into [Settings.traktLists], keeping the public ones the user added. */
+    fun refreshOwnLists() {
+        val own = ownLists()
+        Settings.traktLists = (own + Settings.traktLists.filterNot { it.own }).distinctBy { it.key }
+    }
+
+    /**
+     * GET of a user's list (or its items) and its number of pages. Trakt answers 404, 403 or an empty
+     * 204 for a list that doesn't exist or isn't public, depending on what is asked.
+     */
+    private fun listGet(path: String, list: TraktListRef, auth: Boolean): Pair<JsonElement?, Int> {
+        if (auth) refreshIfNeeded()
+        http.newCall(request(path, auth).build()).execute().use { response ->
+            if (response.code == 401 && auth) Settings.clearTraktSession()
+            if (response.code in UNAVAILABLE) throw ListUnavailableException(list.name, response.code)
+            if (!response.isSuccessful) throw IOException("Trakt HTTP ${response.code} for $path")
+            val pages = response.header("X-Pagination-Page-Count")?.toIntOrNull() ?: 1
+            return response.body?.string()?.takeIf { it.isNotBlank() }?.let { json.parseToJsonElement(it) } to pages
+        }
     }
 
     // --- Watched content ---
@@ -205,6 +266,61 @@ class TraktClient(private val clientId: String, private val clientSecret: String
         private const val PKCE_BASE64 = Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP
         // Never opened (device flow), but the token refresh must send the URI registered for the Trakt app
         const val REDIRECT_URI = "https://github.com/rfmarcos/projectivy-plugin-sofadrop"
+
+        /** Key prefix of users' lists: "trakt:list:user/slug". */
+        const val USER_LIST = "trakt:list:"
+        /** Items per request of a user's list (Trakt allows up to 250). */
+        private const val PAGE_SIZE = 100
+        private val UNAVAILABLE = setOf(204, 403, 404)
+        private val PATH_PART = Regex("[A-Za-z0-9_.-]+")
+        private val LIST_URL = Regex("""(?:^|/)users/([^/?#]+)/lists/([^/?#]+)""")
+
+        /** Popular public lists offered in the Trakt lists screen (from lists/popular and lists/trending). */
+        val SUGGESTED = listOf(
+            TraktListRef("justin/imdb-top-rated-movies", "IMDB: Top Rated Movies"),
+            TraktListRef("justin/imdb-top-rated-tv-shows", "IMDB: Top Rated TV Shows"),
+            TraktListRef("justin/imdb-popular-movies", "IMDB: Popular Movies"),
+            TraktListRef("justin/imdb-popular-tv-shows", "IMDB: Popular TV Shows"),
+            TraktListRef("donxy/marvel-cinematic-universe", "MARVEL Cinematic Universe"),
+            TraktListRef("fidel-cb/a24", "A24"),
+            TraktListRef("draackje/studio-ghibli-feature-films", "Studio Ghibli Feature Films"),
+            TraktListRef("draackje/pixar-feature-films", "Pixar Feature Films"),
+            TraktListRef("thefork/academy-awards-best-picture-winners", "Academy Awards - Best Picture Winners"),
+            TraktListRef("billy-shakes/miniseries-limited-series", "Miniseries & Limited Series"),
+        )
+
+        /**
+         * "user/slug" of a list from "user/slug" or its URL on trakt.tv or app.trakt.tv (with or without
+         * query); null for anything else.
+         */
+        fun listPath(reference: String): String? {
+            val trimmed = reference.trim().trimEnd('/')
+            val parts = LIST_URL.find(trimmed)?.destructured?.toList()
+                ?: trimmed.split('/').takeIf { it.size == 2 && "trakt.tv" !in trimmed }
+                ?: return null
+            return parts.takeIf { it.all { part -> part.matches(PATH_PART) } }?.joinToString("/")
+        }
+
+        /** "users/{user}/lists/{slug}" of a list's "user/slug" path. */
+        fun apiPath(path: String): String = "users/${path.substringBefore('/')}/lists/${path.substringAfter('/')}"
+
+        /** A list from `users/{user}/lists/{slug}` or `users/me/lists`; its path uses the user's and the list's slugs. */
+        fun parseList(list: JsonObject): TraktListRef? {
+            val user = list.obj("user")?.obj("ids")?.str("slug") ?: return null
+            val slug = list.obj("ids")?.str("slug") ?: return null
+            return TraktListRef("$user/$slug", list.str("name")?.takeIf { it.isNotBlank() } ?: slug.replace('-', ' '))
+        }
+
+        /** Items of a list are `{ "type": "movie", "movie": {...} }` or the same with "show"; others are skipped. */
+        fun parseListItems(items: JsonArray): List<TitleRef> =
+            items.filterIsInstance<JsonObject>().mapNotNull { item ->
+                val (type, field) = when (item.str("type")) {
+                    "movie" -> MediaType.MOVIE to "movie"
+                    "show" -> MediaType.TV to "show"
+                    else -> return@mapNotNull null
+                }
+                item.obj(field)?.obj("ids")?.int("tmdb")?.let { TitleRef(type, it) }
+            }
 
         /** Items are either `{ "movie": {...} }` / `{ "show": {...} }` or the object itself. */
         fun parseTitles(items: JsonArray, type: MediaType): List<TitleRef> =

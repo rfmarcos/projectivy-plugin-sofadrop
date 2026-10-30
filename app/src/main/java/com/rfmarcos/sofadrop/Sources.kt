@@ -14,9 +14,12 @@ data class ListSource(
     /** False for lists that are niche on purpose (anime), where "global hits only" would empty them. */
     val localMarketFilter: Boolean = true,
 ) {
-    /** Lists built automatically by a service (trending, popular…), as opposed to the user's own lists. */
+    /**
+     * Lists built automatically by a service (trending, popular…), as opposed to the user's own lists
+     * and the lists made by people (MDBList and Trakt users' lists, named by their [label]).
+     */
     val automatic: Boolean
-        get() = provider != SourceProvider.MDBLIST && !needsAccount
+        get() = label == null && !needsAccount
 
     val needsAccount: Boolean get() = needsTraktAccount || needsTmdbAccount || needsSimklAccount
 }
@@ -61,12 +64,18 @@ object Sources {
     )
 
     fun label(context: android.content.Context, source: ListSource): String =
-        source.label?.let { context.getString(R.string.list_mdblist, it) } ?: context.getString(source.labelRes)
+        source.label?.let { context.getString(if (source.provider == SourceProvider.TRAKT) R.string.list_trakt_user else R.string.list_mdblist, it) }
+            ?: context.getString(source.labelRes)
 
     /** Lists available right now, depending on the configured services. */
     fun available(): List<ListSource> {
         val lists = TMDB.filter { !it.needsTmdbAccount || Settings.tmdbConnected }.toMutableList()
-        if (Settings.traktConfigured) lists += TRAKT.filter { !it.needsTraktAccount || Settings.traktConnected }
+        if (Settings.traktConfigured) {
+            lists += TRAKT.filter { !it.needsTraktAccount || Settings.traktConnected }
+            // Like MDBList's: public lists always, the account's own ones while it is connected
+            lists += Settings.traktLists.filter { !it.own || Settings.traktConnected }
+                .map { ListSource(it.key, SourceProvider.TRAKT, label = it.name) }
+        }
         lists += SIMKL.filter { !it.needsSimklAccount || Settings.simklConnected }
         // Public lists need no account; the account's own lists only while it is connected
         lists += Settings.mdbLists.filter { it.path.isNotEmpty() || Settings.mdbListAvailable }

@@ -36,7 +36,12 @@ class ProviderListsFragment : BaseSettingsFragment() {
     private fun buildRows(): List<GuidedAction> {
         val selected = Settings.lists
         val publicUsable = provider != SourceProvider.TRAKT || Settings.traktConfigured
-        return listOf(accountAction()) + lists.mapIndexed { index, source ->
+        // Trakt users' lists (public ones and the account's) have their own screen
+        val userLists = listOfNotNull(
+            action(ID_USER_LISTS, R.drawable.ic_act_list, getString(R.string.trakt_user_lists_title), TraktListsFragment.summary(requireContext()))
+                .hasNext(true).enabled(publicUsable).build().takeIf { provider == SourceProvider.TRAKT },
+        )
+        return listOf(accountAction()) + userLists + lists.mapIndexed { index, source ->
             val usable = publicUsable && !(source.needsAccount && !connected)
             checkbox(ID_LIST_BASE + index, Sources.label(requireContext(), source).substringAfter(" · "),
                 when {
@@ -74,6 +79,7 @@ class ProviderListsFragment : BaseSettingsFragment() {
     override fun onGuidedActionClicked(action: GuidedAction) {
         when {
             action.id == ID_ACCOUNT -> add(parentFragmentManager, AccountsFragment.newInstance(provider))
+            action.id == ID_USER_LISTS -> add(parentFragmentManager, TraktListsFragment())
             action.id >= ID_LIST_BASE -> {
                 val key = lists.getOrNull((action.id - ID_LIST_BASE).toInt())?.key ?: return
                 Settings.lists = if (action.isChecked) Settings.lists + key else Settings.lists - key
@@ -84,6 +90,7 @@ class ProviderListsFragment : BaseSettingsFragment() {
     companion object {
         private const val ARG_PROVIDER = "provider"
         private const val ID_ACCOUNT = 1L
+        private const val ID_USER_LISTS = 2L
         private const val ID_LIST_BASE = 100L
 
         fun newInstance(provider: SourceProvider) =

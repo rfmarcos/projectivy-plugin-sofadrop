@@ -49,6 +49,12 @@ data class MdbListRef(val id: Long, val name: String, val path: String = "") {
     val key: String get() = "mdblist:" + path.ifEmpty { id.toString() }
 }
 
+/** A Trakt user's list by its "user/slug" [path]: a public one added by the user, or one of the connected account's ([own]). */
+@Serializable
+data class TraktListRef(val path: String, val name: String, val own: Boolean = false) {
+    val key: String get() = TraktClient.USER_LIST + path
+}
+
 /** User preferences plus a few internal values describing the last generation. */
 object Settings {
     private const val KEY_TOKEN = "tmdb_token"
@@ -68,6 +74,7 @@ object Settings {
     private const val KEY_TRAKT_CLIENT_SECRET = "trakt_client_secret"
     private const val KEY_MDBLIST_KEY = "mdblist_api_key"
     private const val KEY_MDBLIST_LISTS = "mdblist_lists"
+    private const val KEY_TRAKT_LISTS = "trakt_lists"
     private const val KEY_RATINGS = "rating_sources"
     private const val KEY_HEADER_HIDDEN = "header_hidden"
     private const val KEY_HEADER_ORDER = "header_order"
@@ -402,6 +409,15 @@ object Settings {
     fun clearTraktSession() = preferences.edit {
         remove(KEY_TRAKT_ACCESS); remove(KEY_TRAKT_REFRESH); remove(KEY_TRAKT_EXPIRES); remove(KEY_TRAKT_USER)
     }
+
+    /** Trakt users' lists: the public ones added by the user plus the account's own (refreshed from its screen). */
+    var traktLists: List<TraktListRef>
+        get() = try {
+            json.decodeFromString<List<TraktListRef>>(preferences.getString(KEY_TRAKT_LISTS, null) ?: "[]")
+        } catch (_: Exception) {
+            emptyList()
+        }
+        set(value) = preferences.edit { putString(KEY_TRAKT_LISTS, json.encodeToString(value)) }
 
     // --- Simkl (trending needs nothing; the account is connected with a QR code) ---
 
