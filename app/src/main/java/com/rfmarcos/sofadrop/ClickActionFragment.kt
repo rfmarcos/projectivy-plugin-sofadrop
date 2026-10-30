@@ -45,8 +45,8 @@ class ClickActionFragment : PreviewSettingsFragment() {
         val context = requireContext()
         val order = Settings.clickPlatforms
         val rows = mutableListOf(header(ID_PLATFORMS_HEADER, getString(R.string.click_platforms_header)))
-        // The ones in use by their position, then the rest
-        rows += (order + Platform.entries.filter { it !in order }).map { platformRow(it, order) }
+        // The ones in use by their position, then the rest (a regional one only in its countries)
+        rows += (order + Platform.entries.filter { it !in order && it.offeredIn(Settings.region, context) }).map { platformRow(it, order) }
 
         rows += header(ID_FALLBACK_HEADER, getString(R.string.click_fallback_header))
         val fallbacks = fallbacks()

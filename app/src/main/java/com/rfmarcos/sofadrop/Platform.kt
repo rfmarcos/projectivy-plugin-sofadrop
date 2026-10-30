@@ -25,8 +25,10 @@ enum class Platform(
     private val packages: List<String>,
     /** Wikidata properties of its ids, best first. */
     val ids: List<WikidataId>,
+    /** Countries where TMDB lists it, for a service of a few; null: most of the world. */
+    private val countries: Set<String>? = null,
 ) {
-    NETFLIX("netflix", "Netflix", setOf(8, 1796), listOf("com.netflix.ninja", "com.netflix.mediaclient"),
+    NETFLIX("netflix", "Netflix", setOf(8, 175, 1796), listOf("com.netflix.ninja", "com.netflix.mediaclient"),
         listOf(WikidataId("P1874") { "https://www.netflix.com/title/$it" })),
     PRIME("prime", "Prime Video", setOf(9, 119, 2100), listOf("com.amazon.amazonvideo.livingroom", "com.amazon.avod.thirdpartyclient"),
         listOf(
@@ -36,6 +38,7 @@ enum class Platform(
         )),
     DISNEY("disney", "Disney+", setOf(337), listOf("com.disney.disneyplus"),
         listOf(
+            WikidataId("P13902") { "https://www.disneyplus.com/browse/$it" },
             WikidataId("P7595", series = false) { "https://www.disneyplus.com/movies/wd/$it" },
             WikidataId("P7596", movies = false) { "https://www.disneyplus.com/series/wp/$it" },
         )),
@@ -45,10 +48,39 @@ enum class Platform(
         listOf(
             WikidataId("P9586", series = false) { "https://tv.apple.com/movie/$it" },
             WikidataId("P9751", movies = false) { "https://tv.apple.com/show/$it" },
-        ));
+        )),
+    MUBI("mubi", "MUBI", setOf(11), listOf("com.mubi"),
+        listOf(WikidataId("P7299") { "https://mubi.com/films/$it" })),
+    CRUNCHYROLL("crunchyroll", "Crunchyroll", setOf(283), listOf("com.crunchyroll.crunchyroid"),
+        listOf(WikidataId("P11330") { "https://www.crunchyroll.com/series/$it" })),
+    HULU("hulu", "Hulu", setOf(15), listOf("com.hulu.livingroomplus", "com.hulu.plus"),
+        listOf(
+            WikidataId("P6466", series = false) { "https://www.hulu.com/movie/$it" },
+            WikidataId("P6467", movies = false) { "https://www.hulu.com/series/$it" },
+        ), setOf("US")),
+    TUBI("tubi", "Tubi", setOf(73), listOf("com.tubitv"),
+        listOf(
+            WikidataId("P7760", series = false) { "https://tubitv.com/movies/$it" },
+            WikidataId("P7761", movies = false) { "https://tubitv.com/series/$it" },
+        ), setOf("AU", "CA", "GB", "IN", "MX", "US")),
+    KANOPY("kanopy", "Kanopy", setOf(191), listOf("com.kanopy"),
+        listOf(WikidataId("P7985") { "https://www.kanopy.com/product/$it" }), setOf("US")),
+    HOOPLA("hoopla", "Hoopla", setOf(212), listOf("com.hoopladigital.android"),
+        listOf(WikidataId("P5680") { "https://www.hoopladigital.com/title/$it" }), setOf("AU", "CA", "NZ", "US")),
+    UNEXT("unext", "U-NEXT", setOf(84), listOf("jp.unext.mediaplayer", "jp.unext.tv.player"),
+        listOf(WikidataId("P14567") { "https://video.unext.jp/title/$it" }), setOf("JP")),
+    NRK("nrk", "NRK TV", setOf(442), listOf("no.nrk.tv"),
+        listOf(WikidataId("P9979") { "https://tv.nrk.no/$it" }), setOf("NO")),
+    SVT("svt", "SVT Play", setOf(493), listOf("se.svt.android.svtplay"),
+        listOf(WikidataId("P6817") { "https://www.svtplay.se/$it" }), setOf("SE")),
+    YLE("yle", "Yle Areena", setOf(323), listOf("com.yle.webtv"),
+        listOf(WikidataId("P3414") { "https://areena.yle.fi/$it" }), setOf("FI"));
 
     /** A Wikidata property holding the title's id on a platform, and the page of an id. */
     class WikidataId(val property: String, val movies: Boolean = true, val series: Boolean = true, val url: (String) -> String)
+
+    /** Worth offering in [region]: TMDB lists it there, or its app is installed anyway. */
+    fun offeredIn(region: String, context: Context) = countries == null || region in countries || installedPackage(context) != null
 
     fun installedPackage(context: Context): String? = packages.firstOrNull { name ->
         try {

@@ -30,6 +30,18 @@
         <package android:name="com.disney.disneyplus" />
         <package android:name="com.wbd.stream" />
         <package android:name="com.apple.atve.androidtv.appletv" />
+        <package android:name="com.mubi" />
+        <package android:name="com.crunchyroll.crunchyroid" />
+        <package android:name="com.hulu.livingroomplus" />
+        <package android:name="com.hulu.plus" />
+        <package android:name="com.tubitv" />
+        <package android:name="com.kanopy" />
+        <package android:name="com.hoopladigital.android" />
+        <package android:name="jp.unext.mediaplayer" />
+        <package android:name="jp.unext.tv.player" />
+        <package android:name="no.nrk.tv" />
+        <package android:name="se.svt.android.svtplay" />
+        <package android:name="com.yle.webtv" />
     </queries>
 
     <application

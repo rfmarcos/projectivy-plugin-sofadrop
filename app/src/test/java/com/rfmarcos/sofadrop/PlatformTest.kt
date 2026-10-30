@@ -45,6 +45,13 @@ class PlatformTest {
     }
 
     @Test
+    fun disneyBrowseIdFirst() {
+        val ids = mapOf("P7596" to "abc", "P13902" to "entity-1")
+        assertEquals("https://www.disneyplus.com/browse/entity-1", Platform.links(MediaType.TV, ids)["disney"])
+        assertEquals("https://www.disneyplus.com/series/wp/abc", Platform.links(MediaType.TV, ids - "P13902")["disney"])
+    }
+
+    @Test
     fun primeGtiFirst() {
         val links = Platform.links(MediaType.MOVIE, mapOf("P8055" to "B0OLD", "P14462" to "amzn1.dv.gti.x"))
         assertEquals("https://app.primevideo.com/detail?gti=amzn1.dv.gti.x", links["prime"])
