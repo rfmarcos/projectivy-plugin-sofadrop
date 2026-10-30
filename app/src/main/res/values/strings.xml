@@ -493,4 +493,8 @@
     <string name="filters_min_rating_summary">rating %1$s</string>
     <string name="filters_min_rating_explain">Skips titles with a lower TMDB score. Titles with too few votes to tell (new or not out yet) are kept.</string>
     <string name="exclusion_low_rating">Skipped: rating too low</string>
+    <string name="filters_age_from_year">From %1$d</string>
+    <string name="filters_year_title">From year</string>
+    <string name="filters_year_explain">Only titles from this year on: type a year (such as 2000), or leave it empty to go back to the age limit above. Unlike the age limit it stays put: a show counts from its first episode, so a show from 1963 that still airs isn\'t \"from 2000\".</string>
+    <string name="filters_year_invalid">\"%1$s\" isn\'t a year</string>
 </resources>

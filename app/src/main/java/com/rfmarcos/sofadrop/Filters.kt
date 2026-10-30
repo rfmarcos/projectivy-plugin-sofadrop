@@ -35,8 +35,10 @@ object Filters {
             if (filter.only) R.plurals.genres_only else R.plurals.genres_except, filter.ids.size, filter.ids.size)
     }
 
+    /** "No limit", "6 months", "5 years" or "From 2000". */
     fun ageLabel(context: Context, months: Int) = when {
         months == 0 -> context.getString(R.string.filters_age_none)
+        Settings.isYear(months) -> context.getString(R.string.filters_age_from_year, months)
         months % 12 == 0 -> context.resources.getQuantityString(R.plurals.filters_age_years, months / 12, months / 12)
         else -> context.getString(R.string.filters_age_months, months)
     }
