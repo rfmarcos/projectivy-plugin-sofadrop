@@ -497,4 +497,20 @@
     <string name="filters_year_title">From year</string>
     <string name="filters_year_explain">Only titles from this year on: type a year (such as 2000), or leave it empty to go back to the age limit above. Unlike the age limit it stays put: a show counts from its first episode, so a show from 1963 that still airs isn\'t \"from 2000\".</string>
     <string name="filters_year_invalid">\"%1$s\" isn\'t a year</string>
+    <string name="filters_blocked_title">Blocked titles</string>
+    <plurals name="filters_blocked_count">
+        <item quantity="one">%d title blocked</item>
+        <item quantity="other">%d titles blocked</item>
+    </plurals>
+    <string name="filters_blocked_unblock">Unblock</string>
+    <string name="filters_blocked_clear">Clear all</string>
+    <string name="filters_blocked_desc">Titles blocked from a list\'s own page (open a list, then a title) or from View wallpapers (▼) never show, whichever list they come from. Choose one here to unblock it.</string>
+    <string name="exclusion_blocked">Skipped: blocked</string>
+    <string name="explore_block">Block this title</string>
+    <string name="explore_unblock">Unblock this title</string>
+    <string name="viewer_block">Block</string>
+    <string name="viewer_unblock">Unblock</string>
+    <string name="viewer_blocked">BLOCKED</string>
+    <string name="viewer_blocked_toast">Blocked: left out of the next set (made when you leave the settings)</string>
+    <string name="viewer_unblocked_toast">Unblocked: it can show again from the next set</string>
 </resources>

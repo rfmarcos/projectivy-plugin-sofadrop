@@ -17,7 +17,8 @@ import androidx.appcompat.app.AppCompatActivity
 
 /**
  * Full-screen view of the generated wallpapers: ◀ ▶ browse, OK shows one in the settings preview,
- * and the info cluster fades out when idle so the wallpaper can be seen whole.
+ * ▼ blocks its title (see [Settings.blocked]), and the info cluster fades out when idle so the
+ * wallpaper can be seen whole.
  */
 class PreviewActivity : AppCompatActivity() {
 
@@ -78,12 +79,15 @@ class PreviewActivity : AppCompatActivity() {
 
         val pinned = pinOf(wallpaper) == Settings.previewPin
         findViewById<View>(R.id.viewer_pinned).visibility = if (pinned) View.VISIBLE else View.GONE
+        val blocked = refOf(wallpaper) in Settings.blockedTitles
+        findViewById<View>(R.id.viewer_blocked).visibility = if (blocked) View.VISIBLE else View.GONE
         title.text = wallpaper.title
         val source = Sources.available().firstOrNull { it.key == wallpaper.source }?.let { Sources.label(this, it) }
         subtitle.text = listOfNotNull(getString(R.string.viewer_position, position + 1, wallpapers.size), source).joinToString("  ·  ")
         chips.removeAllViews()
         chips.addView(chip("◀ ▶", getString(R.string.viewer_browse)))
         chips.addView(chip("OK", getString(if (pinned && !picking) R.string.viewer_unpin else R.string.viewer_use)))
+        if (!picking) chips.addView(chip("▼", getString(if (blocked) R.string.viewer_unblock else R.string.viewer_block)))
         showOverlay()
     }
 
@@ -116,6 +120,19 @@ class PreviewActivity : AppCompatActivity() {
 
     private fun pinOf(wallpaper: StoredWallpaper) = "${wallpaper.type}:${wallpaper.tmdbId}"
 
+    private fun refOf(wallpaper: StoredWallpaper) =
+        TitleRef(if (wallpaper.type == MediaType.TV.path) MediaType.TV else MediaType.MOVIE, wallpaper.tmdbId)
+
+    /** Block or unblock the title shown; the current set keeps it until the next one is made. */
+    private fun toggleBlock() {
+        val wallpaper = wallpapers[position]
+        val block = refOf(wallpaper) !in Settings.blockedTitles
+        Settings.setBlocked(refOf(wallpaper), block, wallpaper.title)
+        // A blocked title can't stay the settings preview
+        if (block && Settings.previewPin == pinOf(wallpaper)) Settings.pinPreview("", "")
+        Toast.makeText(this, if (block) R.string.viewer_blocked_toast else R.string.viewer_unblocked_toast, Toast.LENGTH_LONG).show()
+    }
+
     /** Opened from "Preview title" to pick one: OK keeps it and goes back there. */
     private val picking get() = intent.getBooleanExtra(EXTRA_PICK, false)
 
@@ -138,6 +155,8 @@ class PreviewActivity : AppCompatActivity() {
             KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_MEDIA_PREVIOUS -> position = (position - 1 + wallpapers.size) % wallpapers.size
             // While the overlay is hidden, OK only brings it back: nothing gets pinned by accident
             KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER -> if (!overlayHidden) togglePin()
+            // Same as OK: only with the overlay shown, and not while picking the preview
+            KeyEvent.KEYCODE_DPAD_DOWN -> if (!overlayHidden && !picking) toggleBlock()
             else -> return super.onKeyDown(keyCode, event)
         }
         show()

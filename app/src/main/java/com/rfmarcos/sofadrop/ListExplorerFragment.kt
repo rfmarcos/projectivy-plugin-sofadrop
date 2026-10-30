@@ -14,6 +14,8 @@ import androidx.leanback.widget.GuidedAction
 class ListExplorerFragment : BaseSettingsFragment() {
 
     private var lists: List<ListSource> = emptyList()
+    /** The blocked titles in the order the "Blocked titles" row lists them. */
+    private var blocked: List<TitleRef> = emptyList()
 
     override fun onCreateGuidance(savedInstanceState: Bundle?) = Guidance(
         getString(R.string.setting_explore_title),
@@ -60,6 +62,7 @@ class ListExplorerFragment : BaseSettingsFragment() {
                 .hasNext(true).build(),
             action(ID_DUPLICATES, R.drawable.ic_act_list, getString(R.string.filters_duplicates_title), null)
                 .checkSetId(GuidedAction.CHECKBOX_CHECK_SET_ID).checked(Settings.skipDuplicates).build(),
+            blockedRow(),
         )
         explanations.putAll(filterExplanations(context))
         // Only selected lists: duplicates (and so what a list really brings) depend on the others
@@ -73,6 +76,21 @@ class ListExplorerFragment : BaseSettingsFragment() {
             action(LIST_BASE + index, R.drawable.ic_act_list, Sources.label(context, source), Filters.listFiltersSummary(context, source)).hasNext(true).build()
         }
         return rows
+    }
+
+    /** "3 titles blocked"; expands into the blocked titles (choose one to unblock it) and "Clear all". */
+    private fun blockedRow(): GuidedAction {
+        val names = Settings.blocked
+        blocked = names.keys.sortedBy { names[it].orEmpty().ifEmpty { "~${it.tmdbId}" }.lowercase() }
+        val count = blocked.size
+        val row = action(ID_BLOCKED, R.drawable.ic_act_block, getString(R.string.filters_blocked_title),
+            resources.getQuantityString(R.plurals.filters_blocked_count, count, count))
+        if (count > 0) row.subActions(blocked.mapIndexed { index, ref ->
+            GuidedAction.Builder(requireContext()).id(ID_BLOCKED * SUB_ID_BASE + 1 + index)
+                .title(names[ref].orEmpty().ifEmpty { "TMDB ${ref.type.path} ${ref.tmdbId}" })
+                .description(getString(R.string.filters_blocked_unblock)).build()
+        } + GuidedAction.Builder(requireContext()).id(ID_BLOCKED * SUB_ID_BASE).title(getString(R.string.filters_blocked_clear)).build())
+        return row.build()
     }
 
     private fun choiceRow(id: Long, icon: Int, title: Int, values: List<String>, current: String) =
@@ -107,6 +125,7 @@ class ListExplorerFragment : BaseSettingsFragment() {
             ID_WATCHED -> Settings.watchedMode = Filters.WATCHED_MODES[index]
             ID_RATING_AGE -> Settings.maxRatingAge = Settings.MAX_RATING_AGE_OPTIONS[index]
             ID_MIN_RATING -> Settings.minRating = Settings.MIN_RATING_OPTIONS[index]
+            ID_BLOCKED -> blocked.getOrNull(index - 1)?.let { Settings.setBlocked(it, false) } ?: Settings.clearBlocked()
         }
         refresh() // the watched row follows the watch history
         return true
@@ -125,6 +144,7 @@ class ListExplorerFragment : BaseSettingsFragment() {
         private const val ID_GENRES = 10L
         private const val ID_FROM_YEAR = 11L
         private const val ID_MIN_RATING = 12L
+        private const val ID_BLOCKED = 13L
         private const val LIST_BASE = 100L
 
         /** The age limits to choose from, with the typed year when [current] is one. */
@@ -169,6 +189,7 @@ class ListExplorerFragment : BaseSettingsFragment() {
                 ID_GENRES to context.getString(R.string.genres_explain) + "\n\n" + automatic,
                 ID_MIN_RATING to context.getString(R.string.filters_min_rating_explain) + "\n\n" + automatic,
                 ID_DUPLICATES to context.getString(R.string.filters_duplicates_desc),
+                ID_BLOCKED to context.getString(R.string.filters_blocked_desc),
             )
         }
     }
@@ -184,6 +205,8 @@ class ListContentsFragment : BaseSettingsFragment() {
     private val source get() = Sources.available().firstOrNull { it.key == sourceKey }
     private var loadJob = 0
     private var filterActions: List<GuidedAction> = emptyList()
+    /** The titles shown and their "Title (year)", to block one. */
+    private var titles: List<Pair<TitleRef, String>> = emptyList()
     /** The genre filter the titles were last loaded with. */
     private var shownGenres: GenreFilter? = null
 
@@ -280,6 +303,14 @@ class ListContentsFragment : BaseSettingsFragment() {
 
     override fun onSubGuidedActionClicked(action: GuidedAction): Boolean {
         val list = source ?: return true
+        // A title's only option: block or unblock it
+        val parent = action.id / SUB_ID_BASE
+        if (parent >= TITLE_BASE) {
+            val (ref, name) = titles.getOrNull((parent - TITLE_BASE).toInt()) ?: return true
+            Settings.setBlocked(ref, ref !in Settings.blockedTitles, name)
+            loadTitles(list)
+            return true
+        }
         val index = (action.id % SUB_ID_BASE).toInt()
         val current = Settings.listFilters[list.key] ?: ListFilters()
         // Option 0 is always "Default (…)"
@@ -325,7 +356,8 @@ class ListContentsFragment : BaseSettingsFragment() {
                     candidate.ref in usable || plan.random -> R.drawable.ic_act_check
                     else -> R.drawable.ic_act_list
                 }
-                Triple("${index + 1}. $title${if (year.isNotBlank()) " ($year)" else ""}", status + watched, icon)
+                val name = "$title${if (year.isNotBlank()) " ($year)" else ""}"
+                Triple(candidate.ref to name, status + watched, icon)
             }
         }) { result ->
             if (job != loadJob) return@background
@@ -336,8 +368,13 @@ class ListContentsFragment : BaseSettingsFragment() {
                     Settings.selectionMode == Settings.SELECTION_RANDOM -> getString(R.string.explore_summary_random, rows.size, perList)
                     else -> getString(R.string.explore_summary, rows.size, perList)
                 })
+                titles = rows.map { it.first }
+                val blocked = Settings.blockedTitles
                 setActions(filterActions + header(TITLES_HEADER, getString(R.string.explore_titles_header, rows.size)) + rows.mapIndexed { index, (title, status, icon) ->
-                    action(TITLE_BASE + index, icon, title, status).multilineDescription(true).focusable(true).build()
+                    action(TITLE_BASE + index, icon, "${index + 1}. ${title.second}", status).multilineDescription(true).focusable(true)
+                        .subActions(listOf(GuidedAction.Builder(requireContext()).id((TITLE_BASE + index) * SUB_ID_BASE)
+                            .title(getString(if (title.first in blocked) R.string.explore_unblock else R.string.explore_block)).build()))
+                        .build()
                 })
             }.onFailure {
                 // A deleted or private Trakt list says so, without the "preview" wording
@@ -349,6 +386,7 @@ class ListContentsFragment : BaseSettingsFragment() {
 
     private fun exclusionText(context: android.content.Context, exclusion: Exclusion) = context.getString(
         when (exclusion) {
+            Exclusion.BLOCKED -> R.string.exclusion_blocked
             Exclusion.LOCAL_MARKET -> R.string.exclusion_local_market
             Exclusion.TOO_OLD -> R.string.exclusion_too_old
             Exclusion.ADULT -> R.string.exclusion_adult

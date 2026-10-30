@@ -105,6 +105,7 @@ object Settings {
     private const val KEY_WATCHED = "watched_mode"
     private const val KEY_WATCH_SOURCE = "watch_source"
     private const val KEY_SKIP_DUPLICATES = "skip_duplicates"
+    private const val KEY_BLOCKED = "blocked_titles"
     private const val KEY_MIX_LISTS = "mix_lists"
     private const val KEY_REQUIRE_LOGO = "require_logo"
     private const val KEY_LOGO_FALLBACK = "logo_fallback"
@@ -313,6 +314,26 @@ object Settings {
     var skipDuplicates: Boolean
         get() = preferences.getBoolean(KEY_SKIP_DUPLICATES, true)
         set(value) = preferences.edit { putBoolean(KEY_SKIP_DUPLICATES, value) }
+
+    /** Titles that never show, from any list, with the name they were blocked with ("Title (2020)"). */
+    val blocked: Map<TitleRef, String>
+        get() = preferences.getStringSet(KEY_BLOCKED, null).orEmpty().mapNotNull { entry ->
+            // "movie:123<tab>Title (2020)"
+            val (key, name) = entry.split('\t', limit = 2).let { it[0] to it.getOrElse(1) { "" } }
+            val type = MediaType.entries.firstOrNull { it.path == key.substringBefore(':') } ?: return@mapNotNull null
+            key.substringAfter(':').toIntOrNull()?.let { TitleRef(type, it) to name }
+        }.toMap()
+
+    val blockedTitles: Set<TitleRef> get() = blocked.keys
+
+    /** Block or unblock one title; [name] is what the list of blocked titles shows for it. */
+    fun setBlocked(ref: TitleRef, block: Boolean, name: String = "") {
+        val titles = blocked.toMutableMap()
+        if (block) titles[ref] = name else titles -= ref
+        preferences.edit { putStringSet(KEY_BLOCKED, titles.map { (r, n) -> "${r.type.path}:${r.tmdbId}\t$n" }.toSet()) }
+    }
+
+    fun clearBlocked() = preferences.edit { remove(KEY_BLOCKED) }
 
 
     /** See [LOGO_MODES]; earlier versions stored "logo_fallback" and "require_logo" (read until changed). */
@@ -777,7 +798,8 @@ object Settings {
             "order:${headerOrder.joinToString(",")}".takeIf { headerOrder != HEADER_BLOCKS },
             "minratings:$minRatings".takeIf { minRatings != 2 }, "cast".takeIf { showCast }, "castphotos:$castPhotos".takeIf { showCast && castPhotos != CAST_PHOTOS_GROUPED }, "style:$style".takeIf { style != STYLE_FULL },
             "trailerlang:$trailerLanguage".takeIf { trailerLanguage != LANGUAGE_AUTO }, "trailerfallback:$trailerFallback".takeIf { trailerFallback != TRAILER_ENGLISH },
-            "genres:${genreFilter.only}:${genreFilter.ids.sorted()}".takeIf { !genreFilter.isOff })).joinToString("|")
+            "genres:${genreFilter.only}:${genreFilter.ids.sorted()}".takeIf { !genreFilter.isOff },
+            "blocked:${blockedTitles.map { "${it.type.path}:${it.tmdbId}" }.sorted().hashCode()}".takeIf { blockedTitles.isNotEmpty() })).joinToString("|")
 
     /** True when the current wallpapers were generated with different settings. */
     val hasPendingChanges: Boolean
