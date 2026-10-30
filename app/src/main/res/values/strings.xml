@@ -482,8 +482,5 @@
     <string name="resolution_low_memory">This TV may not have enough memory for 4K</string>
     <string name="about_log">Last generation log</string>
     <string name="about_log_none">No wallpapers generated yet</string>
-    <string name="log_desc">What the last update did: lists, failures and how long it took. If something went wrong, send it with your report.</string>
-    <string name="log_qr">Send from the phone</string>
-    <string name="log_qr_desc">A QR code with the summary, to paste it in a report</string>
-    <string name="log_qr_scan">Scan it with your phone: it shows the summary as text, ready to copy into a bug report.</string>
+    <string name="log_desc">What the last update did: lists, failures and how long it took. If something went wrong, send a photo of it with your report.</string>
 </resources>

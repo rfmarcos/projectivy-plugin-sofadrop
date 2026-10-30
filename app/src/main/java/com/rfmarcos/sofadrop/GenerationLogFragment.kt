@@ -7,7 +7,7 @@ import androidx.appcompat.content.res.AppCompatResources
 import androidx.leanback.widget.GuidanceStylist.Guidance
 import androidx.leanback.widget.GuidedAction
 
-/** The last generation's log ([GenerationLog]), with a QR code to send its summary from the phone. */
+/** The last generation's log ([GenerationLog]), for the user to photograph or copy into a report. */
 class GenerationLogFragment : BaseSettingsFragment() {
 
     private val log by lazy { GenerationLog.read(requireContext()).orEmpty() }
@@ -20,7 +20,6 @@ class GenerationLogFragment : BaseSettingsFragment() {
     )
 
     override fun onCreateActions(actions: MutableList<GuidedAction>, savedInstanceState: Bundle?) {
-        actions += action(ID_QR, R.drawable.ic_act_phone, getString(R.string.log_qr), getString(R.string.log_qr_desc)).build()
         // Lines are focusable rows so the remote can scroll through them; they do nothing when chosen.
         // "tmdb:trending_movies: 20 read, …" shows the list (or title, failure) as the row's title.
         log.lines().filter { it.isNotBlank() }.forEachIndexed { index, line ->
@@ -30,12 +29,7 @@ class GenerationLogFragment : BaseSettingsFragment() {
         }
     }
 
-    override fun onGuidedActionClicked(action: GuidedAction) {
-        if (action.id == ID_QR) TextQrDialog.newInstance(GenerationLog.qrText(log)).show(parentFragmentManager, "log")
-    }
-
     companion object {
-        private const val ID_QR = 1L
         private const val ID_LINES = 100L
     }
 }
