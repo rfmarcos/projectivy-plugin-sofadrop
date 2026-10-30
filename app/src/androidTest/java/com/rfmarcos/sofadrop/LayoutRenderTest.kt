@@ -21,14 +21,14 @@ import java.io.File
 class LayoutRenderTest {
 
     /**
-     * [header]: "all", "ratings" or "none"; [footer]: "both", "providers", "source" or "none"; [photos]: cast photos,
-     * with the second actor's missing when [noPhoto].
+     * [header]: "all", "ratings" or "none"; [footer]: "both", "providers", "source" or "none"; [photos]: cast photos
+     * (see [Settings.CAST_PHOTO_MODES]), with the second actor's missing when [noPhoto].
      */
     private data class Combo(
         val header: String, val lines: Int, val cast: Boolean, val footer: String, val logo: Boolean = true,
-        val photos: Boolean = false, val noPhoto: Boolean = false, val style: String = Settings.STYLE_FULL,
+        val photos: String = Settings.CAST_PHOTOS_NONE, val noPhoto: Boolean = false, val style: String = Settings.STYLE_FULL,
     ) {
-        val label get() = "cab:$header · sinopsis:$lines · reparto:${if (photos) "fotos" else if (cast) "sí" else "no"} · pie:$footer" +
+        val label get() = "cab:$header · sinopsis:$lines · reparto:${if (!cast) "no" else if (photos == Settings.CAST_PHOTOS_NONE) "sí" else "fotos-$photos"} · pie:$footer" +
             (if (logo) "" else " · sin logo") + (if (noPhoto) " · 2º sin foto" else "") + (if (style == Settings.STYLE_FULL) "" else " · estilo:$style")
     }
 
@@ -69,14 +69,20 @@ class LayoutRenderTest {
             Combo("ratings", 0, false, "none"),
             Combo("all", 4, true, "both", logo = false),
             Combo("none", 0, true, "none", logo = false),
-            Combo("all", 4, true, "both", photos = true),
-            Combo("all", 2, true, "both", photos = true),
-            Combo("all", 0, true, "both", photos = true),
-            Combo("none", 0, true, "none", photos = true),
-            Combo("ratings", 4, true, "source", photos = true),
-            Combo("all", 4, true, "both", photos = true, noPhoto = true),
-            Combo("all", 4, true, "both", logo = false, photos = true),
-            Combo("all", 4, true, "both", photos = true, style = Settings.STYLE_LOGO),
+            Combo("all", 4, true, "both", photos = Settings.CAST_PHOTOS_GROUPED),
+            Combo("all", 2, true, "both", photos = Settings.CAST_PHOTOS_GROUPED),
+            Combo("all", 0, true, "both", photos = Settings.CAST_PHOTOS_GROUPED),
+            Combo("none", 0, true, "none", photos = Settings.CAST_PHOTOS_GROUPED),
+            Combo("ratings", 4, true, "source", photos = Settings.CAST_PHOTOS_GROUPED),
+            Combo("all", 4, true, "both", photos = Settings.CAST_PHOTOS_GROUPED, noPhoto = true),
+            Combo("all", 4, true, "both", logo = false, photos = Settings.CAST_PHOTOS_GROUPED),
+            Combo("all", 4, true, "both", photos = Settings.CAST_PHOTOS_GROUPED, style = Settings.STYLE_LOGO),
+            Combo("all", 4, true, "both", photos = Settings.CAST_PHOTOS_EACH),
+            Combo("all", 4, true, "both", photos = Settings.CAST_PHOTOS_EACH, noPhoto = true),
+            Combo("all", 0, true, "both", photos = Settings.CAST_PHOTOS_EACH),
+            Combo("none", 0, true, "none", photos = Settings.CAST_PHOTOS_EACH),
+            Combo("ratings", 4, true, "source", photos = Settings.CAST_PHOTOS_EACH),
+            Combo("all", 4, true, "both", photos = Settings.CAST_PHOTOS_NONE, noPhoto = true),
         )
 
         try {
@@ -102,7 +108,7 @@ class LayoutRenderTest {
                     logoPath = base.logoPath.takeIf { combo.logo },
                 )
                 Settings.overviewLines = combo.lines
-                Settings.showCastPhotos = combo.photos
+                Settings.castPhotos = combo.photos
                 Settings.style = combo.style
                 val bitmap = WallpaperFactory(context, 1920).render(info)
                 val name = "%02d".format(index + 1)
@@ -131,7 +137,7 @@ class LayoutRenderTest {
             }
         } finally {
             Settings.showCast = false
-            Settings.showCastPhotos = true
+            Settings.castPhotos = Settings.CAST_PHOTOS_GROUPED
             Settings.style = Settings.STYLE_FULL
             Settings.overviewLines = 4
         }

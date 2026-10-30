@@ -44,8 +44,8 @@ class WallpaperRenderer(
     private val minRatings: Int = 2,
     /** What is drawn over the backdrop, see [Settings.STYLES]. */
     private val style: String = Settings.STYLE_FULL,
-    /** Faces next to the cast names, see [Settings.showCastPhotos]. */
-    private val castPhotos: Boolean = false,
+    /** Faces next to the cast names, see [Settings.CAST_PHOTO_MODES]. */
+    private val castPhotos: String = Settings.CAST_PHOTOS_NONE,
 ) {
 
     private val height = width * 9 / 16
@@ -451,34 +451,54 @@ class WallpaperRenderer(
 
     /**
      * "Name · Name · Name" on one line, as many as fit, [gap] below [top]; returns its bottom, or [top] with no cast.
-     * With [castPhotos], the faces of the first of them (up to [MAX_CAST_PHOTOS]) go before the names, overlapping.
+     * With [castPhotos], each name drawn has its face: all of them before the names, overlapping, or each one
+     * before its name, with no dot between them (the faces already separate the names).
      */
     private fun drawCast(canvas: Canvas, top: Float, cast: List<CastMember>, faces: List<Bitmap?>, gap: Float): Float {
         val paint = textPaint(light, s(44f), Color.rgb(185, 185, 185))
         val separator = "  ·  "
         val diameter = s(CAST_PHOTO_SIZE)
         val step = diameter * (1 - CAST_PHOTO_OVERLAP)
-        fun facesWidth(count: Int) = if (!castPhotos) 0f else diameter + step * (min(count, MAX_CAST_PHOTOS) - 1) + s(CAST_PHOTO_GAP)
-        // In order: a shorter name further down the list doesn't jump the queue
+        fun facesWidth(count: Int) = diameter + step * (min(count, MAX_CAST_PHOTOS) - 1) + s(CAST_PHOTO_GAP)
+        fun width(names: List<CastMember>) = when (castPhotos) {
+            Settings.CAST_PHOTOS_EACH -> names.sumOf { (diameter + s(CAST_PHOTO_NAME_GAP) + paint.measureText(it.name)).toDouble() }.toFloat() +
+                s(CAST_ITEM_GAP) * (names.size - 1)
+            Settings.CAST_PHOTOS_GROUPED -> facesWidth(names.size) + paint.measureText(names.joinToString(separator) { it.name })
+            else -> paint.measureText(names.joinToString(separator) { it.name })
+        }
+        // In order: a shorter name further down the list doesn't jump the queue; as many faces as names
         var names = emptyList<CastMember>()
-        for (member in cast) {
+        for (member in cast.take(if (castPhotos == Settings.CAST_PHOTOS_NONE) cast.size else MAX_CAST_PHOTOS)) {
             val candidate = names + member
-            if (facesWidth(candidate.size) + paint.measureText(candidate.joinToString(separator) { it.name }) > s(CONTENT_WIDTH)) break
+            if (width(candidate) > s(CONTENT_WIDTH)) break
             names = candidate
         }
         if (names.isEmpty()) return top
         val line = names.joinToString(separator) { it.name }
-        if (!castPhotos) {
-            canvas.drawText(line, s(MARGIN_LEFT), top + gap - paint.fontMetrics.ascent, paint)
-            return top + gap + s(60f)
-        }
         // The circles start a little above where the names alone would, so the footer only moves down a bit
         val center = top + gap + s(32f)
-        // Last first: each face covers part of the next one, the first on top
-        for (index in min(names.size, MAX_CAST_PHOTOS) - 1 downTo 0) {
-            drawFace(canvas, faces.getOrNull(index), names[index].name, s(MARGIN_LEFT) + diameter / 2 + step * index, center, diameter / 2)
+        when (castPhotos) {
+            Settings.CAST_PHOTOS_GROUPED -> {
+                // Last first: each face covers part of the next one, the first on top
+                for (index in names.indices.reversed()) {
+                    drawFace(canvas, faces.getOrNull(index), names[index].name, s(MARGIN_LEFT) + diameter / 2 + step * index, center, diameter / 2)
+                }
+                drawCentered(canvas, line, s(MARGIN_LEFT) + facesWidth(names.size), center, paint)
+            }
+            Settings.CAST_PHOTOS_EACH -> {
+                var x = s(MARGIN_LEFT)
+                names.forEachIndexed { index, member ->
+                    drawFace(canvas, faces.getOrNull(index), member.name, x + diameter / 2, center, diameter / 2)
+                    x += diameter + s(CAST_PHOTO_NAME_GAP)
+                    drawCentered(canvas, member.name, x, center, paint)
+                    x += paint.measureText(member.name) + s(CAST_ITEM_GAP)
+                }
+            }
+            else -> {
+                canvas.drawText(line, s(MARGIN_LEFT), top + gap - paint.fontMetrics.ascent, paint)
+                return top + gap + s(60f)
+            }
         }
-        drawCentered(canvas, line, s(MARGIN_LEFT) + facesWidth(names.size), center, paint)
         return center + diameter / 2 + s(4f)
     }
 
@@ -619,7 +639,11 @@ class WallpaperRenderer(
         private const val CAST_PHOTO_OVERLAP = 0.3f
         /** Between the last face and the names. */
         private const val CAST_PHOTO_GAP = 24f
-        const val MAX_CAST_PHOTOS = 3
+        /** With a face before each name: between the face and its name, and between one name and the next face. */
+        private const val CAST_PHOTO_NAME_GAP = 16f
+        private const val CAST_ITEM_GAP = 44f
+        /** Faces downloaded, and so names drawn with photos: every name [TmdbCatalog] keeps. */
+        const val MAX_CAST_PHOTOS = 4
         private const val CERT_HEIGHT = 56f
         private const val CERT_PADDING = 14f
         /** Between the year and its certification box. */

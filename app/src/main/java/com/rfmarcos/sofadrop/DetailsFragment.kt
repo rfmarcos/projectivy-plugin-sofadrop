@@ -75,9 +75,9 @@ class DetailsFragment : PreviewSettingsFragment() {
     private fun castPhotosAction(): GuidedAction {
         val context = requireContext()
         val action = action(ID_CAST_PHOTOS, R.drawable.ic_act_account, getString(R.string.cast_photos_title),
-            if (Settings.showCast) castPhotosLabel(context, Settings.showCastPhotos) else getString(R.string.cast_photos_disabled))
-            .subActions(options(ID_CAST_PHOTOS, listOf(false, true).map { castPhotosLabel(context, it) }, castPhotosLabel(context, Settings.showCastPhotos),
-                listOf(null, getString(R.string.cast_photos_shown_desc)))).build()
+            if (Settings.showCast) castPhotosLabel(context, Settings.castPhotos) else getString(R.string.cast_photos_disabled))
+            .subActions(options(ID_CAST_PHOTOS, Settings.CAST_PHOTO_MODES.map { castPhotosLabel(context, it) }, castPhotosLabel(context, Settings.castPhotos),
+                listOf(null, getString(R.string.cast_photos_grouped_desc), getString(R.string.cast_photos_each_desc)))).build()
         action.isEnabled = Settings.showCast
         return action
     }
@@ -128,8 +128,8 @@ class DetailsFragment : PreviewSettingsFragment() {
                 replaceRow(castPhotosAction().hiddenBy(Settings.drawsDetails))
             }
             ID_CAST_PHOTOS -> {
-                Settings.showCastPhotos = index == 1
-                updateDescription(ID_CAST_PHOTOS, castPhotosLabel(requireContext(), Settings.showCastPhotos))
+                Settings.castPhotos = Settings.CAST_PHOTO_MODES[index]
+                updateDescription(ID_CAST_PHOTOS, castPhotosLabel(requireContext(), Settings.castPhotos))
             }
             ID_FOOTER -> {
                 Settings.showSource = index == 1 || index >= 3
@@ -192,8 +192,13 @@ class DetailsFragment : PreviewSettingsFragment() {
 
         fun castLabel(context: Context, shown: Boolean) = context.getString(if (shown) R.string.cast_shown else R.string.cast_hidden)
 
-        fun castPhotosLabel(context: Context, shown: Boolean) =
-            context.getString(if (shown) R.string.cast_photos_shown else R.string.cast_photos_hidden)
+        fun castPhotosLabel(context: Context, mode: String) = context.getString(
+            when (mode) {
+                Settings.CAST_PHOTOS_GROUPED -> R.string.cast_photos_grouped
+                Settings.CAST_PHOTOS_EACH -> R.string.cast_photos_each
+                else -> R.string.cast_photos_hidden
+            }
+        )
 
         /** 0 nothing, 1 list source, 2 streaming services, 3 streaming or list source, 4 both. */
         private fun footerIndex() = when {

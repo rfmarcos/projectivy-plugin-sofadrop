@@ -270,9 +270,11 @@
     <string name="cast_shown_desc">Los actores principales, los que quepan en una línea. Baja el pie.</string>
     <string name="cast_photos_title">Fotos del reparto</string>
     <string name="cast_photos_hidden">Solo los nombres</string>
-    <string name="cast_photos_shown">Junto a los nombres</string>
-    <string name="cast_photos_shown_desc">Las caras de hasta tres actores. Quien no tenga foto sale con sus iniciales.</string>
+    <string name="cast_photos_grouped">Juntas, antes de los nombres</string>
+    <string name="cast_photos_grouped_desc">Las caras de los actores que se muestran, solapadas. Quien no tenga foto sale con sus iniciales.</string>
     <string name="cast_photos_disabled">Solo se usa si se muestra el reparto</string>
+    <string name="cast_photos_each">Cada una junto a su nombre</string>
+    <string name="cast_photos_each_desc">Cada cara justo antes de su nombre. Pueden caber menos nombres en la línea.</string>
     <string name="click_action_title">Al pulsar el fondo</string>
     <string name="click_trailer">Ver el tráiler</string>
     <string name="click_trailer_desc">En YouTube, desde el botón de reproducir de Projectivy o «Acerca de este fondo». Necesita Projectivy 4.73 o posterior.</string>

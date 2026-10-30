@@ -28,7 +28,7 @@ class WallpaperFactory(context: Context, val width: Int) {
     val catalog = TmdbCatalog(client, Settings.language, Settings.region, Settings.drawsDetails && Settings.showProviders,
         Settings.partLanguages, Settings.drawsDetails && Settings.showCast)
     /** Faces next to the cast names: only their images are downloaded, and only then. */
-    private val castPhotos = Settings.drawsDetails && Settings.showCastPhotos
+    private val castPhotos = if (Settings.drawsDetails) Settings.castPhotos else Settings.CAST_PHOTOS_NONE
     private val renderers = mutableMapOf<Int, WallpaperRenderer>()
 
     /** Renderer of [width]-pixel wallpapers: this factory's width, or 1920 when 4K runs out of memory. */
@@ -128,7 +128,7 @@ class WallpaperFactory(context: Context, val width: Int) {
         val providerBytes = info.providerLogoPaths.mapNotNull { client.image(it, "w154") }
         // Only the images (~10 KB each): the photo paths came with the credits. One at a time, as this
         // already runs on the pool, alongside other titles
-        val faceBytes = if (castPhotos) info.cast.take(WallpaperRenderer.MAX_CAST_PHOTOS).map { member ->
+        val faceBytes = if (castPhotos != Settings.CAST_PHOTOS_NONE) info.cast.take(WallpaperRenderer.MAX_CAST_PHOTOS).map { member ->
             member.profilePath?.let { client.image(it, "w185") }
         } else emptyList()
 
