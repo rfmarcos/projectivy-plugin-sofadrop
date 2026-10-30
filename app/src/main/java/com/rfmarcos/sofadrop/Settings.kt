@@ -210,6 +210,12 @@ object Settings {
 
     /** "All": lists are read up to this many titles (TMDB pages, Trakt/Simkl/MDBList limits). */
     const val COUNT_ALL = 100
+
+    /**
+     * Wallpapers per generation, shared among the lists. Projectivy shows 100 of them, picked at random
+     * again on each request: more only costs time, requests and disk (4K above all).
+     */
+    const val MAX_WALLPAPERS = 200
     val REFRESH_OPTIONS = listOf(6, 12, 24, 72, 168)
     val WIDTH_OPTIONS = listOf(1920, 3840)
     val DEFAULT_LISTS = setOf("tmdb:trending_movies", "tmdb:trending_tv")

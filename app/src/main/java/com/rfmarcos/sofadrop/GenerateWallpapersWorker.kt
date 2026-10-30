@@ -107,6 +107,10 @@ class GenerateWallpapersWorker(context: Context, params: WorkerParameters) : Wor
         val sources = Sources.selected()
         for ((index, source) in sources.withIndex()) {
             Settings.generationProgress = Triple(stored.size, index + 1, sources.size)
+            // Within Settings.MAX_WALLPAPERS: what's left shared among the lists to go (a short one leaves more)
+            val left = Settings.MAX_WALLPAPERS - stored.size
+            val quota = minOf(perList, (left + sources.size - index - 1) / (sources.size - index))
+            if (quota <= 0) break
             val plan = try {
                 factory.plan(source, perList, seen)
             } catch (e: TmdbException) {
@@ -121,14 +125,14 @@ class GenerateWallpapersWorker(context: Context, params: WorkerParameters) : Wor
             var added = 0
             var next = 0
             // In parallel, as many titles as still missing: the same ones a title-by-title loop would pick
-            while (added < perList && next < plan.usable.size) {
+            while (added < quota && next < plan.usable.size) {
                 if (isStopped) {
                     // Android stops workers after 10 minutes: worth knowing when 4K on a slow TV fails
                     log.add("Stopped by Android after ${stored.size} wallpapers")
                     return stored
                 }
                 val batch = mutableListOf<TitleRef>()
-                while (added + batch.size < perList && batch.size < parallelTitles && next < plan.usable.size) {
+                while (added + batch.size < quota && batch.size < parallelTitles && next < plan.usable.size) {
                     val ref = plan.usable[next++]
                     // Without skipping duplicates, a title already drawn for another list still counts for this one
                     if (seen.add(ref)) batch += ref else added++

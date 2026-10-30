@@ -363,6 +363,7 @@
     <string name="titles_all">Todos (hasta %1$d)</string>
     <string name="titles_total">%1$s · unos %2$d fondos</string>
     <string name="titles_total_all">%1$s · hasta %2$d fondos · la primera actualización puede tardar</string>
+    <string name="titles_total_capped">%1$s · como mucho %2$d fondos, repartidos entre las listas</string>
     <string name="footer_title">Pie</string>
     <string name="footer_none">Nada</string>
     <string name="footer_source">Lista de origen</string>

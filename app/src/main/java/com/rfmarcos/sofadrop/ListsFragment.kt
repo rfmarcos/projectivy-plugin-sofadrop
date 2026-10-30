@@ -99,11 +99,13 @@ class ListsFragment : BaseSettingsFragment() {
         fun countLabel(context: Context, count: Int) =
             if (count >= Settings.COUNT_ALL) context.getString(R.string.titles_all, Settings.COUNT_ALL) else count.toString()
 
-        /** "10 · about 80 wallpapers" (the live total of the selected lists). */
+        /** "10 · about 80 wallpapers" (the live total of the selected lists), or the most there can be. */
         fun countDescription(context: Context): String {
             val count = Settings.titlesPerList
             val total = Sources.selected().size * count
-            return if (count >= Settings.COUNT_ALL) context.getString(R.string.titles_total_all, countLabel(context, count), total)
+            return if (total > Settings.MAX_WALLPAPERS)
+                context.getString(R.string.titles_total_capped, countLabel(context, count), Settings.MAX_WALLPAPERS)
+            else if (count >= Settings.COUNT_ALL) context.getString(R.string.titles_total_all, countLabel(context, count), total)
             else context.getString(R.string.titles_total, countLabel(context, count), total)
         }
 

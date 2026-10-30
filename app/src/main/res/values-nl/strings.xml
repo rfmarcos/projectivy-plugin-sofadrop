@@ -371,6 +371,7 @@
     <string name="titles_all">Alle (tot %1$d)</string>
     <string name="titles_total">%1$s · ongeveer %2$d achtergronden</string>
     <string name="titles_total_all">%1$s · tot %2$d achtergronden · de eerste update kan even duren</string>
+    <string name="titles_total_capped">%1$s · hooguit %2$d achtergronden, verdeeld over de lijsten</string>
     <string name="footer_title">Voettekst</string>
     <string name="footer_none">Niets</string>
     <string name="footer_source">Bronlijst</string>

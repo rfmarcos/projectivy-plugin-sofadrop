@@ -381,6 +381,7 @@
     <string name="titles_all">All (up to %1$d)</string>
     <string name="titles_total">%1$s · about %2$d wallpapers</string>
     <string name="titles_total_all">%1$s · up to %2$d wallpapers · the first update may take a while</string>
+    <string name="titles_total_capped">%1$s · at most %2$d wallpapers, shared among the lists</string>
     <string name="footer_title">Footer</string>
     <string name="footer_none">Nothing</string>
     <string name="footer_source">List source</string>
