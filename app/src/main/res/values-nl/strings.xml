@@ -478,4 +478,9 @@
     <string name="about_log">Logboek van de laatste generatie</string>
     <string name="about_log_none">Nog geen achtergronden gemaakt</string>
     <string name="log_desc">Wat de laatste update deed: lijsten, fouten en hoe lang het duurde.</string>
+    <string name="filters_min_rating_title">Minimale score</string>
+    <string name="filters_min_rating_value">%1$.1f+</string>
+    <string name="filters_min_rating_summary">score %1$s</string>
+    <string name="filters_min_rating_explain">Slaat titels over met een lagere TMDB-score. Titels met te weinig stemmen om dat te zeggen (nieuw of nog niet uit) blijven staan.</string>
+    <string name="exclusion_low_rating">Overgeslagen: score te laag</string>
 </resources>

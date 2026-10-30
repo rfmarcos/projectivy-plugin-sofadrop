@@ -45,7 +45,7 @@ data class WallpaperInfo(
 data class CastMember(val name: String, val profilePath: String? = null)
 
 /** Why a title of a list is not used. */
-enum class Exclusion { LOCAL_MARKET, TOO_OLD, ADULT, AGE_RATING, GENRE, NO_LOGO, NO_SYNOPSIS, WATCHED, NO_IMAGE, DUPLICATE }
+enum class Exclusion { LOCAL_MARKET, TOO_OLD, ADULT, AGE_RATING, GENRE, LOW_RATING, NO_LOGO, NO_SYNOPSIS, WATCHED, NO_IMAGE, DUPLICATE }
 
 /** A title of a list and, when it is filtered out, the reason. */
 data class Candidate(val ref: TitleRef, val exclusion: Exclusion? = null)
@@ -98,7 +98,7 @@ class TmdbCatalog(
         }.distinct()
         if (shuffle) refs = refs.shuffled()
         val check = cutoff != null || filters.globalHits || Settings.excludeAdult || Settings.maxRatingAge > 0 ||
-            !filters.genres.isOff || Settings.requireLogo || Settings.requireSynopsis
+            !filters.genres.isOff || filters.minRating > 0 || Settings.requireLogo || Settings.requireSynopsis
         // Checked a batch at a time in parallel: at most one batch more than needed
         return refs.asSequence()
             .chunked(CHECK_BATCH)
@@ -202,6 +202,7 @@ class TmdbCatalog(
             // Unrated titles (mostly not released yet) pass
             Settings.maxRatingAge > 0 && (Certifications.minimumAge(ref.type, item, region) ?: 0) > Settings.maxRatingAge -> Exclusion.AGE_RATING
             !filters.genres.allows(item.objects("genres").mapNotNull { it.int("id") }) -> Exclusion.GENRE
+            isLowRated(item, filters.minRating) -> Exclusion.LOW_RATING
             // Last: it costs an images request per title
             Settings.requireLogo && logoPath(ref, item) == null -> Exclusion.NO_LOGO
             Settings.requireSynopsis && localOverview(ref, item).isBlank() -> Exclusion.NO_SYNOPSIS
@@ -223,6 +224,10 @@ class TmdbCatalog(
         val date = item.str(if (type == MediaType.MOVIE) "release_date" else "last_air_date")
         return !date.isNullOrEmpty() && date < limit
     }
+
+    /** A TMDB score below [minimum]; titles with too few votes to tell (new or unreleased) pass. */
+    private fun isLowRated(item: JsonObject, minimum: Double): Boolean =
+        minimum > 0 && (item.int("vote_count") ?: 0) >= MIN_VOTES_FOR_RATING && (item.double("vote_average") ?: 0.0) < minimum
 
     private fun isAdult(ref: TitleRef, item: JsonObject): Boolean =
         item.bool("adult") == true || item.obj("keywords")
@@ -358,6 +363,8 @@ class TmdbCatalog(
         private const val RANKING_MIN_VOTES = 300
         private const val RANKING_PRIOR = 6.5
         private const val MIN_VOTES_OTHER_LANGUAGES = 1000
+        /** Fewer votes than this and a score says too little to filter on. */
+        private const val MIN_VOTES_FOR_RATING = 20
         private const val MAX_PROVIDERS = 4
         private const val RANDOM_POOL = 100
         private const val CHECK_BATCH = 8
