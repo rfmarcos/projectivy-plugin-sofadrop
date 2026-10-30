@@ -124,9 +124,11 @@ abstract class QrDialog : DialogFragment() {
         if (left > 0) handler.postDelayed(::tick, 1000)
     }
 
+    /** The line under the QR; blank hides it. */
     protected fun setStatus(text: CharSequence, working: Boolean = true) {
         if (!isAdded) return
         status.text = text
+        (status.parent as View).visibility = if (text.isBlank()) View.GONE else View.VISIBLE
         statusProgress.visibility = if (working) View.VISIBLE else View.GONE
     }
 
@@ -366,14 +368,15 @@ class TextQrDialog : QrDialog() {
     override val titleRes = R.string.log_qr
     override val iconRes = R.drawable.ic_act_phone
     override val buttonRes = R.string.close
-    // A few hundred characters: as big as the screen allows, with the least error correction (a screen
-    // doesn't get scratched) so that its squares are as big as possible
-    override val qrSizeDp = 288
+    // As big as the screen allows, with the least error correction (a screen doesn't get scratched) so
+    // that its squares are as big as possible
+    override val qrSizeDp = 340
     override val errorCorrection = ErrorCorrectionLevel.L
 
     override fun start() {
         showQr(requireArguments().getString(ARG_TEXT).orEmpty(), getString(R.string.log_qr_scan), null, "", null)
-        setStatus(getString(R.string.qr_link_hint), working = false)
+        // The instructions already say it: its room goes to the QR
+        setStatus("", working = false)
     }
 
     companion object {

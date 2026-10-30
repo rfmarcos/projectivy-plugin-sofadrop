@@ -34,6 +34,17 @@ class GenerationLogTest {
     }
 
     @Test
+    fun failuresBeforeListCounts() {
+        val lists = (1..9).map { "tmdb:list_$it: 22 read, 2 filtered, 10 drawn" }
+        val log = (header + lists.take(5) + "trakt:list:a/b: not read - ListUnavailableException" + lists.drop(5) + "Generated 90 wallpapers - 80 s").joinToString("\n")
+        val text = GenerationLog.qrText(log)
+        assertTrue(text, text.toByteArray().size <= GenerationLog.SUMMARY_LIMIT)
+        assertTrue(text, text.contains("Memory: 192/512/1966 MB\n"))
+        assertTrue(text, text.contains("trakt:list:a/b: not read"))
+        assertTrue(text, text.endsWith(" more lines\nGenerated 90 wallpapers - 80 s"))
+    }
+
+    @Test
     fun qrTextIsAscii() {
         val log = (header + "  movie/1 Amélie at 3840 px: OutOfMemoryError" + "Generated 10 wallpapers · 40 s").joinToString("\n")
         val text = GenerationLog.qrText(log)

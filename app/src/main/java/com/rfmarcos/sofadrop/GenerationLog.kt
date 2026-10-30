@@ -50,8 +50,13 @@ class GenerationLog(private val context: Context) {
     companion object {
         private val DATE = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US)
         private const val HEADER_LINES = 4
-        /** Bytes of the QR summary: big QR codes are hard to scan from the sofa (800 is a 89-module code). */
-        const val SUMMARY_LIMIT = 800
+        /**
+         * Bytes of the QR summary. A phone camera reads a QR code on a TV only with few, big modules: in
+         * simulated photos of the screen (340 dp code), 360 bytes were read 1 time in 2 and 250, 9 in 10.
+         */
+        const val SUMMARY_LIMIT = 250
+        private val LIST_LINE = Regex(""".*: \d+ read, \d+ filtered, \d+ drawn""")
+        private val MEMORY_LINE = Regex("""Memory: class (\d+) MB, large (\d+) MB, RAM (\d+) MB""")
 
         private fun file(context: Context) = File(context.filesDir, "last-generation.txt")
 
@@ -66,7 +71,8 @@ class GenerationLog(private val context: Context) {
 
         /**
          * [log] cut to [limit] bytes for a QR code: its header and result lines are kept, then as many of the
-         * others (lists and failures, in order) as fit.
+         * others as fit, failures before the lists' counts, all in their order. The first failure that
+         * doesn't fit is cut to the room left.
          */
         fun summary(log: String, limit: Int = SUMMARY_LIMIT): String {
             if (log.toByteArray().size <= limit) return log
@@ -74,14 +80,19 @@ class GenerationLog(private val context: Context) {
             val head = lines.take(HEADER_LINES)
             val result = lines.last()
             val middle = lines.drop(HEADER_LINES).dropLast(1)
-            var size = (head + result).sumOf { it.toByteArray().size + 1 } + 32
-            val kept = mutableListOf<String>()
-            for (line in middle) {
-                size += line.toByteArray().size + 1
-                if (size > limit) break
-                kept += line
+            var size = (head + result).sumOf { it.toByteArray().size + 1 } + 20
+            val kept = sortedMapOf<Int, String>()
+            for (i in middle.indices.sortedBy { LIST_LINE.matches(middle[it]) }) {
+                val line = middle[i]
+                val room = limit - size - 1
+                when {
+                    line.toByteArray().size <= room -> kept[i] = line
+                    room >= 24 && !LIST_LINE.matches(line) -> kept[i] = line.take(room - 3) + "..."
+                    else -> continue
+                }
+                size += kept.getValue(i).toByteArray().size + 1
             }
-            return (head + kept + "... ${middle.size - kept.size} more lines" + result).joinToString("\n")
+            return (head + kept.values + "... ${middle.size - kept.size} more lines" + result).joinToString("\n")
         }
 
         /**
@@ -90,6 +101,7 @@ class GenerationLog(private val context: Context) {
          */
         fun qrText(log: String): String = summary(
             Normalizer.normalize(log.replace("·", "-").replace("…", "..."), Normalizer.Form.NFD).replace(NON_ASCII, "")
+                .replace(MEMORY_LINE, "Memory: $1/$2/$3 MB")
         )
 
         private val NON_ASCII = Regex("[^\\x00-\\x7F]")
