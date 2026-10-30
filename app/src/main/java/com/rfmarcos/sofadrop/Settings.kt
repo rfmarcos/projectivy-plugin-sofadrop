@@ -116,7 +116,6 @@ object Settings {
     private const val KEY_STYLE = "style"
     private const val KEY_CLICK_PLATFORMS = "click_platforms"
     private const val KEY_CLICK_FALLBACK = "click_fallback"
-    private const val KEY_CLICK_AT_TAP = "click_at_tap"
     private const val KEY_TRAILER_LANGUAGE = "trailer_language"
     private const val KEY_TRAILER_FALLBACK = "trailer_fallback"
     private const val KEY_TMDB_SESSION = "_tmdb_session_id"
@@ -406,11 +405,6 @@ object Settings {
     var clickFallback: String
         get() = preferences.getString(KEY_CLICK_FALLBACK, null)?.takeIf { it in CLICK_FALLBACKS || clickApp(it) != null } ?: CLICK_TRAILER
         set(value) = preferences.edit { putString(KEY_CLICK_FALLBACK, value) }
-
-    /** Decide what a wallpaper opens when it is clicked (see [OpenActivity]) instead of when Projectivy loads the set. */
-    var clickAtTap: Boolean
-        get() = preferences.getBoolean(KEY_CLICK_AT_TAP, false)
-        set(value) = preferences.edit { putBoolean(KEY_CLICK_AT_TAP, value) }
 
     /** The app of a click fallback that opens the title in one ("app:nuvio"), else null. */
     fun clickApp(action: String = clickFallback): TitleApp? =

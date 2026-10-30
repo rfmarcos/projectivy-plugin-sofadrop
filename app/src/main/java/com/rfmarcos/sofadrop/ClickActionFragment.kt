@@ -12,7 +12,7 @@ import androidx.leanback.widget.GuidedAction
 /**
  * What Projectivy opens from a wallpaper: the trailer (in which language, and what instead when there is
  * none in it), the title in an app (see [TitleApp]) or nothing; but first the title on the user's streaming
- * platforms, tried in their order (see [Platform]). Also whether that is decided when clicked.
+ * platforms, tried in their order (see [Platform]).
  */
 class ClickActionFragment : PreviewSettingsFragment() {
 
@@ -70,10 +70,6 @@ class ClickActionFragment : PreviewSettingsFragment() {
         val (installed, missing) = Platform.entries.filter { it !in order && it.offeredIn(Settings.region, context) }
             .partition { it.installedPackage(context) != null }
         rows += (order + installed).map { platformRow(it, order) } + missing.map(::missingPlatformRow)
-
-        rows += header(ID_ADVANCED_HEADER, getString(R.string.click_advanced_header))
-        explanations[ID_AT_TAP] = getString(R.string.click_at_tap_explanation)
-        rows += checkbox(ID_AT_TAP, getString(R.string.click_at_tap_title), getString(R.string.click_at_tap_desc), Settings.clickAtTap).build()
         return rows
     }
 
@@ -109,10 +105,6 @@ class ClickActionFragment : PreviewSettingsFragment() {
             .title(platform.label).description(getString(R.string.click_not_installed)).enabled(false).build()
     }
 
-    override fun onGuidedActionClicked(action: GuidedAction) {
-        if (action.id == ID_AT_TAP) Settings.clickAtTap = action.isChecked
-    }
-
     override fun onSubGuidedActionClicked(action: GuidedAction): Boolean {
         val parent = action.id / SUB_ID_BASE
         val index = (action.id % SUB_ID_BASE).toInt()
@@ -140,8 +132,6 @@ class ClickActionFragment : PreviewSettingsFragment() {
         private const val ID_FALLBACK = 3L
         private const val ID_TRAILER_LANGUAGE = 4L
         private const val ID_TRAILER_FALLBACK = 5L
-        private const val ID_ADVANCED_HEADER = 6L
-        private const val ID_AT_TAP = 7L
         private const val ID_PLATFORM_BASE = 10L
 
         private fun platformId(platform: Platform) = ID_PLATFORM_BASE + platform.ordinal

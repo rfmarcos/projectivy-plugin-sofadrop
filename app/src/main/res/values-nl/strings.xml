@@ -308,10 +308,6 @@
     <string name="click_platform_install">Installeer de app van %1$s op dit apparaat om hem te gebruiken.</string>
     <string name="click_platform_explanation">Gebruikt als de titel in je land op %1$s staat, Wikidata de pagina ervan heeft en de app geïnstalleerd is; anders wordt de volgende geprobeerd. Kies alleen de platforms waarvoor je betaalt.</string>
     <string name="click_target_explanation">Wat de achtergrond opent. Staat de titel op een van je platforms (hieronder), dan opent hij daar.</string>
-    <string name="click_advanced_header">Geavanceerd</string>
-    <string name="click_at_tap_title">Beslissen bij klikken</string>
-    <string name="click_at_tap_desc">Wijzigingen gelden meteen en als een app niet opent, wordt de volgende geprobeerd</string>
-    <string name="click_at_tap_explanation">Projectivy opent Sofadrop, dat op dat moment kiest wat er opent: dat duurt een ogenblik langer. Uit: het wordt bepaald wanneer Projectivy de achtergronden laadt (elke 10 min).</string>
     <string name="click_summary_trailer">Trailer</string>
     <string name="click_summary_more">%1$s en nog %2$d</string>
     <string name="click_trailer_note">De trailer wordt gekozen als de achtergronden worden gemaakt: een nieuwe taal geldt vanaf de volgende update.</string>

@@ -68,12 +68,9 @@ class WallpaperProviderService : Service() {
 
         /**
          * What Projectivy opens from [wallpaper] (see [ClickTargets]); applied when served, without
-         * regenerating (except the platforms' pages). Decided when clicked, it is [OpenActivity] for every
-         * wallpaper that has something to open now.
+         * regenerating (except the platforms' pages).
          */
-        fun actionUri(context: Context, wallpaper: StoredWallpaper): String? {
-            val target = ClickTargets.candidates(context, wallpaper).firstOrNull() ?: return null
-            return (if (Settings.clickAtTap) OpenActivity.intent(context, wallpaper) else target).toUri(Intent.URI_INTENT_SCHEME)
-        }
+        fun actionUri(context: Context, wallpaper: StoredWallpaper): String? =
+            ClickTargets.candidates(context, wallpaper).firstOrNull()?.toUri(Intent.URI_INTENT_SCHEME)
     }
 }

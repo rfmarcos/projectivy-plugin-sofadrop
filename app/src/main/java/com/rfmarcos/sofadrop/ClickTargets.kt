@@ -18,7 +18,7 @@ object ClickTargets {
             .map { (platform, link) -> Intent(Intent.ACTION_VIEW, link.toUri()).setPackage(platform.installedPackage(context)) }
         val fallback = Settings.clickFallback
         val app = Settings.clickApp(fallback)?.let { app -> app.installedPackage(context)?.let { app.intent(context, it, wallpaper) } }
-        // Also after an app: what opens if it refuses the title when decided on click
+        // Also after an app, harmless: only the first one is served
         val trailer = wallpaper.trailerKey?.takeIf { fallback != Settings.CLICK_NONE }?.let { key ->
             // Several apps open YouTube links on a TV (browsers, Downloader…): YouTube's own, without asking
             Intent(Intent.ACTION_VIEW, "https://www.youtube.com/watch?v=$key".toUri())

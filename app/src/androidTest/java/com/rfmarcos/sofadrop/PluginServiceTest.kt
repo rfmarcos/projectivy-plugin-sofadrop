@@ -108,8 +108,6 @@ class PluginServiceTest {
         )
         val lastGeneration = Settings.lastGeneration
         Settings.lastGeneration = System.currentTimeMillis() // not stale: no generation from getWallpapers
-        val atTap = Settings.clickAtTap
-        Settings.clickAtTap = false
         try {
             val service = bind()
             val wallpapers = service.getWallpapers(Event.TimeElapsed).associateBy { it.title }
@@ -119,17 +117,9 @@ class PluginServiceTest {
             assertEquals(Intent.ACTION_VIEW, intent.action)
             assertEquals("https://www.youtube.com/watch?v=dQw4w9WgXcQ", intent.dataString)
 
-            // Decided when clicked: Sofadrop's own activity, with only the title's type and id
-            Settings.clickAtTap = true
-            val open = Intent.parseUri(service.getWallpapers(Event.TimeElapsed).first { it.title == "With trailer" }.actionUri, Intent.URI_INTENT_SCHEME)
-            assertEquals(OpenActivity::class.java.name, open.component?.className)
-            assertEquals(1, open.getIntExtra(OpenActivity.EXTRA_TMDB_ID, 0))
-            Settings.clickAtTap = false
-
             Settings.clickFallback = Settings.CLICK_NONE
             assertTrue(service.getWallpapers(Event.TimeElapsed).all { it.actionUri == null })
         } finally {
-            Settings.clickAtTap = atTap
             Settings.clickFallback = Settings.CLICK_TRAILER
             Settings.lastGeneration = lastGeneration
         }

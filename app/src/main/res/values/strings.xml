@@ -318,10 +318,6 @@
     <string name="click_platform_install">Install the %1$s app on this device to use it.</string>
     <string name="click_platform_explanation">Used when the title is on %1$s in your country, Wikidata has its page and the app is installed; otherwise the next one is tried. Pick only the platforms you pay for.</string>
     <string name="click_target_explanation">What the wallpaper opens. If the title is on one of your platforms (below), it opens there instead.</string>
-    <string name="click_advanced_header">Advanced</string>
-    <string name="click_at_tap_title">Decide when clicked</string>
-    <string name="click_at_tap_desc">Changes apply at once and, if an app doesn\'t open, the next one is tried</string>
-    <string name="click_at_tap_explanation">Projectivy opens Sofadrop, which picks what to open at that moment: it takes an instant longer. Off, it\'s decided when Projectivy loads the wallpapers (every 10 min).</string>
     <string name="click_summary_trailer">Trailer</string>
     <string name="click_summary_more">%1$s and %2$d more</string>
     <string name="click_trailer_note">The trailer is picked when the wallpapers are made: a new language applies from the next update.</string>

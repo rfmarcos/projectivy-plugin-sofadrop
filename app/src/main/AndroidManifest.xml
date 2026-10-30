@@ -64,15 +64,6 @@
             </intent-filter>
         </activity>
 
-        <!-- "Decide when clicked": Projectivy opens it for every wallpaper and it opens the title (OpenActivity) -->
-        <activity
-            android:name=".OpenActivity"
-            android:excludeFromRecents="true"
-            android:exported="true"
-            android:noHistory="true"
-            android:taskAffinity=""
-            android:theme="@android:style/Theme.NoDisplay" />
-
         <receiver
             android:name=".Updater$InstallResultReceiver"
             android:exported="false" />
