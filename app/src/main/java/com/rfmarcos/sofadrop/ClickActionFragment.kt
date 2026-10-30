@@ -41,13 +41,27 @@ class ClickActionFragment : PreviewSettingsFragment() {
     private fun fallbacks(): List<String> =
         listOf(Settings.CLICK_TRAILER) + TitleApp.entries.map { Settings.CLICK_APP_PREFIX + it.key } + Settings.CLICK_NONE
 
+    /**
+     * The steps in the order they're tried, numbered: "1. Apple TV", "Add a platform", "2. Open in Nuvio".
+     * Only the platforms in use are rows; the others are in "Add a platform".
+     */
     private fun rows(): List<GuidedAction> {
         val context = requireContext()
-        val rows = mutableListOf<GuidedAction>()
+        val order = Settings.clickPlatforms
+        val rows = order.mapIndexed { index, platform -> platformRow(platform, index, order.size) }.toMutableList()
+        rows += addRow(order)
+
         val fallbacks = fallbacks()
+        val fallback = Settings.clickFallback
+        val missing = Settings.clickApp(fallback)?.takeIf { it.installedPackage(context) == null }
         explanations[ID_FALLBACK] = getString(R.string.click_target_explanation)
-        rows += action(ID_FALLBACK, R.drawable.ic_act_play, getString(R.string.click_target_title), clickLabel(context, Settings.clickFallback, long = true))
-            .subActions(options(ID_FALLBACK, fallbacks.map { clickLabel(context, it) }, clickLabel(context, Settings.clickFallback),
+        val label = clickLabel(context, fallback)
+        val description = listOfNotNull(
+            getString(if (order.isEmpty()) R.string.click_target_title else R.string.click_if_none),
+            getString(R.string.click_app_missing_short).takeIf { missing != null },
+        ).joinToString(" · ")
+        rows += action(ID_FALLBACK, R.drawable.ic_act_play, if (order.isEmpty()) label else step(order.size + 1, label), description)
+            .subActions(options(ID_FALLBACK, fallbacks.map { clickLabel(context, it) }, label,
                 fallbacks.map { clickDescription(context, it) })).build()
         // The trailer's language only matters when the wallpaper can open it
         if (showsTrailer(context)) {
@@ -63,46 +77,43 @@ class ClickActionFragment : PreviewSettingsFragment() {
                 .subActions(options(ID_TRAILER_FALLBACK, Settings.TRAILER_FALLBACKS.map { fallbackLabel(context, it) },
                     fallbackLabel(context, Settings.trailerFallback), Settings.TRAILER_FALLBACKS.map { fallbackDescription(context, it) })).build()
         }
-
-        rows += header(ID_PLATFORMS_HEADER, getString(R.string.click_platforms_header))
-        // The ones in use by their position, then the rest (a regional one only in its countries), installed first
-        val order = Settings.clickPlatforms
-        val (installed, missing) = Platform.entries.filter { it !in order && it.offeredIn(Settings.region, context) }
-            .partition { it.installedPackage(context) != null }
-        rows += (order + installed).map { platformRow(it, order) } + missing.map(::missingPlatformRow)
         return rows
     }
 
-    /**
-     * A platform in use ("1. Netflix") moves to the position picked or stops being used; one not in use
-     * ("Prime Video") is added at the position picked.
-     */
-    private fun platformRow(platform: Platform, order: List<Platform>): GuidedAction {
-        val context = requireContext()
+    private fun step(position: Int, label: String) = getString(R.string.click_step, position, label)
+
+    /** "1. Apple TV": moves to the position picked or stops being used. */
+    private fun platformRow(platform: Platform, position: Int, count: Int): GuidedAction {
         val id = platformId(platform)
-        val position = order.indexOf(platform)
-        val used = position >= 0
-        val positions = (1..if (used) order.size else order.size + 1)
-            .map { getString(if (used) R.string.click_position else R.string.click_use_at, it) }
-        val labels = positions + listOfNotNull(getString(R.string.click_dont_use).takeIf { used })
+        val labels = (1..count).map { getString(R.string.click_position, it) } + getString(R.string.click_dont_use)
         explanations[id] = getString(R.string.click_platform_explanation, platform.label)
-        val description = when {
-            !used -> getString(R.string.click_unused)
-            platform.installedPackage(context) != null -> getString(R.string.click_installed)
-            else -> getString(R.string.click_not_installed_skipped)
-        }
-        // No icon: there's no logo of each service in the app, and the numbers already line them up
-        return GuidedAction.Builder(context).id(id).icon(ColorDrawable(Color.TRANSPARENT))
-            .title(if (used) "${position + 1}. ${platform.label}" else platform.label).description(description)
-            .subActions(options(id, labels, if (used) labels[position] else "")).build()
+        val installed = platform.installedPackage(requireContext()) != null
+        return action(id, R.drawable.ic_act_tv, step(position + 1, platform.label),
+            getString(if (installed) R.string.click_if_on_it else R.string.click_not_installed_skipped))
+            .subActions(options(id, labels, labels[position])).build()
     }
 
-    /** A platform not in use whose app isn't installed: it would always be skipped, so it can't be picked. */
-    private fun missingPlatformRow(platform: Platform): GuidedAction {
-        val id = platformId(platform)
-        explanations[id] = getString(R.string.click_platform_install, platform.label)
-        return GuidedAction.Builder(requireContext()).id(id).icon(ColorDrawable(Color.TRANSPARENT))
-            .title(platform.label).description(getString(R.string.click_not_installed)).enabled(false).build()
+    /**
+     * The platforms not in use (a regional one only in its countries), each added after the others: the
+     * installed ones, then the rest, which can't be picked (it would always be skipped).
+     */
+    private fun addRow(order: List<Platform>): GuidedAction {
+        val context = requireContext()
+        val (installed, missing) = addable(context, order)
+        explanations[ID_ADD] = getString(R.string.click_add_explanation)
+        val names = installed.map { it.label }
+        val description = when {
+            names.isEmpty() -> getString(R.string.click_add_none)
+            names.size > 2 -> getString(R.string.click_summary_more, names.take(2).joinToString(", "), names.size - 2)
+            else -> names.joinToString(", ")
+        }
+        val options = (installed + missing).mapIndexed { index, platform ->
+            GuidedAction.Builder(context).id(ID_ADD * SUB_ID_BASE + index).title(platform.label)
+                .description(getString(if (platform in installed) R.string.click_installed else R.string.click_not_installed))
+                .enabled(platform in installed).build()
+        }
+        return action(ID_ADD, R.drawable.ic_act_add, getString(R.string.click_add_platform), description)
+            .subActions(options).enabled(options.isNotEmpty()).build()
     }
 
     override fun onSubGuidedActionClicked(action: GuidedAction): Boolean {
@@ -111,10 +122,12 @@ class ClickActionFragment : PreviewSettingsFragment() {
         val platform = Platform.entries.firstOrNull { platformId(it) == parent }
         when {
             platform != null -> {
-                // Positions first, then "don't use" (only on a platform in use)
+                // Positions first, then "don't use"
                 val others = Settings.clickPlatforms - platform
                 Settings.clickPlatforms = if (index > others.size) others else others.toMutableList().apply { add(index, platform) }
             }
+            parent == ID_ADD -> addable(requireContext(), Settings.clickPlatforms).first.getOrNull(index)
+                ?.let { Settings.clickPlatforms += it }
             parent == ID_FALLBACK -> Settings.clickFallback = fallbacks()[index]
             parent == ID_TRAILER_LANGUAGE -> Settings.trailerLanguage = Settings.PART_LANGUAGES[index]
             parent == ID_TRAILER_FALLBACK -> Settings.trailerFallback = Settings.TRAILER_FALLBACKS[index]
@@ -128,13 +141,18 @@ class ClickActionFragment : PreviewSettingsFragment() {
     }
 
     companion object {
-        private const val ID_PLATFORMS_HEADER = 1L
+        private const val ID_ADD = 2L
         private const val ID_FALLBACK = 3L
         private const val ID_TRAILER_LANGUAGE = 4L
         private const val ID_TRAILER_FALLBACK = 5L
         private const val ID_PLATFORM_BASE = 10L
 
         private fun platformId(platform: Platform) = ID_PLATFORM_BASE + platform.ordinal
+
+        /** The platforms that can be added (installed) and those that can't yet (not installed). */
+        private fun addable(context: Context, order: List<Platform>) =
+            Platform.entries.filter { it !in order && it.offeredIn(Settings.region, context) }
+                .partition { it.installedPackage(context) != null }
 
         /** The trailer opens when it is the fallback or the fallback's app isn't installed. */
         private fun showsTrailer(context: Context): Boolean {
@@ -179,9 +197,12 @@ class ClickActionFragment : PreviewSettingsFragment() {
             else -> null
         }
 
-        /** "Netflix › HBO Max › Trailer", or without platforms "See the trailer · Español (España)" / "Open in Nuvio". */
+        /**
+         * "Apple TV; otherwise Nuvio", "Netflix, HBO Max and 1 more; otherwise the trailer", "Only Apple TV", or
+         * without platforms (installed ones: the others are skipped) "See the trailer · Español (España)" / "Open in Nuvio".
+         */
         fun summary(context: Context): String {
-            val platforms = Settings.clickPlatforms.map { it.label }
+            val platforms = Settings.clickPlatforms.filter { it.installedPackage(context) != null }.map { it.label }
             val fallback = Settings.clickFallback
             if (platforms.isEmpty()) {
                 val action = clickLabel(context, fallback, long = true)
@@ -191,14 +212,13 @@ class ClickActionFragment : PreviewSettingsFragment() {
                 else PartLanguagesFragment.languageLabel(context, language)
             }
             val shown = if (platforms.size > 2) context.getString(R.string.click_summary_more, platforms.take(2).joinToString(", "), platforms.size - 2)
-            else platforms.joinToString(" › ")
+            else platforms.joinToString(", ")
             val app = Settings.clickApp(fallback)
-            val last = when {
-                fallback == Settings.CLICK_NONE -> null
-                app != null && app.installedPackage(context) != null -> app.label
-                else -> context.getString(R.string.click_summary_trailer)
+            return when {
+                fallback == Settings.CLICK_NONE -> context.getString(R.string.click_summary_only, shown)
+                app != null && app.installedPackage(context) != null -> context.getString(R.string.click_summary_else, shown, app.label)
+                else -> context.getString(R.string.click_summary_else, shown, context.getString(R.string.click_summary_trailer))
             }
-            return listOfNotNull(shown, last).joinToString(" › ")
         }
     }
 }
