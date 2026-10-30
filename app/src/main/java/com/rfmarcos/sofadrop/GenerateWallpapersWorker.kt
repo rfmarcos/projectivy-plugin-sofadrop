@@ -49,7 +49,7 @@ class GenerateWallpapersWorker(context: Context, params: WorkerParameters) : Wor
         Settings.generating = true
         return try {
             val start = System.currentTimeMillis()
-            val stored = generate(generation, log)
+            val stored = withPlatformLinks(generate(generation, log), log)
             // Every list failing (e.g. no network) or no title fitting in memory is that error, not "no titles"
             if (stored.isEmpty()) throw when {
                 listErrors.isNotEmpty() -> listErrors.first()
@@ -146,6 +146,30 @@ class GenerateWallpapersWorker(context: Context, params: WorkerParameters) : Wor
         return stored
     }
 
+    /**
+     * [stored] with their pages on the streaming platforms that have them, when the wallpaper opens its
+     * platform. Without Wikidata they open the trailer instead: not worth failing the generation for.
+     */
+    private fun withPlatformLinks(stored: List<StoredWallpaper>, log: GenerationLog): List<StoredWallpaper> {
+        if (Settings.clickPlatforms.isEmpty()) return stored
+        val refs = stored.filter { wallpaper -> wallpaper.providerIds.any { Platform.ofProvider(it) != null } }
+            .associateWith { wallpaper -> TitleRef(MediaType.entries.first { it.path == wallpaper.type }, wallpaper.tmdbId) }
+        if (refs.isEmpty()) return stored
+        val ids = try {
+            Wikidata.ids(refs.values)
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not read the platform ids", e)
+            log.add("Platform links failed: ${GenerationLog.describe(e)}")
+            return stored
+        }
+        val linked = stored.map { wallpaper ->
+            val ref = refs[wallpaper] ?: return@map wallpaper
+            wallpaper.copy(platformLinks = Platform.links(ref.type, ids[ref].orEmpty()))
+        }
+        log.add("Platform links: ${linked.count { it.platformLinks.isNotEmpty() }} of ${refs.size} titles on a known platform")
+        return linked
+    }
+
     /** Render one title into [generation]; null when it can't be drawn. */
     private fun store(factory: WallpaperFactory, plan: ListPlan, ref: TitleRef, generation: File, log: GenerationLog): StoredWallpaper? =
         try {
@@ -157,7 +181,7 @@ class GenerateWallpapersWorker(context: Context, params: WorkerParameters) : Wor
                 } finally {
                     bitmap.recycle()
                 }
-                StoredWallpaper(name, info.title, info.type.path, info.id, plan.source.key, info.trailerKey)
+                StoredWallpaper(name, info.title, info.type.path, info.id, plan.source.key, info.trailerKey, info.imdbId, info.providerIds)
             }
         } catch (e: TmdbException) {
             throw e

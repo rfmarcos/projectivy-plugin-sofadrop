@@ -94,6 +94,7 @@ object Settings {
     private val OLD_FILTER_KEYS = listOf("filter_scope", "age_all_lists", "global_hits_all_lists", "adult_all_lists", "filtered_lists",
         "launcher_guide", "_launcher_layout")
     private const val KEY_SOURCE_FALLBACK = "source_fallback"
+    private const val KEY_SOURCE_INLINE = "source_inline"
     private const val KEY_PROGRESS = "_generation_progress"
     private const val KEY_PREVIEW_PIN = "_preview_pin"
     private const val KEY_PREVIEW_PIN_TITLE = "_preview_pin_title"
@@ -108,7 +109,11 @@ object Settings {
     private const val KEY_TITLE_LANGUAGE = "title_language"
     private const val KEY_SYNOPSIS_LANGUAGE = "synopsis_language"
     private const val KEY_STYLE = "style"
-    private const val KEY_CLICK_ACTION = "click_action"
+    private const val KEY_CLICK_PLATFORMS = "click_platforms"
+    private const val KEY_CLICK_FALLBACK = "click_fallback"
+    private const val KEY_CLICK_AT_TAP = "click_at_tap"
+    private const val KEY_TRAILER_LANGUAGE = "trailer_language"
+    private const val KEY_TRAILER_FALLBACK = "trailer_fallback"
     private const val KEY_TMDB_SESSION = "_tmdb_session_id"
     private const val KEY_TMDB_ACCOUNT = "_tmdb_account_id"
     private const val KEY_TMDB_USER = "_tmdb_user"
@@ -148,7 +153,18 @@ object Settings {
     /** What Projectivy opens from a wallpaper ("Watch" in About this wallpaper, play on its status bar). */
     const val CLICK_TRAILER = "trailer"
     const val CLICK_NONE = "none"
-    val CLICK_ACTIONS = listOf(CLICK_TRAILER, CLICK_NONE)
+    val CLICK_FALLBACKS = listOf(CLICK_TRAILER, CLICK_NONE)
+    /** Click action opening the title in a [TitleApp]: "app:nuvio". */
+    const val CLICK_APP_PREFIX = "app:"
+    /**
+     * With no official trailer in the trailer language: the English one, the original-language one (then
+     * any trailer for both), any trailer, or none.
+     */
+    const val TRAILER_ENGLISH = "english"
+    const val TRAILER_ORIGINAL = "original"
+    const val TRAILER_ANY = "any"
+    const val TRAILER_NONE = "none"
+    val TRAILER_FALLBACKS = listOf(TRAILER_ENGLISH, TRAILER_ORIGINAL, TRAILER_ANY, TRAILER_NONE)
     /** Cast photos: none, all together before the names (overlapping), or each one before its name. */
     const val CAST_PHOTOS_NONE = "none"
     const val CAST_PHOTOS_GROUPED = "grouped"
@@ -326,10 +342,40 @@ object Settings {
         get() = preferences.getString(KEY_STYLE, null)?.takeIf { it in STYLES } ?: STYLE_FULL
         set(value) = preferences.edit { putString(KEY_STYLE, value) }
 
-    /** See [CLICK_ACTIONS]; applied when Projectivy asks for the wallpapers, so it needs no new set. */
-    var clickAction: String
-        get() = preferences.getString(KEY_CLICK_ACTION, null)?.takeIf { it in CLICK_ACTIONS } ?: CLICK_TRAILER
-        set(value) = preferences.edit { putString(KEY_CLICK_ACTION, value) }
+    /**
+     * Streaming platforms the user pays for, in the order a wallpaper tries them (see [ClickTargets]); their
+     * pages are looked up when generating, so adding the first one needs a new set.
+     */
+    var clickPlatforms: List<Platform>
+        get() = preferences.getString(KEY_CLICK_PLATFORMS, null).orEmpty().split(',').mapNotNull(Platform::of).distinct()
+        set(value) = preferences.edit { putString(KEY_CLICK_PLATFORMS, value.joinToString(",") { it.key }) }
+
+    /**
+     * What a wallpaper opens when its title is on none of [clickPlatforms]: see [CLICK_FALLBACKS] and
+     * [CLICK_APP_PREFIX] (an app not installed opens the trailer). Applied when served, without a new set.
+     */
+    var clickFallback: String
+        get() = preferences.getString(KEY_CLICK_FALLBACK, null)?.takeIf { it in CLICK_FALLBACKS || clickApp(it) != null } ?: CLICK_TRAILER
+        set(value) = preferences.edit { putString(KEY_CLICK_FALLBACK, value) }
+
+    /** Decide what a wallpaper opens when it is clicked (see [OpenActivity]) instead of when Projectivy loads the set. */
+    var clickAtTap: Boolean
+        get() = preferences.getBoolean(KEY_CLICK_AT_TAP, false)
+        set(value) = preferences.edit { putBoolean(KEY_CLICK_AT_TAP, value) }
+
+    /** The app of a click fallback that opens the title in one ("app:nuvio"), else null. */
+    fun clickApp(action: String = clickFallback): TitleApp? =
+        action.takeIf { it.startsWith(CLICK_APP_PREFIX) }?.let { TitleApp.of(it.removePrefix(CLICK_APP_PREFIX)) }
+
+    /** See [PART_LANGUAGES]: "Automatic" is the wallpaper language; [trailerFallback] applies when there is none in it. */
+    var trailerLanguage: String
+        get() = partLanguage(KEY_TRAILER_LANGUAGE)
+        set(value) = preferences.edit { putString(KEY_TRAILER_LANGUAGE, value) }
+
+    /** See [TRAILER_FALLBACKS]. */
+    var trailerFallback: String
+        get() = preferences.getString(KEY_TRAILER_FALLBACK, null)?.takeIf { it in TRAILER_FALLBACKS } ?: TRAILER_ENGLISH
+        set(value) = preferences.edit { putString(KEY_TRAILER_FALLBACK, value) }
 
     /** The style draws the logo (or the title instead). */
     val drawsLogo: Boolean get() = style != STYLE_BACKDROP
@@ -515,6 +561,11 @@ object Settings {
         }
         set(value) = preferences.edit { putBoolean(KEY_SOURCE_FALLBACK, value) }
 
+    /** With both footer parts always on, the list source next to the streaming services instead of under them (its name shortened to fit). */
+    var sourceInline: Boolean
+        get() = preferences.getBoolean(KEY_SOURCE_INLINE, false)
+        set(value) = preferences.edit { putBoolean(KEY_SOURCE_INLINE, value) }
+
     /** Footer line naming the list each title came from ("Trending · TMDB"). */
     var showSource: Boolean
         get() = preferences.getBoolean(KEY_SHOW_SOURCE, true)
@@ -691,6 +742,9 @@ object Settings {
             maxAgeMonths, excludeAdult, listFilters.toSortedMap().toString().replace(", genres=null", ""),
         // Only when changed, so existing installs don't see a pending change after updating
         ).plus(listOfNotNull(overviewLines.takeIf { it != 4 }, "nosource".takeIf { !showSource }, "fallback".takeIf { showSource && showProviders && sourceFallback },
+            "inline".takeIf { showSource && showProviders && !sourceFallback && sourceInline },
+            // Its pages are looked up when generating
+            "platform".takeIf { clickPlatforms.isNotEmpty() },
             "dups".takeIf { !skipDuplicates }, "logo:$logoMode".takeIf { logoMode != LOGO_TEXT }, "synopsis:$synopsisMode".takeIf { synopsisMode != SYNOPSIS_HIDE },
             "titlelang:$titleLanguage".takeIf { titleLanguage != LANGUAGE_AUTO }, "synopsislang:$synopsisLanguage".takeIf { synopsisLanguage != LANGUAGE_AUTO },
             "ratings:$ratingSourcesKey:$mdbListAvailable".takeIf { ratingSourcesKey != RatingSource.TMDB.key },
@@ -698,6 +752,7 @@ object Settings {
             "ratingage:$maxRatingAge".takeIf { maxRatingAge > 0 },
             "order:${headerOrder.joinToString(",")}".takeIf { headerOrder != HEADER_BLOCKS },
             "minratings:$minRatings".takeIf { minRatings != 2 }, "cast".takeIf { showCast }, "castphotos:$castPhotos".takeIf { showCast && castPhotos != CAST_PHOTOS_GROUPED }, "style:$style".takeIf { style != STYLE_FULL },
+            "trailerlang:$trailerLanguage".takeIf { trailerLanguage != LANGUAGE_AUTO }, "trailerfallback:$trailerFallback".takeIf { trailerFallback != TRAILER_ENGLISH },
             "genres:${genreFilter.only}:${genreFilter.ids.sorted()}".takeIf { !genreFilter.isOff })).joinToString("|")
 
     /** True when the current wallpapers were generated with different settings. */

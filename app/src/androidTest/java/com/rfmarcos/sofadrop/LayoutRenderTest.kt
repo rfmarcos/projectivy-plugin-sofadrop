@@ -21,7 +21,8 @@ import java.io.File
 class LayoutRenderTest {
 
     /**
-     * [header]: "all", "ratings" or "none"; [footer]: "both", "providers", "source" or "none"; [photos]: cast photos
+     * [header]: "all", "ratings" or "none"; [footer]: "both", "providers", "source", "none" or on one line "inline"
+     * (4 services and the list: "inline-trakt" and "inline-mdblist" with long names); [photos]: cast photos
      * (see [Settings.CAST_PHOTO_MODES]), with the second actor's missing when [noPhoto].
      */
     private data class Combo(
@@ -42,6 +43,8 @@ class LayoutRenderTest {
         Settings.headerOrder = Settings.HEADER_BLOCKS
         Settings.minRatings = 2
         Settings.showCast = true
+        Settings.showProviders = true
+        Settings.sourceFallback = false
         val dir = File(context.filesDir, "layout_test").apply { deleteRecursively(); mkdirs() }
 
         val combos = listOf(
@@ -83,6 +86,10 @@ class LayoutRenderTest {
             Combo("none", 0, true, "none", photos = Settings.CAST_PHOTOS_EACH),
             Combo("ratings", 4, true, "source", photos = Settings.CAST_PHOTOS_EACH),
             Combo("all", 4, true, "both", photos = Settings.CAST_PHOTOS_NONE, noPhoto = true),
+            Combo("all", 4, true, "inline", photos = Settings.CAST_PHOTOS_GROUPED),
+            Combo("all", 4, true, "inline-trakt", photos = Settings.CAST_PHOTOS_GROUPED),
+            Combo("all", 4, true, "inline-mdblist", photos = Settings.CAST_PHOTOS_GROUPED),
+            Combo("all", 0, false, "inline-trakt"),
         )
 
         try {
@@ -102,14 +109,29 @@ class LayoutRenderTest {
                     cast = if (!combo.cast) emptyList()
                     else if (combo.noPhoto) base.cast.mapIndexed { i, member -> if (i == 1) member.copy(profilePath = null) else member }
                     else base.cast,
-                    providerLogoPaths = if (combo.footer == "both" || combo.footer == "providers") base.providerLogoPaths else emptyList(),
-                    sourceLabel = if (combo.footer == "both" || combo.footer == "source") "Tendencias" else null,
-                    sourceProvider = SourceProvider.TMDB,
+                    providerLogoPaths = when (combo.footer) {
+                        "both", "providers", "inline" -> base.providerLogoPaths
+                        // The widest row: four services
+                        "inline-trakt", "inline-mdblist" -> List(4) { base.providerLogoPaths }.flatten().take(4)
+                        else -> emptyList()
+                    },
+                    sourceLabel = when (combo.footer) {
+                        "both", "source", "inline" -> "Tendencias"
+                        // As long as Languages.sourceLabel leaves a list name
+                        "inline-trakt", "inline-mdblist" -> "Películas imprescindibles de los 90".take(27) + "…"
+                        else -> null
+                    },
+                    sourceProvider = when (combo.footer) {
+                        "inline-trakt" -> SourceProvider.TRAKT
+                        "inline-mdblist" -> SourceProvider.MDBLIST
+                        else -> SourceProvider.TMDB
+                    },
                     logoPath = base.logoPath.takeIf { combo.logo },
                 )
                 Settings.overviewLines = combo.lines
                 Settings.castPhotos = combo.photos
                 Settings.style = combo.style
+                Settings.sourceInline = combo.footer.startsWith("inline")
                 val bitmap = WallpaperFactory(context, 1920).render(info)
                 val name = "%02d".format(index + 1)
                 File(dir, "$name.jpg").outputStream().use { bitmap.compress(Bitmap.CompressFormat.JPEG, 90, it) }
@@ -140,6 +162,7 @@ class LayoutRenderTest {
             Settings.castPhotos = Settings.CAST_PHOTOS_GROUPED
             Settings.style = Settings.STYLE_FULL
             Settings.overviewLines = 4
+            Settings.sourceInline = false
         }
     }
 }

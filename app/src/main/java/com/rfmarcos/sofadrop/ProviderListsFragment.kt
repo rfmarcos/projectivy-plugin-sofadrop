@@ -55,7 +55,7 @@ class ProviderListsFragment : BaseSettingsFragment() {
     }
 
     private fun refreshRows() {
-        refreshActions(buildRows()) { newInstance(provider) }
+        refreshActions(buildRows())
     }
 
     private val connected get() = AccountsFragment.connected(provider)

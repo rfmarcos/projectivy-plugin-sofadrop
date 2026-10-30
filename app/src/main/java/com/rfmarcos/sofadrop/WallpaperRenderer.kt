@@ -20,6 +20,8 @@ import android.graphics.RectF
 import android.graphics.Shader
 import android.graphics.Typeface
 import android.graphics.drawable.Drawable
+import android.text.TextPaint
+import android.text.TextUtils
 import android.util.Size
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.res.ResourcesCompat
@@ -46,6 +48,8 @@ class WallpaperRenderer(
     private val style: String = Settings.STYLE_FULL,
     /** Faces next to the cast names, see [Settings.CAST_PHOTO_MODES]. */
     private val castPhotos: String = Settings.CAST_PHOTOS_NONE,
+    /** The list source on the streaming services' line, see [Settings.sourceInline]. */
+    private val sourceInline: Boolean = false,
 ) {
 
     private val height = width * 9 / 16
@@ -529,54 +533,89 @@ class WallpaperRenderer(
         })
     }
 
-    /** "Available on [icons]" when there are streaming services, then (dimmer) the list it came from. */
+    /**
+     * "Available on [icons]" when there are streaming services, then the list it came from: dimmer, under
+     * them, or after them past a divider when [sourceInline] (its name shortened to fit, never wrapping).
+     */
     private fun drawFooter(canvas: Canvas, top: Float, providerLogos: List<Bitmap>, info: WallpaperInfo) {
         if (providerLogos.isEmpty()) {
-            drawSource(canvas, top + s(PROVIDER_ICON_SIZE) / 2, info, primary = true)
+            drawSource(canvas, top + s(PROVIDER_ICON_SIZE) / 2, info, SourceStyle.MAIN)
             return
         }
-        drawProviders(canvas, top, providerLogos)
-        drawSource(canvas, top + s(PROVIDER_ICON_SIZE) + s(48f), info, primary = false)
+        val end = drawProviders(canvas, top, providerLogos)
+        val center = top + s(PROVIDER_ICON_SIZE) / 2
+        if (sourceInline && info.sourceLabel != null) {
+            val divider = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.argb(120, 255, 255, 255); strokeWidth = s(3f) }
+            // As tall as the text, not the icons
+            val x = end + s(INLINE_SOURCE_GAP)
+            canvas.drawLine(x, center - s(PROVIDER_ICON_SIZE) * 0.22f, x, center + s(PROVIDER_ICON_SIZE) * 0.22f, divider)
+            drawSource(canvas, center, info, SourceStyle.INLINE, x + s(INLINE_SOURCE_GAP), s(MARGIN_LEFT + CONTENT_WIDTH))
+            return
+        }
+        drawSource(canvas, top + s(PROVIDER_ICON_SIZE) + s(36f), info, SourceStyle.BELOW)
     }
 
     /**
-     * "Trending · [TMDB logo]", "Your watchlist · Trakt", "Netflix Movies · MDBList". Regular, not Light:
-     * under the streaming row it's smaller and dimmer, and Light was too thin to read there.
+     * How the list source looks: on the icons' row, alone or after them, it matches "Available on" (Light
+     * on its baseline; dimmer after them); under them it's smaller and dimmer, in Regular because Light was
+     * too thin to read at that size.
      */
-    private fun drawSource(canvas: Canvas, center: Float, info: WallpaperInfo, primary: Boolean) {
+    private enum class SourceStyle(val size: Float, val grey: Int, val logoHeight: Float, val light: Boolean) {
+        MAIN(46f, 195, 42f, true), INLINE(46f, 170, 42f, true), BELOW(42f, 175, 38f, false)
+    }
+
+    /**
+     * "Trending · [TMDB logo]", "Your watchlist · Trakt", "Netflix Movies · MDBList", from [left]. With
+     * [right], the name is shortened so it all ends there (and is at most [INLINE_SOURCE_MAX] wide).
+     */
+    private fun drawSource(canvas: Canvas, center: Float, info: WallpaperInfo, style: SourceStyle, left: Float = s(MARGIN_LEFT), right: Float? = null) {
         val label = info.sourceLabel ?: return
-        val grey = if (primary) 195 else 175
-        val size = if (primary) 46f else 42f
-        val labelPaint = textPaint(regular, s(size), Color.rgb(grey, grey, grey))
-        val text = "$label  ·  "
-        drawCentered(canvas, text, s(MARGIN_LEFT), center, labelPaint)
-        val x = s(MARGIN_LEFT) + labelPaint.measureText(text)
-        val h = s(if (primary) 42f else 38f)
+        val labelPaint = TextPaint(textPaint(if (style.light) light else regular, s(style.size), Color.rgb(style.grey, style.grey, style.grey)))
+        val separator = "  ·  "
+        val h = s(style.logoHeight)
+        val name = if (right == null) label else {
+            val room = right - left - labelPaint.measureText(separator) - drawSourceLogo(null, 0f, center, info, h, style)
+            TextUtils.ellipsize(label, labelPaint, min(room, s(INLINE_SOURCE_MAX)).coerceAtLeast(0f), TextUtils.TruncateAt.END).toString()
+        }
+        val text = name + separator
+        // Same lift as "Available on" next to the icons
+        drawCentered(canvas, text, left, if (style.light) center - s(2f) else center, labelPaint)
+        drawSourceLogo(canvas, left + labelPaint.measureText(text), center, info, h, style)
+    }
+
+    /** The logo of the list's service at [x], [h] tall; returns where it ends (only measures without a [canvas]). */
+    private fun drawSourceLogo(canvas: Canvas?, x: Float, center: Float, info: WallpaperInfo, h: Float, style: SourceStyle): Float {
         val bitmapPaint = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
         fun drawBitmap(bitmap: Bitmap, height: Float, left: Float): Float {
             val w = bitmap.width * height / bitmap.height
-            canvas.drawBitmap(bitmap, null, RectF(left, center - height / 2, left + w, center + height / 2), bitmapPaint)
+            canvas?.drawBitmap(bitmap, null, RectF(left, center - height / 2, left + w, center + height / 2), bitmapPaint)
             return left + w
         }
-        when (info.sourceProvider) {
+        return when (info.sourceProvider) {
             SourceProvider.TRAKT -> {
                 // The full logo's mark is taller than its letters: size it on the mark
                 val height = h * 1.25f
                 val w = height * traktLogo.intrinsicWidth / traktLogo.intrinsicHeight
-                traktLogo.setBounds(x.roundToInt(), (center - height / 2).roundToInt(), (x + w).roundToInt(), (center + height / 2).roundToInt())
-                traktLogo.draw(canvas)
+                if (canvas != null) {
+                    traktLogo.setBounds(x.roundToInt(), (center - height / 2).roundToInt(), (x + w).roundToInt(), (center + height / 2).roundToInt())
+                    traktLogo.draw(canvas)
+                }
+                x + w
             }
             SourceProvider.SIMKL -> drawBitmap(simklLogo, h * 0.8f, x)
             // MDBList has no wordmark: its app icon followed by the name
             SourceProvider.MDBLIST -> {
                 val end = drawBitmap(mdbListLogo, h * 1.15f, x)
-                drawCentered(canvas, "MDBList", end + s(14f), center, textPaint(medium, s(size), Color.WHITE))
+                val namePaint = textPaint(medium, s(style.size), Color.WHITE)
+                canvas?.let { drawCentered(it, "MDBList", end + s(14f), center, namePaint) }
+                end + s(14f) + namePaint.measureText("MDBList")
             }
             else -> drawBitmap(tmdbLogo, h, x)
         }
     }
 
-    private fun drawProviders(canvas: Canvas, top: Float, providerLogos: List<Bitmap>) {
+    /** Returns where the last icon ends. */
+    private fun drawProviders(canvas: Canvas, top: Float, providerLogos: List<Bitmap>): Float {
         val iconSize = s(PROVIDER_ICON_SIZE)
         val center = top + iconSize / 2
         val label = texts.availableOn
@@ -592,6 +631,7 @@ class WallpaperRenderer(
             rounded.recycle()
             x += iconSize + s(22f)
         }
+        return x - s(22f)
     }
 
     // --- Helpers ---
@@ -631,6 +671,10 @@ class WallpaperRenderer(
         private const val LOGO_BOTTOM = 640
         private const val META_CENTER = 725
         private const val PROVIDER_ICON_SIZE = 92
+        /** Space on each side of the divider before an inline list source. */
+        private const val INLINE_SOURCE_GAP = 40f
+        /** Widest an inline list name gets, so a long one doesn't take over the row. */
+        private const val INLINE_SOURCE_MAX = 480f
         /** Between the synopsis and the cast row. */
         private const val CAST_GAP = 26f
         /** Diameter of the cast faces, ~1.6 times the names' height. */

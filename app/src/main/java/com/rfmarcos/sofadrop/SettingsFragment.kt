@@ -55,6 +55,8 @@ class SettingsFragment : PreviewSettingsFragment() {
             .hasNext(true).build()
         actions += action(ID_DETAILS, R.drawable.ic_act_tv, getString(R.string.setting_details_title), DetailsFragment.summary(context))
             .hasNext(true).build()
+        actions += action(ID_CLICK, R.drawable.ic_act_play, getString(R.string.click_action_title), ClickActionFragment.summary(context))
+            .hasNext(true).build()
         actions += action(ID_ACCOUNTS, R.drawable.ic_act_account, getString(R.string.setting_accounts_title), AccountsFragment.summary(context))
             .hasNext(true).build()
         actions += choice(ID_REFRESH, R.drawable.ic_act_schedule, R.string.setting_refresh_title, refreshLabel(Settings.refreshHours),
@@ -69,6 +71,7 @@ class SettingsFragment : PreviewSettingsFragment() {
         val context = requireContext()
         updateDescription(ID_LISTS, ListsFragment.summary(context))
         updateDescription(ID_DETAILS, DetailsFragment.summary(context))
+        updateDescription(ID_CLICK, ClickActionFragment.summary(context))
         updateDescription(ID_ACCOUNTS, AccountsFragment.summary(context))
         handler.post(statusRefresher)
         // Back from the system installer (cancelled, or blocked by Play Protect): offer the update again
@@ -102,6 +105,7 @@ class SettingsFragment : PreviewSettingsFragment() {
             ID_USE_IN_PROJECTIVY -> Projectivy.openWallpaperSettings(requireContext())
             ID_LISTS -> add(parentFragmentManager, ListsFragment())
             ID_DETAILS -> add(parentFragmentManager, DetailsFragment())
+            ID_CLICK -> add(parentFragmentManager, ClickActionFragment())
             ID_ACCOUNTS -> add(parentFragmentManager, AccountsFragment())
             ID_ABOUT -> add(parentFragmentManager, AboutFragment())
         }
@@ -199,5 +203,6 @@ class SettingsFragment : PreviewSettingsFragment() {
         private const val ID_APP_UPDATE = 21L
         private const val ID_USE_IN_PROJECTIVY = 22L
         private const val ID_ACCOUNTS = 23L
+        private const val ID_CLICK = 24L
     }
 }

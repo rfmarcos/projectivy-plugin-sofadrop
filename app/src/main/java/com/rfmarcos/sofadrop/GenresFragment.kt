@@ -79,7 +79,7 @@ class GenresFragment : BaseSettingsFragment() {
         val index = (action.id % SUB_ID_BASE).toInt()
         // A list's own filter starts from the default's genres
         own = if (labels.size == 3 && index == 0) null else (own ?: default).copy(only = index == labels.size - 1)
-        refreshActions(rows()) { newInstance(listKey) }
+        refreshActions(rows())
         return true
     }
 

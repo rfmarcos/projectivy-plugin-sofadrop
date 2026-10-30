@@ -8,6 +8,9 @@ import org.junit.Test
 
 class TrailerTest {
 
+    /** Spanish, then the English fallback (the default). */
+    private val ES_EN = listOf("es", "en")
+
     private fun video(key: String, type: String = "Trailer", language: String? = "en", official: Boolean = true,
                       published: String = "2024-05-01T16:00:00.000Z", site: String = "YouTube") =
         """{"iso_639_1":${language?.let { "\"$it\"" }},"iso_3166_1":"US","key":"$key","site":"$site","type":"$type","official":$official,"published_at":"$published"}"""
@@ -24,7 +27,7 @@ class TrailerTest {
             video("es-teaser", type = "Teaser", language = "es", published = "2024-09-01T00:00:00.000Z"),
             video("vimeo", language = "es", site = "Vimeo", published = "2024-10-01T00:00:00.000Z"),
         )
-        assertEquals("es-new", TmdbCatalog.trailerKey(videos, "es"))
+        assertEquals("es-new", TmdbCatalog.trailerKey(videos, ES_EN))
     }
 
     @Test
@@ -34,9 +37,9 @@ class TrailerTest {
             video("en-old", published = "2024-01-01T00:00:00.000Z"),
             video("en-new", published = "2024-03-01T00:00:00.000Z"),
         )
-        assertEquals("en-new", TmdbCatalog.trailerKey(videos, "es"))
+        assertEquals("en-new", TmdbCatalog.trailerKey(videos, ES_EN))
         // A title in another language: its official trailer only counts in the synopsis language or English
-        assertEquals("en-new", TmdbCatalog.trailerKey(videos(video("ko", language = "ko"), video("en-new")), "es"))
+        assertEquals("en-new", TmdbCatalog.trailerKey(videos(video("ko", language = "ko"), video("en-new")), ES_EN))
     }
 
     @Test
@@ -48,21 +51,37 @@ class TrailerTest {
             video("none", language = null, official = false, published = "2024-04-01T00:00:00.000Z"),
             video("clip", type = "Clip", published = "2024-09-01T00:00:00.000Z"),
         )
-        assertEquals("none", TmdbCatalog.trailerKey(unofficial, "es"))
+        assertEquals("none", TmdbCatalog.trailerKey(unofficial, ES_EN))
 
         val teasers = videos(
             video("teaser-old", type = "Teaser", published = "2024-01-01T00:00:00.000Z"),
             video("teaser-new", type = "Teaser", language = "fr", official = false, published = "2024-02-01T00:00:00.000Z"),
             video("featurette", type = "Featurette", published = "2024-09-01T00:00:00.000Z"),
         )
-        assertEquals("teaser-new", TmdbCatalog.trailerKey(teasers, "es"))
+        assertEquals("teaser-new", TmdbCatalog.trailerKey(teasers, ES_EN))
+    }
+
+    @Test
+    fun fallbacks() {
+        val videos = videos(
+            video("ko", language = "ko", published = "2024-01-01T00:00:00.000Z"),
+            video("en", published = "2024-02-01T00:00:00.000Z"),
+            video("fr-fan", language = "fr", official = false, published = "2024-09-01T00:00:00.000Z"),
+        )
+        // Original language as the fallback (a Korean title in Spanish)
+        assertEquals("ko", TmdbCatalog.trailerKey(videos, listOf("es", "ko")))
+        // Any trailer: the newest, official or not
+        assertEquals("fr-fan", TmdbCatalog.trailerKey(videos, listOf("es")))
+        // None: only the trailer language
+        assertNull(TmdbCatalog.trailerKey(videos, listOf("es"), anyTrailer = false))
+        assertEquals("en", TmdbCatalog.trailerKey(videos, listOf("en"), anyTrailer = false))
     }
 
     @Test
     fun nothingToOpen() {
-        assertNull(TmdbCatalog.trailerKey(null, "es"))
-        assertNull(TmdbCatalog.trailerKey(videos(), "es"))
-        assertNull(TmdbCatalog.trailerKey(videos(video("clip", type = "Clip"), video("vimeo", site = "Vimeo")), "es"))
-        assertNull(TmdbCatalog.trailerKey(Json.parseToJsonElement("""{"results":[{"site":"YouTube","type":"Trailer","key":""}]}""") as JsonObject, "es"))
+        assertNull(TmdbCatalog.trailerKey(null, ES_EN))
+        assertNull(TmdbCatalog.trailerKey(videos(), ES_EN))
+        assertNull(TmdbCatalog.trailerKey(videos(video("clip", type = "Clip"), video("vimeo", site = "Vimeo")), ES_EN))
+        assertNull(TmdbCatalog.trailerKey(Json.parseToJsonElement("""{"results":[{"site":"YouTube","type":"Trailer","key":""}]}""") as JsonObject, ES_EN))
     }
 }

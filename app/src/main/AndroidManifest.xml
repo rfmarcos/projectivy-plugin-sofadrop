@@ -16,6 +16,32 @@
 
     <queries>
         <package android:name="com.spocky.projengmenu" />
+        <!-- Where a wallpaper can open its title (TitleApp) and its trailer -->
+        <package android:name="com.nuvio.tv" />
+        <package android:name="com.nuvio.app" />
+        <package android:name="com.stremio.one" />
+        <package android:name="org.jellyfin.androidtv" />
+        <package android:name="com.google.android.youtube.tv" />
+        <!-- Streaming platforms (Platform) -->
+        <package android:name="com.netflix.ninja" />
+        <package android:name="com.netflix.mediaclient" />
+        <package android:name="com.amazon.amazonvideo.livingroom" />
+        <package android:name="com.amazon.avod.thirdpartyclient" />
+        <package android:name="com.disney.disneyplus" />
+        <package android:name="com.wbd.stream" />
+        <package android:name="com.apple.atve.androidtv.appletv" />
+        <package android:name="com.mubi" />
+        <package android:name="com.crunchyroll.crunchyroid" />
+        <package android:name="com.hulu.livingroomplus" />
+        <package android:name="com.hulu.plus" />
+        <package android:name="com.tubitv" />
+        <package android:name="com.kanopy" />
+        <package android:name="com.hoopladigital.android" />
+        <package android:name="jp.unext.mediaplayer" />
+        <package android:name="jp.unext.tv.player" />
+        <package android:name="no.nrk.tv" />
+        <package android:name="se.svt.android.svtplay" />
+        <package android:name="com.yle.webtv" />
     </queries>
 
     <application
@@ -37,6 +63,15 @@
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- "Decide when clicked": Projectivy opens it for every wallpaper and it opens the title (OpenActivity) -->
+        <activity
+            android:name=".OpenActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.NoDisplay" />
 
         <receiver
             android:name=".Updater$InstallResultReceiver"
