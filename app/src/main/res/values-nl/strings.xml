@@ -466,6 +466,11 @@
     <string name="update_install">Installeren</string>
     <string name="update_not_now">Niet nu</string>
     <string name="about_version_update">%1$s · versie %2$s beschikbaar</string>
+    <string name="about_version_check">%1$s · druk om naar updates te zoeken</string>
+    <string name="update_checking">Zoeken naar updates…</string>
+    <string name="update_found">Versie %1$s is beschikbaar: installeer hem bovenaan de instellingen</string>
+    <string name="update_none">Je hebt de nieuwste versie</string>
+    <string name="update_check_failed">Kon niet naar updates zoeken</string>
     <string name="use_in_projectivy_title">Gebruiken in Projectivy</string>
     <string name="use_in_projectivy_desc">Opent de instellingen van Projectivy: Weergave › Achtergrond › Launcher achtergrond › 🔌 Sofadrop</string>
     <string name="use_in_projectivy_path">In Projectivy: Weergave › Achtergrond › Launcher achtergrond › 🔌 Sofadrop</string>

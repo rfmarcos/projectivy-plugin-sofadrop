@@ -32,6 +32,9 @@ object Updater {
     fun repo(): String? =
         Regex("github\\.com/([^/]+/[^/#?]+)").find(BuildConfig.SOURCE_URL)?.groupValues?.get(1)?.removeSuffix(".git")
 
+    /** True when this build looks for updates: it has a repository, and it isn't the Dev build. */
+    val canCheck: Boolean get() = repo() != null && !BuildConfig.DEBUG
+
     /** True when the last check found a release newer than this build. */
     val available: Boolean get() = isNewer(Settings.updateVersion, BuildConfig.VERSION_NAME) && Settings.updateApkUrl.isNotBlank()
 
@@ -50,7 +53,7 @@ object Updater {
     /** Look for a newer release, at most every 12 hours unless [force]; network errors are only logged. */
     fun check(force: Boolean = false) {
         // The Dev build must not offer to "update" itself to the release
-        val repo = repo()?.takeUnless { BuildConfig.DEBUG } ?: return
+        val repo = repo()?.takeIf { canCheck } ?: return
         if (!force && System.currentTimeMillis() - Settings.updateCheckedAt < CHECK_EVERY) return
         try {
             val request = Request.Builder().url("https://api.github.com/repos/$repo/releases/latest")

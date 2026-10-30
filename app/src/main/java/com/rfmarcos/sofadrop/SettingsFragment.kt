@@ -42,10 +42,7 @@ class SettingsFragment : PreviewSettingsFragment() {
             actions += action(ID_USE_IN_PROJECTIVY, R.drawable.ic_act_tv, getString(R.string.use_in_projectivy_title),
                 getString(R.string.use_in_projectivy_desc)).multilineDescription(true).build()
         }
-        if (Updater.available) {
-            actions += action(ID_APP_UPDATE, R.drawable.ic_act_refresh, getString(R.string.update_title), updateText())
-                .multilineDescription(true).build()
-        }
+        if (Updater.available) actions += updateAction()
         // "Update now" also carries the status, so there is a single place to look
         actions += action(ID_GENERATE, R.drawable.ic_act_refresh, getString(R.string.action_generate_now), statusText())
             .multilineDescription(true).build()
@@ -76,7 +73,7 @@ class SettingsFragment : PreviewSettingsFragment() {
         handler.post(statusRefresher)
         // Back from the system installer (cancelled, or blocked by Play Protect): offer the update again
         updateDescription(ID_APP_UPDATE, updateText())
-        background({ Updater.check() }) { }
+        background({ Updater.check() }) { showUpdate() }
     }
 
     override fun onPause() {
@@ -134,6 +131,17 @@ class SettingsFragment : PreviewSettingsFragment() {
 
     private fun updateText() = getString(if (hasNotes()) R.string.update_desc_notes else R.string.update_desc,
         Settings.updateVersion, BuildConfig.VERSION_NAME)
+
+    // Opens the notes first when the release has them (onGuidedActionClicked)
+    private fun updateAction(): GuidedAction =
+        action(ID_APP_UPDATE, R.drawable.ic_act_refresh, getString(R.string.update_title), updateText()).multilineDescription(true).build()
+
+    /** Offer an update found after the screen opened, below the first-run hint, without reopening the screen. */
+    private fun showUpdate() {
+        if (!isAdded || !Updater.available || findActionById(ID_APP_UPDATE) != null) return
+        val index = if (findActionById(ID_USE_IN_PROJECTIVY) != null) 1 else 0
+        actions = actions.toMutableList().apply { add(index, updateAction()) }
+    }
 
     /** Download and install the new version; Android first asks to allow Sofadrop to install apps. */
     private fun installUpdate() {
