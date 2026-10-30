@@ -4,6 +4,7 @@ import android.app.ActivityManager
 import android.content.Context
 import android.os.Build
 import java.io.File
+import java.text.Normalizer
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -49,8 +50,8 @@ class GenerationLog(private val context: Context) {
     companion object {
         private val DATE = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US)
         private const val HEADER_LINES = 4
-        /** Bytes of the QR summary: big QR codes are hard to scan from the sofa. */
-        const val SUMMARY_LIMIT = 1400
+        /** Bytes of the QR summary: big QR codes are hard to scan from the sofa (800 is a 89-module code). */
+        const val SUMMARY_LIMIT = 800
 
         private fun file(context: Context) = File(context.filesDir, "last-generation.txt")
 
@@ -80,8 +81,18 @@ class GenerationLog(private val context: Context) {
                 if (size > limit) break
                 kept += line
             }
-            return (head + kept + "… ${middle.size - kept.size} more lines" + result).joinToString("\n")
+            return (head + kept + "... ${middle.size - kept.size} more lines" + result).joinToString("\n")
         }
+
+        /**
+         * [log] for its QR code: the [summary] of it in plain ASCII. "·", "…" and accents would be encoded
+         * as ISO-8859-1, which some phone readers show garbled, and each takes two bytes in UTF-8.
+         */
+        fun qrText(log: String): String = summary(
+            Normalizer.normalize(log.replace("·", "-").replace("…", "..."), Normalizer.Form.NFD).replace(NON_ASCII, "")
+        )
+
+        private val NON_ASCII = Regex("[^\\x00-\\x7F]")
     }
 }
 

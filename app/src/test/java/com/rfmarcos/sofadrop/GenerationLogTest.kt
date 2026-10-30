@@ -34,6 +34,15 @@ class GenerationLogTest {
     }
 
     @Test
+    fun qrTextIsAscii() {
+        val log = (header + "  movie/1 Amélie at 3840 px: OutOfMemoryError" + "Generated 10 wallpapers · 40 s").joinToString("\n")
+        val text = GenerationLog.qrText(log)
+        assertTrue(text, text.all { it.code < 128 })
+        assertTrue(text, text.startsWith("Sofadrop 1.2.0 (5) - 2026-10-29 18:40\n"))
+        assertTrue(text, text.contains("Amelie"))
+    }
+
+    @Test
     fun describeLeavesOutQueries() {
         val error = IOException("HTTP 500 for https://api.mdblist.com/lists/user/top?apikey=secret123&limit=100")
         val text = GenerationLog.describe(error)

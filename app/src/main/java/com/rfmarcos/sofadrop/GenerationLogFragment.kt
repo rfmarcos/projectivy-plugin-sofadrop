@@ -31,7 +31,7 @@ class GenerationLogFragment : BaseSettingsFragment() {
     }
 
     override fun onGuidedActionClicked(action: GuidedAction) {
-        if (action.id == ID_QR) TextQrDialog.newInstance(GenerationLog.summary(log)).show(parentFragmentManager, "log")
+        if (action.id == ID_QR) TextQrDialog.newInstance(GenerationLog.qrText(log)).show(parentFragmentManager, "log")
     }
 
     companion object {
