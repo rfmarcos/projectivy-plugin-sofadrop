@@ -27,9 +27,6 @@ object ClickTargets {
         // An app that doesn't take that kind of link would fail silently. Not the trailer: whatever opens
         // YouTube links (its phone app, a browser) is hidden from Sofadrop, and something always does
         val apps = (platforms + listOfNotNull(app)).filter { it.resolveActivity(context.packageManager) != null }
-            // An app already open (Nuvio, Apple TV…) only comes to the front and stays on what it showed:
-            // started afresh it reads the link
-            .map { it.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK) }
         return (apps + listOfNotNull(trailer)).map { it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
     }
 
