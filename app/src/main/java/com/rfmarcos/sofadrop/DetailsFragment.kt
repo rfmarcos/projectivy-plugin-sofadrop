@@ -7,8 +7,9 @@ import androidx.leanback.widget.GuidanceStylist.Guidance
 import androidx.leanback.widget.GuidedAction
 
 /**
- * How each wallpaper looks: style, language (and per part), synopsis, footer (list source / streaming
- * services) and resolution. Rows of the parts the style hides stay in place, disabled.
+ * How each wallpaper looks: style, language and resolution here, and a screen for each part of it
+ * (languages of each part, header, synopsis and cast, footer, what a click opens). Rows of the parts
+ * the style hides stay in place, disabled.
  */
 class DetailsFragment : PreviewSettingsFragment() {
 
@@ -32,62 +33,25 @@ class DetailsFragment : PreviewSettingsFragment() {
                     Settings.STYLES.map { styleDescription(context, it) })).build(),
             choice(ID_LANGUAGE, R.drawable.ic_act_language, R.string.setting_language_title, Languages.displayName(Settings.language),
                 Languages.OPTIONS.values.toList()),
-            action(ID_PART_LANGUAGES, R.drawable.ic_act_language, getString(R.string.part_languages_title), PartLanguagesFragment.summary(context))
-                .hasNext(true).build().hiddenBy(Settings.drawsLogo),
-            action(ID_HEADER, R.drawable.ic_act_heart, getString(R.string.header_title), HeaderFragment.summary(context)).hasNext(true).build()
+            screen(ID_PART_LANGUAGES, R.drawable.ic_act_language, R.string.part_languages_title, PartLanguagesFragment.summary(context))
+                .hiddenBy(Settings.drawsLogo),
+            screen(ID_HEADER, R.drawable.ic_act_heart, R.string.header_title, HeaderFragment.summary(context)).hiddenBy(Settings.drawsDetails),
+            screen(ID_SYNOPSIS_CAST, R.drawable.ic_act_count, R.string.synopsis_cast_title, SynopsisCastFragment.summary(context))
                 .hiddenBy(Settings.drawsDetails),
-            choice(ID_SYNOPSIS, R.drawable.ic_act_count, R.string.synopsis_title, synopsisLabel(context, Settings.overviewLines),
-                Settings.OVERVIEW_OPTIONS.map { synopsisLabel(context, it) }).hiddenBy(Settings.drawsDetails),
-            action(ID_CAST, R.drawable.ic_act_account, getString(R.string.cast_title), castLabel(context, Settings.showCast))
-                .subActions(options(ID_CAST, listOf(false, true).map { castLabel(context, it) }, castLabel(context, Settings.showCast),
-                    listOf(null, getString(R.string.cast_shown_desc)))).build().hiddenBy(Settings.drawsDetails),
-            castPhotosAction().hiddenBy(Settings.drawsDetails),
-            action(ID_FOOTER, R.drawable.ic_act_list, getString(R.string.footer_title), footerLabel(context, footerIndex()))
-                // the fallback option is the one that needs explaining
-                .subActions(options(ID_FOOTER, (0..4).map { footerLabel(context, it) }, footerLabel(context, footerIndex()),
-                    listOf(null, null, null, getString(R.string.footer_fallback_desc)))).build().hiddenBy(Settings.drawsDetails),
-            countryAction().hiddenBy(Settings.drawsDetails),
+            screen(ID_FOOTER, R.drawable.ic_act_list, R.string.footer_title, FooterFragment.summary(context)).hiddenBy(Settings.drawsDetails),
             action(ID_RESOLUTION, R.drawable.ic_act_hd, getString(R.string.setting_resolution_title), resolutionLabel(context, Settings.outputWidth))
                 .subActions(options(ID_RESOLUTION, Settings.WIDTH_OPTIONS.map { resolutionLabel(context, it) }, resolutionLabel(context, Settings.outputWidth),
                     Settings.WIDTH_OPTIONS.map { width ->
                         if (width > 1920 && DeviceMemory.tightFor4k(context)) getString(R.string.resolution_low_memory) else null
                     }))
                 .build(),
-            action(ID_CLICK, R.drawable.ic_act_movie, getString(R.string.click_action_title), clickLabel(context, Settings.clickAction))
-                .subActions(options(ID_CLICK, Settings.CLICK_ACTIONS.map { clickLabel(context, it) }, clickLabel(context, Settings.clickAction),
-                    listOf(getString(R.string.click_trailer_desc), null))).build(),
-            action(ID_PREVIEW_PIN, R.drawable.ic_act_preview, getString(R.string.preview_pin_title), PreviewPinFragment.summary(context))
-                .hasNext(true).build(),
+            screen(ID_CLICK, R.drawable.ic_act_movie, R.string.click_action_title, ClickActionFragment.summary(context)),
+            screen(ID_PREVIEW_PIN, R.drawable.ic_act_preview, R.string.preview_pin_title, PreviewPinFragment.summary(context)),
         )
     }
 
-    /** Country of the streaming services; only meaningful while the footer shows them (kept visible so rows don't jump). */
-    private fun countryAction(): GuidedAction {
-        val action = choice(ID_COUNTRY, R.drawable.ic_act_tv, R.string.streaming_country_title,
-            if (Settings.showProviders) countryLabel(requireContext()) else getString(R.string.streaming_country_disabled),
-            listOf(getString(R.string.region_auto, Languages.regionOf(Settings.language))) + Languages.REGIONS.map { "${Languages.countryName(it)} ($it)" },
-            selected = countryLabel(requireContext()))
-        action.isEnabled = Settings.showProviders
-        return action
-    }
-
-    /** Faces next to the cast names; only meaningful while the cast is shown (kept visible so rows don't jump). */
-    private fun castPhotosAction(): GuidedAction {
-        val context = requireContext()
-        val action = action(ID_CAST_PHOTOS, R.drawable.ic_act_account, getString(R.string.cast_photos_title),
-            if (Settings.showCast) castPhotosLabel(context, Settings.castPhotos) else getString(R.string.cast_photos_disabled))
-            .subActions(options(ID_CAST_PHOTOS, Settings.CAST_PHOTO_MODES.map { castPhotosLabel(context, it) }, castPhotosLabel(context, Settings.castPhotos),
-                listOf(null, getString(R.string.cast_photos_grouped_desc), getString(R.string.cast_photos_each_desc)))).build()
-        action.isEnabled = Settings.showCast
-        return action
-    }
-
-    private fun replaceRow(action: GuidedAction) {
-        val position = findActionPositionById(action.id)
-        refreshActions(actions.toMutableList().also { it[position] = action }) { DetailsFragment() }
-    }
-
-    private fun replaceCountryRow() = replaceRow(countryAction().hiddenBy(Settings.drawsDetails))
+    /** Row opening a sub-screen, with the summary of its settings. */
+    private fun screen(id: Long, icon: Int, title: Int, summary: String) = action(id, icon, getString(title), summary).hasNext(true).build()
 
     // Back from a sub-screen: its summary may have changed
     override fun onResume() {
@@ -99,6 +63,9 @@ class DetailsFragment : PreviewSettingsFragment() {
         when (action.id) {
             ID_PART_LANGUAGES -> add(parentFragmentManager, PartLanguagesFragment())
             ID_HEADER -> add(parentFragmentManager, HeaderFragment())
+            ID_SYNOPSIS_CAST -> add(parentFragmentManager, SynopsisCastFragment())
+            ID_FOOTER -> add(parentFragmentManager, FooterFragment())
+            ID_CLICK -> add(parentFragmentManager, ClickActionFragment())
             ID_PREVIEW_PIN -> add(parentFragmentManager, PreviewPinFragment())
         }
     }
@@ -110,66 +77,26 @@ class DetailsFragment : PreviewSettingsFragment() {
                 Settings.style = Settings.STYLES[index]
                 // Rows of the parts it hides (or brings back) change
                 collapseSubActions()
-                refreshActions(rows()) { DetailsFragment() }
             }
-            ID_LANGUAGE -> {
-                Settings.language = Languages.OPTIONS.keys.elementAt(index)
-                updateDescription(ID_LANGUAGE, Languages.displayName(Settings.language))
-                updateDescription(ID_PART_LANGUAGES, PartLanguagesFragment.summary(requireContext()))
-                replaceCountryRow() // "Automatic (XX)" follows the language
-            }
-            ID_SYNOPSIS -> {
-                Settings.overviewLines = Settings.OVERVIEW_OPTIONS[index]
-                updateDescription(ID_SYNOPSIS, synopsisLabel(requireContext(), Settings.overviewLines))
-            }
-            ID_CAST -> {
-                Settings.showCast = index == 1
-                updateDescription(ID_CAST, castLabel(requireContext(), Settings.showCast))
-                replaceRow(castPhotosAction().hiddenBy(Settings.drawsDetails))
-            }
-            ID_CAST_PHOTOS -> {
-                Settings.castPhotos = Settings.CAST_PHOTO_MODES[index]
-                updateDescription(ID_CAST_PHOTOS, castPhotosLabel(requireContext(), Settings.castPhotos))
-            }
-            ID_FOOTER -> {
-                Settings.showSource = index == 1 || index >= 3
-                Settings.showProviders = index >= 2
-                Settings.sourceFallback = index == 3
-                updateDescription(ID_FOOTER, footerLabel(requireContext(), index))
-                replaceCountryRow()
-            }
-            ID_COUNTRY -> {
-                Settings.regionOverride = if (index == 0) "" else Languages.REGIONS[index - 1]
-                updateDescription(ID_COUNTRY, countryLabel(requireContext()))
-            }
-            ID_RESOLUTION -> {
-                Settings.outputWidth = Settings.WIDTH_OPTIONS[index]
-                updateDescription(ID_RESOLUTION, resolutionLabel(requireContext(), Settings.outputWidth))
-            }
-            ID_CLICK -> {
-                // Projectivy gets it with the next request; nothing to preview or regenerate
-                Settings.clickAction = Settings.CLICK_ACTIONS[index]
-                updateDescription(ID_CLICK, clickLabel(requireContext(), Settings.clickAction))
-                return true
-            }
+            ID_LANGUAGE -> Settings.language = Languages.OPTIONS.keys.elementAt(index)
+            ID_RESOLUTION -> Settings.outputWidth = Settings.WIDTH_OPTIONS[index]
         }
+        // The language shows in the summaries of other rows (the footer's "Automatic" country, the trailer's)
+        refreshActions(rows()) { DetailsFragment() }
         schedulePreview(300)
         return true
     }
 
     companion object {
         private const val ID_LANGUAGE = 1L
-        private const val ID_COUNTRY = 2L
         private const val ID_RESOLUTION = 3L
-        private const val ID_SYNOPSIS = 4L
         private const val ID_FOOTER = 5L
         private const val ID_PART_LANGUAGES = 6L
         private const val ID_HEADER = 8L
         private const val ID_PREVIEW_PIN = 9L
-        private const val ID_CAST = 10L
         private const val ID_STYLE = 11L
         private const val ID_CLICK = 12L
-        private const val ID_CAST_PHOTOS = 13L
+        private const val ID_SYNOPSIS_CAST = 14L
 
         fun styleLabel(context: Context, style: String) = context.getString(
             when (style) {
@@ -186,49 +113,6 @@ class DetailsFragment : PreviewSettingsFragment() {
                 else -> R.string.style_full_desc
             }
         )
-
-        fun clickLabel(context: Context, action: String) =
-            context.getString(if (action == Settings.CLICK_TRAILER) R.string.click_trailer else R.string.click_none)
-
-        fun castLabel(context: Context, shown: Boolean) = context.getString(if (shown) R.string.cast_shown else R.string.cast_hidden)
-
-        fun castPhotosLabel(context: Context, mode: String) = context.getString(
-            when (mode) {
-                Settings.CAST_PHOTOS_GROUPED -> R.string.cast_photos_grouped
-                Settings.CAST_PHOTOS_EACH -> R.string.cast_photos_each
-                else -> R.string.cast_photos_hidden
-            }
-        )
-
-        /** 0 nothing, 1 list source, 2 streaming services, 3 streaming or list source, 4 both. */
-        private fun footerIndex() = when {
-            !Settings.showProviders -> if (Settings.showSource) 1 else 0
-            !Settings.showSource -> 2
-            Settings.sourceFallback -> 3
-            else -> 4
-        }
-
-        fun footerLabel(context: Context, index: Int) = context.getString(
-            when (index) {
-                1 -> R.string.footer_source
-                2 -> R.string.footer_streaming
-                3 -> R.string.footer_fallback
-                4 -> R.string.footer_both
-                else -> R.string.footer_none
-            }
-        )
-
-        fun synopsisLabel(context: Context, lines: Int) = context.getString(
-            when (lines) {
-                0 -> R.string.synopsis_hidden
-                2 -> R.string.synopsis_short
-                else -> R.string.synopsis_full
-            }
-        )
-
-        fun countryLabel(context: Context): String =
-            if (Settings.regionOverride.isEmpty()) context.getString(R.string.region_auto, Languages.regionOf(Settings.language))
-            else "${Languages.countryName(Settings.regionOverride)} (${Settings.regionOverride})"
 
         fun resolutionLabel(context: Context, width: Int) =
             context.getString(if (width > 1920) R.string.resolution_2160 else R.string.resolution_1080)

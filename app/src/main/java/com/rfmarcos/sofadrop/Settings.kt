@@ -109,6 +109,8 @@ object Settings {
     private const val KEY_SYNOPSIS_LANGUAGE = "synopsis_language"
     private const val KEY_STYLE = "style"
     private const val KEY_CLICK_ACTION = "click_action"
+    private const val KEY_TRAILER_LANGUAGE = "trailer_language"
+    private const val KEY_TRAILER_FALLBACK = "trailer_fallback"
     private const val KEY_TMDB_SESSION = "_tmdb_session_id"
     private const val KEY_TMDB_ACCOUNT = "_tmdb_account_id"
     private const val KEY_TMDB_USER = "_tmdb_user"
@@ -149,6 +151,17 @@ object Settings {
     const val CLICK_TRAILER = "trailer"
     const val CLICK_NONE = "none"
     val CLICK_ACTIONS = listOf(CLICK_TRAILER, CLICK_NONE)
+    /** Click action opening the title in a [TitleApp]: "app:nuvio". */
+    const val CLICK_APP_PREFIX = "app:"
+    /**
+     * With no official trailer in the trailer language: the English one, the original-language one (then
+     * any trailer for both), any trailer, or none.
+     */
+    const val TRAILER_ENGLISH = "english"
+    const val TRAILER_ORIGINAL = "original"
+    const val TRAILER_ANY = "any"
+    const val TRAILER_NONE = "none"
+    val TRAILER_FALLBACKS = listOf(TRAILER_ENGLISH, TRAILER_ORIGINAL, TRAILER_ANY, TRAILER_NONE)
     /** Cast photos: none, all together before the names (overlapping), or each one before its name. */
     const val CAST_PHOTOS_NONE = "none"
     const val CAST_PHOTOS_GROUPED = "grouped"
@@ -326,10 +339,24 @@ object Settings {
         get() = preferences.getString(KEY_STYLE, null)?.takeIf { it in STYLES } ?: STYLE_FULL
         set(value) = preferences.edit { putString(KEY_STYLE, value) }
 
-    /** See [CLICK_ACTIONS]; applied when Projectivy asks for the wallpapers, so it needs no new set. */
+    /** See [CLICK_ACTIONS] and [CLICK_APP_PREFIX]; applied when Projectivy asks for the wallpapers, so it needs no new set. */
     var clickAction: String
-        get() = preferences.getString(KEY_CLICK_ACTION, null)?.takeIf { it in CLICK_ACTIONS } ?: CLICK_TRAILER
+        get() = preferences.getString(KEY_CLICK_ACTION, null)?.takeIf { it in CLICK_ACTIONS || clickApp(it) != null } ?: CLICK_TRAILER
         set(value) = preferences.edit { putString(KEY_CLICK_ACTION, value) }
+
+    /** The app of a click action that opens the title in one ("app:nuvio"), else null. */
+    fun clickApp(action: String = clickAction): TitleApp? =
+        action.takeIf { it.startsWith(CLICK_APP_PREFIX) }?.let { TitleApp.of(it.removePrefix(CLICK_APP_PREFIX)) }
+
+    /** See [PART_LANGUAGES]: "Automatic" is the wallpaper language; [trailerFallback] applies when there is none in it. */
+    var trailerLanguage: String
+        get() = partLanguage(KEY_TRAILER_LANGUAGE)
+        set(value) = preferences.edit { putString(KEY_TRAILER_LANGUAGE, value) }
+
+    /** See [TRAILER_FALLBACKS]. */
+    var trailerFallback: String
+        get() = preferences.getString(KEY_TRAILER_FALLBACK, null)?.takeIf { it in TRAILER_FALLBACKS } ?: TRAILER_ENGLISH
+        set(value) = preferences.edit { putString(KEY_TRAILER_FALLBACK, value) }
 
     /** The style draws the logo (or the title instead). */
     val drawsLogo: Boolean get() = style != STYLE_BACKDROP
@@ -698,6 +725,7 @@ object Settings {
             "ratingage:$maxRatingAge".takeIf { maxRatingAge > 0 },
             "order:${headerOrder.joinToString(",")}".takeIf { headerOrder != HEADER_BLOCKS },
             "minratings:$minRatings".takeIf { minRatings != 2 }, "cast".takeIf { showCast }, "castphotos:$castPhotos".takeIf { showCast && castPhotos != CAST_PHOTOS_GROUPED }, "style:$style".takeIf { style != STYLE_FULL },
+            "trailerlang:$trailerLanguage".takeIf { trailerLanguage != LANGUAGE_AUTO }, "trailerfallback:$trailerFallback".takeIf { trailerFallback != TRAILER_ENGLISH },
             "genres:${genreFilter.only}:${genreFilter.ids.sorted()}".takeIf { !genreFilter.isOff })).joinToString("|")
 
     /** True when the current wallpapers were generated with different settings. */

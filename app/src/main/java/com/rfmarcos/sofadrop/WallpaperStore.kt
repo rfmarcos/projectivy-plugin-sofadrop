@@ -17,6 +17,8 @@ data class StoredWallpaper(
     val source: String = "",
     /** YouTube trailer opened from Projectivy (null: none, or a set made before it was stored). */
     val trailerKey: String? = null,
+    /** "tt0133093", for the apps that open a title by its IMDb id (see [TitleApp]). */
+    val imdbId: String? = null,
 )
 
 /**

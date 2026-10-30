@@ -26,7 +26,7 @@ class WallpaperFactory(context: Context, val width: Int) {
 
     val client = TmdbClient(Settings.token, context.cacheDir)
     val catalog = TmdbCatalog(client, Settings.language, Settings.region, Settings.drawsDetails && Settings.showProviders,
-        Settings.partLanguages, Settings.drawsDetails && Settings.showCast)
+        Settings.partLanguages, Settings.drawsDetails && Settings.showCast, Settings.resolve(Settings.trailerLanguage), Settings.trailerFallback)
     /** Faces next to the cast names: only their images are downloaded, and only then. */
     private val castPhotos = if (Settings.drawsDetails) Settings.castPhotos else Settings.CAST_PHOTOS_NONE
     private val renderers = mutableMapOf<Int, WallpaperRenderer>()

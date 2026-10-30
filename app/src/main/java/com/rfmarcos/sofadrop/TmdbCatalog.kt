@@ -60,11 +60,12 @@ class TmdbCatalog(
     /** The logo and synopsis may use other languages than the rest of the wallpaper. */
     private val parts: PartLanguages = PartLanguages(language, language),
     private val showCast: Boolean = false,
+    /** TMDB locale of the trailer, null for the title's original language; [trailerFallback] is a [Settings.TRAILER_FALLBACKS]. */
+    private val trailerLanguage: String? = language,
+    private val trailerFallback: String = Settings.TRAILER_ENGLISH,
 ) {
     private val languageCode = Languages.code(language)
     private val texts = Languages.texts(language)
-    /** Trailers asked for with the details: in the synopsis language (the general one when it's the original, unknown until then). */
-    private val videoLanguage = parts.synopsis?.let(Languages::code) ?: languageCode
     private val details = ConcurrentHashMap<TitleRef, JsonObject>()
     private val translations = ConcurrentHashMap<TitleRef, List<JsonObject>>()
 
@@ -231,7 +232,7 @@ class TmdbCatalog(
     private fun details(ref: TitleRef): JsonObject? =
         details[ref] ?: client.get("${ref.type.path}/${ref.tmdbId}?language=$language&append_to_response=keywords,videos," +
             (if (ref.type == MediaType.TV) "external_ids,content_ratings" else "release_dates") +
-            "&include_video_language=$videoLanguage,en,null")
+            "&include_video_language=$VIDEO_LANGUAGES")
             ?.also { details[ref] = it }
 
     // --- Wallpaper data ---
@@ -280,9 +281,19 @@ class TmdbCatalog(
             imdbId = item.str("imdb_id") ?: item.obj("external_ids")?.str("imdb_id"),
             certification = Certifications.of(type, item, region)?.let { Certifications.label(region, it) },
             cast = if (showCast) cast(ref) else emptyList(),
-            trailerKey = trailerKey(item.obj("videos"), parts.synopsis?.let(Languages::code) ?: originalCode(item)),
+            trailerKey = trailerKey(item.obj("videos"), trailerLanguages(item), anyTrailer = trailerFallback != Settings.TRAILER_NONE),
         )
     }
+
+    /** Languages an official trailer is looked for in, in order: the trailer language, then its fallback. */
+    private fun trailerLanguages(item: JsonObject): List<String> = listOfNotNull(
+        trailerLanguage?.let(Languages::code) ?: originalCode(item),
+        when (trailerFallback) {
+            Settings.TRAILER_ENGLISH -> "en"
+            Settings.TRAILER_ORIGINAL -> originalCode(item)
+            else -> null
+        },
+    ).distinct()
 
     // Its own request, only for the titles drawn: a series' aggregate credits (whole run, by episodes)
     // can be 300 KB, and its plain credits only list the latest season (no Pedro Pascal in The Last of Us)
@@ -360,19 +371,26 @@ class TmdbCatalog(
             .take(MAX_CAST)
 
         /**
-         * YouTube key of the video to open from the wallpaper: an official trailer in [language] (a language
-         * code, "es"), else an official one in English, else any trailer, else a teaser; the newest of each.
+         * Videos asked for with the details: the trailer and its fallback may be in any wallpaper language or
+         * the title's original one, unknown until then, so all of them (and those without a language).
          */
-        fun trailerKey(videos: JsonObject?, language: String): String? {
+        private val VIDEO_LANGUAGES = (Languages.OPTIONS.keys.map(Languages::code) +
+            listOf("ko", "ja", "zh", "hi", "ru", "tr", "sv", "da", "no", "fi", "th", "null")).distinct().joinToString(",")
+
+        /**
+         * YouTube key of the video to open from the wallpaper: an official trailer in the first of [languages]
+         * (language codes, "es") that has one, else with [anyTrailer] any trailer, else a teaser; the newest of each.
+         */
+        fun trailerKey(videos: JsonObject?, languages: List<String>, anyTrailer: Boolean = true): String? {
             val youTube = videos?.objects("results").orEmpty()
                 .filter { it.str("site") == "YouTube" && !it.str("key").isNullOrBlank() }
                 .sortedByDescending { it.str("published_at").orEmpty() }
             fun JsonObject.isOfficialTrailer() = str("type") == "Trailer" && bool("official") == true
-            return (youTube.firstOrNull { it.isOfficialTrailer() && it.str("iso_639_1") == language }
-                ?: youTube.firstOrNull { it.isOfficialTrailer() && it.str("iso_639_1") == "en" }
-                ?: youTube.firstOrNull { it.str("type") == "Trailer" }
-                ?: youTube.firstOrNull { it.str("type") == "Teaser" })
-                ?.str("key")
+            for (language in languages) {
+                youTube.firstOrNull { it.isOfficialTrailer() && it.str("iso_639_1") == language }?.let { return it.str("key") }
+            }
+            if (!anyTrailer) return null
+            return (youTube.firstOrNull { it.str("type") == "Trailer" } ?: youTube.firstOrNull { it.str("type") == "Teaser" })?.str("key")
         }
 
         private val PROVIDER_VARIANT_SUFFIX = Regex(

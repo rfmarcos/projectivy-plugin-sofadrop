@@ -1,6 +1,7 @@
 package com.rfmarcos.sofadrop
 
 import android.app.Service
+import android.content.Context
 import android.content.Intent
 import android.os.IBinder
 import android.util.Log
@@ -50,7 +51,7 @@ class WallpaperProviderService : Service() {
                     source = "https://www.themoviedb.org/${wallpaper.type}/${wallpaper.tmdbId}",
                     author = "TMDB",
                     // "Watch" in Projectivy's "About this wallpaper" and a play button on its status bar
-                    actionUri = actionUri(wallpaper),
+                    actionUri = actionUri(this@WallpaperProviderService, wallpaper),
                 )
             }
         }
@@ -66,12 +67,26 @@ class WallpaperProviderService : Service() {
     companion object {
         private const val TAG = "SofadropService"
 
-        /** What Projectivy opens from [wallpaper] (see [Settings.clickAction]); applied when served, without regenerating. */
-        fun actionUri(wallpaper: StoredWallpaper): String? = when (Settings.clickAction) {
-            Settings.CLICK_TRAILER -> wallpaper.trailerKey?.let {
-                Intent(Intent.ACTION_VIEW, "https://www.youtube.com/watch?v=$it".toUri()).toUri(Intent.URI_INTENT_SCHEME)
+        private const val YOUTUBE_TV = "com.google.android.youtube.tv"
+
+        /**
+         * What Projectivy opens from [wallpaper] (see [Settings.clickAction]); applied when served, without
+         * regenerating. An app that isn't installed falls back to the trailer.
+         */
+        fun actionUri(context: Context, wallpaper: StoredWallpaper): String? {
+            if (Settings.clickAction == Settings.CLICK_NONE) return null
+            Settings.clickApp()?.let { app ->
+                app.installedPackage(context)?.let { app.intent(context, it, wallpaper) }?.let { return it.toUri(Intent.URI_INTENT_SCHEME) }
             }
-            else -> null
+            return wallpaper.trailerKey?.let { key ->
+                // Several apps open YouTube links on a TV (browsers, Downloader…): YouTube's own, without asking
+                Intent(Intent.ACTION_VIEW, "https://www.youtube.com/watch?v=$key".toUri())
+                    .apply { if (isInstalled(context, YOUTUBE_TV)) setPackage(YOUTUBE_TV) }
+                    .toUri(Intent.URI_INTENT_SCHEME)
+            }
         }
+
+        private fun isInstalled(context: Context, packageName: String) =
+            runCatching { context.packageManager.getPackageInfo(packageName, 0) }.isSuccess
     }
 }

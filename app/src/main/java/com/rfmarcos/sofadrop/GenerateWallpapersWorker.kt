@@ -157,7 +157,7 @@ class GenerateWallpapersWorker(context: Context, params: WorkerParameters) : Wor
                 } finally {
                     bitmap.recycle()
                 }
-                StoredWallpaper(name, info.title, info.type.path, info.id, plan.source.key, info.trailerKey)
+                StoredWallpaper(name, info.title, info.type.path, info.id, plan.source.key, info.trailerKey, info.imdbId)
             }
         } catch (e: TmdbException) {
             throw e
