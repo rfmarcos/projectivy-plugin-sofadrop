@@ -49,6 +49,7 @@ class GenerateWallpapersWorker(context: Context, params: WorkerParameters) : Wor
         Settings.generating = true
         return try {
             val start = System.currentTimeMillis()
+            val requests = TmdbClient.requestCounts()
             val stored = withPlatformLinks(generate(generation, log), log)
             // Every list failing (e.g. no network) or no title fitting in memory is that error, not "no titles"
             if (stored.isEmpty()) throw when {
@@ -68,6 +69,9 @@ class GenerateWallpapersWorker(context: Context, params: WorkerParameters) : Wor
             ).joinToString(" · ")
             notifyProjectivy(applicationContext)
             Log.i(TAG, "Generated ${stored.size} wallpapers (${Settings.language}) in ${System.currentTimeMillis() - start} ms, Projectivy notified")
+            // What a generation costs TMDB (a preview open at the same time counts too)
+            val (api, images, network) = TmdbClient.requestCounts().zip(requests) { now, before -> now - before }
+            log.add("TMDB: $api API requests, $images images, $network not cached")
             log.finish("Generated ${stored.size} wallpapers")
             Result.success()
         } catch (e: Throwable) {

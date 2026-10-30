@@ -18,6 +18,7 @@ import okhttp3.Request
 import java.io.File
 import java.io.IOException
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 
 /** An error no retry fixes; [keyRejected] when TMDB refuses the key. */
 class TmdbException(message: String, val keyRejected: Boolean = false) : IOException(message)
@@ -41,6 +42,7 @@ class TmdbClient(token: String, cacheDir: File) {
         val url = if (isApiKey) "$API_URL$path${separator}api_key=$token" else "$API_URL$path"
         val builder = Request.Builder().url(url).header("accept", "application/json")
         if (!isApiKey) builder.header("Authorization", "Bearer $token")
+        apiRequests.incrementAndGet()
         val body = execute(builder.build(), path) ?: return null
         return json.parseToJsonElement(body.decodeToString()) as? JsonObject
     }
@@ -62,6 +64,7 @@ class TmdbClient(token: String, cacheDir: File) {
     /** Download a TMDB image, e.g. size `original` or `w500`. */
     fun image(filePath: String, size: String = "original"): ByteArray? =
         try {
+            imageRequests.incrementAndGet()
             execute(Request.Builder().url("$IMAGE_URL$size$filePath").build(), filePath)
         } catch (e: IOException) {
             Log.w(TAG, "Image download failed for $filePath: ${e.message}")
@@ -73,6 +76,7 @@ class TmdbClient(token: String, cacheDir: File) {
         repeat(MAX_ATTEMPTS) { attempt ->
             try {
                 http.newCall(request).execute().use { response ->
+                    if (response.networkResponse != null) networkRequests.incrementAndGet()
                     when {
                         response.isSuccessful -> return response.body?.bytes()
                         response.code == 404 -> return null
@@ -97,6 +101,14 @@ class TmdbClient(token: String, cacheDir: File) {
         private const val API_URL = "https://api.themoviedb.org/3/"
         private const val IMAGE_URL = "https://image.tmdb.org/t/p/"
         private const val MAX_ATTEMPTS = 3
+
+        /** Requests made in this process, for the generation log: API calls, images, and those that weren't cached. */
+        val apiRequests = AtomicInteger()
+        val imageRequests = AtomicInteger()
+        val networkRequests = AtomicInteger()
+
+        /** API calls, images and network requests so far: the difference of two of them is what a run made. */
+        fun requestCounts() = listOf(apiRequests.get(), imageRequests.get(), networkRequests.get())
 
         // One client per process: each preview reuses the open connections, and OkHttp wants one Cache per directory
         private var shared: OkHttpClient? = null
