@@ -65,6 +65,7 @@
     <string name="list_trakt_watchlist_movies">Trakt · Jouw kijklijst (films)</string>
     <string name="list_trakt_watchlist_shows">Trakt · Jouw kijklijst (series)</string>
     <string name="list_mdblist">MDBList · %1$s</string>
+    <string name="list_trakt_user">Trakt · %1$s</string>
 
     <!-- Trakt -->
     <string name="setting_trakt_title">Trakt</string>
@@ -72,6 +73,13 @@
     <string name="trakt_login_failed">Kan geen verbinding maken met Trakt (%1$s)</string>
     <string name="trakt_login_expired">De code is verlopen, probeer het opnieuw</string>
     <string name="trakt_login_denied">Toegang is geweigerd op Trakt</string>
+    <string name="trakt_user_lists_title">Lijsten van Trakt-gebruikers</string>
+    <string name="trakt_user_lists_summary">Openbare lijsten en je eigen · %1$s</string>
+    <string name="trakt_user_lists_description">Voeg elke openbare Trakt-lijst toe, zonder account: vink een voorgestelde aan of typ gebruiker/lijst (of de URL van de lijst op trakt.tv of app.trakt.tv). Koppel je account (in Accounts) om ook je eigen lijsten te zien, privélijsten inbegrepen.</string>
+    <string name="trakt_user_lists_account_hint">Optioneel · koppel het in Accounts voor je eigen lijsten</string>
+    <string name="trakt_add_desc">Typ gebruiker/lijst of de URL van de lijst</string>
+    <string name="trakt_list_not_found">Lijst niet gevonden: hij bestaat niet of is privé</string>
+    <string name="trakt_failed">Trakt-fout: %1$s</string>
 
     <!-- MDBList -->
     <string name="setting_mdblist_title">MDBList</string>
@@ -90,6 +98,12 @@
     <string name="error_no_token">TMDB-sleutel ontbreekt</string>
     <string name="error_no_lists">Geen lijsten gekozen · huidige achtergronden blijven staan</string>
     <string name="error_no_titles">De gekozen lijsten gaven geen titels</string>
+    <string name="error_memory">Niet genoeg geheugen · probeer 1080p</string>
+    <string name="error_network">Geen verbinding: controleer het internet van de tv</string>
+    <string name="error_tmdb_key">TMDB heeft de sleutel geweigerd</string>
+    <string name="notice_memory_1080">sommige in 1080p: niet genoeg geheugen voor 4K</string>
+    <string name="error_list_unavailable">De Trakt-lijst “%1$s” is verwijderd of privé</string>
+    <string name="notice_list_unavailable">verwijderd of privé op Trakt: %1$s</string>
 
     <!-- QR, accounts, selection, watched, explorer -->
     <string name="close">Sluiten</string>
@@ -272,6 +286,56 @@
     <string name="cast_hidden">Verborgen</string>
     <string name="cast_shown">Onder de samenvatting</string>
     <string name="cast_shown_desc">De hoofdrolspelers, zoveel als er op één regel passen. De voettekst schuift daardoor omlaag.</string>
+    <string name="cast_photos_title">Castfoto\'s</string>
+    <string name="cast_photos_hidden">Alleen namen</string>
+    <string name="cast_photos_grouped">Samen, vóór de namen</string>
+    <string name="cast_photos_grouped_desc">De gezichten van de getoonde acteurs, overlappend. Wie geen foto heeft, krijgt zijn initialen.</string>
+    <string name="cast_photos_disabled">Alleen gebruikt als de cast wordt getoond</string>
+    <string name="cast_photos_each">Elk naast de eigen naam</string>
+    <string name="cast_photos_each_desc">Elk gezicht vlak voor de naam. Er passen misschien minder namen op de regel.</string>
+    <string name="click_action_title">Bij klikken op de achtergrond</string>
+    <string name="click_trailer">Trailer bekijken</string>
+    <string name="click_trailer_desc">Op YouTube</string>
+    <string name="click_none">Niets</string>
+    <string name="click_platforms_header">Je platforms, op volgorde</string>
+    <string name="click_position">%1$de</string>
+    <string name="click_use_at">Gebruiken als %1$de</string>
+    <string name="click_dont_use">Niet gebruiken</string>
+    <string name="click_unused">Niet gebruikt</string>
+    <string name="click_installed">Geïnstalleerd</string>
+    <string name="click_not_installed_skipped">Niet geïnstalleerd: overgeslagen</string>
+    <string name="click_platform_explanation">Gebruikt als de titel in je land op %1$s staat, Wikidata de pagina ervan heeft en de app geïnstalleerd is; anders wordt de volgende geprobeerd. Kies alleen de platforms waarvoor je betaalt.</string>
+    <string name="click_fallback_header">Als hij op geen ervan staat</string>
+    <string name="click_fallback_explanation">Als de titel op geen van je platforms staat, of daar niet geopend kan worden.</string>
+    <string name="click_advanced_header">Geavanceerd</string>
+    <string name="click_at_tap_title">Beslissen bij klikken</string>
+    <string name="click_at_tap_desc">Wijzigingen gelden meteen en als een app niet opent, wordt de volgende geprobeerd</string>
+    <string name="click_at_tap_explanation">Projectivy opent Sofadrop, dat op dat moment kiest wat er opent: dat duurt een ogenblik langer. Uit: het wordt bepaald wanneer Projectivy de achtergronden laadt (elke 10 min).</string>
+    <string name="click_summary_trailer">Trailer</string>
+    <string name="click_summary_more">%1$s en nog %2$d</string>
+    <string name="click_trailer_note">De trailer wordt gekozen als de achtergronden worden gemaakt: een nieuwe taal geldt vanaf de volgende update.</string>
+    <string name="click_app_not_installed">Niet geïnstalleerd · %1$s</string>
+    <string name="synopsis_cast_title">Samenvatting en cast</string>
+    <string name="synopsis_cast_desc">De tekst onder de kopregel. Een kortere samenvatting blijft uit de buurt van de rijen van de launcher; de castregel schuift de voettekst omlaag.</string>
+    <string name="synopsis_cast_summary">Samenvatting: %1$s</string>
+    <string name="cast_summary_hidden">geen cast</string>
+    <string name="cast_summary_names">cast</string>
+    <string name="cast_summary_photos">cast met foto\'s</string>
+    <string name="footer_desc">De onderste regel: de streamingdiensten die elke titel hebben, in het land dat je kiest, en de lijst waar hij vandaan komt.</string>
+    <string name="click_action_desc">Projectivy opent het via het pictogram in de statusbalk of via “Over deze achtergrond”.</string>
+    <string name="click_target_title">Wat het opent</string>
+    <string name="click_open_app">Openen in %1$s</string>
+    <string name="click_app_missing">Openen in %1$s (niet geïnstalleerd: de trailer opent)</string>
+    <string name="click_app_title_desc">Gaat naar de pagina van de titel</string>
+    <string name="click_app_search_desc">Zoekt naar de titel</string>
+    <string name="trailer_language_title">Taal van de trailer</string>
+    <string name="trailer_fallback_title">Als er geen in die taal is</string>
+    <string name="trailer_fallback_english">De Engelse</string>
+    <string name="trailer_fallback_original">Die in de oorspronkelijke taal</string>
+    <string name="trailer_fallback_any">Elke trailer</string>
+    <string name="trailer_fallback_none">Geen</string>
+    <string name="trailer_fallback_then_any">En als die er ook niet is, elke trailer</string>
+    <string name="trailer_fallback_none_desc">De achtergrond opent niets</string>
     <string name="preview_label_pinned">Voorbeeld · %1$s · vastgezet</string>
     <string name="preview_pinned">Getoond in het voorbeeld bij de instellingen · wijzig het bij Achtergronddetails</string>
     <string name="preview_pin_title">Voorbeeldtitel</string>
@@ -311,9 +375,6 @@
     <string name="footer_none">Niets</string>
     <string name="footer_source">Bronlijst</string>
     <string name="footer_streaming">Streamingdiensten</string>
-    <string name="footer_both">Streaming en bronlijst</string>
-    <string name="streaming_country_title">Streamingland</string>
-    <string name="streaming_country_disabled">Alleen gebruikt als de voettekst streamingdiensten toont</string>
     <string name="explore_empty_title">Geen lijsten gekozen</string>
     <string name="explore_empty_desc">Kies lijsten van TMDB, Trakt, Simkl of MDBList</string>
     <string name="viewer_browse">Bladeren</string>
@@ -321,8 +382,18 @@
     <string name="viewer_unpin">Losmaken</string>
     <string name="viewer_pinned">VASTGEZET</string>
     <string name="viewer_position">%1$d van %2$d</string>
-    <string name="footer_fallback">Streaming, of bronlijst</string>
     <string name="footer_fallback_desc">De lijst wordt getoond als geen enkele dienst de titel heeft</string>
+    <string name="footer_source_always">Altijd</string>
+    <string name="footer_source_fallback">Alleen zonder streamingdiensten</string>
+    <string name="footer_layout_title">Indeling</string>
+    <string name="footer_layout_lines">Op twee regels</string>
+    <string name="footer_layout_lines_desc">De lijst onder de streamingdiensten</string>
+    <string name="footer_layout_inline">Op één regel</string>
+    <string name="footer_layout_inline_desc">Als de lijst niet past, wordt de naam ingekort</string>
+    <string name="footer_summary_services">streaming in %1$s</string>
+    <string name="footer_summary_source">bronlijst</string>
+    <string name="footer_summary_fallback">lijst als er geen streamingdienst is</string>
+    <string name="footer_summary_inline">%1$s, op één regel</string>
     <string name="filter_off">Uit</string>
     <string name="filter_on">Aan</string>
     <string name="filters_age_explain">Slaat titels over die langer geleden zijn uitgebracht (of, bij series, voor het laatst uitgezonden)</string>
@@ -350,13 +421,12 @@
     <string name="filters_automatic_note">Standaard geldt dit alleen voor trending, populaire en vergelijkbare lijsten, zodat je kijklijsten en favorieten niet leeg raken.</string>
     <string name="explore_titles_header">Titels · %1$d</string>
     <string name="about_credits_short">TMDB · Trakt · Simkl · MDBList</string>
-    <string name="part_languages_title">Taal per onderdeel</string>
     <string name="part_languages_desc">Het logo en de samenvatting kunnen een andere taal gebruiken dan de rest van de achtergrond. Automatisch volgt de Taal van de achtergrond: %1$s. Bij elk staat wat er moet gebeuren als TMDB niets in die taal heeft.</string>
-    <string name="part_summary_all">Alles in %1$s</string>
     <string name="part_summary_logo">Logo: %1$s</string>
     <string name="part_summary_synopsis">Samenvatting: %1$s</string>
     <string name="part_summary_skips">slaat titels over</string>
     <string name="logo_language_title">Taal van het logo</string>
+    <string name="general_language_title">Algemene taal</string>
     <string name="synopsis_language_title">Taal van de samenvatting</string>
     <string name="language_auto">Automatisch</string>
     <string name="language_auto_current">Automatisch · %1$s</string>
@@ -390,8 +460,17 @@
     <string name="update_downloading">Versie %1$s downloaden…</string>
     <string name="update_failed">Bijwerken mislukt: %1$s</string>
     <string name="update_allow">Sta Sofadrop toe apps te installeren en kies daarna opnieuw de update</string>
+    <string name="update_desc_notes">Versie %1$s (je hebt %2$s) · bekijk wat er nieuw is en installeer hem</string>
+    <string name="update_notes_title">Versie %1$s</string>
+    <string name="update_notes_desc">Wat er nieuw is in deze versie (in het Engels). Je hebt %1$s; je instellingen blijven bewaard.\n\nAls Play Protect hem blokkeert: Meer details → Toch installeren</string>
+    <string name="update_install">Installeren</string>
+    <string name="update_not_now">Niet nu</string>
     <string name="about_version_update">%1$s · versie %2$s beschikbaar</string>
     <string name="use_in_projectivy_title">Gebruiken in Projectivy</string>
     <string name="use_in_projectivy_desc">Opent de instellingen van Projectivy: Weergave › Achtergrond › Launcher achtergrond › 🔌 Sofadrop</string>
     <string name="use_in_projectivy_path">In Projectivy: Weergave › Achtergrond › Launcher achtergrond › 🔌 Sofadrop</string>
+    <string name="resolution_low_memory">Deze tv heeft misschien niet genoeg geheugen voor 4K</string>
+    <string name="about_log">Logboek van de laatste generatie</string>
+    <string name="about_log_none">Nog geen achtergronden gemaakt</string>
+    <string name="log_desc">Wat de laatste update deed: lijsten, fouten en hoe lang het duurde.</string>
 </resources>
