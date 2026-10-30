@@ -15,6 +15,7 @@ import android.widget.Toast
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.os.bundleOf
 import androidx.fragment.app.DialogFragment
+import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
 import java.util.concurrent.Executors
 
 /**
@@ -41,6 +42,9 @@ abstract class QrDialog : DialogFragment() {
     protected abstract val titleRes: Int
     protected abstract val iconRes: Int
     protected open val buttonRes: Int = R.string.cancel
+    /** Side of the QR box; long texts need more room than a short link to be scanned from the sofa. */
+    protected open val qrSizeDp: Int = 168
+    protected open val errorCorrection: ErrorCorrectionLevel = ErrorCorrectionLevel.M
 
     /** Request what is needed and call [showQr]; runs when the dialog is shown. */
     protected abstract fun start()
@@ -53,6 +57,10 @@ abstract class QrDialog : DialogFragment() {
         title = view.findViewById(R.id.dialog_title)
         instructions = view.findViewById(R.id.dialog_instructions)
         qr = view.findViewById(R.id.dialog_qr)
+        view.findViewById<View>(R.id.dialog_qr_frame).layoutParams.apply {
+            width = (qrSizeDp * resources.displayMetrics.density).toInt()
+            height = width
+        }
         qrProgress = view.findViewById(R.id.dialog_qr_progress)
         code = view.findViewById(R.id.dialog_code)
         url = view.findViewById(R.id.dialog_url)
@@ -93,12 +101,15 @@ abstract class QrDialog : DialogFragment() {
 
     protected fun showQr(target: String, instructionsText: CharSequence, userCode: String?, displayUrl: String, expiresInSeconds: Int?) {
         if (!isAdded) return
-        qr.setImageBitmap(Qr.bitmap(target, 440))
+        qr.setImageDrawable(Qr.drawable(resources, target, errorCorrection))
         qrProgress.visibility = View.GONE
         instructions.text = instructionsText
         code.text = userCode
         code.visibility = if (userCode.isNullOrBlank()) View.GONE else View.VISIBLE
         url.text = displayUrl
+        // Empty lines would take room from a big QR
+        url.visibility = if (displayUrl.isBlank()) View.GONE else View.VISIBLE
+        countdown.visibility = if (expiresInSeconds == null) View.GONE else View.VISIBLE
         setStatus(getString(R.string.qr_waiting))
         if (expiresInSeconds != null) {
             expiresAt = System.currentTimeMillis() + expiresInSeconds * 1000L
@@ -355,6 +366,10 @@ class TextQrDialog : QrDialog() {
     override val titleRes = R.string.log_qr
     override val iconRes = R.drawable.ic_act_phone
     override val buttonRes = R.string.close
+    // A few hundred characters: as big as the screen allows, with the least error correction (a screen
+    // doesn't get scratched) so that its squares are as big as possible
+    override val qrSizeDp = 288
+    override val errorCorrection = ErrorCorrectionLevel.L
 
     override fun start() {
         showQr(requireArguments().getString(ARG_TEXT).orEmpty(), getString(R.string.log_qr_scan), null, "", null)
