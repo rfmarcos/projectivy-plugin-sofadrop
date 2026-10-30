@@ -27,7 +27,7 @@ class ClickActionFragment : PreviewSettingsFragment() {
         actions += rows()
     }
 
-    // Where Projectivy opens it from, always in view under the preview
+    // The explanations, and where Projectivy opens it from, always in view under the preview
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         guidanceStylist.descriptionView?.visibility = View.VISIBLE
@@ -54,7 +54,7 @@ class ClickActionFragment : PreviewSettingsFragment() {
         val fallbacks = fallbacks()
         val fallback = Settings.clickFallback
         val missing = Settings.clickApp(fallback)?.takeIf { it.installedPackage(context) == null }
-        explanations[ID_FALLBACK] = getString(R.string.click_target_explanation)
+        explain(ID_FALLBACK, getString(R.string.click_target_explanation))
         val label = clickLabel(context, fallback)
         val description = listOfNotNull(
             getString(if (order.isEmpty()) R.string.click_target_title else R.string.click_if_none),
@@ -80,13 +80,18 @@ class ClickActionFragment : PreviewSettingsFragment() {
         return rows
     }
 
+    /** A row's explanation, followed by where Projectivy opens it from: the explanation replaces the guidance. */
+    private fun explain(id: Long, text: String) {
+        explanations[id] = text + "\n\n" + getString(R.string.click_action_desc)
+    }
+
     private fun step(position: Int, label: String) = getString(R.string.click_step, position, label)
 
     /** "1. Apple TV": moves to the position picked or stops being used. */
     private fun platformRow(platform: Platform, position: Int, count: Int): GuidedAction {
         val id = platformId(platform)
         val labels = (1..count).map { getString(R.string.click_position, it) } + getString(R.string.click_dont_use)
-        explanations[id] = getString(R.string.click_platform_explanation, platform.label)
+        explain(id, getString(R.string.click_platform_explanation, platform.label))
         val installed = platform.installedPackage(requireContext()) != null
         return action(id, R.drawable.ic_act_tv, step(position + 1, platform.label),
             getString(if (installed) R.string.click_if_on_it else R.string.click_not_installed_skipped))
@@ -100,7 +105,7 @@ class ClickActionFragment : PreviewSettingsFragment() {
     private fun addRow(order: List<Platform>): GuidedAction {
         val context = requireContext()
         val (installed, missing) = addable(context, order)
-        explanations[ID_ADD] = getString(R.string.click_add_explanation)
+        explain(ID_ADD, getString(R.string.click_add_explanation))
         val names = installed.map { it.label }
         val description = when {
             names.isEmpty() -> getString(R.string.click_add_none)

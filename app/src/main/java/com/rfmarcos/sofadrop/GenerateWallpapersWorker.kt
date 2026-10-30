@@ -152,7 +152,7 @@ class GenerateWallpapersWorker(context: Context, params: WorkerParameters) : Wor
 
     /**
      * [stored] with their pages on the streaming platforms that have them, when the wallpaper opens its
-     * platform. Without Wikidata they open the trailer instead: not worth failing the generation for.
+     * platform. Without Wikidata they open the fallback instead: not worth failing the generation for.
      */
     private fun withPlatformLinks(stored: List<StoredWallpaper>, log: GenerationLog): List<StoredWallpaper> {
         if (Settings.clickPlatforms.isEmpty()) return stored
