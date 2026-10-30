@@ -65,7 +65,7 @@ class FooterFragment : PreviewSettingsFragment() {
             }
             ID_LAYOUT -> Settings.sourceInline = index == 1
         }
-        refreshActions(rows()) { FooterFragment() }
+        refreshActions(rows())
         schedulePreview(300)
         return true
     }

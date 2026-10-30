@@ -19,6 +19,10 @@ data class StoredWallpaper(
     val trailerKey: String? = null,
     /** "tt0133093", for the apps that open a title by its IMDb id (see [TitleApp]). */
     val imdbId: String? = null,
+    /** TMDB ids of its streaming services in the streaming country (see [Platform.pick]). */
+    val providerIds: List<Int> = emptyList(),
+    /** Its pages on the streaming platforms, by [Platform.key] (only when it opens on its platform). */
+    val platformLinks: Map<String, String> = emptyMap(),
 )
 
 /**

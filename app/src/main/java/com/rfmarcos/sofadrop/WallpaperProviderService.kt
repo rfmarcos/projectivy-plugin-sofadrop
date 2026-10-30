@@ -71,10 +71,13 @@ class WallpaperProviderService : Service() {
 
         /**
          * What Projectivy opens from [wallpaper] (see [Settings.clickAction]); applied when served, without
-         * regenerating. An app that isn't installed falls back to the trailer.
+         * regenerating (except the platforms' pages). An app that isn't installed falls back to the trailer.
          */
         fun actionUri(context: Context, wallpaper: StoredWallpaper): String? {
             if (Settings.clickAction == Settings.CLICK_NONE) return null
+            if (Settings.clickAction == Settings.CLICK_PLATFORM) {
+                Platform.intent(context, wallpaper)?.let { return it.toUri(Intent.URI_INTENT_SCHEME) }
+            }
             Settings.clickApp()?.let { app ->
                 app.installedPackage(context)?.let { app.intent(context, it, wallpaper) }?.let { return it.toUri(Intent.URI_INTENT_SCHEME) }
             }

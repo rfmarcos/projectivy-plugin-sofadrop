@@ -22,6 +22,15 @@
         <package android:name="com.stremio.one" />
         <package android:name="org.jellyfin.androidtv" />
         <package android:name="com.google.android.youtube.tv" />
+        <!-- Streaming platforms (Platform) -->
+        <package android:name="com.netflix.ninja" />
+        <package android:name="com.netflix.mediaclient" />
+        <package android:name="com.amazon.amazonvideo.livingroom" />
+        <package android:name="com.amazon.avod.thirdpartyclient" />
+        <package android:name="com.disney.disneyplus" />
+        <package android:name="com.wbd.stream" />
+        <package android:name="com.hbo.hbonow" />
+        <package android:name="com.apple.atve.androidtv.appletv" />
     </queries>
 
     <application

@@ -11,7 +11,8 @@ import androidx.leanback.widget.GuidedAction
 
 /**
  * What Projectivy opens from a wallpaper: its trailer (in which language, and what instead when there is
- * none in it), the title in one of the apps installed (see [TitleApp]) or nothing.
+ * none in it), its page on its streaming platform (see [Platform]), the title in one of the apps installed
+ * (see [TitleApp]) or nothing.
  */
 class ClickActionFragment : PreviewSettingsFragment() {
 
@@ -32,13 +33,14 @@ class ClickActionFragment : PreviewSettingsFragment() {
         guidanceStylist.descriptionView?.visibility = View.VISIBLE
     }
 
-    /** Where it opens from, and when the trailer is picked if that's the action. */
+    /** Where it opens from, and when the trailer or the platform's page is picked if that's the action. */
     private fun guidanceText() = listOfNotNull(getString(R.string.click_action_desc),
-        getString(R.string.click_trailer_note).takeIf { Settings.clickAction == Settings.CLICK_TRAILER }).joinToString(" ")
+        getString(R.string.click_trailer_note).takeIf { Settings.clickAction == Settings.CLICK_TRAILER },
+        getString(R.string.click_platform_note).takeIf { Settings.clickAction == Settings.CLICK_PLATFORM }).joinToString(" ")
 
-    /** The trailer, every app (those not installed can't be picked) and nothing. */
-    private fun clickActions(): List<String> =
-        listOf(Settings.CLICK_TRAILER) + TitleApp.entries.map { Settings.CLICK_APP_PREFIX + it.key } + Settings.CLICK_NONE
+    /** The trailer, the platform, every app (those not installed can't be picked) and nothing. */
+    private fun clickActions(): List<String> = listOf(Settings.CLICK_TRAILER, Settings.CLICK_PLATFORM) +
+        TitleApp.entries.map { Settings.CLICK_APP_PREFIX + it.key } + Settings.CLICK_NONE
 
     private fun rows(): List<GuidedAction> {
         val context = requireContext()
@@ -46,12 +48,13 @@ class ClickActionFragment : PreviewSettingsFragment() {
         val options = options(ID_ACTION, clickActions.map { clickLabel(context, it) }, clickLabel(context, Settings.clickAction),
             clickActions.map { clickDescription(context, it) })
         options.zip(clickActions).forEach { (option, action) ->
-            option.isEnabled = Settings.clickApp(action)?.let { it.installedPackage(context) != null } ?: true
+            option.isEnabled = Settings.clickApp(action)?.let { it.installedPackage(context) != null }
+                ?: (action != Settings.CLICK_PLATFORM || Platform.installed(context).isNotEmpty())
         }
         val target = action(ID_ACTION, R.drawable.ic_act_play, getString(R.string.click_target_title), clickLabel(context, Settings.clickAction, long = true))
             .subActions(options).build()
-        // The trailer's language only matters when the wallpaper opens it
-        if (Settings.clickAction != Settings.CLICK_TRAILER) return listOf(target)
+        // The trailer's language only matters when the wallpaper opens it (also titles not on a platform)
+        if (Settings.clickAction != Settings.CLICK_TRAILER && Settings.clickAction != Settings.CLICK_PLATFORM) return listOf(target)
         val languages = Settings.PART_LANGUAGES
         val language = action(ID_TRAILER_LANGUAGE, R.drawable.ic_act_language, getString(R.string.trailer_language_title),
             PartLanguagesFragment.languageLabel(context, Settings.trailerLanguage, long = true))
@@ -70,17 +73,19 @@ class ClickActionFragment : PreviewSettingsFragment() {
         val index = (action.id % SUB_ID_BASE).toInt()
         when (action.id / SUB_ID_BASE) {
             ID_ACTION -> {
-                // Projectivy gets it with the next request; nothing to preview or regenerate
+                // Projectivy gets it with the next request; nothing to preview, and only the platform's
+                // pages need a new set
                 Settings.clickAction = clickActions()[index]
                 setGuidanceText(guidanceText())
-                refreshActions(rows()) { ClickActionFragment() }
+                refreshActions(rows())
+                refreshPending()
                 return true
             }
             ID_TRAILER_LANGUAGE -> Settings.trailerLanguage = Settings.PART_LANGUAGES[index]
             ID_TRAILER_FALLBACK -> Settings.trailerFallback = Settings.TRAILER_FALLBACKS[index]
         }
         // The trailer is chosen when generating: a new set picks it up
-        refreshActions(rows()) { ClickActionFragment() }
+        refreshActions(rows())
         refreshPending()
         return true
     }
@@ -97,6 +102,7 @@ class ClickActionFragment : PreviewSettingsFragment() {
                 app != null && long && app.installedPackage(context) == null -> context.getString(R.string.click_app_missing, app.label)
                 app != null -> context.getString(R.string.click_open_app, app.label)
                 action == Settings.CLICK_NONE -> context.getString(R.string.click_none)
+                action == Settings.CLICK_PLATFORM -> context.getString(R.string.click_platform)
                 else -> context.getString(R.string.click_trailer)
             }
         }
@@ -106,7 +112,13 @@ class ClickActionFragment : PreviewSettingsFragment() {
             val reach = when (app?.reach) {
                 TitleApp.Reach.TITLE -> context.getString(R.string.click_app_title_desc)
                 TitleApp.Reach.SEARCH -> context.getString(R.string.click_app_search_desc)
-                null -> return if (action == Settings.CLICK_TRAILER) context.getString(R.string.click_trailer_desc) else null
+                null -> return when (action) {
+                    Settings.CLICK_TRAILER -> context.getString(R.string.click_trailer_desc)
+                    Settings.CLICK_PLATFORM -> context.getString(R.string.click_platform_desc).let {
+                        if (Platform.installed(context).isEmpty()) context.getString(R.string.click_platform_none_installed, it) else it
+                    }
+                    else -> null
+                }
             }
             return if (app.installedPackage(context) == null) context.getString(R.string.click_app_not_installed, reach) else reach
         }

@@ -37,7 +37,7 @@ class HeaderFragment : PreviewSettingsFragment() {
     // Back from Accounts: MDBList's platforms become available (or not)
     override fun onResume() {
         super.onResume()
-        refreshActions(rows()) { HeaderFragment() }
+        refreshActions(rows())
     }
 
     private fun rows(): List<GuidedAction> {
@@ -110,7 +110,7 @@ class HeaderFragment : PreviewSettingsFragment() {
             parent >= ID_BLOCK -> return moveBlock(blockRows().getOrNull((parent - ID_BLOCK).toInt()) ?: return true, choice)
         }
         collapseSubActions()
-        refreshActions(rows()) { HeaderFragment() }
+        refreshActions(rows())
         schedulePreview()
         return true
     }
@@ -145,7 +145,7 @@ class HeaderFragment : PreviewSettingsFragment() {
     /** Focus follows the moved row to its new place, once the options have closed. */
     private fun afterMove(rowId: Long) {
         collapseSubActions()
-        refreshActions(rows()) { HeaderFragment() }
+        refreshActions(rows())
         val row = findActionPositionById(rowId)
         handler.postDelayed({ if (isAdded) setSelectedActionPosition(row) }, 150)
         schedulePreview()

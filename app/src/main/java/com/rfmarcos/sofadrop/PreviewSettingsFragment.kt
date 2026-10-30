@@ -37,8 +37,6 @@ abstract class PreviewSettingsFragment : BaseSettingsFragment() {
             previewProgress = view.findViewById(R.id.preview_progress)
             previewLabel = view.findViewById(R.id.preview_label)
             pendingNotice = view.findViewById(R.id.pending_notice)
-            // A screen reopened by refreshActions isn't resumed until later: its notice and preview start here
-            schedulePreview(0)
             view.findViewById<View>(R.id.preview_frame).clipToOutline = true
             if (showsProjectivyNotice) view.findViewById<View>(R.id.projectivy_notice).visibility = View.VISIBLE
             cachedPreview?.let { (key, bitmap, title) -> if (key == previewKey()) showPreview(bitmap, title) }

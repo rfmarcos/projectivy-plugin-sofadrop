@@ -37,6 +37,8 @@ data class WallpaperInfo(
     val cast: List<CastMember> = emptyList(),
     /** YouTube video opened from the wallpaper (see [TmdbCatalog.trailerKey]). */
     val trailerKey: String? = null,
+    /** TMDB ids of the streaming services that have it in the streaming country, in TMDB's order (see [Platform]). */
+    val providerIds: List<Int> = emptyList(),
 )
 
 /** An actor of the cast row, with their TMDB profile photo when there is one. */
@@ -260,6 +262,8 @@ class TmdbCatalog(
             if (Settings.synopsisMode == Settings.SYNOPSIS_ENGLISH) translated(translations(ref), "en", "US", "overview") else ""
         }
 
+        // Also for opening the title on its platform, whose app the wallpaper picks from these
+        val providers = if (showProviders || Settings.clickAction == Settings.CLICK_PLATFORM) providers(ref) else emptyList()
         return WallpaperInfo(
             type = type,
             id = ref.tmdbId,
@@ -277,7 +281,8 @@ class TmdbCatalog(
                 .joinToString(", "),
             backdropPath = backdrop,
             logoPath = if (Settings.drawsLogo) logoPath(ref, item) else null,
-            providerLogoPaths = if (showProviders) providerLogoPaths(ref) else emptyList(),
+            providerLogoPaths = if (showProviders) providerLogoPaths(providers) else emptyList(),
+            providerIds = providers.mapNotNull { it.int("provider_id") },
             imdbId = item.str("imdb_id") ?: item.obj("external_ids")?.str("imdb_id"),
             certification = Certifications.of(type, item, region)?.let { Certifications.label(region, it) },
             cast = if (showCast) cast(ref) else emptyList(),
@@ -327,12 +332,14 @@ class TmdbCatalog(
         client.get("${ref.type.path}/${ref.tmdbId}/translations")?.objects("translations").orEmpty()
     }
 
-    private fun providerLogoPaths(ref: TitleRef): List<String> {
-        val providers = client.get("${ref.type.path}/${ref.tmdbId}/watch/providers")
+    /** Streaming services (not rent or buy) that have the title in the streaming country, TMDB's first. */
+    private fun providers(ref: TitleRef): List<JsonObject> =
+        client.get("${ref.type.path}/${ref.tmdbId}/watch/providers")
             ?.obj("results")?.obj(region)?.objects("flatrate")
             ?.sortedBy { it.int("display_priority") ?: 999 }
             .orEmpty()
 
+    private fun providerLogoPaths(providers: List<JsonObject>): List<String> {
         val logos = mutableListOf<String>()
         val seenNames = mutableListOf<String>()
         for (provider in providers) {

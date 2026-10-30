@@ -53,7 +53,7 @@ class SynopsisCastFragment : PreviewSettingsFragment() {
             ID_CAST -> {
                 Settings.showCast = index == 1
                 updateDescription(ID_CAST, castLabel(requireContext(), Settings.showCast))
-                refreshActions(rows()) { SynopsisCastFragment() }
+                refreshActions(rows())
             }
             ID_CAST_PHOTOS -> {
                 Settings.castPhotos = Settings.CAST_PHOTO_MODES[index]

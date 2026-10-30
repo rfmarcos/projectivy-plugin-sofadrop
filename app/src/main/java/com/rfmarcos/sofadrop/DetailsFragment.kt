@@ -51,7 +51,7 @@ class DetailsFragment : PreviewSettingsFragment() {
     // Back from a sub-screen: its summary may have changed
     override fun onResume() {
         super.onResume()
-        refreshActions(rows()) { DetailsFragment() }
+        refreshActions(rows())
     }
 
     override fun onGuidedActionClicked(action: GuidedAction) {
@@ -74,7 +74,7 @@ class DetailsFragment : PreviewSettingsFragment() {
             }
             ID_RESOLUTION -> Settings.outputWidth = Settings.WIDTH_OPTIONS[index]
         }
-        refreshActions(rows()) { DetailsFragment() }
+        refreshActions(rows())
         schedulePreview(300)
         return true
     }

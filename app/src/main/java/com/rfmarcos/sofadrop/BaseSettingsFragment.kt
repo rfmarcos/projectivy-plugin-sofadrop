@@ -5,12 +5,15 @@ import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.LayerDrawable
+import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.text.InputType
+import android.view.View
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.ContextCompat
 import androidx.leanback.app.GuidedStepSupportFragment
+import androidx.leanback.widget.DiffCallback
 import androidx.leanback.widget.GuidedAction
 import androidx.leanback.widget.GuidedActionsStylist
 import java.util.concurrent.Executors
@@ -21,6 +24,15 @@ abstract class BaseSettingsFragment : GuidedStepSupportFragment() {
     protected val handler = Handler(Looper.getMainLooper())
 
     override fun onProvideTheme(): Int = R.style.Theme_Sofadrop_GuidedStep
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        // Rows matched by id, so a row added or removed by refreshActions doesn't rebuild the list
+        setActionsDiffCallback(object : DiffCallback<GuidedAction>() {
+            override fun areItemsTheSame(oldItem: GuidedAction, newItem: GuidedAction) = oldItem.id == newItem.id
+            override fun areContentsTheSame(oldItem: GuidedAction, newItem: GuidedAction) = false
+        })
+    }
 
     /** Ids of the section headers of this screen (see [header]). */
     private val headerIds = mutableSetOf<Long>()
@@ -112,24 +124,25 @@ abstract class BaseSettingsFragment : GuidedStepSupportFragment() {
 
     /**
      * Show [fresh] rows. Leanback stops expanding sub-actions once rows that have them are swapped for
-     * new objects, so rows with the same ids are updated in place; a different set of rows reopens
-     * this screen with [reopen] (sub-screens only).
+     * new objects, so rows with the same ids are updated in place; rows that come or go are inserted or
+     * removed around them (see the diff callback in [onViewCreated]), keeping the focus where it was.
      */
-    protected fun refreshActions(fresh: List<GuidedAction>, reopen: () -> GuidedStepSupportFragment) {
+    protected fun refreshActions(fresh: List<GuidedAction>) {
         if (!isAdded) return
         val current = actions
+        fun GuidedAction.update(row: GuidedAction) = apply {
+            title = row.title
+            description = row.description
+            isEnabled = row.isEnabled
+            isChecked = row.isChecked
+            subActions = row.subActions
+        }
         if (current.map { it.id } != fresh.map { it.id }) {
-            parentFragmentManager.popBackStack()
-            add(parentFragmentManager, reopen())
+            setActions(fresh.map { row -> current.firstOrNull { it.id == row.id }?.update(row) ?: row })
             return
         }
         current.forEachIndexed { index, action ->
-            val row = fresh[index]
-            action.title = row.title
-            action.description = row.description
-            action.isEnabled = row.isEnabled
-            action.isChecked = row.isChecked
-            action.subActions = row.subActions
+            action.update(fresh[index])
             notifyActionChanged(index)
         }
     }

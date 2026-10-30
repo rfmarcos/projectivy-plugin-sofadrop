@@ -31,7 +31,7 @@ class ListExplorerFragment : BaseSettingsFragment() {
     }
 
     // Replacing the actions breaks leanback's sub-action expansion, so rows are updated in place
-    private fun refresh() = refreshActions(buildRows()) { ListExplorerFragment() }
+    private fun refresh() = refreshActions(buildRows())
 
     private fun buildRows(): List<GuidedAction> {
         val context = requireContext()

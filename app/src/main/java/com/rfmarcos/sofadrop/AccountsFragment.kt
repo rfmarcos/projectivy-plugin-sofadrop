@@ -54,7 +54,7 @@ class AccountsFragment : BaseSettingsFragment() {
     private fun rows(): List<GuidedAction> = SERVICES.map(::serviceAction) + header(ID_NO_ACCOUNT, getString(R.string.accounts_no_account)) +
         action(ID_IMDB, R.drawable.ic_act_refresh, getString(R.string.imdb_data_title), imdbLabel(requireContext())).build()
 
-    private fun refreshRows() = refreshActions(rows()) { AccountsFragment() }
+    private fun refreshRows() = refreshActions(rows())
 
     private fun serviceAction(provider: SourceProvider): GuidedAction {
         val context = requireContext()

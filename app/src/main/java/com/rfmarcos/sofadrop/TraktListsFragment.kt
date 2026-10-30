@@ -72,7 +72,7 @@ class TraktListsFragment : BaseSettingsFragment() {
 
     private fun refreshRows() {
         if (!isAdded) return
-        refreshActions(listOf(accountAction()) + ownActions() + findActionById(ID_ADD)!! + publicActions()) { TraktListsFragment() }
+        refreshActions(listOf(accountAction()) + ownActions() + findActionById(ID_ADD)!! + publicActions())
     }
 
     override fun onGuidedActionClicked(action: GuidedAction) {

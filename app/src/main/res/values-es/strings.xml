@@ -288,6 +288,10 @@
     <string name="click_action_title">Al pulsar el fondo</string>
     <string name="click_trailer">Ver el tráiler</string>
     <string name="click_trailer_desc">En YouTube</string>
+    <string name="click_platform">Abrir en su plataforma</string>
+    <string name="click_platform_desc">Netflix, Prime Video, Disney+, HBO Max o Apple TV, si está en una de las tuyas. Si no, el tráiler</string>
+    <string name="click_platform_none_installed">Ninguna instalada · %1$s</string>
+    <string name="click_platform_note">La página de cada título se busca en Wikidata al crear los fondos: están los populares y los originales de cada plataforma; los demás abren el tráiler.</string>
     <string name="click_none">Nada</string>
     <string name="click_trailer_note">El tráiler se elige al crear los fondos: un cambio de idioma se aplica desde la próxima actualización.</string>
     <string name="click_app_not_installed">No está instalada · %1$s</string>

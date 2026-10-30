@@ -86,7 +86,7 @@ class PartLanguagesFragment : PreviewSettingsFragment() {
         }
         // A language changes the options of its fallback row, and the wallpaper's what Automatic says
         collapseSubActions()
-        refreshActions(rows()) { PartLanguagesFragment() }
+        refreshActions(rows())
         schedulePreview(300)
         return true
     }

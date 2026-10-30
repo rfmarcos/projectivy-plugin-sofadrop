@@ -151,7 +151,9 @@ object Settings {
     /** What Projectivy opens from a wallpaper ("Watch" in About this wallpaper, play on its status bar). */
     const val CLICK_TRAILER = "trailer"
     const val CLICK_NONE = "none"
-    val CLICK_ACTIONS = listOf(CLICK_TRAILER, CLICK_NONE)
+    /** The title's page on its streaming platform (see [Platform]), else the trailer. */
+    const val CLICK_PLATFORM = "platform"
+    val CLICK_ACTIONS = listOf(CLICK_TRAILER, CLICK_PLATFORM, CLICK_NONE)
     /** Click action opening the title in a [TitleApp]: "app:nuvio". */
     const val CLICK_APP_PREFIX = "app:"
     /**
@@ -725,6 +727,8 @@ object Settings {
         // Only when changed, so existing installs don't see a pending change after updating
         ).plus(listOfNotNull(overviewLines.takeIf { it != 4 }, "nosource".takeIf { !showSource }, "fallback".takeIf { showSource && showProviders && sourceFallback },
             "inline".takeIf { showSource && showProviders && !sourceFallback && sourceInline },
+            // Its pages are looked up when generating
+            "platform".takeIf { clickAction == CLICK_PLATFORM },
             "dups".takeIf { !skipDuplicates }, "logo:$logoMode".takeIf { logoMode != LOGO_TEXT }, "synopsis:$synopsisMode".takeIf { synopsisMode != SYNOPSIS_HIDE },
             "titlelang:$titleLanguage".takeIf { titleLanguage != LANGUAGE_AUTO }, "synopsislang:$synopsisLanguage".takeIf { synopsisLanguage != LANGUAGE_AUTO },
             "ratings:$ratingSourcesKey:$mdbListAvailable".takeIf { ratingSourcesKey != RatingSource.TMDB.key },
