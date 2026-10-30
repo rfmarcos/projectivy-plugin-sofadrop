@@ -30,6 +30,7 @@ class TraktListsTest {
         assertNull(TraktClient.listPath("https://trakt.tv/users/justin"))
         assertNull(TraktClient.listPath("https://trakt.tv/movies/tron"))
         assertEquals("trakt:list:justin/imdb-top-rated-movies", TraktListRef(path, "IMDB: Top Rated Movies").key)
+        assertEquals("users/justin/lists/imdb-top-rated-movies", TraktClient.apiPath(path))
     }
 
     @Test

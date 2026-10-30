@@ -154,7 +154,7 @@ class TraktClient(private val clientId: String, private val clientSecret: String
         val pageSize = limit.coerceIn(1, PAGE_SIZE)
         var page = 1
         do {
-            val (items, pages) = listGet("users/${list.path}/items/movie,show?page=$page&limit=$pageSize", list, auth)
+            val (items, pages) = listGet("${apiPath(list.path)}/items/movie,show?page=$page&limit=$pageSize", list, auth)
             titles += parseListItems(items as? JsonArray ?: break)
             page++
         } while (titles.size < limit && page <= pages)
@@ -165,7 +165,7 @@ class TraktClient(private val clientId: String, private val clientSecret: String
     fun findList(reference: String): TraktListRef? {
         val path = listPath(reference) ?: return null
         return try {
-            parseList(listGet("users/$path", TraktListRef(path, path), auth = false).first as? JsonObject ?: return null)
+            parseList(listGet(apiPath(path), TraktListRef(path, path), auth = false).first as? JsonObject ?: return null)
         } catch (_: ListUnavailableException) {
             null
         }
@@ -300,6 +300,9 @@ class TraktClient(private val clientId: String, private val clientSecret: String
                 ?: return null
             return parts.takeIf { it.all { part -> part.matches(PATH_PART) } }?.joinToString("/")
         }
+
+        /** "users/{user}/lists/{slug}" of a list's "user/slug" path. */
+        fun apiPath(path: String): String = "users/${path.substringBefore('/')}/lists/${path.substringAfter('/')}"
 
         /** A list from `users/{user}/lists/{slug}` or `users/me/lists`; its path uses the user's and the list's slugs. */
         fun parseList(list: JsonObject): TraktListRef? {
