@@ -263,7 +263,7 @@ class TmdbCatalog(
         }
 
         // Also for opening the title on its platform, whose app the wallpaper picks from these
-        val providers = if (showProviders || Settings.clickAction == Settings.CLICK_PLATFORM) providers(ref) else emptyList()
+        val providers = if (showProviders || Settings.clickPlatforms.isNotEmpty()) providers(ref) else emptyList()
         return WallpaperInfo(
             type = type,
             id = ref.tmdbId,

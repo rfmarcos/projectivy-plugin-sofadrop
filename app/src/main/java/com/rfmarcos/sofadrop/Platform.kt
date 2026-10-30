@@ -1,9 +1,7 @@
 package com.rfmarcos.sofadrop
 
 import android.content.Context
-import android.content.Intent
 import android.content.pm.PackageManager
-import androidx.core.net.toUri
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -13,14 +11,15 @@ import okhttp3.Request
 import java.util.concurrent.TimeUnit
 
 /**
- * Streaming services a wallpaper can open its title on. TMDB says which ones have it in the streaming
- * country (by provider id), Wikidata gives the title's id on each one (when someone added it: TMDB and
- * JustWatch don't share them) and the service's app opens that page.
+ * Streaming services a wallpaper can open its title on (the ones the user picks, in their order: see
+ * [Settings.clickPlatforms]). TMDB says which ones have it in the streaming country (by provider id),
+ * Wikidata gives the title's id on each one (when someone added it: TMDB and JustWatch don't share them)
+ * and the service's app opens that page.
  */
 enum class Platform(
     val key: String,
     val label: String,
-    /** TMDB watch provider ids, with their ad tiers. */
+    /** TMDB watch provider ids, with their ad tiers and older ids (not channels inside another service). */
     private val providerIds: Set<Int>,
     /** Android TV app first. */
     private val packages: List<String>,
@@ -29,7 +28,7 @@ enum class Platform(
 ) {
     NETFLIX("netflix", "Netflix", setOf(8, 1796), listOf("com.netflix.ninja", "com.netflix.mediaclient"),
         listOf(WikidataId("P1874") { "https://www.netflix.com/title/$it" })),
-    PRIME("prime", "Prime Video", setOf(119, 2100), listOf("com.amazon.amazonvideo.livingroom", "com.amazon.avod.thirdpartyclient"),
+    PRIME("prime", "Prime Video", setOf(9, 119, 2100), listOf("com.amazon.amazonvideo.livingroom", "com.amazon.avod.thirdpartyclient"),
         listOf(
             WikidataId("P14462") { "https://app.primevideo.com/detail?gti=$it" },
             WikidataId("P14440") { "https://www.primevideo.com/detail/$it" },
@@ -40,7 +39,7 @@ enum class Platform(
             WikidataId("P7595", series = false) { "https://www.disneyplus.com/movies/wd/$it" },
             WikidataId("P7596", movies = false) { "https://www.disneyplus.com/series/wp/$it" },
         )),
-    MAX("max", "HBO Max", setOf(1899), listOf("com.wbd.stream", "com.hbo.hbonow"),
+    MAX("max", "HBO Max", setOf(384, 1899), listOf("com.wbd.stream"),
         listOf(WikidataId("P8298") { "https://play.hbomax.com/$it" })),
     APPLE("apple", "Apple TV", setOf(350), listOf("com.apple.atve.androidtv.appletv"),
         listOf(
@@ -66,29 +65,21 @@ enum class Platform(
         .firstNotNullOfOrNull { id -> ids[id.property]?.let(id.url) }
 
     companion object {
-        fun ofProvider(providerId: Int): Platform? = entries.firstOrNull { providerId in it.providerIds }
+        fun of(key: String): Platform? = entries.firstOrNull { it.key == key }
 
-        fun installed(context: Context): List<Platform> = entries.filter { it.installedPackage(context) != null }
+        fun ofProvider(providerId: Int): Platform? = entries.firstOrNull { providerId in it.providerIds }
 
         /** Pages of a title on every platform Wikidata knows it on, by [key]. */
         fun links(type: MediaType, ids: Map<String, String>): Map<String, String> =
             entries.mapNotNull { platform -> platform.link(type, ids)?.let { platform.key to it } }.toMap()
 
         /**
-         * The first of the title's streaming services ([providerIds], TMDB's order) that has a page for it in
-         * [links] and is [installed], with that page.
+         * The platforms of [order] (the user's, best first) that have the title in the streaming country
+         * ([providerIds]), a page for it in [links] and are [installed], with that page.
          */
-        fun pick(providerIds: List<Int>, links: Map<String, String>, installed: (Platform) -> Boolean): Pair<Platform, String>? =
-            providerIds.asSequence().mapNotNull(::ofProvider).distinct()
-                .mapNotNull { platform -> links[platform.key]?.takeIf { installed(platform) }?.let { platform to it } }
-                .firstOrNull()
-
-        /** What opens [wallpaper] on its platform (see [pick]), or null to open the trailer instead. */
-        fun intent(context: Context, wallpaper: StoredWallpaper): Intent? {
-            val (platform, link) = pick(wallpaper.providerIds, wallpaper.platformLinks) { it.installedPackage(context) != null } ?: return null
-            val intent = Intent(Intent.ACTION_VIEW, link.toUri()).setPackage(platform.installedPackage(context)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            // An app that doesn't take that kind of link would fail silently: the trailer instead
-            return intent.takeIf { it.resolveActivity(context.packageManager) != null }
+        fun pick(order: List<Platform>, providerIds: List<Int>, links: Map<String, String>, installed: (Platform) -> Boolean): List<Pair<Platform, String>> {
+            val available = providerIds.mapNotNull(::ofProvider).toSet()
+            return order.filter { it in available && installed(it) }.mapNotNull { platform -> links[platform.key]?.let { platform to it } }
         }
     }
 }

@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.os.IBinder
 import android.util.Log
-import androidx.core.net.toUri
 import tv.projectivy.plugin.wallpaperprovider.api.Event
 import tv.projectivy.plugin.wallpaperprovider.api.IWallpaperProviderService
 import tv.projectivy.plugin.wallpaperprovider.api.Wallpaper
@@ -67,29 +66,14 @@ class WallpaperProviderService : Service() {
     companion object {
         private const val TAG = "SofadropService"
 
-        private const val YOUTUBE_TV = "com.google.android.youtube.tv"
-
         /**
-         * What Projectivy opens from [wallpaper] (see [Settings.clickAction]); applied when served, without
-         * regenerating (except the platforms' pages). An app that isn't installed falls back to the trailer.
+         * What Projectivy opens from [wallpaper] (see [ClickTargets]); applied when served, without
+         * regenerating (except the platforms' pages). Decided when clicked, it is [OpenActivity] for every
+         * wallpaper that has something to open now.
          */
         fun actionUri(context: Context, wallpaper: StoredWallpaper): String? {
-            if (Settings.clickAction == Settings.CLICK_NONE) return null
-            if (Settings.clickAction == Settings.CLICK_PLATFORM) {
-                Platform.intent(context, wallpaper)?.let { return it.toUri(Intent.URI_INTENT_SCHEME) }
-            }
-            Settings.clickApp()?.let { app ->
-                app.installedPackage(context)?.let { app.intent(context, it, wallpaper) }?.let { return it.toUri(Intent.URI_INTENT_SCHEME) }
-            }
-            return wallpaper.trailerKey?.let { key ->
-                // Several apps open YouTube links on a TV (browsers, Downloader…): YouTube's own, without asking
-                Intent(Intent.ACTION_VIEW, "https://www.youtube.com/watch?v=$key".toUri())
-                    .apply { if (isInstalled(context, YOUTUBE_TV)) setPackage(YOUTUBE_TV) }
-                    .toUri(Intent.URI_INTENT_SCHEME)
-            }
+            val target = ClickTargets.candidates(context, wallpaper).firstOrNull() ?: return null
+            return (if (Settings.clickAtTap) OpenActivity.intent(context, wallpaper) else target).toUri(Intent.URI_INTENT_SCHEME)
         }
-
-        private fun isInstalled(context: Context, packageName: String) =
-            runCatching { context.packageManager.getPackageInfo(packageName, 0) }.isSuccess
     }
 }

@@ -29,7 +29,6 @@
         <package android:name="com.amazon.avod.thirdpartyclient" />
         <package android:name="com.disney.disneyplus" />
         <package android:name="com.wbd.stream" />
-        <package android:name="com.hbo.hbonow" />
         <package android:name="com.apple.atve.androidtv.appletv" />
     </queries>
 
@@ -52,6 +51,15 @@
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- "Decide when clicked": Projectivy opens it for every wallpaper and it opens the title (OpenActivity) -->
+        <activity
+            android:name=".OpenActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.NoDisplay" />
 
         <receiver
             android:name=".Updater$InstallResultReceiver"

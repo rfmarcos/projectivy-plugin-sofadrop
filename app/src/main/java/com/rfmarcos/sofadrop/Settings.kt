@@ -109,7 +109,9 @@ object Settings {
     private const val KEY_TITLE_LANGUAGE = "title_language"
     private const val KEY_SYNOPSIS_LANGUAGE = "synopsis_language"
     private const val KEY_STYLE = "style"
-    private const val KEY_CLICK_ACTION = "click_action"
+    private const val KEY_CLICK_PLATFORMS = "click_platforms"
+    private const val KEY_CLICK_FALLBACK = "click_fallback"
+    private const val KEY_CLICK_AT_TAP = "click_at_tap"
     private const val KEY_TRAILER_LANGUAGE = "trailer_language"
     private const val KEY_TRAILER_FALLBACK = "trailer_fallback"
     private const val KEY_TMDB_SESSION = "_tmdb_session_id"
@@ -151,9 +153,7 @@ object Settings {
     /** What Projectivy opens from a wallpaper ("Watch" in About this wallpaper, play on its status bar). */
     const val CLICK_TRAILER = "trailer"
     const val CLICK_NONE = "none"
-    /** The title's page on its streaming platform (see [Platform]), else the trailer. */
-    const val CLICK_PLATFORM = "platform"
-    val CLICK_ACTIONS = listOf(CLICK_TRAILER, CLICK_PLATFORM, CLICK_NONE)
+    val CLICK_FALLBACKS = listOf(CLICK_TRAILER, CLICK_NONE)
     /** Click action opening the title in a [TitleApp]: "app:nuvio". */
     const val CLICK_APP_PREFIX = "app:"
     /**
@@ -342,13 +342,29 @@ object Settings {
         get() = preferences.getString(KEY_STYLE, null)?.takeIf { it in STYLES } ?: STYLE_FULL
         set(value) = preferences.edit { putString(KEY_STYLE, value) }
 
-    /** See [CLICK_ACTIONS] and [CLICK_APP_PREFIX]; applied when Projectivy asks for the wallpapers, so it needs no new set. */
-    var clickAction: String
-        get() = preferences.getString(KEY_CLICK_ACTION, null)?.takeIf { it in CLICK_ACTIONS || clickApp(it) != null } ?: CLICK_TRAILER
-        set(value) = preferences.edit { putString(KEY_CLICK_ACTION, value) }
+    /**
+     * Streaming platforms the user pays for, in the order a wallpaper tries them (see [ClickTargets]); their
+     * pages are looked up when generating, so adding the first one needs a new set.
+     */
+    var clickPlatforms: List<Platform>
+        get() = preferences.getString(KEY_CLICK_PLATFORMS, null).orEmpty().split(',').mapNotNull(Platform::of).distinct()
+        set(value) = preferences.edit { putString(KEY_CLICK_PLATFORMS, value.joinToString(",") { it.key }) }
 
-    /** The app of a click action that opens the title in one ("app:nuvio"), else null. */
-    fun clickApp(action: String = clickAction): TitleApp? =
+    /**
+     * What a wallpaper opens when its title is on none of [clickPlatforms]: see [CLICK_FALLBACKS] and
+     * [CLICK_APP_PREFIX] (an app not installed opens the trailer). Applied when served, without a new set.
+     */
+    var clickFallback: String
+        get() = preferences.getString(KEY_CLICK_FALLBACK, null)?.takeIf { it in CLICK_FALLBACKS || clickApp(it) != null } ?: CLICK_TRAILER
+        set(value) = preferences.edit { putString(KEY_CLICK_FALLBACK, value) }
+
+    /** Decide what a wallpaper opens when it is clicked (see [OpenActivity]) instead of when Projectivy loads the set. */
+    var clickAtTap: Boolean
+        get() = preferences.getBoolean(KEY_CLICK_AT_TAP, false)
+        set(value) = preferences.edit { putBoolean(KEY_CLICK_AT_TAP, value) }
+
+    /** The app of a click fallback that opens the title in one ("app:nuvio"), else null. */
+    fun clickApp(action: String = clickFallback): TitleApp? =
         action.takeIf { it.startsWith(CLICK_APP_PREFIX) }?.let { TitleApp.of(it.removePrefix(CLICK_APP_PREFIX)) }
 
     /** See [PART_LANGUAGES]: "Automatic" is the wallpaper language; [trailerFallback] applies when there is none in it. */
@@ -728,7 +744,7 @@ object Settings {
         ).plus(listOfNotNull(overviewLines.takeIf { it != 4 }, "nosource".takeIf { !showSource }, "fallback".takeIf { showSource && showProviders && sourceFallback },
             "inline".takeIf { showSource && showProviders && !sourceFallback && sourceInline },
             // Its pages are looked up when generating
-            "platform".takeIf { clickAction == CLICK_PLATFORM },
+            "platform".takeIf { clickPlatforms.isNotEmpty() },
             "dups".takeIf { !skipDuplicates }, "logo:$logoMode".takeIf { logoMode != LOGO_TEXT }, "synopsis:$synopsisMode".takeIf { synopsisMode != SYNOPSIS_HIDE },
             "titlelang:$titleLanguage".takeIf { titleLanguage != LANGUAGE_AUTO }, "synopsislang:$synopsisLanguage".takeIf { synopsisLanguage != LANGUAGE_AUTO },
             "ratings:$ratingSourcesKey:$mdbListAvailable".takeIf { ratingSourcesKey != RatingSource.TMDB.key },

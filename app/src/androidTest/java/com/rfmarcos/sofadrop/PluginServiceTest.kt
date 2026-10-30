@@ -65,7 +65,7 @@ class PluginServiceTest {
         }
 
         // Trailers: "Watch" in Projectivy opens YouTube; a title without one has no action
-        assertEquals(Settings.CLICK_TRAILER, Settings.clickAction)
+        assertEquals(Settings.CLICK_TRAILER, Settings.clickFallback)
         val trailers = wallpapers.mapNotNull { it.actionUri }
         assertTrue("no wallpaper has a trailer", trailers.isNotEmpty())
         for (actionUri in trailers) {
@@ -73,11 +73,11 @@ class PluginServiceTest {
             assertEquals(Intent.ACTION_VIEW, intent.action)
             assertTrue(actionUri, intent.dataString.orEmpty().startsWith("https://www.youtube.com/watch?v="))
         }
-        Settings.clickAction = Settings.CLICK_NONE
+        Settings.clickFallback = Settings.CLICK_NONE
         try {
             assertTrue(service.getWallpapers(Event.TimeElapsed).all { it.actionUri == null })
         } finally {
-            Settings.clickAction = Settings.CLICK_TRAILER
+            Settings.clickFallback = Settings.CLICK_TRAILER
         }
 
         // Projectivy backup round-trip
@@ -108,6 +108,8 @@ class PluginServiceTest {
         )
         val lastGeneration = Settings.lastGeneration
         Settings.lastGeneration = System.currentTimeMillis() // not stale: no generation from getWallpapers
+        val atTap = Settings.clickAtTap
+        Settings.clickAtTap = false
         try {
             val service = bind()
             val wallpapers = service.getWallpapers(Event.TimeElapsed).associateBy { it.title }
@@ -117,10 +119,18 @@ class PluginServiceTest {
             assertEquals(Intent.ACTION_VIEW, intent.action)
             assertEquals("https://www.youtube.com/watch?v=dQw4w9WgXcQ", intent.dataString)
 
-            Settings.clickAction = Settings.CLICK_NONE
+            // Decided when clicked: Sofadrop's own activity, with only the title's type and id
+            Settings.clickAtTap = true
+            val open = Intent.parseUri(service.getWallpapers(Event.TimeElapsed).first { it.title == "With trailer" }.actionUri, Intent.URI_INTENT_SCHEME)
+            assertEquals(OpenActivity::class.java.name, open.component?.className)
+            assertEquals(1, open.getIntExtra(OpenActivity.EXTRA_TMDB_ID, 0))
+            Settings.clickAtTap = false
+
+            Settings.clickFallback = Settings.CLICK_NONE
             assertTrue(service.getWallpapers(Event.TimeElapsed).all { it.actionUri == null })
         } finally {
-            Settings.clickAction = Settings.CLICK_TRAILER
+            Settings.clickAtTap = atTap
+            Settings.clickFallback = Settings.CLICK_TRAILER
             Settings.lastGeneration = lastGeneration
         }
     }

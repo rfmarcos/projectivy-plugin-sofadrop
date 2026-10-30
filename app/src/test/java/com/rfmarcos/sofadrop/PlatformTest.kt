@@ -51,13 +51,18 @@ class PlatformTest {
     }
 
     @Test
-    fun picksTheFirstProviderWithAPageAndItsApp() {
+    fun picksTheUsersPlatformsInTheirOrder() {
         val links = mapOf("netflix" to "https://www.netflix.com/title/1", "max" to "https://play.hbomax.com/x", "apple" to "https://tv.apple.com/movie/y")
-        // Movistar (149) has no platform, Max (1899) no app: Netflix's ad tier (1796) wins
-        val picked = Platform.pick(listOf(149, 1899, 1796, 350), links) { it != Platform.MAX }
-        assertEquals(Platform.NETFLIX to "https://www.netflix.com/title/1", picked)
+        val providers = listOf(149, 350, 1796, 1899)
+        // The user's order, not TMDB's; Netflix through its ad tier (1796); Movistar (149) is no platform
+        assertEquals(listOf(Platform.MAX, Platform.NETFLIX),
+            Platform.pick(listOf(Platform.MAX, Platform.NETFLIX), providers, links) { true }.map { it.first })
+        // Skipped: not installed, not in the user's list, or no page
+        assertEquals(listOf(Platform.APPLE to "https://tv.apple.com/movie/y"),
+            Platform.pick(listOf(Platform.MAX, Platform.APPLE, Platform.DISNEY), providers + 337, links) { it != Platform.MAX })
         // A page of a platform that doesn't have it in the country isn't used
-        assertNull(Platform.pick(listOf(337), links) { true })
-        assertNull(Platform.pick(emptyList(), links) { true })
+        assertTrue(Platform.pick(Platform.entries, listOf(337), links) { true }.isEmpty())
+        // A channel inside another service (HBO Max Amazon Channel) isn't that service
+        assertTrue(Platform.pick(Platform.entries, listOf(1825), links) { true }.isEmpty())
     }
 }

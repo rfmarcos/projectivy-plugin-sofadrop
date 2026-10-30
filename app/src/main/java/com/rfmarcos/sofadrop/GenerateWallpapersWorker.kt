@@ -151,7 +151,7 @@ class GenerateWallpapersWorker(context: Context, params: WorkerParameters) : Wor
      * platform. Without Wikidata they open the trailer instead: not worth failing the generation for.
      */
     private fun withPlatformLinks(stored: List<StoredWallpaper>, log: GenerationLog): List<StoredWallpaper> {
-        if (Settings.clickAction != Settings.CLICK_PLATFORM) return stored
+        if (Settings.clickPlatforms.isEmpty()) return stored
         val refs = stored.filter { wallpaper -> wallpaper.providerIds.any { Platform.ofProvider(it) != null } }
             .associateWith { wallpaper -> TitleRef(MediaType.entries.first { it.path == wallpaper.type }, wallpaper.tmdbId) }
         if (refs.isEmpty()) return stored
@@ -166,8 +166,7 @@ class GenerateWallpapersWorker(context: Context, params: WorkerParameters) : Wor
             val ref = refs[wallpaper] ?: return@map wallpaper
             wallpaper.copy(platformLinks = Platform.links(ref.type, ids[ref].orEmpty()))
         }
-        val opening = linked.count { Platform.pick(it.providerIds, it.platformLinks) { true } != null }
-        log.add("Platform links: $opening of ${refs.size} titles on a known platform")
+        log.add("Platform links: ${linked.count { it.platformLinks.isNotEmpty() }} of ${refs.size} titles on a known platform")
         return linked
     }
 

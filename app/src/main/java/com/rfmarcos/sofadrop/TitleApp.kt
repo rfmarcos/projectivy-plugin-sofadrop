@@ -8,7 +8,7 @@ import android.net.Uri
 import androidx.core.net.toUri
 
 /**
- * Apps a wallpaper can open its title in (see [Settings.clickAction]). Only some of them can go to the
+ * Apps a wallpaper can open its title in (see [Settings.clickFallback]). Only some of them can go to the
  * title itself; the platforms (Netflix, Prime Video…) have no public way to, so they aren't here.
  */
 enum class TitleApp(val key: String, val label: String, private val packages: List<String>, val reach: Reach) {

@@ -21,7 +21,7 @@ data class StoredWallpaper(
     val imdbId: String? = null,
     /** TMDB ids of its streaming services in the streaming country (see [Platform.pick]). */
     val providerIds: List<Int> = emptyList(),
-    /** Its pages on the streaming platforms, by [Platform.key] (only when it opens on its platform). */
+    /** Its pages on the streaming platforms, by [Platform.key] (only when the user has platforms). */
     val platformLinks: Map<String, String> = emptyMap(),
 )
 
