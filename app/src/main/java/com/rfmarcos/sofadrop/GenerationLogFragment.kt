@@ -7,7 +7,7 @@ import androidx.appcompat.content.res.AppCompatResources
 import androidx.leanback.widget.GuidanceStylist.Guidance
 import androidx.leanback.widget.GuidedAction
 
-/** The last generation's log ([GenerationLog]), for the user to photograph or copy into a report. */
+/** The last generation's log ([GenerationLog]). */
 class GenerationLogFragment : BaseSettingsFragment() {
 
     private val log by lazy { GenerationLog.read(requireContext()).orEmpty() }

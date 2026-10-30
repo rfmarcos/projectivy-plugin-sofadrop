@@ -464,5 +464,5 @@
     <string name="resolution_low_memory">Puede que esta TV no tenga memoria suficiente para 4K</string>
     <string name="about_log">Registro de la última generación</string>
     <string name="about_log_none">Todavía no se han generado fondos</string>
-    <string name="log_desc">Qué hizo la última actualización: listas, fallos y cuánto tardó. Si algo salió mal, manda una foto de esta pantalla con tu aviso.</string>
+    <string name="log_desc">Qué hizo la última actualización: listas, fallos y cuánto tardó.</string>
 </resources>

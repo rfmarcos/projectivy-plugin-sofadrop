@@ -482,5 +482,5 @@
     <string name="resolution_low_memory">This TV may not have enough memory for 4K</string>
     <string name="about_log">Last generation log</string>
     <string name="about_log_none">No wallpapers generated yet</string>
-    <string name="log_desc">What the last update did: lists, failures and how long it took. If something went wrong, send a photo of it with your report.</string>
+    <string name="log_desc">What the last update did: lists, failures and how long it took.</string>
 </resources>
