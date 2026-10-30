@@ -3,12 +3,14 @@ package com.rfmarcos.sofadrop
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.BitmapShader
 import android.graphics.BlurMaskFilter
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.graphics.LinearGradient
+import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.PorterDuff
@@ -42,6 +44,8 @@ class WallpaperRenderer(
     private val minRatings: Int = 2,
     /** What is drawn over the backdrop, see [Settings.STYLES]. */
     private val style: String = Settings.STYLE_FULL,
+    /** Faces next to the cast names, see [Settings.CAST_PHOTO_MODES]. */
+    private val castPhotos: String = Settings.CAST_PHOTOS_NONE,
 ) {
 
     private val height = width * 9 / 16
@@ -66,10 +70,11 @@ class WallpaperRenderer(
     private fun s(value: Float) = value * scale
     private fun s(value: Int) = value * scale
 
-    fun render(info: WallpaperInfo, backdrop: Bitmap, logo: Bitmap?, providerLogos: List<Bitmap>): Bitmap {
+    /** [faces]: photos of the first [MAX_CAST_PHOTOS] actors of [WallpaperInfo.cast], null where there is none. */
+    fun render(info: WallpaperInfo, backdrop: Bitmap, logo: Bitmap?, providerLogos: List<Bitmap>, faces: List<Bitmap?> = emptyList()): Bitmap {
         val output = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         try {
-            draw(output, info, backdrop, logo, providerLogos)
+            draw(output, info, backdrop, logo, providerLogos, faces)
         } catch (e: Throwable) {
             // A 4K wallpaper is ~33 MB: don't keep it waiting for the collector after running out of memory
             output.recycle()
@@ -78,7 +83,7 @@ class WallpaperRenderer(
         return output
     }
 
-    private fun draw(output: Bitmap, info: WallpaperInfo, backdrop: Bitmap, logo: Bitmap?, providerLogos: List<Bitmap>) {
+    private fun draw(output: Bitmap, info: WallpaperInfo, backdrop: Bitmap, logo: Bitmap?, providerLogos: List<Bitmap>, faces: List<Bitmap?>) {
         val canvas = Canvas(output)
 
         // Full-bleed backdrop
@@ -105,13 +110,13 @@ class WallpaperRenderer(
             min(width, s(2100).roundToInt()), min(height, s(1500).roundToInt()), Bitmap.Config.ARGB_8888
         )
         try {
-            drawInfo(canvas, layer, info, logo, providerLogos)
+            drawInfo(canvas, layer, info, logo, providerLogos, faces)
         } finally {
             layer.recycle()
         }
     }
 
-    private fun drawInfo(canvas: Canvas, layer: Bitmap, info: WallpaperInfo, logo: Bitmap?, providerLogos: List<Bitmap>) {
+    private fun drawInfo(canvas: Canvas, layer: Bitmap, info: WallpaperInfo, logo: Bitmap?, providerLogos: List<Bitmap>, faces: List<Bitmap?>) {
         val layerCanvas = Canvas(layer)
         if (logo != null) drawLogo(layerCanvas, logo) else drawTitle(layerCanvas, info.title)
         if (style == Settings.STYLE_FULL) {
@@ -119,7 +124,7 @@ class WallpaperRenderer(
             val overviewTop = s(if (drawMetadata(layerCanvas, info)) META_CENTER + 36 + 52 else LOGO_BOTTOM + 60)
             val overviewBottom = drawOverview(layerCanvas, info.overview, overviewTop)
             // Without a synopsis, the cast or the footer starts where it would, not a synopsis gap lower
-            val castBottom = drawCast(layerCanvas, overviewBottom, info.cast, if (overviewBottom > overviewTop) s(CAST_GAP) else 0f)
+            val castBottom = drawCast(layerCanvas, overviewBottom, info.cast, faces, if (overviewBottom > overviewTop) s(CAST_GAP) else 0f)
             drawFooter(layerCanvas, if (castBottom > overviewTop) castBottom + s(40) else overviewTop, providerLogos, info)
         }
 
@@ -444,20 +449,84 @@ class WallpaperRenderer(
         return top
     }
 
-    /** "Name · Name · Name" on one line, as many as fit, [gap] below [top]; returns its bottom, or [top] with no cast. */
-    private fun drawCast(canvas: Canvas, top: Float, cast: List<String>, gap: Float): Float {
+    /**
+     * "Name · Name · Name" on one line, as many as fit, [gap] below [top]; returns its bottom, or [top] with no cast.
+     * With [castPhotos], each name drawn has its face: all of them before the names, overlapping, or each one
+     * before its name, with no dot between them (the faces already separate the names).
+     */
+    private fun drawCast(canvas: Canvas, top: Float, cast: List<CastMember>, faces: List<Bitmap?>, gap: Float): Float {
         val paint = textPaint(light, s(44f), Color.rgb(185, 185, 185))
         val separator = "  ·  "
-        // In order: a shorter name further down the list doesn't jump the queue
-        var line = ""
-        for (name in cast) {
-            val candidate = if (line.isEmpty()) name else "$line$separator$name"
-            if (paint.measureText(candidate) > s(CONTENT_WIDTH)) break
-            line = candidate
+        val diameter = s(CAST_PHOTO_SIZE)
+        val step = diameter * (1 - CAST_PHOTO_OVERLAP)
+        fun facesWidth(count: Int) = diameter + step * (min(count, MAX_CAST_PHOTOS) - 1) + s(CAST_PHOTO_GAP)
+        fun width(names: List<CastMember>) = when (castPhotos) {
+            Settings.CAST_PHOTOS_EACH -> names.sumOf { (diameter + s(CAST_PHOTO_NAME_GAP) + paint.measureText(it.name)).toDouble() }.toFloat() +
+                s(CAST_ITEM_GAP) * (names.size - 1)
+            Settings.CAST_PHOTOS_GROUPED -> facesWidth(names.size) + paint.measureText(names.joinToString(separator) { it.name })
+            else -> paint.measureText(names.joinToString(separator) { it.name })
         }
-        if (line.isEmpty()) return top
-        canvas.drawText(line, s(MARGIN_LEFT), top + gap - paint.fontMetrics.ascent, paint)
-        return top + gap + s(60f)
+        // In order: a shorter name further down the list doesn't jump the queue; as many faces as names
+        var names = emptyList<CastMember>()
+        for (member in cast.take(if (castPhotos == Settings.CAST_PHOTOS_NONE) cast.size else MAX_CAST_PHOTOS)) {
+            val candidate = names + member
+            if (width(candidate) > s(CONTENT_WIDTH)) break
+            names = candidate
+        }
+        if (names.isEmpty()) return top
+        val line = names.joinToString(separator) { it.name }
+        // The circles start a little above where the names alone would, so the footer only moves down a bit
+        val center = top + gap + s(32f)
+        when (castPhotos) {
+            Settings.CAST_PHOTOS_GROUPED -> {
+                // Last first: each face covers part of the next one, the first on top
+                for (index in names.indices.reversed()) {
+                    drawFace(canvas, faces.getOrNull(index), names[index].name, s(MARGIN_LEFT) + diameter / 2 + step * index, center, diameter / 2)
+                }
+                drawCentered(canvas, line, s(MARGIN_LEFT) + facesWidth(names.size), center, paint)
+            }
+            Settings.CAST_PHOTOS_EACH -> {
+                var x = s(MARGIN_LEFT)
+                names.forEachIndexed { index, member ->
+                    drawFace(canvas, faces.getOrNull(index), member.name, x + diameter / 2, center, diameter / 2)
+                    x += diameter + s(CAST_PHOTO_NAME_GAP)
+                    drawCentered(canvas, member.name, x, center, paint)
+                    x += paint.measureText(member.name) + s(CAST_ITEM_GAP)
+                }
+            }
+            else -> {
+                canvas.drawText(line, s(MARGIN_LEFT), top + gap - paint.fontMetrics.ascent, paint)
+                return top + gap + s(60f)
+            }
+        }
+        return center + diameter / 2 + s(4f)
+    }
+
+    /** An actor's photo in a circle with a thin white border, or their initials on grey when there is none. */
+    private fun drawFace(canvas: Canvas, face: Bitmap?, name: String, cx: Float, cy: Float, radius: Float) {
+        if (face != null) {
+            // TMDB's profiles are portraits: the square from their upper part, where the face is
+            val side = min(face.width, face.height).toFloat()
+            val matrix = Matrix().apply {
+                setTranslate(-(face.width - side) / 2, -(face.height - side) * 0.2f)
+                postScale(radius * 2 / side, radius * 2 / side)
+                postTranslate(cx - radius, cy - radius)
+            }
+            val shader = BitmapShader(face, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP).apply { setLocalMatrix(matrix) }
+            canvas.drawCircle(cx, cy, radius, Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG).apply { this.shader = shader })
+        } else {
+            canvas.drawCircle(cx, cy, radius, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.rgb(78, 78, 78) })
+            val words = name.split(' ').filter { it.isNotEmpty() }
+            val initials = listOfNotNull(words.firstOrNull(), words.drop(1).lastOrNull()).joinToString("") { it.take(1).uppercase() }
+            val paint = textPaint(medium, radius * 0.75f, Color.rgb(225, 225, 225)).apply { textAlign = Paint.Align.CENTER }
+            canvas.drawText(initials, cx, cy - glyphCenter(paint, initials), paint)
+        }
+        val stroke = s(3f)
+        canvas.drawCircle(cx, cy, radius - stroke / 2, Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            strokeWidth = stroke
+            color = Color.argb(230, 255, 255, 255)
+        })
     }
 
     /** "Available on [icons]" when there are streaming services, then (dimmer) the list it came from. */
@@ -467,19 +536,22 @@ class WallpaperRenderer(
             return
         }
         drawProviders(canvas, top, providerLogos)
-        drawSource(canvas, top + s(PROVIDER_ICON_SIZE) + s(52f), info, primary = false)
+        drawSource(canvas, top + s(PROVIDER_ICON_SIZE) + s(48f), info, primary = false)
     }
 
-    /** "Trending · [TMDB logo]", "Your watchlist · Trakt", "Netflix Movies · MDBList". */
+    /**
+     * "Trending · [TMDB logo]", "Your watchlist · Trakt", "Netflix Movies · MDBList". Regular, not Light:
+     * under the streaming row it's smaller and dimmer, and Light was too thin to read there.
+     */
     private fun drawSource(canvas: Canvas, center: Float, info: WallpaperInfo, primary: Boolean) {
         val label = info.sourceLabel ?: return
-        val grey = if (primary) 205 else 165
-        val size = if (primary) 50f else 40f
-        val labelPaint = textPaint(light, s(size), Color.rgb(grey, grey, grey))
+        val grey = if (primary) 195 else 175
+        val size = if (primary) 46f else 42f
+        val labelPaint = textPaint(regular, s(size), Color.rgb(grey, grey, grey))
         val text = "$label  ·  "
         drawCentered(canvas, text, s(MARGIN_LEFT), center, labelPaint)
         val x = s(MARGIN_LEFT) + labelPaint.measureText(text)
-        val h = s(if (primary) 46f else 37f)
+        val h = s(if (primary) 42f else 38f)
         val bitmapPaint = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
         fun drawBitmap(bitmap: Bitmap, height: Float, left: Float): Float {
             val w = bitmap.width * height / bitmap.height
@@ -508,9 +580,10 @@ class WallpaperRenderer(
         val iconSize = s(PROVIDER_ICON_SIZE)
         val center = top + iconSize / 2
         val label = texts.availableOn
-        val labelPaint = textPaint(light, s(50f), Color.rgb(205, 205, 205))
-        drawCentered(canvas, label, s(MARGIN_LEFT), center, labelPaint)
-        var x = s(MARGIN_LEFT) + labelPaint.measureText(label) + s(32f)
+        val labelPaint = textPaint(light, s(46f), Color.rgb(195, 195, 195))
+        // A touch higher: next to the icons, its lowercase letters look low on the font's centre
+        drawCentered(canvas, label, s(MARGIN_LEFT), center - s(2f), labelPaint)
+        var x = s(MARGIN_LEFT) + labelPaint.measureText(label) + s(30f)
 
         val paint = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
         for (logo in providerLogos.take(4)) {
@@ -557,9 +630,20 @@ class WallpaperRenderer(
         private const val LOGO_MAX_HEIGHT = 420
         private const val LOGO_BOTTOM = 640
         private const val META_CENTER = 725
-        private const val PROVIDER_ICON_SIZE = 88
+        private const val PROVIDER_ICON_SIZE = 92
         /** Between the synopsis and the cast row. */
         private const val CAST_GAP = 26f
+        /** Diameter of the cast faces, ~1.6 times the names' height. */
+        private const val CAST_PHOTO_SIZE = 72
+        /** How much each face covers of the one after it. */
+        private const val CAST_PHOTO_OVERLAP = 0.3f
+        /** Between the last face and the names. */
+        private const val CAST_PHOTO_GAP = 24f
+        /** With a face before each name: between the face and its name, and between one name and the next face. */
+        private const val CAST_PHOTO_NAME_GAP = 16f
+        private const val CAST_ITEM_GAP = 44f
+        /** Faces downloaded, and so names drawn with photos: every name [TmdbCatalog] keeps. */
+        const val MAX_CAST_PHOTOS = 4
         private const val CERT_HEIGHT = 56f
         private const val CERT_PADDING = 14f
         /** Between the year and its certification box. */
@@ -595,6 +679,9 @@ class WallpaperRenderer(
             kept[kept.lastIndex] = last.trimEnd(',', '.', ';', ':') + "…"
             return kept
         }
+
+        /** Side of a cast face on a [width]-pixel wallpaper. */
+        fun castPhotoSize(width: Int) = CAST_PHOTO_SIZE * width / 3840
 
         /** The box a logo is drawn in on a [width]-pixel wallpaper. */
         fun logoBox(width: Int) = Size(LOGO_MAX_WIDTH * width / 3840, LOGO_MAX_HEIGHT * width / 3840)

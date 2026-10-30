@@ -41,6 +41,7 @@ class DetailsFragment : PreviewSettingsFragment() {
             action(ID_CAST, R.drawable.ic_act_account, getString(R.string.cast_title), castLabel(context, Settings.showCast))
                 .subActions(options(ID_CAST, listOf(false, true).map { castLabel(context, it) }, castLabel(context, Settings.showCast),
                     listOf(null, getString(R.string.cast_shown_desc)))).build().hiddenBy(Settings.drawsDetails),
+            castPhotosAction().hiddenBy(Settings.drawsDetails),
             action(ID_FOOTER, R.drawable.ic_act_list, getString(R.string.footer_title), footerLabel(context, footerIndex()))
                 // the fallback option is the one that needs explaining
                 .subActions(options(ID_FOOTER, (0..4).map { footerLabel(context, it) }, footerLabel(context, footerIndex()),
@@ -70,10 +71,23 @@ class DetailsFragment : PreviewSettingsFragment() {
         return action
     }
 
-    private fun replaceCountryRow() {
-        val position = findActionPositionById(ID_COUNTRY)
-        refreshActions(actions.toMutableList().also { it[position] = countryAction().hiddenBy(Settings.drawsDetails) }) { DetailsFragment() }
+    /** Faces next to the cast names; only meaningful while the cast is shown (kept visible so rows don't jump). */
+    private fun castPhotosAction(): GuidedAction {
+        val context = requireContext()
+        val action = action(ID_CAST_PHOTOS, R.drawable.ic_act_account, getString(R.string.cast_photos_title),
+            if (Settings.showCast) castPhotosLabel(context, Settings.castPhotos) else getString(R.string.cast_photos_disabled))
+            .subActions(options(ID_CAST_PHOTOS, Settings.CAST_PHOTO_MODES.map { castPhotosLabel(context, it) }, castPhotosLabel(context, Settings.castPhotos),
+                listOf(null, getString(R.string.cast_photos_grouped_desc), getString(R.string.cast_photos_each_desc)))).build()
+        action.isEnabled = Settings.showCast
+        return action
     }
+
+    private fun replaceRow(action: GuidedAction) {
+        val position = findActionPositionById(action.id)
+        refreshActions(actions.toMutableList().also { it[position] = action }) { DetailsFragment() }
+    }
+
+    private fun replaceCountryRow() = replaceRow(countryAction().hiddenBy(Settings.drawsDetails))
 
     // Back from a sub-screen: its summary may have changed
     override fun onResume() {
@@ -111,6 +125,11 @@ class DetailsFragment : PreviewSettingsFragment() {
             ID_CAST -> {
                 Settings.showCast = index == 1
                 updateDescription(ID_CAST, castLabel(requireContext(), Settings.showCast))
+                replaceRow(castPhotosAction().hiddenBy(Settings.drawsDetails))
+            }
+            ID_CAST_PHOTOS -> {
+                Settings.castPhotos = Settings.CAST_PHOTO_MODES[index]
+                updateDescription(ID_CAST_PHOTOS, castPhotosLabel(requireContext(), Settings.castPhotos))
             }
             ID_FOOTER -> {
                 Settings.showSource = index == 1 || index >= 3
@@ -150,6 +169,7 @@ class DetailsFragment : PreviewSettingsFragment() {
         private const val ID_CAST = 10L
         private const val ID_STYLE = 11L
         private const val ID_CLICK = 12L
+        private const val ID_CAST_PHOTOS = 13L
 
         fun styleLabel(context: Context, style: String) = context.getString(
             when (style) {
@@ -171,6 +191,14 @@ class DetailsFragment : PreviewSettingsFragment() {
             context.getString(if (action == Settings.CLICK_TRAILER) R.string.click_trailer else R.string.click_none)
 
         fun castLabel(context: Context, shown: Boolean) = context.getString(if (shown) R.string.cast_shown else R.string.cast_hidden)
+
+        fun castPhotosLabel(context: Context, mode: String) = context.getString(
+            when (mode) {
+                Settings.CAST_PHOTOS_GROUPED -> R.string.cast_photos_grouped
+                Settings.CAST_PHOTOS_EACH -> R.string.cast_photos_each
+                else -> R.string.cast_photos_hidden
+            }
+        )
 
         /** 0 nothing, 1 list source, 2 streaming services, 3 streaming or list source, 4 both. */
         private fun footerIndex() = when {

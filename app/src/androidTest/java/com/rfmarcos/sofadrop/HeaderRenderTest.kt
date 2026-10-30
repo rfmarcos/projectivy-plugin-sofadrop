@@ -44,18 +44,26 @@ class HeaderRenderTest {
             File(dir, "$name.jpg").outputStream().use { bitmap.compress(Bitmap.CompressFormat.JPEG, 90, it) }
         }
 
-        // Cast under the synopsis (Squid Game skips its Hangul-only names), full and short synopsis, and Swedish
+        // Cast under the synopsis (Squid Game skips its Hangul-only names), full and short synopsis, and Swedish;
+        // with the photos together, and the movie (four short names) with each photo next to its name too
         Settings.showCast = true
+        Settings.castPhotos = Settings.CAST_PHOTOS_GROUPED
         try {
             val squidGame = WallpaperFactory(context, 1920).catalog.build(TitleRef(MediaType.TV, 93405))!!
+            val movie = WallpaperFactory(context, 1920).catalog.build(TitleRef(MediaType.MOVIE, 1061474))!!.copy(ratings = ratings)
             listOf(
                 "cast_squid_game" to squidGame,
                 "cast_last_of_us" to WallpaperFactory(context, 1920).catalog.build(TitleRef(MediaType.TV, 100088))!!,
-                "cast_movie" to WallpaperFactory(context, 1920).catalog.build(TitleRef(MediaType.MOVIE, 1061474))!!.copy(ratings = ratings),
+                "cast_movie" to movie,
             ).forEach { (name, info) ->
                 val bitmap = WallpaperFactory(context, 1920).render(info)
                 File(dir, "$name.jpg").outputStream().use { bitmap.compress(Bitmap.CompressFormat.JPEG, 90, it) }
             }
+            Settings.castPhotos = Settings.CAST_PHOTOS_EACH
+            WallpaperFactory(context, 1920).render(movie).let { bitmap ->
+                File(dir, "cast_movie_each.jpg").outputStream().use { bitmap.compress(Bitmap.CompressFormat.JPEG, 90, it) }
+            }
+            Settings.castPhotos = Settings.CAST_PHOTOS_GROUPED
             Settings.overviewLines = 2
             WallpaperFactory(context, 1920).render(squidGame).let { bitmap ->
                 File(dir, "cast_short.jpg").outputStream().use { bitmap.compress(Bitmap.CompressFormat.JPEG, 90, it) }

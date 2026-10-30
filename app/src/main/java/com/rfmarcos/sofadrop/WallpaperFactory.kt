@@ -27,13 +27,15 @@ class WallpaperFactory(context: Context, val width: Int) {
     val client = TmdbClient(Settings.token, context.cacheDir)
     val catalog = TmdbCatalog(client, Settings.language, Settings.region, Settings.drawsDetails && Settings.showProviders,
         Settings.partLanguages, Settings.drawsDetails && Settings.showCast)
+    /** Faces next to the cast names: only their images are downloaded, and only then. */
+    private val castPhotos = if (Settings.drawsDetails) Settings.castPhotos else Settings.CAST_PHOTOS_NONE
     private val renderers = mutableMapOf<Int, WallpaperRenderer>()
 
     /** Renderer of [width]-pixel wallpapers: this factory's width, or 1920 when 4K runs out of memory. */
     private fun renderer(width: Int) = synchronized(renderers) {
         renderers.getOrPut(width) {
             WallpaperRenderer(appContext, width, Languages.texts(Settings.language), Settings.overviewLines,
-                Settings.headerOrder, Settings.minRatings, Settings.style)
+                Settings.headerOrder, Settings.minRatings, Settings.style, castPhotos)
         }
     }
 
@@ -124,12 +126,18 @@ class WallpaperFactory(context: Context, val width: Int) {
         val backdropBytes = client.image(info.backdropPath, if (width <= 1280) "w1280" else "original")
         val logoBytes = info.logoPath?.let { client.image(it, if (width > 1920) "original" else "w500") }
         val providerBytes = info.providerLogoPaths.mapNotNull { client.image(it, "w154") }
+        // Only the images (~10 KB each): the photo paths came with the credits. One at a time, as this
+        // already runs on the pool, alongside other titles
+        val faceBytes = if (castPhotos != Settings.CAST_PHOTOS_NONE) info.cast.take(WallpaperRenderer.MAX_CAST_PHOTOS).map { member ->
+            member.profilePath?.let { client.image(it, "w185") }
+        } else emptyList()
 
         synchronized(drawing) {
             // Released even when one of them doesn't fit in memory: the next title (or 1920) still can
             var backdrop: Bitmap? = null
             var logo: Bitmap? = null
             val providers = mutableListOf<Bitmap>()
+            val faces = mutableListOf<Bitmap?>()
             try {
                 backdrop = backdropBytes?.let { decode(it, width, width * 9 / 16) } ?: error("No backdrop for ${info.title}")
                 // Originals can be several thousand pixels wide: no bigger than the box it's drawn in
@@ -139,11 +147,14 @@ class WallpaperFactory(context: Context, val width: Int) {
                     WallpaperRenderer.brightenDarkLogo(trimmed).also { if (it !== trimmed) trimmed.recycle() }
                 }
                 providerBytes.mapNotNullTo(providers) { decode(it) }
-                return renderer(width).render(info, backdrop, logo, providers)
+                val faceSize = WallpaperRenderer.castPhotoSize(width)
+                faceBytes.mapTo(faces) { bytes -> bytes?.let { decode(it, faceSize, faceSize) } }
+                return renderer(width).render(info, backdrop, logo, providers, faces)
             } finally {
                 backdrop?.recycle()
                 logo?.recycle()
                 providers.forEach { it.recycle() }
+                faces.forEach { it?.recycle() }
             }
         }
     }

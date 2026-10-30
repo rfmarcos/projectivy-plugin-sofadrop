@@ -79,6 +79,9 @@ object Settings {
     private const val KEY_SELECTION = "selection_mode"
     private const val KEY_OVERVIEW_LINES = "overview_lines"
     private const val KEY_CAST = "show_cast"
+    /** Old on/off switch of the cast photos, read until [castPhotos] is first set. */
+    private const val KEY_CAST_PHOTOS = "cast_photos"
+    private const val KEY_CAST_PHOTO_MODE = "cast_photo_mode"
     private const val KEY_SHOW_SOURCE = "show_source"
     private const val KEY_LIST_FILTERS = "list_filters"
     private val OLD_FILTER_KEYS = listOf("filter_scope", "age_all_lists", "global_hits_all_lists", "adult_all_lists", "filtered_lists",
@@ -139,6 +142,11 @@ object Settings {
     const val CLICK_TRAILER = "trailer"
     const val CLICK_NONE = "none"
     val CLICK_ACTIONS = listOf(CLICK_TRAILER, CLICK_NONE)
+    /** Cast photos: none, all together before the names (overlapping), or each one before its name. */
+    const val CAST_PHOTOS_NONE = "none"
+    const val CAST_PHOTOS_GROUPED = "grouped"
+    const val CAST_PHOTOS_EACH = "each"
+    val CAST_PHOTO_MODES = listOf(CAST_PHOTOS_NONE, CAST_PHOTOS_GROUPED, CAST_PHOTOS_EACH)
 
     // Internal state, not exported in Projectivy backups
     private const val KEY_LAST_GENERATION = "_last_generation"
@@ -474,6 +482,12 @@ object Settings {
         get() = preferences.getBoolean(KEY_CAST, false)
         set(value) = preferences.edit { putBoolean(KEY_CAST, value) }
 
+    /** Faces of the actors shown, see [CAST_PHOTO_MODES] (together by default); only images, no API requests. */
+    var castPhotos: String
+        get() = preferences.getString(KEY_CAST_PHOTO_MODE, null)?.takeIf { it in CAST_PHOTO_MODES }
+            ?: if (preferences.getBoolean(KEY_CAST_PHOTOS, true)) CAST_PHOTOS_GROUPED else CAST_PHOTOS_NONE
+        set(value) = preferences.edit { putString(KEY_CAST_PHOTO_MODE, value).remove(KEY_CAST_PHOTOS) }
+
     /**
      * With both footer parts on, show the list source only when the title has no streaming service.
      * Default for new installs; existing installs keep showing both (decided once, on first read).
@@ -667,7 +681,7 @@ object Settings {
             "header:${headerHidden.sorted()}".takeIf { headerHidden.isNotEmpty() },
             "ratingage:$maxRatingAge".takeIf { maxRatingAge > 0 },
             "order:${headerOrder.joinToString(",")}".takeIf { headerOrder != HEADER_BLOCKS },
-            "minratings:$minRatings".takeIf { minRatings != 2 }, "cast".takeIf { showCast }, "style:$style".takeIf { style != STYLE_FULL },
+            "minratings:$minRatings".takeIf { minRatings != 2 }, "cast".takeIf { showCast }, "castphotos:$castPhotos".takeIf { showCast && castPhotos != CAST_PHOTOS_GROUPED }, "style:$style".takeIf { style != STYLE_FULL },
             "genres:${genreFilter.only}:${genreFilter.ids.sorted()}".takeIf { !genreFilter.isOff })).joinToString("|")
 
     /** True when the current wallpapers were generated with different settings. */

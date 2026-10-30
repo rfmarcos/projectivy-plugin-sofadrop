@@ -286,6 +286,13 @@
     <string name="cast_hidden">Hidden</string>
     <string name="cast_shown">Under the synopsis</string>
     <string name="cast_shown_desc">The main actors, as many as fit on one line. It moves the footer down.</string>
+    <string name="cast_photos_title">Cast photos</string>
+    <string name="cast_photos_hidden">Names only</string>
+    <string name="cast_photos_grouped">Together, before the names</string>
+    <string name="cast_photos_grouped_desc">The faces of the actors shown, overlapping. Those without a photo get their initials.</string>
+    <string name="cast_photos_disabled">Only used when the cast is shown</string>
+    <string name="cast_photos_each">Each one next to its name</string>
+    <string name="cast_photos_each_desc">Each face just before its name. Fewer names may fit on the line.</string>
     <string name="click_action_title">On wallpaper click</string>
     <string name="click_trailer">Watch the trailer</string>
     <string name="click_trailer_desc">On YouTube, from Projectivy\'s play button or “About this wallpaper”. Needs Projectivy 4.73 or later.</string>
