@@ -1,8 +1,6 @@
 package com.rfmarcos.sofadrop
 
 import android.content.Context
-import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.leanback.widget.GuidanceStylist.Guidance
@@ -41,9 +39,7 @@ class FooterFragment : PreviewSettingsFragment() {
         if (bothShown()) {
             val layouts = listOf(false, true)
             val layout = layoutLabel(context, Settings.sourceInline)
-            // No icon: it reads as part of the list source row above
-            rows += GuidedAction.Builder(context).id(ID_LAYOUT).icon(ColorDrawable(Color.TRANSPARENT))
-                .title(getString(R.string.footer_layout_title)).description(layout)
+            rows += action(ID_LAYOUT, R.drawable.ic_act_layout, getString(R.string.footer_layout_title), layout)
                 .subActions(options(ID_LAYOUT, layouts.map { layoutLabel(context, it) }, layout, listOf(
                     getString(R.string.footer_layout_lines_desc), getString(R.string.footer_layout_inline_desc)))).build()
         }

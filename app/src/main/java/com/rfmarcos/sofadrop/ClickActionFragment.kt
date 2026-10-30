@@ -10,9 +10,9 @@ import androidx.leanback.widget.GuidanceStylist.Guidance
 import androidx.leanback.widget.GuidedAction
 
 /**
- * What Projectivy opens from a wallpaper: the title on the user's streaming platforms, tried in their
- * order (see [Platform]); else the fallback: the trailer (in which language, and what instead when there is
- * none in it), the title in an app (see [TitleApp]) or nothing. Also whether that is decided when clicked.
+ * What Projectivy opens from a wallpaper: the trailer (in which language, and what instead when there is
+ * none in it), the title in an app (see [TitleApp]) or nothing; but first the title on the user's streaming
+ * platforms, tried in their order (see [Platform]). Also whether that is decided when clicked.
  */
 class ClickActionFragment : PreviewSettingsFragment() {
 
@@ -43,14 +43,9 @@ class ClickActionFragment : PreviewSettingsFragment() {
 
     private fun rows(): List<GuidedAction> {
         val context = requireContext()
-        val order = Settings.clickPlatforms
-        val rows = mutableListOf(header(ID_PLATFORMS_HEADER, getString(R.string.click_platforms_header)))
-        // The ones in use by their position, then the rest (a regional one only in its countries)
-        rows += (order + Platform.entries.filter { it !in order && it.offeredIn(Settings.region, context) }).map { platformRow(it, order) }
-
-        rows += header(ID_FALLBACK_HEADER, getString(R.string.click_fallback_header))
+        val rows = mutableListOf<GuidedAction>()
         val fallbacks = fallbacks()
-        explanations[ID_FALLBACK] = getString(R.string.click_fallback_explanation)
+        explanations[ID_FALLBACK] = getString(R.string.click_target_explanation)
         rows += action(ID_FALLBACK, R.drawable.ic_act_play, getString(R.string.click_target_title), clickLabel(context, Settings.clickFallback, long = true))
             .subActions(options(ID_FALLBACK, fallbacks.map { clickLabel(context, it) }, clickLabel(context, Settings.clickFallback),
                 fallbacks.map { clickDescription(context, it) })).build()
@@ -68,6 +63,13 @@ class ClickActionFragment : PreviewSettingsFragment() {
                 .subActions(options(ID_TRAILER_FALLBACK, Settings.TRAILER_FALLBACKS.map { fallbackLabel(context, it) },
                     fallbackLabel(context, Settings.trailerFallback), Settings.TRAILER_FALLBACKS.map { fallbackDescription(context, it) })).build()
         }
+
+        rows += header(ID_PLATFORMS_HEADER, getString(R.string.click_platforms_header))
+        // The ones in use by their position, then the rest (a regional one only in its countries), installed first
+        val order = Settings.clickPlatforms
+        val (installed, missing) = Platform.entries.filter { it !in order && it.offeredIn(Settings.region, context) }
+            .partition { it.installedPackage(context) != null }
+        rows += (order + installed).map { platformRow(it, order) } + missing.map(::missingPlatformRow)
 
         rows += header(ID_ADVANCED_HEADER, getString(R.string.click_advanced_header))
         explanations[ID_AT_TAP] = getString(R.string.click_at_tap_explanation)
@@ -99,6 +101,14 @@ class ClickActionFragment : PreviewSettingsFragment() {
             .subActions(options(id, labels, if (used) labels[position] else "")).build()
     }
 
+    /** A platform not in use whose app isn't installed: it would always be skipped, so it can't be picked. */
+    private fun missingPlatformRow(platform: Platform): GuidedAction {
+        val id = platformId(platform)
+        explanations[id] = getString(R.string.click_platform_install, platform.label)
+        return GuidedAction.Builder(requireContext()).id(id).icon(ColorDrawable(Color.TRANSPARENT))
+            .title(platform.label).description(getString(R.string.click_not_installed)).enabled(false).build()
+    }
+
     override fun onGuidedActionClicked(action: GuidedAction) {
         if (action.id == ID_AT_TAP) Settings.clickAtTap = action.isChecked
     }
@@ -127,7 +137,6 @@ class ClickActionFragment : PreviewSettingsFragment() {
 
     companion object {
         private const val ID_PLATFORMS_HEADER = 1L
-        private const val ID_FALLBACK_HEADER = 2L
         private const val ID_FALLBACK = 3L
         private const val ID_TRAILER_LANGUAGE = 4L
         private const val ID_TRAILER_FALLBACK = 5L
