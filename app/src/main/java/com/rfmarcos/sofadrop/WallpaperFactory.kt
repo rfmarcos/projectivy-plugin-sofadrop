@@ -66,7 +66,8 @@ class WallpaperFactory(context: Context, val width: Int) {
                 else -> null
             }
         }.takeIf { skipTaken || hideWatched }
-        val candidates = catalog.candidates(source, perList * 2, trakt, simkl, mdbList, shuffle = random, runExclusion = runExclusion)
+        // Twice as many as needed for titles that fail to draw, but the list is only read further for the ones needed
+        val candidates = catalog.candidates(source, perList * 2, trakt, simkl, mdbList, shuffle = random, runExclusion = runExclusion, enough = perList)
         // History is only loaded when some list shows or hides watched titles
         if (watchedMode != Settings.WATCHED_SHOW) candidates.forEach { candidate ->
             if (candidate.exclusion == null) watched?.status(candidate.ref)?.let { statuses[candidate.ref] = it }

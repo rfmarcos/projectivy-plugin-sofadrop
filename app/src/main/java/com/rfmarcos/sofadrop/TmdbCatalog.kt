@@ -85,11 +85,12 @@ class TmdbCatalog(
      * (with the reason), using the list's own filters (see [Settings.filtersFor]) and then [runExclusion]
      * (titles an earlier list took, hidden watched titles), so both count against the same pool.
      * With [shuffle] the whole list is shuffled first (random selection). A list that comes up short is
-     * read further, up to [MAX_FETCH] titles.
+     * read further, up to [MAX_FETCH] titles, while it has fewer than [enough] usable ones (the rest of the
+     * pool is a reserve from the titles already read: reading further costs a TMDB request per title).
      */
     fun candidates(
         source: ListSource, pool: Int, trakt: TraktClient?, simkl: SimklClient?, mdbList: MdbListClient?,
-        shuffle: Boolean = false, runExclusion: ((TitleRef) -> Exclusion?)? = null,
+        shuffle: Boolean = false, runExclusion: ((TitleRef) -> Exclusion?)? = null, enough: Int = pool,
     ): List<Candidate> {
         val filters = Settings.filtersFor(source)
         val cutoff = cutoff(filters.maxAgeMonths)
@@ -115,7 +116,7 @@ class TmdbCatalog(
             val selected = select(refs, pool, filter, runExclusion)
             // Short on usable titles (strict filters, or a later list whose titles earlier lists took):
             // read further into the list, until it has enough or has no more titles
-            if (selected.count { it.exclusion == null } >= pool) return selected
+            if (selected.count { it.exclusion == null } >= enough) return selected
             val bigger = grow(fetch) ?: return selected
             val more = load(bigger)
             if (more.size <= refs.size) return selected
@@ -388,7 +389,7 @@ class TmdbCatalog(
         private const val DEFAULT_MARGIN = 5
         private const val FILTERED_MARGIN = 20
         /** Most titles read from one list that comes up short (TMDB: 20 a page). */
-        private const val MAX_FETCH = 200
+        private const val MAX_FETCH = 100
         private const val MAX_PAGES = MAX_FETCH / 20
         private const val CHECK_BATCH = 8
 

@@ -51,7 +51,7 @@ class SelectionTest {
     fun shortListsAreReadFurtherUpToALimit() {
         assertEquals(80, TmdbCatalog.grow(40))
         val steps = generateSequence(40) { TmdbCatalog.grow(it) }.toList()
-        assertEquals(200, steps.last())
+        assertEquals(100, steps.last())
         assertTrue(steps.size < 10)
     }
 

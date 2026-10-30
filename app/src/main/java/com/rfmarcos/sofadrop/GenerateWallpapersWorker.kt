@@ -186,10 +186,14 @@ class GenerateWallpapersWorker(context: Context, params: WorkerParameters) : Wor
         if (missing <= 0 || perList >= Settings.COUNT_ALL || plans.isEmpty()) return
         Log.i(TAG, "$missing wallpapers short, topping up from the other lists")
         log.add("$missing short: topping up from the other lists")
-        // Each list read further than its own share; titles already in the set are skipped
+        // Each list read a bit further than its share of what's missing (one more, for the lists that have no
+        // more); titles already in the set are skipped
+        val share = (missing + plans.size - 1) / plans.size + 1
+        // Skipping duplicates, the titles already in the set (its own too) are left out of the pool
+        val pool = if (Settings.skipDuplicates) share else perList + share
         val extra = plans.map { (source, plan) ->
             val bigger = try {
-                factory.plan(source, perList + missing, taken)
+                factory.plan(source, pool, taken)
             } catch (e: TmdbException) {
                 throw e
             } catch (e: Exception) {
