@@ -7,9 +7,8 @@ import androidx.leanback.widget.GuidanceStylist.Guidance
 import androidx.leanback.widget.GuidedAction
 
 /**
- * How each wallpaper looks: style, language and resolution here, and a screen for each part of it
- * (languages of each part, header, synopsis and cast, footer, what a click opens). Rows of the parts
- * the style hides stay in place, disabled.
+ * How each wallpaper looks: style and resolution here, and a screen for the rest (languages, header,
+ * synopsis and cast, footer, what a click opens). Rows of the parts the style hides stay in place, disabled.
  */
 class DetailsFragment : PreviewSettingsFragment() {
 
@@ -31,10 +30,7 @@ class DetailsFragment : PreviewSettingsFragment() {
             action(ID_STYLE, R.drawable.ic_act_visibility, getString(R.string.style_title), styleLabel(context, Settings.style))
                 .subActions(options(ID_STYLE, styleLabels, styleLabel(context, Settings.style),
                     Settings.STYLES.map { styleDescription(context, it) })).build(),
-            choice(ID_LANGUAGE, R.drawable.ic_act_language, R.string.setting_language_title, Languages.displayName(Settings.language),
-                Languages.OPTIONS.values.toList()),
-            screen(ID_PART_LANGUAGES, R.drawable.ic_act_language, R.string.part_languages_title, PartLanguagesFragment.summary(context))
-                .hiddenBy(Settings.drawsLogo),
+            screen(ID_LANGUAGE, R.drawable.ic_act_language, R.string.setting_language_title, PartLanguagesFragment.summary(context)),
             screen(ID_HEADER, R.drawable.ic_act_heart, R.string.header_title, HeaderFragment.summary(context)).hiddenBy(Settings.drawsDetails),
             screen(ID_SYNOPSIS_CAST, R.drawable.ic_act_count, R.string.synopsis_cast_title, SynopsisCastFragment.summary(context))
                 .hiddenBy(Settings.drawsDetails),
@@ -61,7 +57,7 @@ class DetailsFragment : PreviewSettingsFragment() {
 
     override fun onGuidedActionClicked(action: GuidedAction) {
         when (action.id) {
-            ID_PART_LANGUAGES -> add(parentFragmentManager, PartLanguagesFragment())
+            ID_LANGUAGE -> add(parentFragmentManager, PartLanguagesFragment())
             ID_HEADER -> add(parentFragmentManager, HeaderFragment())
             ID_SYNOPSIS_CAST -> add(parentFragmentManager, SynopsisCastFragment())
             ID_FOOTER -> add(parentFragmentManager, FooterFragment())
@@ -78,10 +74,8 @@ class DetailsFragment : PreviewSettingsFragment() {
                 // Rows of the parts it hides (or brings back) change
                 collapseSubActions()
             }
-            ID_LANGUAGE -> Settings.language = Languages.OPTIONS.keys.elementAt(index)
             ID_RESOLUTION -> Settings.outputWidth = Settings.WIDTH_OPTIONS[index]
         }
-        // The language shows in the summaries of other rows (the footer's "Automatic" country, the trailer's)
         refreshActions(rows()) { DetailsFragment() }
         schedulePreview(300)
         return true
@@ -91,7 +85,6 @@ class DetailsFragment : PreviewSettingsFragment() {
         private const val ID_LANGUAGE = 1L
         private const val ID_RESOLUTION = 3L
         private const val ID_FOOTER = 5L
-        private const val ID_PART_LANGUAGES = 6L
         private const val ID_HEADER = 8L
         private const val ID_PREVIEW_PIN = 9L
         private const val ID_STYLE = 11L

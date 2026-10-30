@@ -10,13 +10,14 @@ import androidx.leanback.widget.GuidanceStylist.Guidance
 import androidx.leanback.widget.GuidedAction
 
 /**
- * Language of the logo (and of the title written instead) and of the synopsis, each followed by what to
- * do when TMDB has none in it. "Automatic" follows the wallpaper language, like everything else drawn.
+ * The wallpaper language, then the language of the logo (and of the title written instead) and of the
+ * synopsis, each followed by what to do when TMDB has none in it. "Automatic" follows the wallpaper
+ * language, like everything else drawn.
  */
 class PartLanguagesFragment : PreviewSettingsFragment() {
 
     override fun onCreateGuidance(savedInstanceState: Bundle?) = Guidance(
-        getString(R.string.part_languages_title),
+        getString(R.string.setting_language_title),
         getString(R.string.part_languages_desc, Languages.displayName(Settings.language)),
         getString(R.string.setting_details_title),
         AppCompatResources.getDrawable(requireActivity(), R.mipmap.ic_launcher),
@@ -45,9 +46,11 @@ class PartLanguagesFragment : PreviewSettingsFragment() {
         val synopsisModes = synopsisModes()
         val synopsisMode = shownSynopsisMode()
         return listOf(
-            languageRow(ID_TITLE_LANGUAGE, R.string.logo_language_title, Settings.titleLanguage),
+            choice(ID_LANGUAGE, R.drawable.ic_act_language, R.string.wallpaper_language_title, Languages.displayName(Settings.language),
+                Languages.OPTIONS.values.toList()),
+            languageRow(ID_TITLE_LANGUAGE, R.string.logo_language_title, Settings.titleLanguage).hiddenBy(Settings.drawsLogo),
             fallbackRow(ID_LOGO_MODE, R.string.logo_mode_title, logoModeLabel(context, Settings.logoMode, originalLogo), logoModes,
-                Settings.LOGO_MODES.map { logoModeDescription(context, it, originalLogo) }),
+                Settings.LOGO_MODES.map { logoModeDescription(context, it, originalLogo) }).hiddenBy(Settings.drawsLogo),
             languageRow(ID_SYNOPSIS_LANGUAGE, R.string.synopsis_language_title, Settings.synopsisLanguage).hiddenBy(Settings.drawsDetails),
             fallbackRow(ID_SYNOPSIS_MODE, R.string.synopsis_mode_title, synopsisModeLabel(context, synopsisMode),
                 synopsisModes.map { synopsisModeLabel(context, it) },
@@ -83,12 +86,17 @@ class PartLanguagesFragment : PreviewSettingsFragment() {
     override fun onSubGuidedActionClicked(action: GuidedAction): Boolean {
         val index = (action.id % SUB_ID_BASE).toInt()
         when (action.id / SUB_ID_BASE) {
+            ID_LANGUAGE -> {
+                Settings.language = Languages.OPTIONS.keys.elementAt(index)
+                // What Automatic stands for
+                setGuidanceText(getString(R.string.part_languages_desc, Languages.displayName(Settings.language)))
+            }
             ID_TITLE_LANGUAGE -> Settings.titleLanguage = Settings.PART_LANGUAGES[index]
             ID_LOGO_MODE -> Settings.logoMode = Settings.LOGO_MODES[index]
             ID_SYNOPSIS_LANGUAGE -> Settings.synopsisLanguage = Settings.PART_LANGUAGES[index]
             ID_SYNOPSIS_MODE -> Settings.synopsisMode = synopsisModes()[index]
         }
-        // A language changes the options of its fallback row
+        // A language changes the options of its fallback row, and the wallpaper's what Automatic says
         collapseSubActions()
         refreshActions(rows()) { PartLanguagesFragment() }
         schedulePreview(300)
@@ -101,6 +109,7 @@ class PartLanguagesFragment : PreviewSettingsFragment() {
         private const val ID_SYNOPSIS_LANGUAGE = 3L
         private const val ID_SYNOPSIS_MODE = 4L
         private const val ID_PREVIEW_PIN = 5L
+        private const val ID_LANGUAGE = 6L
 
         /** A synopsis already in English has no English one to fall back to. */
         private fun englishSynopsis() = Settings.partLanguages.synopsis?.let(Languages::code) == "en"
@@ -154,14 +163,14 @@ class PartLanguagesFragment : PreviewSettingsFragment() {
             else -> null
         }
 
-        /** "All in Español (España)", or what differs: "Logo: Original language · skips titles", for the details screen. */
-        fun summary(context: Context): String {
-            val languages = listOfNotNull(
-                Settings.titleLanguage.takeIf { it != Settings.LANGUAGE_AUTO }?.let { context.getString(R.string.part_summary_logo, languageLabel(context, it)) },
-                Settings.synopsisLanguage.takeIf { it != Settings.LANGUAGE_AUTO }?.let { context.getString(R.string.part_summary_synopsis, languageLabel(context, it)) },
-            ).ifEmpty { listOf(context.getString(R.string.part_summary_all, Languages.displayName(Settings.language))) }
-            val skips = Settings.requireLogo || Settings.requireSynopsis
-            return (languages + listOfNotNull(context.getString(R.string.part_summary_skips).takeIf { skips })).joinToString(" · ")
-        }
+        /** "Español (España)", plus the parts that differ: "Español (España) · Logo: Original language · skips titles", for the details screen. */
+        fun summary(context: Context): String = listOfNotNull(
+            Languages.displayName(Settings.language),
+            Settings.titleLanguage.takeIf { it != Settings.LANGUAGE_AUTO && Settings.drawsLogo }
+                ?.let { context.getString(R.string.part_summary_logo, languageLabel(context, it)) },
+            Settings.synopsisLanguage.takeIf { it != Settings.LANGUAGE_AUTO && Settings.drawsDetails }
+                ?.let { context.getString(R.string.part_summary_synopsis, languageLabel(context, it)) },
+            context.getString(R.string.part_summary_skips).takeIf { Settings.requireLogo || Settings.requireSynopsis },
+        ).joinToString(" · ")
     }
 }

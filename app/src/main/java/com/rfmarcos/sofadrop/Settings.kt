@@ -94,6 +94,7 @@ object Settings {
     private val OLD_FILTER_KEYS = listOf("filter_scope", "age_all_lists", "global_hits_all_lists", "adult_all_lists", "filtered_lists",
         "launcher_guide", "_launcher_layout")
     private const val KEY_SOURCE_FALLBACK = "source_fallback"
+    private const val KEY_SOURCE_INLINE = "source_inline"
     private const val KEY_PROGRESS = "_generation_progress"
     private const val KEY_PREVIEW_PIN = "_preview_pin"
     private const val KEY_PREVIEW_PIN_TITLE = "_preview_pin_title"
@@ -542,6 +543,11 @@ object Settings {
         }
         set(value) = preferences.edit { putBoolean(KEY_SOURCE_FALLBACK, value) }
 
+    /** With both footer parts always on, the list source next to the streaming services instead of under them (when it fits). */
+    var sourceInline: Boolean
+        get() = preferences.getBoolean(KEY_SOURCE_INLINE, false)
+        set(value) = preferences.edit { putBoolean(KEY_SOURCE_INLINE, value) }
+
     /** Footer line naming the list each title came from ("Trending · TMDB"). */
     var showSource: Boolean
         get() = preferences.getBoolean(KEY_SHOW_SOURCE, true)
@@ -718,6 +724,7 @@ object Settings {
             maxAgeMonths, excludeAdult, listFilters.toSortedMap().toString().replace(", genres=null", ""),
         // Only when changed, so existing installs don't see a pending change after updating
         ).plus(listOfNotNull(overviewLines.takeIf { it != 4 }, "nosource".takeIf { !showSource }, "fallback".takeIf { showSource && showProviders && sourceFallback },
+            "inline".takeIf { showSource && showProviders && !sourceFallback && sourceInline },
             "dups".takeIf { !skipDuplicates }, "logo:$logoMode".takeIf { logoMode != LOGO_TEXT }, "synopsis:$synopsisMode".takeIf { synopsisMode != SYNOPSIS_HIDE },
             "titlelang:$titleLanguage".takeIf { titleLanguage != LANGUAGE_AUTO }, "synopsislang:$synopsisLanguage".takeIf { synopsisLanguage != LANGUAGE_AUTO },
             "ratings:$ratingSourcesKey:$mdbListAvailable".takeIf { ratingSourcesKey != RatingSource.TMDB.key },

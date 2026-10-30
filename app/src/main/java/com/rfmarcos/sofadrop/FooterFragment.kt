@@ -25,8 +25,8 @@ class FooterFragment : PreviewSettingsFragment() {
         return listOf(
             action(ID_FOOTER, R.drawable.ic_act_list, getString(R.string.footer_content_title), footerLabel(context, footerIndex()))
                 // the fallback option is the one that needs explaining
-                .subActions(options(ID_FOOTER, (0..4).map { footerLabel(context, it) }, footerLabel(context, footerIndex()),
-                    listOf(null, null, null, getString(R.string.footer_fallback_desc)))).build(),
+                .subActions(options(ID_FOOTER, (0..5).map { footerLabel(context, it) }, footerLabel(context, footerIndex()),
+                    listOf(null, null, null, getString(R.string.footer_fallback_desc), null, getString(R.string.footer_inline_desc)))).build(),
             countryAction(),
         )
     }
@@ -48,6 +48,7 @@ class FooterFragment : PreviewSettingsFragment() {
                 Settings.showSource = index == 1 || index >= 3
                 Settings.showProviders = index >= 2
                 Settings.sourceFallback = index == 3
+                Settings.sourceInline = index == 5
                 refreshActions(rows()) { FooterFragment() }
             }
             ID_COUNTRY -> {
@@ -63,11 +64,12 @@ class FooterFragment : PreviewSettingsFragment() {
         private const val ID_FOOTER = 1L
         private const val ID_COUNTRY = 2L
 
-        /** 0 nothing, 1 list source, 2 streaming services, 3 streaming or list source, 4 both. */
+        /** 0 nothing, 1 list source, 2 streaming services, 3 streaming or list source, 4 both, 5 both on one line. */
         private fun footerIndex() = when {
             !Settings.showProviders -> if (Settings.showSource) 1 else 0
             !Settings.showSource -> 2
             Settings.sourceFallback -> 3
+            Settings.sourceInline -> 5
             else -> 4
         }
 
@@ -77,6 +79,7 @@ class FooterFragment : PreviewSettingsFragment() {
                 2 -> R.string.footer_streaming
                 3 -> R.string.footer_fallback
                 4 -> R.string.footer_both
+                5 -> R.string.footer_inline
                 else -> R.string.footer_none
             }
         )

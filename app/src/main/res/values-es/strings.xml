@@ -206,7 +206,7 @@
     <string name="style_logo_desc">El logo (o el título) sobre el fondo, nada más</string>
     <string name="style_backdrop_desc">Solo la imagen</string>
     <string name="style_hidden">Oculto con el estilo %1$s</string>
-    <string name="details_description">Cómo se ve cada fondo. Estilo, idioma y resolución aquí; el resto, por partes: idioma de cada parte, cabecera (la línea bajo el título), sinopsis y reparto, pie (lista de origen y plataformas) y qué abre Projectivy al pulsar el fondo.</string>
+    <string name="details_description">Cómo se ve cada fondo. Estilo y resolución aquí; el resto, por partes: idioma, cabecera (la línea bajo el título), sinopsis y reparto, pie (lista de origen y plataformas) y qué abre Projectivy al pulsar el fondo.</string>
 
     <string name="header_title">Cabecera</string>
     <string name="header_fit_desc">Si la línea no cabe, se quitan primero las notas que pasan del mínimo y después lo que esté más a la derecha (los géneros, de uno en uno). Pon delante lo que no quieras perder: lo primero y las notas siempre visibles no se quitan nunca.</string>
@@ -287,8 +287,10 @@
     <string name="cast_photos_each_desc">Cada cara justo antes de su nombre. Pueden caber menos nombres en la línea.</string>
     <string name="click_action_title">Al pulsar el fondo</string>
     <string name="click_trailer">Ver el tráiler</string>
-    <string name="click_trailer_desc">En YouTube, desde el botón de reproducir de Projectivy o «Acerca de este fondo».</string>
+    <string name="click_trailer_desc">En YouTube</string>
     <string name="click_none">Nada</string>
+    <string name="click_trailer_note">El tráiler se elige al crear los fondos: un cambio de idioma se aplica desde la próxima actualización.</string>
+    <string name="click_app_not_installed">No está instalada · %1$s</string>
     <string name="synopsis_cast_title">Sinopsis y reparto</string>
     <string name="synopsis_cast_desc">El texto bajo la cabecera. Una sinopsis más corta evita que las filas del launcher la tapen; el reparto baja el pie.</string>
     <string name="synopsis_cast_summary">Sinopsis: %1$s</string>
@@ -297,7 +299,7 @@
     <string name="cast_summary_photos">reparto con fotos</string>
     <string name="footer_desc">La línea de abajo: la lista de la que sale cada fondo y las plataformas donde está, en el país que elijas.</string>
     <string name="footer_content_title">Qué muestra</string>
-    <string name="click_action_desc">Qué abre Projectivy desde un fondo, con su botón de reproducir o desde «Acerca de este fondo». El tráiler se elige al crear los fondos: un idioma nuevo se aplica desde la próxima actualización.</string>
+    <string name="click_action_desc">Projectivy lo abre con su botón de reproducir o desde «Acerca de este fondo».</string>
     <string name="click_target_title">Qué abre</string>
     <string name="click_open_app">Abrir en %1$s</string>
     <string name="click_app_missing">Abrir en %1$s (no está instalada: se abre el tráiler)</string>
@@ -363,6 +365,8 @@
     <string name="viewer_position">%1$d de %2$d</string>
     <string name="footer_fallback">Plataformas, o lista de origen</string>
     <string name="footer_fallback_desc">La lista se muestra si ninguna plataforma lo tiene</string>
+    <string name="footer_inline">Plataformas y lista de origen, en una línea</string>
+    <string name="footer_inline_desc">Si la lista no cabe al lado, va debajo</string>
     <string name="filter_off">No</string>
     <string name="filter_on">Sí</string>
     <string name="filters_age_explain">Descarta lo estrenado (o, en series, emitido por última vez) hace más tiempo</string>
@@ -390,13 +394,12 @@
     <string name="filters_automatic_note">Por defecto solo se aplica a tendencias, populares y similares, para no vaciar tus watchlists y favoritos.</string>
     <string name="explore_titles_header">Títulos · %1$d</string>
     <string name="about_credits_short">TMDB · Trakt · Simkl · MDBList</string>
-    <string name="part_languages_title">Idioma de cada parte</string>
-    <string name="part_languages_desc">El logo y la sinopsis pueden ir en otro idioma que el resto del fondo. Automático sigue el Idioma del fondo: %1$s. Cada uno dice qué hacer cuando TMDB no tiene nada en ese idioma.</string>
-    <string name="part_summary_all">Todo en %1$s</string>
+    <string name="part_languages_desc">El idioma de los textos del fondo. El logo y la sinopsis pueden ir en otro: Automático sigue el del fondo (%1$s). Cada uno dice qué hacer cuando TMDB no tiene nada en ese idioma.</string>
     <string name="part_summary_logo">Logo: %1$s</string>
     <string name="part_summary_synopsis">Sinopsis: %1$s</string>
     <string name="part_summary_skips">descarta títulos</string>
     <string name="logo_language_title">Idioma del logo</string>
+    <string name="wallpaper_language_title">Idioma del fondo</string>
     <string name="synopsis_language_title">Idioma de la sinopsis</string>
     <string name="language_auto">Automático</string>
     <string name="language_auto_current">Automático · %1$s</string>

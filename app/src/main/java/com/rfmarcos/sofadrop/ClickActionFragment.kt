@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
+import android.view.View
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.leanback.widget.GuidanceStylist.Guidance
 import androidx.leanback.widget.GuidedAction
@@ -16,7 +17,7 @@ class ClickActionFragment : PreviewSettingsFragment() {
 
     override fun onCreateGuidance(savedInstanceState: Bundle?) = Guidance(
         getString(R.string.click_action_title),
-        getString(R.string.click_action_desc),
+        guidanceText(),
         getString(R.string.setting_details_title),
         AppCompatResources.getDrawable(requireActivity(), R.mipmap.ic_launcher),
     )
@@ -25,16 +26,32 @@ class ClickActionFragment : PreviewSettingsFragment() {
         actions += rows()
     }
 
-    /** The trailer, the installed apps and nothing; an app chosen before that is no longer installed stays listed. */
-    private fun clickActions(): List<String> {
-        val apps = (TitleApp.installed(requireContext()) + listOfNotNull(Settings.clickApp())).distinct()
-        return listOf(Settings.CLICK_TRAILER) + apps.map { Settings.CLICK_APP_PREFIX + it.key } + Settings.CLICK_NONE
+    // Where Projectivy opens it from, always in view under the preview
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        guidanceStylist.descriptionView?.visibility = View.VISIBLE
     }
+
+    /** Where it opens from, and when the trailer is picked if that's the action. */
+    private fun guidanceText() = listOfNotNull(getString(R.string.click_action_desc),
+        getString(R.string.click_trailer_note).takeIf { Settings.clickAction == Settings.CLICK_TRAILER }).joinToString(" ")
+
+    /** The trailer, every app (those not installed can't be picked) and nothing. */
+    private fun clickActions(): List<String> =
+        listOf(Settings.CLICK_TRAILER) + TitleApp.entries.map { Settings.CLICK_APP_PREFIX + it.key } + Settings.CLICK_NONE
 
     private fun rows(): List<GuidedAction> {
         val context = requireContext()
         val clickActions = clickActions()
-        val trailer = Settings.clickAction != Settings.CLICK_NONE
+        val options = options(ID_ACTION, clickActions.map { clickLabel(context, it) }, clickLabel(context, Settings.clickAction),
+            clickActions.map { clickDescription(context, it) })
+        options.zip(clickActions).forEach { (option, action) ->
+            option.isEnabled = Settings.clickApp(action)?.let { it.installedPackage(context) != null } ?: true
+        }
+        val target = action(ID_ACTION, R.drawable.ic_act_movie, getString(R.string.click_target_title), clickLabel(context, Settings.clickAction, long = true))
+            .subActions(options).build()
+        // The trailer's language only matters when the wallpaper opens it
+        if (Settings.clickAction != Settings.CLICK_TRAILER) return listOf(target)
         val languages = Settings.PART_LANGUAGES
         val language = action(ID_TRAILER_LANGUAGE, R.drawable.ic_act_language, getString(R.string.trailer_language_title),
             PartLanguagesFragment.languageLabel(context, Settings.trailerLanguage, long = true))
@@ -46,15 +63,7 @@ class ClickActionFragment : PreviewSettingsFragment() {
             .title(getString(R.string.trailer_fallback_title)).description(fallbackLabel(context, Settings.trailerFallback))
             .subActions(options(ID_TRAILER_FALLBACK, Settings.TRAILER_FALLBACKS.map { fallbackLabel(context, it) },
                 fallbackLabel(context, Settings.trailerFallback), Settings.TRAILER_FALLBACKS.map { fallbackDescription(context, it) })).build()
-        language.isEnabled = trailer
-        fallback.isEnabled = trailer
-        return listOf(
-            action(ID_ACTION, R.drawable.ic_act_movie, getString(R.string.click_target_title), clickLabel(context, Settings.clickAction, long = true))
-                .subActions(options(ID_ACTION, clickActions.map { clickLabel(context, it) }, clickLabel(context, Settings.clickAction),
-                    clickActions.map { clickDescription(context, it) })).build(),
-            language,
-            fallback,
-        )
+        return listOf(target, language, fallback)
     }
 
     override fun onSubGuidedActionClicked(action: GuidedAction): Boolean {
@@ -63,6 +72,7 @@ class ClickActionFragment : PreviewSettingsFragment() {
             ID_ACTION -> {
                 // Projectivy gets it with the next request; nothing to preview or regenerate
                 Settings.clickAction = clickActions()[index]
+                setGuidanceText(guidanceText())
                 refreshActions(rows()) { ClickActionFragment() }
                 return true
             }
@@ -91,11 +101,15 @@ class ClickActionFragment : PreviewSettingsFragment() {
             }
         }
 
-        private fun clickDescription(context: Context, action: String): String? = when (Settings.clickApp(action)?.reach) {
-            TitleApp.Reach.TITLE -> context.getString(R.string.click_app_title_desc)
-            TitleApp.Reach.SEARCH -> context.getString(R.string.click_app_search_desc)
-            TitleApp.Reach.APP -> context.getString(R.string.click_app_launch_desc)
-            null -> if (action == Settings.CLICK_TRAILER) context.getString(R.string.click_trailer_desc) else null
+        private fun clickDescription(context: Context, action: String): String? {
+            val app = Settings.clickApp(action)
+            val reach = when (app?.reach) {
+                TitleApp.Reach.TITLE -> context.getString(R.string.click_app_title_desc)
+                TitleApp.Reach.SEARCH -> context.getString(R.string.click_app_search_desc)
+                TitleApp.Reach.APP -> context.getString(R.string.click_app_launch_desc)
+                null -> return if (action == Settings.CLICK_TRAILER) context.getString(R.string.click_trailer_desc) else null
+            }
+            return if (app.installedPackage(context) == null) context.getString(R.string.click_app_not_installed, reach) else reach
         }
 
         fun fallbackLabel(context: Context, fallback: String) = context.getString(
