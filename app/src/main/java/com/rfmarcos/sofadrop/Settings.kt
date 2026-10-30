@@ -543,7 +543,7 @@ object Settings {
         }
         set(value) = preferences.edit { putBoolean(KEY_SOURCE_FALLBACK, value) }
 
-    /** With both footer parts always on, the list source next to the streaming services instead of under them (when it fits). */
+    /** With both footer parts always on, the list source next to the streaming services instead of under them (its name shortened to fit). */
     var sourceInline: Boolean
         get() = preferences.getBoolean(KEY_SOURCE_INLINE, false)
         set(value) = preferences.edit { putBoolean(KEY_SOURCE_INLINE, value) }

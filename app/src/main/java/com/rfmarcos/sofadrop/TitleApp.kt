@@ -17,13 +17,11 @@ enum class TitleApp(val key: String, val label: String, private val packages: Li
     /** stremio:///detail/movie/tt0133093 (Stremio's deep links), by IMDb id; its search without one. */
     STREMIO("stremio", "Stremio", listOf("com.stremio.one"), Reach.TITLE),
     /** Its search screen with the title, through ACTION_SEARCH; items need the server's own ids. */
-    JELLYFIN("jellyfin", "Jellyfin", listOf("org.jellyfin.androidtv"), Reach.SEARCH),
-    /** No deep links to a title: the app opens. */
-    PLEX("plex", "Plex", listOf("com.plexapp.android"), Reach.APP),
-    KODI("kodi", "Kodi", listOf("org.xbmc.kodi"), Reach.APP);
+    JELLYFIN("jellyfin", "Jellyfin", listOf("org.jellyfin.androidtv"), Reach.SEARCH);
+    // Plex and Kodi have no way in to a title: only opening the app, which isn't worth a wallpaper click
 
     /** How close to the title the app gets. */
-    enum class Reach { TITLE, SEARCH, APP }
+    enum class Reach { TITLE, SEARCH }
 
     /** The installed package of this app, or null. */
     fun installedPackage(context: Context): String? = packages.firstOrNull { name ->
@@ -43,8 +41,6 @@ enum class TitleApp(val key: String, val label: String, private val packages: Li
             STREMIO -> Intent(Intent.ACTION_VIEW, (wallpaper.imdbId?.let { "stremio:///detail/${if (series) "series" else "movie"}/$it" }
                 ?: "stremio:///search?search=${Uri.encode(wallpaper.title)}").toUri())
             JELLYFIN -> Intent(Intent.ACTION_SEARCH).putExtra(SearchManager.QUERY, wallpaper.title)
-            PLEX, KODI -> context.packageManager.run { getLeanbackLaunchIntentForPackage(packageName) ?: getLaunchIntentForPackage(packageName) }
-                ?: return null
         }.setPackage(packageName).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     }
 

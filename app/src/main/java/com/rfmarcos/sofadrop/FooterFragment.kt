@@ -1,12 +1,18 @@
 package com.rfmarcos.sofadrop
 
 import android.content.Context
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.leanback.widget.GuidanceStylist.Guidance
 import androidx.leanback.widget.GuidedAction
 
-/** The bottom line of the wallpaper: the list it came from and/or the streaming services, and their country. */
+/**
+ * The bottom line of the wallpaper: the streaming services (and their country), the list it came from
+ * (always, or only when no service has the title) and, with both, whether the list goes under them or
+ * beside them. A row that only matters with another one's value is hidden, and comes last.
+ */
 class FooterFragment : PreviewSettingsFragment() {
 
     override fun onCreateGuidance(savedInstanceState: Bundle?) = Guidance(
@@ -22,74 +28,104 @@ class FooterFragment : PreviewSettingsFragment() {
 
     private fun rows(): List<GuidedAction> {
         val context = requireContext()
-        return listOf(
-            action(ID_FOOTER, R.drawable.ic_act_list, getString(R.string.footer_content_title), footerLabel(context, footerIndex()))
-                // the fallback option is the one that needs explaining
-                .subActions(options(ID_FOOTER, (0..5).map { footerLabel(context, it) }, footerLabel(context, footerIndex()),
-                    listOf(null, null, null, getString(R.string.footer_fallback_desc), null, getString(R.string.footer_inline_desc)))).build(),
-            countryAction(),
+        val services = servicesLabel(context)
+        val sources = sourceModes()
+        val source = sourceLabel(context, sourceMode())
+        val rows = mutableListOf(
+            action(ID_SERVICES, R.drawable.ic_act_tv, getString(R.string.footer_streaming), services)
+                .subActions(options(ID_SERVICES, serviceOptions(context), services)).build(),
+            action(ID_SOURCE, R.drawable.ic_act_list, getString(R.string.footer_source), source)
+                .subActions(options(ID_SOURCE, sources.map { sourceLabel(context, it) }, source,
+                    sources.map { if (it == SOURCE_FALLBACK) getString(R.string.footer_fallback_desc) else null })).build(),
         )
-    }
-
-    /** Country of the streaming services; only meaningful while the footer shows them (kept visible so rows don't jump). */
-    private fun countryAction(): GuidedAction {
-        val action = choice(ID_COUNTRY, R.drawable.ic_act_tv, R.string.streaming_country_title,
-            if (Settings.showProviders) countryLabel(requireContext()) else getString(R.string.streaming_country_disabled),
-            listOf(getString(R.string.region_auto, Languages.regionOf(Settings.language))) + Languages.REGIONS.map { "${Languages.countryName(it)} ($it)" },
-            selected = countryLabel(requireContext()))
-        action.isEnabled = Settings.showProviders
-        return action
+        if (bothShown()) {
+            val layouts = listOf(false, true)
+            val layout = layoutLabel(context, Settings.sourceInline)
+            // No icon: it reads as part of the list source row above
+            rows += GuidedAction.Builder(context).id(ID_LAYOUT).icon(ColorDrawable(Color.TRANSPARENT))
+                .title(getString(R.string.footer_layout_title)).description(layout)
+                .subActions(options(ID_LAYOUT, layouts.map { layoutLabel(context, it) }, layout, listOf(
+                    getString(R.string.footer_layout_lines_desc), getString(R.string.footer_layout_inline_desc)))).build()
+        }
+        return rows
     }
 
     override fun onSubGuidedActionClicked(action: GuidedAction): Boolean {
         val index = (action.id % SUB_ID_BASE).toInt()
         when (action.id / SUB_ID_BASE) {
-            ID_FOOTER -> {
-                Settings.showSource = index == 1 || index >= 3
-                Settings.showProviders = index >= 2
-                Settings.sourceFallback = index == 3
-                Settings.sourceInline = index == 5
-                refreshActions(rows()) { FooterFragment() }
+            ID_SERVICES -> {
+                // Hiding them keeps the country for when they come back
+                Settings.showProviders = index > 0
+                if (index > 0) Settings.regionOverride = if (index == 1) "" else Languages.REGIONS[index - 2]
             }
-            ID_COUNTRY -> {
-                Settings.regionOverride = if (index == 0) "" else Languages.REGIONS[index - 1]
-                updateDescription(ID_COUNTRY, countryLabel(requireContext()))
+            ID_SOURCE -> {
+                val mode = sourceModes()[index]
+                Settings.showSource = mode != SOURCE_NONE
+                if (mode != SOURCE_NONE) Settings.sourceFallback = mode == SOURCE_FALLBACK
             }
+            ID_LAYOUT -> Settings.sourceInline = index == 1
         }
+        refreshActions(rows()) { FooterFragment() }
         schedulePreview(300)
         return true
     }
 
     companion object {
-        private const val ID_FOOTER = 1L
-        private const val ID_COUNTRY = 2L
+        private const val ID_SERVICES = 1L
+        private const val ID_SOURCE = 2L
+        private const val ID_LAYOUT = 3L
 
-        /** 0 nothing, 1 list source, 2 streaming services, 3 streaming or list source, 4 both, 5 both on one line. */
-        private fun footerIndex() = when {
-            !Settings.showProviders -> if (Settings.showSource) 1 else 0
-            !Settings.showSource -> 2
-            Settings.sourceFallback -> 3
-            Settings.sourceInline -> 5
-            else -> 4
+        private const val SOURCE_NONE = 0
+        private const val SOURCE_ALWAYS = 1
+        private const val SOURCE_FALLBACK = 2
+
+        /** "Only without streaming services" only means something while they are shown. */
+        private fun sourceModes() =
+            if (Settings.showProviders) listOf(SOURCE_NONE, SOURCE_ALWAYS, SOURCE_FALLBACK) else listOf(SOURCE_NONE, SOURCE_ALWAYS)
+
+        /** What is drawn: without the services, a fallback list is always there. */
+        private fun sourceMode() = when {
+            !Settings.showSource -> SOURCE_NONE
+            Settings.showProviders && Settings.sourceFallback -> SOURCE_FALLBACK
+            else -> SOURCE_ALWAYS
         }
 
-        fun footerLabel(context: Context, index: Int) = context.getString(
-            when (index) {
-                1 -> R.string.footer_source
-                2 -> R.string.footer_streaming
-                3 -> R.string.footer_fallback
-                4 -> R.string.footer_both
-                5 -> R.string.footer_inline
-                else -> R.string.footer_none
+        /** Both parts on every wallpaper, so they can share a line. */
+        private fun bothShown() = Settings.showProviders && sourceMode() == SOURCE_ALWAYS
+
+        private fun serviceOptions(context: Context) = listOf(context.getString(R.string.ratings_dont_show),
+            context.getString(R.string.region_auto, Languages.regionOf(Settings.language))) +
+            Languages.REGIONS.map { "${Languages.countryName(it)} ($it)" }
+
+        /** "Don't show", "Automatic (ES)" or "Spain (ES)". */
+        private fun servicesLabel(context: Context): String = when {
+            !Settings.showProviders -> context.getString(R.string.ratings_dont_show)
+            Settings.regionOverride.isEmpty() -> context.getString(R.string.region_auto, Languages.regionOf(Settings.language))
+            else -> "${Languages.countryName(Settings.regionOverride)} (${Settings.regionOverride})"
+        }
+
+        private fun sourceLabel(context: Context, mode: Int) = context.getString(
+            when (mode) {
+                SOURCE_ALWAYS -> R.string.footer_source_always
+                SOURCE_FALLBACK -> R.string.footer_source_fallback
+                else -> R.string.ratings_dont_show
             }
         )
 
-        fun countryLabel(context: Context): String =
-            if (Settings.regionOverride.isEmpty()) context.getString(R.string.region_auto, Languages.regionOf(Settings.language))
-            else "${Languages.countryName(Settings.regionOverride)} (${Settings.regionOverride})"
+        private fun layoutLabel(context: Context, inline: Boolean) =
+            context.getString(if (inline) R.string.footer_layout_inline else R.string.footer_layout_lines)
 
-        /** "Streaming, or list source · ES", for the details screen. */
-        fun summary(context: Context): String =
-            footerLabel(context, footerIndex()) + if (Settings.showProviders) " · ${Settings.region}" else ""
+        /** "Streaming in ES · list source, on one line", "List source" or "Nothing", for the details screen. */
+        fun summary(context: Context): String {
+            val source = when (sourceMode()) {
+                SOURCE_FALLBACK -> context.getString(R.string.footer_summary_fallback)
+                SOURCE_ALWAYS -> context.getString(R.string.footer_summary_source).let {
+                    if (bothShown() && Settings.sourceInline) context.getString(R.string.footer_summary_inline, it) else it
+                }
+                else -> null
+            }
+            val parts = listOfNotNull(context.getString(R.string.footer_summary_services, Settings.region).takeIf { Settings.showProviders }, source)
+            return parts.joinToString(" · ").replaceFirstChar { it.uppercase() }.ifEmpty { context.getString(R.string.footer_none) }
+        }
     }
 }

@@ -8,7 +8,7 @@ import androidx.leanback.widget.GuidedAction
 
 /**
  * How each wallpaper looks: style and resolution here, and a screen for the rest (languages, header,
- * synopsis and cast, footer, what a click opens). Rows of the parts the style hides stay in place, disabled.
+ * synopsis and cast, footer). Rows of the parts the style hides stay in place, disabled.
  */
 class DetailsFragment : PreviewSettingsFragment() {
 
@@ -41,7 +41,6 @@ class DetailsFragment : PreviewSettingsFragment() {
                         if (width > 1920 && DeviceMemory.tightFor4k(context)) getString(R.string.resolution_low_memory) else null
                     }))
                 .build(),
-            screen(ID_CLICK, R.drawable.ic_act_movie, R.string.click_action_title, ClickActionFragment.summary(context)),
             screen(ID_PREVIEW_PIN, R.drawable.ic_act_preview, R.string.preview_pin_title, PreviewPinFragment.summary(context)),
         )
     }
@@ -61,7 +60,6 @@ class DetailsFragment : PreviewSettingsFragment() {
             ID_HEADER -> add(parentFragmentManager, HeaderFragment())
             ID_SYNOPSIS_CAST -> add(parentFragmentManager, SynopsisCastFragment())
             ID_FOOTER -> add(parentFragmentManager, FooterFragment())
-            ID_CLICK -> add(parentFragmentManager, ClickActionFragment())
             ID_PREVIEW_PIN -> add(parentFragmentManager, PreviewPinFragment())
         }
     }
@@ -88,7 +86,6 @@ class DetailsFragment : PreviewSettingsFragment() {
         private const val ID_HEADER = 8L
         private const val ID_PREVIEW_PIN = 9L
         private const val ID_STYLE = 11L
-        private const val ID_CLICK = 12L
         private const val ID_SYNOPSIS_CAST = 14L
 
         fun styleLabel(context: Context, style: String) = context.getString(

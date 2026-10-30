@@ -10,7 +10,7 @@ import androidx.leanback.widget.GuidanceStylist.Guidance
 import androidx.leanback.widget.GuidedAction
 
 /**
- * The wallpaper language, then the language of the logo (and of the title written instead) and of the
+ * The general language, then the language of the logo (and of the title written instead) and of the
  * synopsis, each followed by what to do when TMDB has none in it. "Automatic" follows the wallpaper
  * language, like everything else drawn.
  */
@@ -33,12 +33,6 @@ class PartLanguagesFragment : PreviewSettingsFragment() {
         guidanceStylist.descriptionView?.visibility = View.VISIBLE
     }
 
-    // Back from the preview title
-    override fun onResume() {
-        super.onResume()
-        refreshActions(rows()) { PartLanguagesFragment() }
-    }
-
     private fun rows(): List<GuidedAction> {
         val context = requireContext()
         val originalLogo = Settings.partLanguages.title == null
@@ -46,7 +40,7 @@ class PartLanguagesFragment : PreviewSettingsFragment() {
         val synopsisModes = synopsisModes()
         val synopsisMode = shownSynopsisMode()
         return listOf(
-            choice(ID_LANGUAGE, R.drawable.ic_act_language, R.string.wallpaper_language_title, Languages.displayName(Settings.language),
+            choice(ID_LANGUAGE, R.drawable.ic_act_language, R.string.general_language_title, Languages.displayName(Settings.language),
                 Languages.OPTIONS.values.toList()),
             languageRow(ID_TITLE_LANGUAGE, R.string.logo_language_title, Settings.titleLanguage).hiddenBy(Settings.drawsLogo),
             fallbackRow(ID_LOGO_MODE, R.string.logo_mode_title, logoModeLabel(context, Settings.logoMode, originalLogo), logoModes,
@@ -55,8 +49,6 @@ class PartLanguagesFragment : PreviewSettingsFragment() {
             fallbackRow(ID_SYNOPSIS_MODE, R.string.synopsis_mode_title, synopsisModeLabel(context, synopsisMode),
                 synopsisModes.map { synopsisModeLabel(context, it) },
                 synopsisModes.map { mode -> synopsisModeDescription(context, mode) }).hiddenBy(Settings.drawsDetails),
-            action(ID_PREVIEW_PIN, R.drawable.ic_act_preview, getString(R.string.preview_pin_title), PreviewPinFragment.summary(context))
-                .hasNext(true).build(),
         )
     }
 
@@ -78,10 +70,6 @@ class PartLanguagesFragment : PreviewSettingsFragment() {
     private fun fallbackRow(id: Long, title: Int, current: String, labels: List<String>, descriptions: List<String?>) =
         GuidedAction.Builder(requireContext()).id(id).icon(ColorDrawable(Color.TRANSPARENT)).title(getString(title)).description(current)
             .subActions(options(id, labels, current, descriptions)).build()
-
-    override fun onGuidedActionClicked(action: GuidedAction) {
-        if (action.id == ID_PREVIEW_PIN) add(parentFragmentManager, PreviewPinFragment())
-    }
 
     override fun onSubGuidedActionClicked(action: GuidedAction): Boolean {
         val index = (action.id % SUB_ID_BASE).toInt()
@@ -108,7 +96,6 @@ class PartLanguagesFragment : PreviewSettingsFragment() {
         private const val ID_LOGO_MODE = 2L
         private const val ID_SYNOPSIS_LANGUAGE = 3L
         private const val ID_SYNOPSIS_MODE = 4L
-        private const val ID_PREVIEW_PIN = 5L
         private const val ID_LANGUAGE = 6L
 
         /** A synopsis already in English has no English one to fall back to. */

@@ -216,7 +216,7 @@
     <string name="style_logo_desc">The logo (or the title) over the backdrop, nothing else</string>
     <string name="style_backdrop_desc">Just the image</string>
     <string name="style_hidden">Hidden with the %1$s style</string>
-    <string name="details_description">How each wallpaper looks. Style and resolution here; the rest by parts: language, the header (the line under the title), synopsis and cast, the footer (list source and streaming services) and what Projectivy opens on wallpaper click.</string>
+    <string name="details_description">How each wallpaper looks. Style and resolution here; the rest by parts: language, the header (the line under the title), synopsis and cast, and the footer (streaming services and list source).</string>
 
     <string name="rating_imdb" translatable="false">IMDb</string>
     <string name="rating_metacritic" translatable="false">Metacritic</string>
@@ -315,15 +315,13 @@
     <string name="cast_summary_hidden">no cast</string>
     <string name="cast_summary_names">cast</string>
     <string name="cast_summary_photos">cast with photos</string>
-    <string name="footer_desc">The bottom line: the list each wallpaper came from and the streaming services that have it, in the country you choose.</string>
-    <string name="footer_content_title">What it shows</string>
-    <string name="click_action_desc">Projectivy opens it with its play button or from “About this wallpaper”.</string>
+    <string name="footer_desc">The bottom line: the streaming services that have each title, in the country you choose, and the list it came from.</string>
+    <string name="click_action_desc">Projectivy opens it from its icon in the status bar or from “About this wallpaper”.</string>
     <string name="click_target_title">What it opens</string>
     <string name="click_open_app">Open in %1$s</string>
     <string name="click_app_missing">Open in %1$s (not installed: the trailer opens)</string>
     <string name="click_app_title_desc">Goes to the title\'s page</string>
     <string name="click_app_search_desc">Searches for the title</string>
-    <string name="click_app_launch_desc">Only opens the app: it can\'t go to the title</string>
     <string name="trailer_language_title">Trailer language</string>
     <string name="trailer_fallback_title">If there\'s none in that language</string>
     <string name="trailer_fallback_english">The English one</string>
@@ -371,9 +369,6 @@
     <string name="footer_none">Nothing</string>
     <string name="footer_source">List source</string>
     <string name="footer_streaming">Streaming services</string>
-    <string name="footer_both">Streaming and list source</string>
-    <string name="streaming_country_title">Streaming country</string>
-    <string name="streaming_country_disabled">Only used when the footer shows streaming services</string>
     <string name="explore_empty_title">No lists selected</string>
     <string name="explore_empty_desc">Pick lists from TMDB, Trakt, Simkl or MDBList</string>
     <string name="viewer_browse">Browse</string>
@@ -381,10 +376,18 @@
     <string name="viewer_unpin">Unpin</string>
     <string name="viewer_pinned">PINNED</string>
     <string name="viewer_position">%1$d of %2$d</string>
-    <string name="footer_fallback">Streaming, or list source</string>
     <string name="footer_fallback_desc">The list shows when no service has it</string>
-    <string name="footer_inline">Streaming services and list source, on one line</string>
-    <string name="footer_inline_desc">If the list doesn\'t fit beside them, it goes below</string>
+    <string name="footer_source_always">Always</string>
+    <string name="footer_source_fallback">Only without streaming services</string>
+    <string name="footer_layout_title">Layout</string>
+    <string name="footer_layout_lines">On two lines</string>
+    <string name="footer_layout_lines_desc">The list under the streaming services</string>
+    <string name="footer_layout_inline">On one line</string>
+    <string name="footer_layout_inline_desc">If the list doesn\'t fit, its name is shortened</string>
+    <string name="footer_summary_services">streaming in %1$s</string>
+    <string name="footer_summary_source">list source</string>
+    <string name="footer_summary_fallback">list if no streaming service</string>
+    <string name="footer_summary_inline">%1$s, on one line</string>
     <string name="filter_off">Off</string>
     <string name="filter_on">On</string>
     <string name="filters_age_explain">Skips titles released (or, for shows, last aired) longer ago</string>
@@ -412,12 +415,12 @@
     <string name="filters_automatic_note">By default this only applies to trending, popular and similar lists, so your watchlists and favourites aren\'t emptied.</string>
     <string name="explore_titles_header">Titles · %1$d</string>
     <string name="about_credits_short">TMDB · Trakt · Simkl · MDBList</string>
-    <string name="part_languages_desc">The language of the wallpaper\'s text. The logo and the synopsis can use another one: Automatic follows the wallpaper\'s (%1$s). Each one says what to do when TMDB has nothing in its language.</string>
+    <string name="part_languages_desc">The general language of the wallpaper\'s text. The logo and the synopsis can use another one: Automatic follows the general one: %1$s. Each one says what to do when TMDB has nothing in its language.</string>
     <string name="part_summary_logo">Logo: %1$s</string>
     <string name="part_summary_synopsis">Synopsis: %1$s</string>
     <string name="part_summary_skips">skips titles</string>
     <string name="logo_language_title">Logo language</string>
-    <string name="wallpaper_language_title">Wallpaper language</string>
+    <string name="general_language_title">General language</string>
     <string name="synopsis_language_title">Synopsis language</string>
     <string name="language_auto">Automatic</string>
     <string name="language_auto_current">Automatic · %1$s</string>

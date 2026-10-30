@@ -18,7 +18,7 @@ class ClickActionFragment : PreviewSettingsFragment() {
     override fun onCreateGuidance(savedInstanceState: Bundle?) = Guidance(
         getString(R.string.click_action_title),
         guidanceText(),
-        getString(R.string.setting_details_title),
+        getString(R.string.plugin_name),
         AppCompatResources.getDrawable(requireActivity(), R.mipmap.ic_launcher),
     )
 
@@ -48,7 +48,7 @@ class ClickActionFragment : PreviewSettingsFragment() {
         options.zip(clickActions).forEach { (option, action) ->
             option.isEnabled = Settings.clickApp(action)?.let { it.installedPackage(context) != null } ?: true
         }
-        val target = action(ID_ACTION, R.drawable.ic_act_movie, getString(R.string.click_target_title), clickLabel(context, Settings.clickAction, long = true))
+        val target = action(ID_ACTION, R.drawable.ic_act_play, getString(R.string.click_target_title), clickLabel(context, Settings.clickAction, long = true))
             .subActions(options).build()
         // The trailer's language only matters when the wallpaper opens it
         if (Settings.clickAction != Settings.CLICK_TRAILER) return listOf(target)
@@ -106,7 +106,6 @@ class ClickActionFragment : PreviewSettingsFragment() {
             val reach = when (app?.reach) {
                 TitleApp.Reach.TITLE -> context.getString(R.string.click_app_title_desc)
                 TitleApp.Reach.SEARCH -> context.getString(R.string.click_app_search_desc)
-                TitleApp.Reach.APP -> context.getString(R.string.click_app_launch_desc)
                 null -> return if (action == Settings.CLICK_TRAILER) context.getString(R.string.click_trailer_desc) else null
             }
             return if (app.installedPackage(context) == null) context.getString(R.string.click_app_not_installed, reach) else reach
