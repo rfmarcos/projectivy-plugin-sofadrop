@@ -35,6 +35,12 @@ class GenerateWallpapersWorker(context: Context, params: WorkerParameters) : Wor
     override fun doWork(): Result {
         Settings.init(applicationContext)
         if (!profile.isScreensaver) Updater.check()
+        // Without Projectivy nothing shows the wallpapers' set while the screensaver has its own
+        if (!profile.isScreensaver && Profile.SCREENSAVER.separate && !Projectivy.isInstalled(applicationContext)) {
+            profile.generating = false
+            runForScreensaver(applicationContext)
+            return Result.success()
+        }
         return generateSet().also { if (!profile.isScreensaver) runForScreensaver(applicationContext) }
     }
 
@@ -78,7 +84,7 @@ class GenerateWallpapersWorker(context: Context, params: WorkerParameters) : Wor
                 applicationContext.getString(R.string.notice_list_unavailable, unavailable.joinToString(", ")).takeIf { unavailable.isNotEmpty() },
             ).joinToString(" · ")
             if (!profile.isScreensaver) notifyProjectivy(applicationContext)
-            Log.i(TAG, "Generated ${stored.size} wallpapers for the ${profile.id} (${Settings.language}) in ${System.currentTimeMillis() - start} ms")
+            Log.i(TAG, "Generated ${stored.size} wallpapers${" for the screensaver".takeIf { profile.isScreensaver }.orEmpty()} (${Settings.language}) in ${System.currentTimeMillis() - start} ms")
             // What a generation costs TMDB (a preview open at the same time counts too)
             val (api, images, network) = TmdbClient.requestCounts().zip(requests) { now, before -> now - before }
             log.add("TMDB: $api API requests, $images images, $network not cached")

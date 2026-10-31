@@ -82,6 +82,18 @@ object Settings {
     private const val KEY_MIX_LISTS = "mix_lists"
     private const val KEY_SCREENSAVER_OWN_LISTS = "screensaver_own_lists"
     private const val KEY_SCREENSAVER_OWN_LOOK = "screensaver_own_look"
+    private const val KEY_SCREENSAVER_SECONDS = "screensaver_seconds"
+    private const val KEY_SCREENSAVER_TRANSITION = "screensaver_transition"
+    private const val KEY_SCREENSAVER_ZOOM = "screensaver_zoom"
+    private const val KEY_SCREENSAVER_SHUFFLE = "screensaver_shuffle"
+    private const val KEY_SCREENSAVER_CLOCK = "screensaver_clock"
+    private const val KEY_SCREENSAVER_DATE = "screensaver_date"
+    private const val KEY_SCREENSAVER_CLOCK_BOTTOM = "screensaver_clock_bottom"
+    private const val KEY_SCREENSAVER_CLOCK_FORMAT = "screensaver_clock_format"
+    private const val KEY_SCREENSAVER_BRIGHTNESS = "screensaver_brightness"
+    private const val KEY_SCREENSAVER_WEATHER = "screensaver_weather"
+    private const val KEY_WEATHER_PLACE = "weather_place"
+    private const val KEY_WEATHER_COORDINATES = "weather_coordinates"
     private const val KEY_CLICK_PLATFORMS = "click_platforms"
     private const val KEY_CLICK_FALLBACK = "click_fallback"
     private const val KEY_TRAILER_LANGUAGE = "trailer_language"
@@ -159,6 +171,7 @@ object Settings {
     // Internal state, not exported in Projectivy backups
     private const val KEY_UPDATE_VERSION = "_update_version"
     private const val KEY_PROJECTIVY_ASKED = "_projectivy_asked_at"
+    private const val KEY_SCREENSAVER_SHOWN = "_screensaver_shown_at"
     private const val KEY_UPDATE_APK = "_update_apk"
     private const val KEY_UPDATE_NOTES = "_update_notes"
     private const val KEY_UPDATE_CHECKED = "_update_checked_at"
@@ -522,6 +535,96 @@ object Settings {
             if (value && !screensaverOwnLook) copyToScreensaver(Profile.LOOK_KEYS)
             putBoolean(KEY_SCREENSAVER_OWN_LOOK, value)
         }
+
+    // How Sofascreen shows the set (see SofascreenView), after PR #13 by schumi2004
+    val SCREENSAVER_SECONDS_OPTIONS = listOf(10, 20, 30, 60, 120, 300)
+    const val TRANSITION_FADE = "fade"
+    const val TRANSITION_BLACK = "black"
+    const val TRANSITION_SLIDE = "slide"
+    const val TRANSITION_ZOOM = "zoom"
+    const val TRANSITION_RANDOM = "random"
+    val TRANSITIONS = listOf(TRANSITION_FADE, TRANSITION_BLACK, TRANSITION_SLIDE, TRANSITION_ZOOM, TRANSITION_RANDOM)
+    const val CLOCK_OFF = "off"
+    const val CLOCK_STACKED = "stacked"
+    const val CLOCK_LINE = "line"
+    val CLOCK_STYLES = listOf(CLOCK_OFF, CLOCK_STACKED, CLOCK_LINE)
+    const val CLOCK_FORMAT_SYSTEM = "system"
+    const val CLOCK_FORMAT_24 = "24"
+    const val CLOCK_FORMAT_12 = "12"
+    val CLOCK_FORMATS = listOf(CLOCK_FORMAT_SYSTEM, CLOCK_FORMAT_24, CLOCK_FORMAT_12)
+    val SCREENSAVER_BRIGHTNESS_OPTIONS = listOf(100, 75, 50)
+
+    /** How long each wallpaper stays on screen. */
+    var screensaverSeconds: Int
+        get() = preferences.getInt(KEY_SCREENSAVER_SECONDS, 30)
+        set(value) = preferences.edit { putInt(KEY_SCREENSAVER_SECONDS, value) }
+
+    /** See [TRANSITIONS]. */
+    var screensaverTransition: String
+        get() = preferences.getString(KEY_SCREENSAVER_TRANSITION, null)?.takeIf { it in TRANSITIONS } ?: TRANSITION_FADE
+        set(value) = preferences.edit { putString(KEY_SCREENSAVER_TRANSITION, value) }
+
+    /** A slow zoom while each wallpaper is shown. */
+    var screensaverZoom: Boolean
+        get() = preferences.getBoolean(KEY_SCREENSAVER_ZOOM, true)
+        set(value) = preferences.edit { putBoolean(KEY_SCREENSAVER_ZOOM, value) }
+
+    /** Random order instead of the set's. */
+    var screensaverShuffle: Boolean
+        get() = preferences.getBoolean(KEY_SCREENSAVER_SHUFFLE, true)
+        set(value) = preferences.edit { putBoolean(KEY_SCREENSAVER_SHUFFLE, value) }
+
+    /** See [CLOCK_STYLES]. */
+    var screensaverClock: String
+        get() = preferences.getString(KEY_SCREENSAVER_CLOCK, null)?.takeIf { it in CLOCK_STYLES } ?: CLOCK_STACKED
+        set(value) = preferences.edit { putString(KEY_SCREENSAVER_CLOCK, value) }
+
+    var screensaverDate: Boolean
+        get() = preferences.getBoolean(KEY_SCREENSAVER_DATE, true)
+        set(value) = preferences.edit { putBoolean(KEY_SCREENSAVER_DATE, value) }
+
+    /** 24 or 12 hours, or as Android is set (see [CLOCK_FORMATS]). */
+    var screensaverClockFormat: String
+        get() = preferences.getString(KEY_SCREENSAVER_CLOCK_FORMAT, null)?.takeIf { it in CLOCK_FORMATS } ?: CLOCK_FORMAT_SYSTEM
+        set(value) = preferences.edit { putString(KEY_SCREENSAVER_CLOCK_FORMAT, value) }
+
+    /** The clock at the bottom of its side instead of the top. */
+    var screensaverClockBottom: Boolean
+        get() = preferences.getBoolean(KEY_SCREENSAVER_CLOCK_BOTTOM, false)
+        set(value) = preferences.edit { putBoolean(KEY_SCREENSAVER_CLOCK_BOTTOM, value) }
+
+    /** Percentage, see [SCREENSAVER_BRIGHTNESS_OPTIONS]. */
+    var screensaverBrightness: Int
+        get() = preferences.getInt(KEY_SCREENSAVER_BRIGHTNESS, 100)
+        set(value) = preferences.edit { putInt(KEY_SCREENSAVER_BRIGHTNESS, value) }
+
+    /** When Android last started Sofascreen as the screensaver (0: never), to tell whether it's switched on. */
+    var screensaverShownAt: Long
+        get() = preferences.getLong(KEY_SCREENSAVER_SHOWN, 0L)
+        set(value) = preferences.edit { putLong(KEY_SCREENSAVER_SHOWN, value) }
+
+    /** The weather at [weatherPlace] under the clock (Open-Meteo, no account). */
+    var screensaverWeather: Boolean
+        get() = preferences.getBoolean(KEY_SCREENSAVER_WEATHER, false)
+        set(value) = preferences.edit { putBoolean(KEY_SCREENSAVER_WEATHER, value) }
+
+    /** "Amsterdam, North Holland": the place found for the location the user typed; empty when not set. */
+    val weatherPlace: String get() = preferences.getString(KEY_WEATHER_PLACE, null).orEmpty()
+
+    /** Latitude and longitude of [weatherPlace]. */
+    val weatherCoordinates: Pair<Double, Double>?
+        get() = preferences.getString(KEY_WEATHER_COORDINATES, null)?.split(',')?.mapNotNull { it.toDoubleOrNull() }
+            ?.takeIf { it.size == 2 }?.let { it[0] to it[1] }
+
+    fun setWeatherPlace(place: Place?) = preferences.edit {
+        if (place == null) {
+            remove(KEY_WEATHER_PLACE)
+            remove(KEY_WEATHER_COORDINATES)
+        } else {
+            putString(KEY_WEATHER_PLACE, place.name)
+            putString(KEY_WEATHER_COORDINATES, "${place.latitude},${place.longitude}")
+        }
+    }
 
     /** The wallpapers' values of [keys] as the screensaver's own. */
     private fun SharedPreferences.Editor.copyToScreensaver(keys: List<String>) {

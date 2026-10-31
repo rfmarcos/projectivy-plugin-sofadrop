@@ -94,5 +94,10 @@ class WallpaperStore(private val context: Context, profile: Profile = Profile.WA
         private const val INDEX = "index.json"
         const val DIR = "wallpapers"
         private const val SCREENSAVER_DIR = "screensaver"
+
+        /** Remove the screensaver's own set, once it shows the wallpapers' again. */
+        fun deleteScreensaverSet(context: Context) {
+            File(context.filesDir, SCREENSAVER_DIR).deleteRecursively()
+        }
     }
 }

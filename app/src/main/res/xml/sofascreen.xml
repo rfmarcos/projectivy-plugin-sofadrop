@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- "Settings" in Android's screensaver picker opens Sofadrop's settings (full class name: the Dev
+     build has another package, but the class stays in com.rfmarcos.sofadrop) -->
+<dream xmlns:android="http://schemas.android.com/apk/res/android"
+    android:settingsActivity="com.rfmarcos.sofadrop.SettingsActivity" />

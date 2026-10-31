@@ -1,8 +1,6 @@
 package com.rfmarcos.sofadrop
 
-import android.content.pm.PackageManager
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.addCallback
 import androidx.fragment.app.FragmentActivity
 import androidx.leanback.app.GuidedStepSupportFragment
@@ -12,10 +10,6 @@ class SettingsActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Settings.init(this)
-
-        if (!packageManager.isApplicationInstalled(Projectivy.PACKAGE)) {
-            Toast.makeText(this, R.string.projectivy_not_installed, Toast.LENGTH_LONG).show()
-        }
 
         if (savedInstanceState == null) {
             GuidedStepSupportFragment.addAsRoot(this, SettingsFragment(), android.R.id.content)
@@ -45,12 +39,5 @@ class SettingsActivity : FragmentActivity() {
             val due = profile.hasPendingChanges || (profile.isScreensaver && profile.lastGeneration == 0L)
             if (due && !profile.generating && Sources.selected(profile).isNotEmpty()) GenerateWallpapersWorker.runNow(this, profile, replace = true)
         }
-    }
-
-    private fun PackageManager.isApplicationInstalled(packageName: String): Boolean = try {
-        getApplicationInfo(packageName, 0)
-        true
-    } catch (_: PackageManager.NameNotFoundException) {
-        false
     }
 }

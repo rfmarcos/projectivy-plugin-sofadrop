@@ -32,8 +32,8 @@ class DetailsFragment : PreviewSettingsFragment() {
                     Settings.STYLES.map { styleDescription(context, it) })).build(),
             action(ID_POSITION, R.drawable.ic_act_place, getString(R.string.position_title), positionLabel(context, profile.position))
                 .subActions(options(ID_POSITION, Settings.POSITIONS.map { positionLabel(context, it) }, positionLabel(context, profile.position),
-                    // Down where the launcher rows are, in Projectivy's usual layout
-                    Settings.POSITIONS.map { if (it.startsWith("top")) null else getString(R.string.position_rows_note) }))
+                    // Down where the launcher rows are, in Projectivy's usual layout (no rows over the screensaver)
+                    Settings.POSITIONS.map { if (it.startsWith("top") || profile.isScreensaver) null else getString(R.string.position_rows_note) }))
                 .build().hiddenBy(profile.drawsLogo),
             screen(ID_LANGUAGE, R.drawable.ic_act_language, R.string.setting_language_title, PartLanguagesFragment.summary(context, profile)),
             screen(ID_HEADER, R.drawable.ic_act_heart, R.string.header_title, HeaderFragment.summary(context, profile)).hiddenBy(profile.drawsDetails),

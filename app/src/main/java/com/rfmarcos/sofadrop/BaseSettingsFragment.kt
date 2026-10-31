@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.text.InputType
+import android.text.format.DateUtils
 import android.view.View
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.ContextCompat
@@ -35,6 +36,8 @@ abstract class BaseSettingsFragment : GuidedStepSupportFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        // The screensaver's lists and details look like the wallpapers': the breadcrumb tells them apart
+        if (profile.isScreensaver && this !is ScreensaverFragment) guidanceStylist.breadcrumbView?.text = getString(R.string.screensaver_title)
         // Rows matched by id, so a row added or removed by refreshActions doesn't rebuild the list
         setActionsDiffCallback(object : DiffCallback<GuidedAction>() {
             override fun areItemsTheSame(oldItem: GuidedAction, newItem: GuidedAction) = oldItem.id == newItem.id
@@ -167,6 +170,31 @@ abstract class BaseSettingsFragment : GuidedStepSupportFragment() {
         action.description = description
         notifyActionChanged(findActionPositionById(id))
     }
+
+    /** State of [profile]'s set: progress, error, pending changes or when it was made. */
+    protected fun generationStatus(): String {
+        val count = WallpaperStore(requireContext(), profile).current().size
+        return when {
+            profile.generating -> profile.generationProgress?.let { (done, list, lists) ->
+                getString(R.string.status_progress, resources.getQuantityString(R.plurals.wallpapers_count, done, done), list, lists)
+            } ?: getString(R.string.status_generating)
+            Sources.selected(profile).isEmpty() -> getString(R.string.status_select_list)
+            // A "no lists" error is stale once lists are picked again
+            profile.lastError.isNotEmpty() && profile.lastError != getString(R.string.error_no_lists) ->
+                getString(R.string.status_error, profile.lastError)
+            count == 0 -> getString(R.string.status_never)
+            profile.hasPendingChanges -> getString(R.string.status_pending, count)
+            else -> getString(R.string.status_ok, count, timeAgo(profile.lastGeneration)) +
+                profile.lastNotice.takeIf { it.isNotEmpty() }?.let { " · $it" }.orEmpty()
+        }
+    }
+
+    /** "just now" or "3 minutes ago", to go mid-sentence. */
+    protected fun timeAgo(time: Long): String =
+        // "0 minutes ago" reads oddly; mid-sentence, Spanish and others capitalise it ("Hace 3 minutos")
+        if (System.currentTimeMillis() - time < DateUtils.MINUTE_IN_MILLIS) getString(R.string.time_just_now)
+        else DateUtils.getRelativeTimeSpanString(time, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS)
+            .toString().replaceFirstChar { it.lowercase() }
 
     /** Masked display of a secret value. */
     protected fun masked(value: String): String =

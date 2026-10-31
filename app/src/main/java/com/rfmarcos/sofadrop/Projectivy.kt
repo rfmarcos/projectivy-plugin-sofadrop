@@ -3,11 +3,20 @@ package com.rfmarcos.sofadrop
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.widget.Toast
 
 /** Projectivy Launcher, from the plugin's side. */
 object Projectivy {
     const val PACKAGE = "com.spocky.projengmenu"
+
+    /** Without it Sofadrop is only a screensaver (see Sofascreen.kt). */
+    fun isInstalled(context: Context): Boolean = try {
+        context.packageManager.getApplicationInfo(PACKAGE, 0)
+        true
+    } catch (_: PackageManager.NameNotFoundException) {
+        false
+    }
 
     /**
      * Open Projectivy's settings with the path to pick Sofadrop as the wallpaper: Projectivy has no

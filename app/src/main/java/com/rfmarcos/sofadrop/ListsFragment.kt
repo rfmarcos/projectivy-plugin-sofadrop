@@ -23,7 +23,8 @@ class ListsFragment : BaseSettingsFragment() {
             Settings.COUNT_OPTIONS.map { countLabel(context, it) }, selected = countLabel(context, profile.titlesPerList))
         actions += choice(ID_ORDER, R.drawable.ic_act_shuffle, R.string.setting_selection_title, orderLabel(profile.selectionMode),
             ORDER_MODES.map(::orderLabel))
-        actions += choice(ID_MIX, R.drawable.ic_act_shuffle, R.string.setting_mix_title, mixLabel(Settings.mixLists),
+        // Projectivy's order; the screensaver has its own (see ScreensaverFragment)
+        if (!profile.isScreensaver) actions += choice(ID_MIX, R.drawable.ic_act_shuffle, R.string.setting_mix_title, mixLabel(Settings.mixLists),
             listOf(mixLabel(true), mixLabel(false)))
         actions += provider(ID_TMDB, R.drawable.badge_tmdb, "TMDB", ProviderListsFragment.summary(context, profile, SourceProvider.TMDB))
         actions += provider(ID_TRAKT, R.drawable.badge_trakt, getString(R.string.setting_trakt_title),
