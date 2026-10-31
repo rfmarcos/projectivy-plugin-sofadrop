@@ -9,18 +9,20 @@ Documento para aprobar **antes** de tocar el renderizador de verdad. Las cifras 
 * Cambiar la posición solo vuelve a montar, sin red. 200 fondos tardan 1 minuto en 1080p y unos 4 en 4K.
 * El salvapantallas (T10) dibuja las capas directamente en pantalla: no codifica nada y nunca vuelve a dibujar el fondo.
 * Coste:
-  * el disco se multiplica por 3,6: 200 fondos pasan de ~50 MB a ~190 MB en 1080p, y de ~170 MB a ~590 MB en 4K;
+  * el disco se multiplica por ~2,9 (×3,6 en el prototipo, ver "Por qué ocupa tanto"): 200 fondos en 4K pasan de ~170 MB a ~480 MB;
   * generar tarda algo más, porque hay que codificar dos imágenes más por título.
-* Posiciones propuestas:
-  * en el fondo de Projectivy, solo **arriba a la izquierda** (como ahora) y **arriba a la derecha**;
-  * en el salvapantallas, las cinco, con **abajo a la izquierda** por defecto.
+* Posiciones propuestas: las cinco, tanto en el fondo como en el salvapantallas.
+  * En el fondo, **arriba a la izquierda** por defecto (como ahora).
+  * En el salvapantallas, **abajo a la izquierda** por defecto.
 
 ## Posiciones
 
-Las capturas son de fondos reales de la TV (4K, reducidas). Las zonas en rojo son lo que tapa Projectivy:
+Las capturas son de fondos reales de la TV (4K, reducidas). Las zonas en rojo son lo que tapa Projectivy **con la configuración de Rubén**:
 
 * las filas de apps, desde el 64 % de la altura hacia abajo;
 * el reloj y los iconos de estado, arriba a la derecha.
+
+Otros usuarios tienen otra configuración de Projectivy: menos filas, filas más bajas, filas ocultas, o sin reloj. Por eso no se quita ninguna posición; lo que sigue es lo que pasa con una configuración como la de Rubén.
 
 El último recuadro es `info.png` sobre un damero, para ver qué es la capa.
 
@@ -32,7 +34,7 @@ Qué se ve:
 
 * **Arriba izquierda:** es la de ahora. Con sinopsis y reparto, el bloque llega justo hasta las filas.
 * **Centro izquierda:** el pie (plataformas y lista) cae debajo de las filas.
-* **Abajo izquierda / abajo derecha:** las filas tapan la mitad del bloque. Solo sirven sin filas encima, es decir, en el salvapantallas.
+* **Abajo izquierda / abajo derecha:** las filas tapan la mitad del bloque. Sirven en el salvapantallas, o en el fondo si se ocultan o reducen las filas de Projectivy.
 * **Arriba derecha:**
   * Cabe igual que arriba a la izquierda.
   * Con logos altos, el logo roza la zona del reloj. Se puede bajar un poco el bloque en esa posición.
@@ -42,8 +44,10 @@ Qué se ve:
 
 | | Posiciones | Por defecto |
 |---|---|---|
-| Fondo de Projectivy | Arriba izquierda, arriba derecha | Arriba izquierda |
+| Fondo de Projectivy | Las cinco | Arriba izquierda |
 | Salvapantallas (T10) | Las cinco | Abajo izquierda, o "como el fondo" |
+
+La explicación del ajuste en el fondo avisa de que, con las filas de Projectivy a la vista, las posiciones de abajo y del centro pueden quedar tapadas.
 
 Limitación: el bloque se dibuja una sola vez, así que en las posiciones de la derecha el texto sigue alineado a la izquierda dentro del bloque (se ve en las capturas). Alinearlo a la derecha obligaría a dibujar otro `info.png` por alineación. Propongo dejarlo así.
 
@@ -54,7 +58,7 @@ En cada generación (`files/wallpapers/gen-<hora>/`):
 | Fichero | Qué es | Ya existe |
 |---|---|---|
 | `NN.jpg` | El fondo montado que se entrega a Projectivy, en la posición elegida | Sí, igual que ahora |
-| `NN-bg.jpg` | El fondo recortado al tamaño del fondo de pantalla, con los degradados de arriba (reloj) y abajo (filas) ya pintados. JPEG calidad 90 | Nuevo |
+| `NN-bg.jpg` | El fondo recortado al tamaño del fondo de pantalla, con los degradados de arriba (reloj) y abajo (filas) ya pintados. JPEG calidad 85 (ver "Cuánto se puede recortar") | Nuevo |
 | `NN-info.png` | El bloque (logo, cabecera, sinopsis, reparto, pie, insignias) con su sombra, transparente y recortado a su caja | Nuevo |
 
 Campos nuevos en cada entrada de `index.json` (`StoredWallpaper`). Todos son opcionales, así que un `index.json` antiguo se sigue leyendo (`ignoreUnknownKeys` y valores por defecto):
@@ -85,9 +89,34 @@ Medidas en el Chromecast con Google TV. En 1080p son 5 títulos y en 4K son 3. S
 | 1080p | 0,26 MB | 0,45 MB | 0,23 MB (0,19–0,34) | 0,17 MB | 0,94 MB (×3,6) |
 | 4K | 0,83 MB | 1,42 MB | 0,70 MB (0,38–1,23) | 0,58 MB | 2,95 MB (×3,6) |
 
-`bg.jpg` ocupa más que `NN.jpg` porque no lleva el oscurecido, que comprime muy bien. Con los degradados de arriba y abajo dentro bajará algo, pero no lo he medido.
+### Por qué ocupa tanto
 
-### Disco por set
+* **El fondo se guarda dos veces:** una dentro de `NN.jpg` y otra en `bg.jpg`.
+* **`bg.jpg` ocupa más que `NN.jpg` (1,42 frente a 0,83 MB en 4K):**
+  * en `NN.jpg`, los degradados dejan casi negra la mitad de la imagen (la izquierda y la parte de abajo), y lo oscuro y liso comprime muy bien;
+  * el `bg.jpg` del prototipo es el fondo entero, con todo el detalle.
+* **`info.png` no tiene pérdida:** guarda exactos el logo, las fotos del reparto y la sombra. La sombra ocupa ~45 % de los píxeles del bloque y ~25 % de lo que pesa el fichero.
+
+### Cuánto se puede recortar
+
+Medido con los ficheros 4K de la TV, recodificados en el PC. Al recodificar `NN.jpg` sale un 3–6 % más grande que en Android, así que las cifras se pueden comparar.
+
+| `bg.jpg` en 4K (media de 3) | Tamaño |
+|---|---|
+| Prototipo (sin degradados, calidad 90) | 1,42 MB |
+| Con los degradados de arriba y abajo dentro, calidad 90 | 1,10 MB (−23 %) |
+| Con los degradados de arriba y abajo dentro, calidad 85 | 0,89 MB (−37 %) |
+| Con los tres degradados (para comparar: es `NN.jpg` sin el bloque) | 0,68 MB |
+
+* **Propuesta:** degradados de arriba y abajo dentro de `bg.jpg` (ya estaba en el formato), con calidad 85. `bg` casi nunca se ve sin oscurecer, y en 4K la calidad 85 no se nota en la TV. Así quedan **2,4 MB por título en 4K (×2,9)**: con 200 fondos, ~480 MB en vez de ~590 MB. En 1080p, en proporción, ~150 MB.
+* **La sombra fuera de `info`:** quitaría ~25 % del bloque, pero habría que desenfocarla otra vez en cada montaje. No compensa.
+* **Bajar de ~×2:** solo se consigue no guardando una de las dos copias del fondo:
+  * montar `NN.jpg` al vuelo (descartado arriba);
+  * o no guardar `bg.jpg` y volver a descargar los fondos de TMDB al cambiar la posición: son solo imágenes, sin llamadas a la API, pero ya hace falta red.
+
+  La caché HTTP (150 MB, que Android puede vaciar) no basta para contar con que los fondos sigan allí.
+
+### Disco por set (prototipo; con los recortes de abajo, ~20 % menos)
 
 | | 100 fondos (lo que muestra Projectivy) | 200 fondos (el tope) |
 |---|---|---|
@@ -142,6 +171,8 @@ Montar directamente sobre el `bg` leído (mutable) tarda lo mismo que crear un b
 
 ## Decisiones para Rubén
 
-1. **Posiciones del fondo:** ¿solo arriba izquierda y arriba derecha (propuesta), o también centro izquierda para quien acepte que el pie quede bajo las filas?
-2. **Disco en 4K:** ¿aceptamos ~590 MB para 200 fondos en 4K (~295 MB para 100)? Si es mucho, la alternativa es guardar capas solo cuando se usan: con el salvapantallas activado o con una posición distinta de la de por defecto.
+1. **Posiciones:** las cinco en el fondo y en el salvapantallas, con un aviso sobre las filas de Projectivy (propuesta tras la revisión de Rubén: lo que tapa Projectivy depende de cada configuración).
+2. **Disco en 4K:** ¿aceptamos ~480 MB para 200 fondos en 4K (~240 MB para 100)? Si es mucho, las alternativas son:
+   * guardar capas solo cuando se usan: con el salvapantallas activado, o con una posición distinta de la de por defecto;
+   * no guardar `bg.jpg` y volver a descargar los fondos al cambiar la posición.
 3. **`info`:** ¿WebP sin pérdida en Android 11 o superior, con PNG de respaldo (propuesta), o PNG siempre por sencillez?
