@@ -36,7 +36,7 @@ class WallpaperFactory(context: Context, val width: Int) {
         renderers.getOrPut(width) {
             WallpaperRenderer(appContext, width, Languages.texts(Settings.language), Settings.overviewLines,
                 Settings.headerOrder, Settings.minRatings, Settings.style, castPhotos,
-                Settings.showProviders && !Settings.sourceFallback && Settings.sourceInline)
+                Settings.showProviders && !Settings.sourceFallback && Settings.sourceInline, Settings.position)
         }
     }
 

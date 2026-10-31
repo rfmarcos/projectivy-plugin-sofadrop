@@ -114,6 +114,7 @@ object Settings {
     private const val KEY_TITLE_LANGUAGE = "title_language"
     private const val KEY_SYNOPSIS_LANGUAGE = "synopsis_language"
     private const val KEY_STYLE = "style"
+    private const val KEY_POSITION = "block_position"
     private const val KEY_CLICK_PLATFORMS = "click_platforms"
     private const val KEY_CLICK_FALLBACK = "click_fallback"
     private const val KEY_TRAILER_LANGUAGE = "trailer_language"
@@ -164,6 +165,9 @@ object Settings {
     const val STYLE_LOGO = "logo"
     const val STYLE_BACKDROP = "backdrop"
     val STYLES = listOf(STYLE_FULL, STYLE_LOGO, STYLE_BACKDROP)
+    /** Where the info block goes on the wallpaper. */
+    const val POSITION_TOP_LEFT = "top_left"
+    val POSITIONS = listOf(POSITION_TOP_LEFT, "center_left", "bottom_left", "top_right", "center_right", "bottom_right")
     /** What Projectivy opens from a wallpaper ("Watch" in About this wallpaper, play on its status bar). */
     const val CLICK_TRAILER = "trailer"
     const val CLICK_NONE = "none"
@@ -389,6 +393,11 @@ object Settings {
     var style: String
         get() = preferences.getString(KEY_STYLE, null)?.takeIf { it in STYLES } ?: STYLE_FULL
         set(value) = preferences.edit { putString(KEY_STYLE, value) }
+
+    /** See [POSITIONS]; Projectivy's rows may cover the bottom ones, depending on the user's layout. */
+    var position: String
+        get() = preferences.getString(KEY_POSITION, null)?.takeIf { it in POSITIONS } ?: POSITION_TOP_LEFT
+        set(value) = preferences.edit { putString(KEY_POSITION, value) }
 
     /**
      * Streaming platforms the user pays for, in the order a wallpaper tries them (see [ClickTargets]); their
@@ -797,6 +806,7 @@ object Settings {
             "ratingage:$maxRatingAge".takeIf { maxRatingAge > 0 }, "minrating:$minRating".takeIf { minRating > 0 },
             "order:${headerOrder.joinToString(",")}".takeIf { headerOrder != HEADER_BLOCKS },
             "minratings:$minRatings".takeIf { minRatings != 2 }, "cast".takeIf { showCast }, "castphotos:$castPhotos".takeIf { showCast && castPhotos != CAST_PHOTOS_GROUPED }, "style:$style".takeIf { style != STYLE_FULL },
+            "position:$position".takeIf { position != POSITION_TOP_LEFT && drawsLogo },
             "trailerlang:$trailerLanguage".takeIf { trailerLanguage != LANGUAGE_AUTO }, "trailerfallback:$trailerFallback".takeIf { trailerFallback != TRAILER_ENGLISH },
             "genres:${genreFilter.only}:${genreFilter.ids.sorted()}".takeIf { !genreFilter.isOff },
             "blocked:${blockedTitles.map { "${it.type.path}:${it.tmdbId}" }.sorted().hashCode()}".takeIf { blockedTitles.isNotEmpty() })).joinToString("|")

@@ -216,7 +216,15 @@
     <string name="style_logo_desc">The logo (or the title) over the backdrop, nothing else</string>
     <string name="style_backdrop_desc">Just the image</string>
     <string name="style_hidden">Hidden with the %1$s style</string>
-    <string name="details_description">How each wallpaper looks. Style and resolution here; the rest by parts: language, the header (the line under the title), synopsis and cast, and the footer (streaming services and list source).</string>
+    <string name="position_title">Position</string>
+    <string name="position_top_left">Top left</string>
+    <string name="position_center_left">Center left</string>
+    <string name="position_bottom_left">Bottom left</string>
+    <string name="position_top_right">Top right</string>
+    <string name="position_center_right">Center right</string>
+    <string name="position_bottom_right">Bottom right</string>
+    <string name="position_rows_note">Projectivy\'s app rows may cover it, depending on your layout</string>
+    <string name="details_description">How each wallpaper looks. Style, position and resolution here; the rest by parts: language, the header (the line under the title), synopsis and cast, and the footer (streaming services and list source).</string>
 
     <string name="rating_imdb" translatable="false">IMDb</string>
     <string name="rating_metacritic" translatable="false">Metacritic</string>

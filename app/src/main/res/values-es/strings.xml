@@ -206,7 +206,15 @@
     <string name="style_logo_desc">El logo (o el título) sobre el fondo, nada más</string>
     <string name="style_backdrop_desc">Solo la imagen</string>
     <string name="style_hidden">Oculto con el estilo %1$s</string>
-    <string name="details_description">Cómo se ve cada fondo. Estilo y resolución aquí; el resto, por partes: idioma, cabecera (la línea bajo el título), sinopsis y reparto, y pie (plataformas y lista de origen).</string>
+    <string name="position_title">Posición</string>
+    <string name="position_top_left">Arriba a la izquierda</string>
+    <string name="position_center_left">En el centro a la izquierda</string>
+    <string name="position_bottom_left">Abajo a la izquierda</string>
+    <string name="position_top_right">Arriba a la derecha</string>
+    <string name="position_center_right">En el centro a la derecha</string>
+    <string name="position_bottom_right">Abajo a la derecha</string>
+    <string name="position_rows_note">Las filas de apps de Projectivy pueden taparlo, según cómo las tengas</string>
+    <string name="details_description">Cómo se ve cada fondo. Estilo, posición y resolución aquí; el resto, por partes: idioma, cabecera (la línea bajo el título), sinopsis y reparto, y pie (plataformas y lista de origen).</string>
 
     <string name="header_title">Cabecera</string>
     <string name="header_fit_desc">Si la línea no cabe, se quitan primero las notas que pasan del mínimo y después lo que esté más a la derecha (los géneros, de uno en uno). Pon delante lo que no quieras perder: lo primero y las notas siempre visibles no se quitan nunca.</string>
