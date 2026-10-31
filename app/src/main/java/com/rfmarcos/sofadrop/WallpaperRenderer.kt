@@ -93,20 +93,7 @@ class WallpaperRenderer(
         // Full-bleed backdrop
         drawCover(canvas, backdrop)
 
-        // Gradients tinted with the backdrop's own colour: left (info), bottom (launcher rows), top (clock)
-        val average = Bitmap.createScaledBitmap(backdrop, 1, 1, true).getPixel(0, 0)
-        val tint = Color.rgb(
-            (6 + Color.red(average) * 0.1f).roundToInt(),
-            (6 + Color.green(average) * 0.1f).roundToInt(),
-            (6 + Color.blue(average) * 0.1f).roundToInt(),
-        )
-        // The left one is there for the text: lighter behind a logo alone, none on the bare backdrop
-        when (style) {
-            Settings.STYLE_FULL -> drawGradient(canvas, tint, horizontal = true) { t -> 0.96f * (1 - smoothstep((t - 0.28f) / 0.45f)) }
-            Settings.STYLE_LOGO -> drawGradient(canvas, tint, horizontal = true) { t -> 0.75f * (1 - smoothstep((t - 0.12f) / 0.45f)) }
-        }
-        drawGradient(canvas, tint, horizontal = false) { t -> 0.98f * smoothstep((t - 0.42f) / 0.46f) }
-        drawGradient(canvas, tint, horizontal = false) { t -> 0.45f * (1 - smoothstep(t / 0.22f)) }
+        drawGradients(canvas, tintOf(backdrop), right = false)
         if (style == Settings.STYLE_BACKDROP) return
 
         // Info block on its own layer, so it can cast a soft shadow
@@ -120,8 +107,136 @@ class WallpaperRenderer(
         }
     }
 
+    /** The backdrop's own colour, darkened, for the gradients. */
+    private fun tintOf(backdrop: Bitmap): Int {
+        val average = Bitmap.createScaledBitmap(backdrop, 1, 1, true).getPixel(0, 0)
+        return Color.rgb(
+            (6 + Color.red(average) * 0.1f).roundToInt(),
+            (6 + Color.green(average) * 0.1f).roundToInt(),
+            (6 + Color.blue(average) * 0.1f).roundToInt(),
+        )
+    }
+
+    /** Gradients tinted with the backdrop's colour: on the info's side, bottom (launcher rows), top (clock). */
+    private fun drawGradients(canvas: Canvas, tint: Int, right: Boolean) {
+        drawSideGradient(canvas, tint, right)
+        drawGradient(canvas, tint, horizontal = false) { t -> 0.98f * smoothstep((t - 0.42f) / 0.46f) }
+        drawGradient(canvas, tint, horizontal = false) { t -> 0.45f * (1 - smoothstep(t / 0.22f)) }
+    }
+
+    private fun drawSideGradient(canvas: Canvas, tint: Int, right: Boolean) {
+        // The side one is there for the text: lighter behind a logo alone, none on the bare backdrop
+        val side: ((Float) -> Float)? = when (style) {
+            Settings.STYLE_FULL -> { t -> 0.96f * (1 - smoothstep((t - 0.28f) / 0.45f)) }
+            Settings.STYLE_LOGO -> { t -> 0.75f * (1 - smoothstep((t - 0.12f) / 0.45f)) }
+            else -> null
+        }
+        side?.let { alphaAt -> drawGradient(canvas, tint, horizontal = true) { t -> alphaAt(if (right) 1 - t else t) } }
+    }
+
+    // --- Layers (T9 prototype, see docs/t9-layers.md) ---
+
+    /** The backdrop cropped to the wallpaper, its tint, and the info block with its shadow, trimmed, drawn at [infoLeft], [infoTop]. */
+    class Layers(val background: Bitmap, val tint: Int, val info: Bitmap?, val infoLeft: Int, val infoTop: Int)
+
+    fun renderLayers(info: WallpaperInfo, backdrop: Bitmap, logo: Bitmap?, providerLogos: List<Bitmap>, faces: List<Bitmap?> = emptyList()): Layers {
+        val background = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        drawCover(Canvas(background), backdrop)
+        val tint = tintOf(backdrop)
+        if (style == Settings.STYLE_BACKDROP) return Layers(background, tint, null, 0, 0)
+        val layer = Bitmap.createBitmap(min(width, s(2100).roundToInt()), min(height, s(1500).roundToInt()), Bitmap.Config.ARGB_8888)
+        try {
+            drawInfoContent(Canvas(layer), info, logo, providerLogos, faces)
+            val offset = IntArray(2)
+            val shadow = layer.extractAlpha(blurPaint(), offset)
+            val block = Bitmap.createBitmap(shadow.width, shadow.height, Bitmap.Config.ARGB_8888)
+            Canvas(block).apply {
+                drawBitmap(shadow, 0f, 0f, shadowPaint())
+                drawBitmap(layer, -offset[0].toFloat(), -offset[1].toFloat(), Paint(Paint.FILTER_BITMAP_FLAG))
+            }
+            shadow.recycle()
+            val box = opaqueBox(block) ?: return Layers(background, tint, null, 0, 0).also { block.recycle() }
+            val trimmed = Bitmap.createBitmap(block, box.left, box.top, box.width(), box.height())
+            if (trimmed !== block) block.recycle()
+            return Layers(background, tint, trimmed, offset[0] + box.left, offset[1] + box.top)
+        } finally {
+            layer.recycle()
+        }
+    }
+
+    /** The wallpaper from its [layers], with the info block at [position] (one of [POSITIONS]). */
+    fun compose(layers: Layers, position: String): Bitmap {
+        val output = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(output)
+        canvas.drawBitmap(layers.background, 0f, 0f, null)
+        val right = position.endsWith("_right")
+        drawGradients(canvas, layers.tint, right)
+        val info = layers.info ?: return output
+        // Mirrored on the right: the same margin from the edge
+        val x = if (right) width - layers.infoLeft - info.width else layers.infoLeft
+        val y = when {
+            position.startsWith("center") -> (height - info.height) / 2
+            position.startsWith("bottom") -> height - s(LOGO_BOTTOM - LOGO_MAX_HEIGHT).roundToInt() - info.height
+            else -> layers.infoTop
+        }
+        canvas.drawBitmap(info, x.toFloat(), y.toFloat(), Paint(Paint.FILTER_BITMAP_FLAG))
+        return output
+    }
+
+    /**
+     * [compose] straight onto the (mutable) background, without a new bitmap; with [sideOnly], only the side
+     * gradient, as if the top and bottom ones were already in the background.
+     */
+    fun composeOnto(layers: Layers, position: String, sideOnly: Boolean): Bitmap {
+        val canvas = Canvas(layers.background)
+        val right = position.endsWith("_right")
+        if (sideOnly) drawSideGradient(canvas, layers.tint, right) else drawGradients(canvas, layers.tint, right)
+        val info = layers.info ?: return layers.background
+        val x = if (right) width - layers.infoLeft - info.width else layers.infoLeft
+        val y = when {
+            position.startsWith("center") -> (height - info.height) / 2
+            position.startsWith("bottom") -> height - s(LOGO_BOTTOM - LOGO_MAX_HEIGHT).roundToInt() - info.height
+            else -> layers.infoTop
+        }
+        canvas.drawBitmap(info, x.toFloat(), y.toFloat(), Paint(Paint.FILTER_BITMAP_FLAG))
+        return layers.background
+    }
+
+    private fun blurPaint() = Paint().apply { maskFilter = BlurMaskFilter(s(18f).coerceAtLeast(1f), BlurMaskFilter.Blur.NORMAL) }
+
+    private fun shadowPaint() = Paint().apply {
+        color = Color.BLACK
+        alpha = 153
+    }
+
+    /** The box of a bitmap's visible pixels, or null when there are none. */
+    private fun opaqueBox(bitmap: Bitmap): Rect? {
+        val w = bitmap.width
+        val h = bitmap.height
+        val pixels = IntArray(w * h)
+        bitmap.getPixels(pixels, 0, w, 0, 0, w, h)
+        var left = w; var top = h; var right = -1; var bottom = -1
+        for (y in 0 until h) for (x in 0 until w) {
+            if (pixels[y * w + x] ushr 24 > 0) {
+                if (x < left) left = x
+                if (x > right) right = x
+                if (y < top) top = y
+                if (y > bottom) bottom = y
+            }
+        }
+        return if (right < left) null else Rect(left, top, right + 1, bottom + 1)
+    }
+
     private fun drawInfo(canvas: Canvas, layer: Bitmap, info: WallpaperInfo, logo: Bitmap?, providerLogos: List<Bitmap>, faces: List<Bitmap?>) {
-        val layerCanvas = Canvas(layer)
+        drawInfoContent(Canvas(layer), info, logo, providerLogos, faces)
+        val offset = IntArray(2)
+        val shadow = layer.extractAlpha(blurPaint(), offset)
+        canvas.drawBitmap(shadow, offset[0].toFloat(), offset[1].toFloat(), shadowPaint())
+        canvas.drawBitmap(layer, 0f, 0f, Paint(Paint.FILTER_BITMAP_FLAG))
+        shadow.recycle()
+    }
+
+    private fun drawInfoContent(layerCanvas: Canvas, info: WallpaperInfo, logo: Bitmap?, providerLogos: List<Bitmap>, faces: List<Bitmap?>) {
         if (logo != null) drawLogo(layerCanvas, logo) else drawTitle(layerCanvas, info.title)
         if (style == Settings.STYLE_FULL) {
             // With no header line the synopsis moves up into its place
@@ -131,18 +246,6 @@ class WallpaperRenderer(
             val castBottom = drawCast(layerCanvas, overviewBottom, info.cast, faces, if (overviewBottom > overviewTop) s(CAST_GAP) else 0f)
             drawFooter(layerCanvas, if (castBottom > overviewTop) castBottom + s(40) else overviewTop, providerLogos, info)
         }
-
-        val offset = IntArray(2)
-        val shadow = layer.extractAlpha(
-            Paint().apply { maskFilter = BlurMaskFilter(s(18f).coerceAtLeast(1f), BlurMaskFilter.Blur.NORMAL) },
-            offset,
-        )
-        canvas.drawBitmap(shadow, offset[0].toFloat(), offset[1].toFloat(), Paint().apply {
-            color = Color.BLACK
-            alpha = 153
-        })
-        canvas.drawBitmap(layer, 0f, 0f, Paint(Paint.FILTER_BITMAP_FLAG))
-        shadow.recycle()
     }
 
     // --- Background ---
@@ -689,6 +792,8 @@ class WallpaperRenderer(
         private const val CAST_ITEM_GAP = 44f
         /** Faces downloaded, and so names drawn with photos: every name [TmdbCatalog] keeps. */
         const val MAX_CAST_PHOTOS = 4
+        /** Where the info block can go (T9 prototype). */
+        val POSITIONS = listOf("top_left", "center_left", "bottom_left", "top_right", "bottom_right")
         private const val CERT_HEIGHT = 56f
         private const val CERT_PADDING = 14f
         /** Between the year and its certification box. */

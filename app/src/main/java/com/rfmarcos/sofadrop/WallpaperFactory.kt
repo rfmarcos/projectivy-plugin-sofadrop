@@ -131,7 +131,20 @@ class WallpaperFactory(context: Context, val width: Int) {
      * titles; decoding and drawing go one at a time: in the background Android runs the app on a single
      * core of the TV.
      */
-    fun render(info: WallpaperInfo, width: Int = this.width): Bitmap {
+    fun render(info: WallpaperInfo, width: Int = this.width): Bitmap =
+        withImages(info, width) { backdrop, logo, providers, faces -> renderer(width).render(info, backdrop, logo, providers, faces) }
+
+    /** The wallpaper of [info] in layers (T9 prototype). */
+    fun renderLayers(info: WallpaperInfo, width: Int = this.width): WallpaperRenderer.Layers =
+        withImages(info, width) { backdrop, logo, providers, faces -> renderer(width).renderLayers(info, backdrop, logo, providers, faces) }
+
+    /** Compose [layers] with the info at [position] (T9 prototype). */
+    fun compose(layers: WallpaperRenderer.Layers, position: String, width: Int = this.width): Bitmap = renderer(width).compose(layers, position)
+
+    fun composeOnto(layers: WallpaperRenderer.Layers, position: String, sideOnly: Boolean, width: Int = this.width): Bitmap =
+        renderer(width).composeOnto(layers, position, sideOnly)
+
+    private fun <T> withImages(info: WallpaperInfo, width: Int, draw: (Bitmap, Bitmap?, List<Bitmap>, List<Bitmap?>) -> T): T {
         // Previews are 1280 px wide: TMDB's 1280 size instead of decoding the (often 4K) original
         val backdropBytes = client.image(info.backdropPath, if (width <= 1280) "w1280" else "original")
         val logoBytes = info.logoPath?.let { client.image(it, if (width > 1920) "original" else "w500") }
@@ -159,7 +172,7 @@ class WallpaperFactory(context: Context, val width: Int) {
                 providerBytes.mapNotNullTo(providers) { decode(it) }
                 val faceSize = WallpaperRenderer.castPhotoSize(width)
                 faceBytes.mapTo(faces) { bytes -> bytes?.let { decode(it, faceSize, faceSize) } }
-                return renderer(width).render(info, backdrop, logo, providers, faces)
+                return draw(backdrop, logo, providers, faces)
             } finally {
                 backdrop?.recycle()
                 logo?.recycle()
