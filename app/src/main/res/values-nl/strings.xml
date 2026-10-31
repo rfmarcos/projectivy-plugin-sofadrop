@@ -502,6 +502,7 @@
     <string name="explore_block">Deze titel blokkeren</string>
     <string name="explore_unblock">Deze titel deblokkeren</string>
     <string name="viewer_block">Blokkeren</string>
+    <string name="viewer_open_failed">Kon het niet openen</string>
     <string name="viewer_unblock">Deblokkeren</string>
     <string name="viewer_blocked">GEBLOKKEERD</string>
     <string name="viewer_blocked_toast">Geblokkeerd: niet meer in de volgende set (die wordt gemaakt als je de instellingen verlaat)</string>

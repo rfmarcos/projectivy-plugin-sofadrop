@@ -494,6 +494,7 @@
     <string name="explore_block">Bloquear este título</string>
     <string name="explore_unblock">Desbloquear este título</string>
     <string name="viewer_block">Bloquear</string>
+    <string name="viewer_open_failed">No se ha podido abrir</string>
     <string name="viewer_unblock">Desbloquear</string>
     <string name="viewer_blocked">BLOQUEADO</string>
     <string name="viewer_blocked_toast">Bloqueado: no estará en el próximo conjunto (se crea al salir de los ajustes)</string>

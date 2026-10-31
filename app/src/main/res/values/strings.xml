@@ -512,6 +512,7 @@
     <string name="explore_block">Block this title</string>
     <string name="explore_unblock">Unblock this title</string>
     <string name="viewer_block">Block</string>
+    <string name="viewer_open_failed">Couldn\'t open it</string>
     <string name="viewer_unblock">Unblock</string>
     <string name="viewer_blocked">BLOCKED</string>
     <string name="viewer_blocked_toast">Blocked: left out of the next set (made when you leave the settings)</string>

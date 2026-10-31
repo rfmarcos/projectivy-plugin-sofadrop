@@ -1,5 +1,7 @@
 package com.rfmarcos.sofadrop
 
+import android.content.ActivityNotFoundException
+import android.content.Intent
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.os.Bundle
@@ -17,8 +19,8 @@ import androidx.appcompat.app.AppCompatActivity
 
 /**
  * Full-screen view of the generated wallpapers: ◀ ▶ browse, OK shows one in the settings preview,
- * ▼ blocks its title (see [Settings.blocked]), and the info cluster fades out when idle so the
- * wallpaper can be seen whole.
+ * ▲ opens what the wallpaper opens from Projectivy (to try "On wallpaper click"), ▼ blocks its title
+ * (see [Settings.blocked]), and the info cluster fades out when idle so the wallpaper can be seen whole.
  */
 class PreviewActivity : AppCompatActivity() {
 
@@ -87,6 +89,7 @@ class PreviewActivity : AppCompatActivity() {
         chips.removeAllViews()
         chips.addView(chip("◀ ▶", getString(R.string.viewer_browse)))
         chips.addView(chip("OK", getString(if (pinned && !picking) R.string.viewer_unpin else R.string.viewer_use)))
+        if (!picking) clickTarget(wallpaper)?.let { (_, label) -> chips.addView(chip("▲", label)) }
         if (!picking) chips.addView(chip("▼", getString(if (blocked) R.string.viewer_unblock else R.string.viewer_block)))
         showOverlay()
     }
@@ -133,6 +136,29 @@ class PreviewActivity : AppCompatActivity() {
         Toast.makeText(this, if (block) R.string.viewer_blocked_toast else R.string.viewer_unblocked_toast, Toast.LENGTH_LONG).show()
     }
 
+    /**
+     * What the wallpaper opens from Projectivy, the same [ClickTargets] serves it with, and what it does:
+     * "Open in Apple TV", "Open in Nuvio" or "Watch the trailer"; null when it opens nothing.
+     */
+    private fun clickTarget(wallpaper: StoredWallpaper): Pair<Intent, String>? {
+        val intent = ClickTargets.candidates(this, wallpaper).firstOrNull() ?: return null
+        // The trailer may have no package (without YouTube for TV): not an app's
+        val app = intent.`package`?.let { app ->
+            Platform.entries.firstOrNull { it.installedPackage(this) == app }?.label
+                ?: TitleApp.entries.firstOrNull { it.installedPackage(this) == app }?.label
+        }
+        return intent to if (app != null) getString(R.string.click_open_app, app) else getString(R.string.click_trailer)
+    }
+
+    private fun openClickTarget() {
+        val intent = clickTarget(wallpapers[position])?.first ?: return
+        try {
+            startActivity(intent)
+        } catch (e: ActivityNotFoundException) {
+            Toast.makeText(this, R.string.viewer_open_failed, Toast.LENGTH_LONG).show()
+        }
+    }
+
     /** Opened from "Preview title" to pick one: OK keeps it and goes back there. */
     private val picking get() = intent.getBooleanExtra(EXTRA_PICK, false)
 
@@ -157,6 +183,7 @@ class PreviewActivity : AppCompatActivity() {
             KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER -> if (!overlayHidden) togglePin()
             // Same as OK: only with the overlay shown, and not while picking the preview
             KeyEvent.KEYCODE_DPAD_DOWN -> if (!overlayHidden && !picking) toggleBlock()
+            KeyEvent.KEYCODE_DPAD_UP -> if (!overlayHidden && !picking) openClickTarget()
             else -> return super.onKeyDown(keyCode, event)
         }
         show()
