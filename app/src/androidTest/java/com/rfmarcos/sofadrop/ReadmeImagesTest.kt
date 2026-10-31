@@ -20,24 +20,24 @@ class ReadmeImagesTest {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         Settings.init(context)
         Settings.regionOverride = ""
-        Settings.style = Settings.STYLE_FULL
-        Settings.titleLanguage = Settings.LANGUAGE_AUTO
-        Settings.synopsisLanguage = Settings.LANGUAGE_AUTO
-        Settings.headerOrder = Settings.HEADER_BLOCKS
-        Settings.headerHidden = emptySet()
-        Settings.minRatings = 2
-        Settings.overviewLines = 4
-        Settings.showProviders = true
-        Settings.showSource = true
-        Settings.sourceFallback = true
-        Settings.ratingSources = listOf(RatingSource.IMDB, RatingSource.TRAKT)
+        Profile.WALLPAPER.style = Settings.STYLE_FULL
+        Profile.WALLPAPER.titleLanguage = Settings.LANGUAGE_AUTO
+        Profile.WALLPAPER.synopsisLanguage = Settings.LANGUAGE_AUTO
+        Profile.WALLPAPER.headerOrder = Settings.HEADER_BLOCKS
+        Profile.WALLPAPER.headerHidden = emptySet()
+        Profile.WALLPAPER.minRatings = 2
+        Profile.WALLPAPER.overviewLines = 4
+        Profile.WALLPAPER.showProviders = true
+        Profile.WALLPAPER.showSource = true
+        Profile.WALLPAPER.sourceFallback = true
+        Profile.WALLPAPER.ratingSources = listOf(RatingSource.IMDB, RatingSource.TRAKT)
         val dir = File(context.filesDir, "readme").apply { deleteRecursively(); mkdirs() }
         val trendingMovies = Sources.TMDB.first { it.key == "tmdb:trending_movies" }
 
         fun save(name: String, language: String, ref: TitleRef, cast: Boolean = false, change: (WallpaperInfo) -> WallpaperInfo = { it }) {
             Settings.language = language
-            Settings.showCast = cast
-            val factory = WallpaperFactory(context, 1920)
+            Profile.WALLPAPER.showCast = cast
+            val factory = WallpaperFactory(context, 1920, Profile.WALLPAPER)
             val info = factory.build(ref, source = trendingMovies)
             assertNotNull(info)
             val bitmap = factory.render(change(info!!))
@@ -54,8 +54,8 @@ class ReadmeImagesTest {
             save("wallpaper_es_mandalorian", "es-ES", TitleRef(MediaType.MOVIE, 1228710))
         } finally {
             Settings.language = "en-US"
-            Settings.showCast = false
-            Settings.ratingSources = listOf(RatingSource.TMDB)
+            Profile.WALLPAPER.showCast = false
+            Profile.WALLPAPER.ratingSources = listOf(RatingSource.TMDB)
         }
     }
 }

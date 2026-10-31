@@ -25,8 +25,8 @@ class StyleRenderTest {
 
         try {
             for (style in Settings.STYLES) {
-                Settings.style = style
-                val factory = WallpaperFactory(context, 1920)
+                Profile.WALLPAPER.style = style
+                val factory = WallpaperFactory(context, 1920, Profile.WALLPAPER)
                 val thrones = factory.build(TitleRef(MediaType.TV, 1399))
                 val superman = factory.build(TitleRef(MediaType.MOVIE, 1061474))
                 assertNotNull(thrones)
@@ -41,12 +41,12 @@ class StyleRenderTest {
             }
 
             // No header line: the synopsis moves up under the logo
-            Settings.style = Settings.STYLE_FULL
-            val factory = WallpaperFactory(context, 1920)
+            Profile.WALLPAPER.style = Settings.STYLE_FULL
+            val factory = WallpaperFactory(context, 1920, Profile.WALLPAPER)
             val info = factory.catalog.build(TitleRef(MediaType.TV, 1399))!!
             save("no_header", factory.render(info.copy(ratings = emptyList(), year = "", extraInfo = "", genres = "", certification = null)))
         } finally {
-            Settings.style = Settings.STYLE_FULL
+            Profile.WALLPAPER.style = Settings.STYLE_FULL
         }
     }
 }

@@ -52,7 +52,7 @@ class AccountsFragment : BaseSettingsFragment() {
     }
 
     private fun rows(): List<GuidedAction> = SERVICES.map(::serviceAction) + header(ID_NO_ACCOUNT, getString(R.string.accounts_no_account)) +
-        action(ID_IMDB, R.drawable.ic_act_refresh, getString(R.string.imdb_data_title), imdbLabel(requireContext())).build()
+        action(ID_IMDB, R.drawable.ic_act_refresh, getString(R.string.imdb_data_title), imdbLabel(requireContext(), profile)).build()
 
     private fun refreshRows() = refreshActions(rows())
 
@@ -115,7 +115,7 @@ class AccountsFragment : BaseSettingsFragment() {
                 // Like MDBList: the account's own lists go, the public ones stay
                 val own = Settings.traktLists.filter { it.own }
                 Settings.traktLists -= own.toSet()
-                Settings.lists -= own.map { it.key }.toSet()
+                profile.lists -= own.map { it.key }.toSet()
             }
             SourceProvider.SIMKL -> Settings.clearSimklSession()
             SourceProvider.TMDB -> Settings.clearTmdbSession()
@@ -125,7 +125,7 @@ class AccountsFragment : BaseSettingsFragment() {
                 Settings.clearMdbListSession()
                 Settings.mdbListKey = ""
                 Settings.mdbLists = Settings.mdbLists.filter { it.path.isNotEmpty() }
-                Settings.lists -= accountKeys
+                profile.lists -= accountKeys
                 return
             }
         }
@@ -134,7 +134,7 @@ class AccountsFragment : BaseSettingsFragment() {
             SourceProvider.SIMKL -> Sources.SIMKL
             else -> Sources.TMDB
         }
-        Settings.lists -= lists.filter { it.needsAccount }.map { it.key }.toSet()
+        profile.lists -= lists.filter { it.needsAccount }.map { it.key }.toSet()
     }
 
     private fun downloadImdb() {
@@ -143,7 +143,7 @@ class AccountsFragment : BaseSettingsFragment() {
         updateDescription(ID_IMDB, getString(R.string.imdb_data_downloading))
         background({ ImdbRatings.refresh(requireContext().applicationContext) }) { result ->
             downloading = false
-            updateDescription(ID_IMDB, result.exceptionOrNull()?.let { getString(R.string.imdb_data_failed, it.message) } ?: imdbLabel(requireContext()))
+            updateDescription(ID_IMDB, result.exceptionOrNull()?.let { getString(R.string.imdb_data_failed, it.message) } ?: imdbLabel(requireContext(), profile))
         }
     }
 
@@ -208,8 +208,8 @@ class AccountsFragment : BaseSettingsFragment() {
             SERVICES.filter(::connected).joinToString(", ") { ListsFragment.providerName(context, it) }
                 .let { if (it.isEmpty()) context.getString(R.string.accounts_none) else context.getString(R.string.accounts_summary, it) }
 
-        fun imdbLabel(context: Context): String {
-            if (RatingSource.IMDB !in Settings.ratingSources || Settings.mdbListAvailable) return context.getString(R.string.imdb_data_unused)
+        fun imdbLabel(context: Context, profile: Profile): String {
+            if (RatingSource.IMDB !in profile.ratingSources || Settings.mdbListAvailable) return context.getString(R.string.imdb_data_unused)
             val date = ImdbRatings.downloadedAt(context)
             return if (date == 0L) context.getString(R.string.imdb_data_never)
             else context.getString(R.string.imdb_data_date, DateUtils.formatDateTime(context, date, DateUtils.FORMAT_SHOW_DATE or DateUtils.FORMAT_ABBREV_MONTH))

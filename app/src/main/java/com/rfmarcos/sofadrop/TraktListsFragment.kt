@@ -53,7 +53,7 @@ class TraktListsFragment : BaseSettingsFragment() {
     private fun ownActions(): List<GuidedAction> {
         ownOptions = if (Settings.traktConnected) Settings.traktLists.filter { it.own } else emptyList()
         return ownOptions.mapIndexed { index, list ->
-            checkbox(ID_OWN_BASE + index, list.name, getString(R.string.mdblist_own_list), list.key in Settings.lists).build()
+            checkbox(ID_OWN_BASE + index, list.name, getString(R.string.mdblist_own_list), list.key in profile.lists).build()
         }
     }
 
@@ -77,10 +77,10 @@ class TraktListsFragment : BaseSettingsFragment() {
 
     override fun onGuidedActionClicked(action: GuidedAction) {
         when {
-            action.id == ID_ACCOUNT -> add(parentFragmentManager, AccountsFragment.newInstance(SourceProvider.TRAKT))
+            action.id == ID_ACCOUNT -> open(AccountsFragment.newInstance(SourceProvider.TRAKT))
             action.id >= ID_OWN_BASE -> {
                 val key = ownOptions.getOrNull((action.id - ID_OWN_BASE).toInt())?.key ?: return
-                Settings.lists = if (action.isChecked) Settings.lists + key else Settings.lists - key
+                profile.lists = if (action.isChecked) profile.lists + key else profile.lists - key
             }
             action.id >= ID_PUBLIC_BASE -> {
                 val list = publicOptions.getOrNull((action.id - ID_PUBLIC_BASE).toInt()) ?: return
@@ -109,7 +109,7 @@ class TraktListsFragment : BaseSettingsFragment() {
     /** Adding a public list also selects it; removing it unselects it. */
     private fun setPublic(list: TraktListRef, enabled: Boolean) {
         Settings.traktLists = Settings.traktLists.filterNot { it.key == list.key } + listOfNotNull(list.takeIf { enabled })
-        Settings.lists = if (enabled) Settings.lists + list.key else Settings.lists - list.key
+        profile.lists = if (enabled) profile.lists + list.key else profile.lists - list.key
     }
 
     private fun accountDescription(): String =
@@ -129,8 +129,8 @@ class TraktListsFragment : BaseSettingsFragment() {
         private var ownLoadedAt = 0L
 
         /** One-line summary for the Trakt screen: how many users' lists are selected. */
-        fun summary(context: Context): String {
-            val selected = Sources.selected().count { it.key.startsWith(TraktClient.USER_LIST) }
+        fun summary(context: Context, profile: Profile): String {
+            val selected = Sources.selected(profile).count { it.key.startsWith(TraktClient.USER_LIST) }
             return context.getString(R.string.trakt_user_lists_summary, ListsFragment.listsCount(context, selected))
         }
     }

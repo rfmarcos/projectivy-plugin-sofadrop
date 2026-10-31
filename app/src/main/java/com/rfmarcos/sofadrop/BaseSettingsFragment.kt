@@ -23,6 +23,14 @@ abstract class BaseSettingsFragment : GuidedStepSupportFragment() {
 
     protected val handler = Handler(Looper.getMainLooper())
 
+    /** Whose lists and look this screen edits (see [forProfile]): the wallpapers' unless opened for the screensaver. */
+    protected val profile: Profile get() = Profile.of(arguments?.getString(ARG_PROFILE))
+
+    /** Open [screen] over this one, for the same profile. */
+    protected fun open(screen: GuidedStepSupportFragment) {
+        add(parentFragmentManager, screen.forProfile(profile))
+    }
+
     override fun onProvideTheme(): Int = R.style.Theme_Sofadrop_GuidedStep
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -178,5 +186,11 @@ abstract class BaseSettingsFragment : GuidedStepSupportFragment() {
         private const val RADIO_SET_BASE = 100
         private const val VIEW_TYPE_HEADER = 1
         private val executor = Executors.newCachedThreadPool()
+        private const val ARG_PROFILE = "profile"
+
+        /** This screen for [profile]'s settings (see [profile]). */
+        fun <T : GuidedStepSupportFragment> T.forProfile(profile: Profile): T = apply {
+            arguments = (arguments ?: Bundle()).apply { putString(ARG_PROFILE, profile.id) }
+        }
     }
 }

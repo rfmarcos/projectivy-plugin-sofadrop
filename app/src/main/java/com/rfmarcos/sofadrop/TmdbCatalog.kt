@@ -65,6 +65,8 @@ class TmdbCatalog(
     /** TMDB locale of the trailer, null for the title's original language; [trailerFallback] is a [Settings.TRAILER_FALLBACKS]. */
     private val trailerLanguage: String? = language,
     private val trailerFallback: String = Settings.TRAILER_ENGLISH,
+    /** Whose filters and look it follows. */
+    private val profile: Profile = Profile.WALLPAPER,
 ) {
     private val languageCode = Languages.code(language)
     private val texts = Languages.texts(language)
@@ -82,7 +84,7 @@ class TmdbCatalog(
 
     /**
      * Candidate titles of a list, in the order they should be tried, including the ones filtered out
-     * (with the reason), using the list's own filters (see [Settings.filtersFor]) and then [runExclusion]
+     * (with the reason), using the list's own filters (see [Profile.filtersFor]) and then [runExclusion]
      * (titles an earlier list took, hidden watched titles), so both count against the same pool.
      * With [shuffle] the whole list is shuffled first (random selection). A list that comes up short is
      * read further, up to [MAX_FETCH] titles, while it has fewer than [enough] usable ones (the rest of the
@@ -92,7 +94,7 @@ class TmdbCatalog(
         source: ListSource, pool: Int, trakt: TraktClient?, simkl: SimklClient?, mdbList: MdbListClient?,
         shuffle: Boolean = false, runExclusion: ((TitleRef) -> Exclusion?)? = null, enough: Int = pool,
     ): List<Candidate> {
-        val filters = Settings.filtersFor(source)
+        val filters = profile.filtersFor(source)
         val cutoff = cutoff(filters.maxAgeMonths)
         fun load(count: Int) = when (source.provider) {
             SourceProvider.TMDB -> tmdbRefs(source.key, count, cutoff)
@@ -104,8 +106,8 @@ class TmdbCatalog(
             }
         }.distinct()
         val blocked = Settings.blockedTitles
-        val check = cutoff != null || filters.globalHits || Settings.excludeAdult || Settings.maxRatingAge > 0 ||
-            !filters.genres.isOff || filters.minRating > 0 || Settings.requireLogo || Settings.requireSynopsis || blocked.isNotEmpty()
+        val check = cutoff != null || filters.globalHits || profile.excludeAdult || profile.maxRatingAge > 0 ||
+            !filters.genres.isOff || filters.minRating > 0 || profile.requireLogo || profile.requireSynopsis || blocked.isNotEmpty()
         // Each title is checked once, also when the list is read again further
         val checked = ConcurrentHashMap<TitleRef, Candidate>()
         val filter = if (check) { ref: TitleRef -> checked.getOrPut(ref) { Candidate(ref, exclusion(ref, cutoff, filters, blocked)) }.exclusion } else null
@@ -209,21 +211,21 @@ class TmdbCatalog(
         return when {
             filters.globalHits && isLocalMarket(item) -> Exclusion.LOCAL_MARKET
             isTooOld(ref.type, item, cutoff, Settings.isYear(filters.maxAgeMonths)) -> Exclusion.TOO_OLD
-            Settings.excludeAdult && isAdult(ref, item) -> Exclusion.ADULT
+            profile.excludeAdult && isAdult(ref, item) -> Exclusion.ADULT
             // Unrated titles (mostly not released yet) pass
-            Settings.maxRatingAge > 0 && (Certifications.minimumAge(ref.type, item, region) ?: 0) > Settings.maxRatingAge -> Exclusion.AGE_RATING
+            profile.maxRatingAge > 0 && (Certifications.minimumAge(ref.type, item, region) ?: 0) > profile.maxRatingAge -> Exclusion.AGE_RATING
             !filters.genres.allows(item.objects("genres").mapNotNull { it.int("id") }) -> Exclusion.GENRE
             isLowRated(item, filters.minRating) -> Exclusion.LOW_RATING
             // Last: it costs an images request per title
-            Settings.requireLogo && logoPath(ref, item) == null -> Exclusion.NO_LOGO
-            Settings.requireSynopsis && localOverview(ref, item).isBlank() -> Exclusion.NO_SYNOPSIS
+            profile.requireLogo && logoPath(ref, item) == null -> Exclusion.NO_LOGO
+            profile.requireSynopsis && localOverview(ref, item).isBlank() -> Exclusion.NO_SYNOPSIS
             else -> null
         }
     }
 
     /** Local-market titles only pass when they are worldwide hits. */
     private fun isLocalMarket(item: JsonObject): Boolean {
-        if (!Settings.globalHitsOnly) return false
+        if (!profile.globalHitsOnly) return false
         val originalLanguage = item.str("original_language")?.lowercase().orEmpty()
         return originalLanguage !in Languages.MAINSTREAM && originalLanguage != languageCode &&
             (item.int("vote_count") ?: 0) < MIN_VOTES_OTHER_LANGUAGES
@@ -281,8 +283,8 @@ class TmdbCatalog(
         }
 
         // Untranslated synopsis: English only when the user prefers it to none
-        val overview = if (!Settings.drawsDetails) "" else localOverview(ref, item).ifBlank {
-            if (Settings.synopsisMode == Settings.SYNOPSIS_ENGLISH) translated(translations(ref), "en", "US", "overview") else ""
+        val overview = if (!profile.drawsDetails) "" else localOverview(ref, item).ifBlank {
+            if (profile.synopsisMode == Settings.SYNOPSIS_ENGLISH) translated(translations(ref), "en", "US", "overview") else ""
         }
 
         // Also for opening the title on its platform, whose app the wallpaper picks from these
@@ -303,7 +305,7 @@ class TmdbCatalog(
                 .take(2)
                 .joinToString(", "),
             backdropPath = backdrop,
-            logoPath = if (Settings.drawsLogo) logoPath(ref, item) else null,
+            logoPath = if (profile.drawsLogo) logoPath(ref, item) else null,
             providerLogoPaths = if (showProviders) providerLogoPaths(providers) else emptyList(),
             providerIds = providers.mapNotNull { it.int("provider_id") },
             imdbId = item.str("imdb_id") ?: item.obj("external_ids")?.str("imdb_id"),
@@ -344,7 +346,7 @@ class TmdbCatalog(
         val code = parts.title?.let(Languages::code) ?: originalLanguage
         val logos = client.get("${ref.type.path}/${ref.tmdbId}/images?include_image_language=$code,$originalLanguage,en")
             ?.objects("logos").orEmpty()
-        return pickLogo(logos, item, ref.type, { translations(ref) }, parts.title, language, Settings.logoFallback)
+        return pickLogo(logos, item, ref.type, { translations(ref) }, parts.title, language, profile.logoFallback)
     }
 
     /** Synopsis in the synopsis language, from another country if needed (es-MX for es-ES); empty when there is none. */

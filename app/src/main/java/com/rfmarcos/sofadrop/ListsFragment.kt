@@ -19,20 +19,20 @@ class ListsFragment : BaseSettingsFragment() {
     override fun onCreateActions(actions: MutableList<GuidedAction>, savedInstanceState: Bundle?) {
         val context = requireContext()
         // How lists are read: they apply to every provider below
-        actions += choice(ID_COUNT, R.drawable.ic_act_count, R.string.setting_count_title, countDescription(context),
-            Settings.COUNT_OPTIONS.map { countLabel(context, it) }, selected = countLabel(context, Settings.titlesPerList))
-        actions += choice(ID_ORDER, R.drawable.ic_act_shuffle, R.string.setting_selection_title, orderLabel(Settings.selectionMode),
+        actions += choice(ID_COUNT, R.drawable.ic_act_count, R.string.setting_count_title, countDescription(context, profile),
+            Settings.COUNT_OPTIONS.map { countLabel(context, it) }, selected = countLabel(context, profile.titlesPerList))
+        actions += choice(ID_ORDER, R.drawable.ic_act_shuffle, R.string.setting_selection_title, orderLabel(profile.selectionMode),
             ORDER_MODES.map(::orderLabel))
         actions += choice(ID_MIX, R.drawable.ic_act_shuffle, R.string.setting_mix_title, mixLabel(Settings.mixLists),
             listOf(mixLabel(true), mixLabel(false)))
-        actions += provider(ID_TMDB, R.drawable.badge_tmdb, "TMDB", ProviderListsFragment.summary(context, SourceProvider.TMDB))
+        actions += provider(ID_TMDB, R.drawable.badge_tmdb, "TMDB", ProviderListsFragment.summary(context, profile, SourceProvider.TMDB))
         actions += provider(ID_TRAKT, R.drawable.badge_trakt, getString(R.string.setting_trakt_title),
-            ProviderListsFragment.summary(context, SourceProvider.TRAKT))
+            ProviderListsFragment.summary(context, profile, SourceProvider.TRAKT))
         actions += provider(ID_SIMKL, R.drawable.badge_simkl, getString(R.string.setting_simkl_title),
-            ProviderListsFragment.summary(context, SourceProvider.SIMKL))
+            ProviderListsFragment.summary(context, profile, SourceProvider.SIMKL))
         actions += provider(ID_MDBLIST, R.drawable.badge_mdblist, getString(R.string.setting_mdblist_title), MdbListFragment.summary(context))
         actions += action(ID_EXPLORE, R.drawable.ic_act_filter, getString(R.string.setting_explore_title),
-            Filters.summary(context)).hasNext(true).build()
+            Filters.summary(context, profile)).hasNext(true).build()
     }
 
     /** Provider row with the provider's own round badge instead of a generic icon in the grey circle. */
@@ -43,21 +43,21 @@ class ListsFragment : BaseSettingsFragment() {
     override fun onResume() {
         super.onResume()
         val context = requireContext()
-        updateDescription(ID_COUNT, countDescription(context))
-        updateDescription(ID_TMDB, ProviderListsFragment.summary(context, SourceProvider.TMDB))
-        updateDescription(ID_TRAKT, ProviderListsFragment.summary(context, SourceProvider.TRAKT))
-        updateDescription(ID_SIMKL, ProviderListsFragment.summary(context, SourceProvider.SIMKL))
+        updateDescription(ID_COUNT, countDescription(context, profile))
+        updateDescription(ID_TMDB, ProviderListsFragment.summary(context, profile, SourceProvider.TMDB))
+        updateDescription(ID_TRAKT, ProviderListsFragment.summary(context, profile, SourceProvider.TRAKT))
+        updateDescription(ID_SIMKL, ProviderListsFragment.summary(context, profile, SourceProvider.SIMKL))
         updateDescription(ID_MDBLIST, MdbListFragment.summary(context))
-        updateDescription(ID_EXPLORE, Filters.summary(context))
+        updateDescription(ID_EXPLORE, Filters.summary(context, profile))
     }
 
     override fun onGuidedActionClicked(action: GuidedAction) {
         when (action.id) {
-            ID_TMDB -> add(parentFragmentManager, ProviderListsFragment.newInstance(SourceProvider.TMDB))
-            ID_TRAKT -> add(parentFragmentManager, ProviderListsFragment.newInstance(SourceProvider.TRAKT))
-            ID_SIMKL -> add(parentFragmentManager, ProviderListsFragment.newInstance(SourceProvider.SIMKL))
-            ID_MDBLIST -> add(parentFragmentManager, MdbListFragment())
-            ID_EXPLORE -> add(parentFragmentManager, ListExplorerFragment())
+            ID_TMDB -> open(ProviderListsFragment.newInstance(SourceProvider.TMDB))
+            ID_TRAKT -> open(ProviderListsFragment.newInstance(SourceProvider.TRAKT))
+            ID_SIMKL -> open(ProviderListsFragment.newInstance(SourceProvider.SIMKL))
+            ID_MDBLIST -> open(MdbListFragment())
+            ID_EXPLORE -> open(ListExplorerFragment())
         }
     }
 
@@ -65,12 +65,12 @@ class ListsFragment : BaseSettingsFragment() {
         val index = (action.id % SUB_ID_BASE).toInt()
         when (action.id / SUB_ID_BASE) {
             ID_COUNT -> {
-                Settings.titlesPerList = Settings.COUNT_OPTIONS[index]
-                updateDescription(ID_COUNT, countDescription(requireContext()))
+                profile.titlesPerList = Settings.COUNT_OPTIONS[index]
+                updateDescription(ID_COUNT, countDescription(requireContext(), profile))
             }
             ID_ORDER -> {
-                Settings.selectionMode = ORDER_MODES[index]
-                updateDescription(ID_ORDER, orderLabel(Settings.selectionMode))
+                profile.selectionMode = ORDER_MODES[index]
+                updateDescription(ID_ORDER, orderLabel(profile.selectionMode))
             }
             ID_MIX -> {
                 Settings.mixLists = index == 0
@@ -100,9 +100,9 @@ class ListsFragment : BaseSettingsFragment() {
             if (count >= Settings.COUNT_ALL) context.getString(R.string.titles_all, Settings.COUNT_ALL) else count.toString()
 
         /** "10 · about 80 wallpapers" (the live total of the selected lists), or the most there can be. */
-        fun countDescription(context: Context): String {
-            val count = Settings.titlesPerList
-            val total = Sources.selected().size * count
+        fun countDescription(context: Context, profile: Profile): String {
+            val count = profile.titlesPerList
+            val total = Sources.selected(profile).size * count
             return if (total > Settings.MAX_WALLPAPERS)
                 context.getString(R.string.titles_total_capped, countLabel(context, count), Settings.MAX_WALLPAPERS)
             else if (count >= Settings.COUNT_ALL) context.getString(R.string.titles_total_all, countLabel(context, count), total)
@@ -110,8 +110,8 @@ class ListsFragment : BaseSettingsFragment() {
         }
 
         /** "8 lists · TMDB 2 · Trakt 4 · MDBList 2" for the main screen. */
-        fun summary(context: Context): String {
-            val selected = Sources.selected()
+        fun summary(context: Context, profile: Profile): String {
+            val selected = Sources.selected(profile)
             if (selected.isEmpty()) return context.getString(R.string.error_no_lists)
             val perProvider = selected.groupingBy { it.provider }.eachCount().entries
                 .joinToString(" · ") { (provider, count) -> "${providerName(context, provider)} $count" }

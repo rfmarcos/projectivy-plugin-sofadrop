@@ -39,12 +39,12 @@ class LayoutRenderTest {
         Settings.init(context)
         Settings.language = "es-ES"
         Settings.regionOverride = ""
-        Settings.style = Settings.STYLE_FULL
-        Settings.headerOrder = Settings.HEADER_BLOCKS
-        Settings.minRatings = 2
-        Settings.showCast = true
-        Settings.showProviders = true
-        Settings.sourceFallback = false
+        Profile.WALLPAPER.style = Settings.STYLE_FULL
+        Profile.WALLPAPER.headerOrder = Settings.HEADER_BLOCKS
+        Profile.WALLPAPER.minRatings = 2
+        Profile.WALLPAPER.showCast = true
+        Profile.WALLPAPER.showProviders = true
+        Profile.WALLPAPER.sourceFallback = false
         val dir = File(context.filesDir, "layout_test").apply { deleteRecursively(); mkdirs() }
 
         val combos = listOf(
@@ -93,7 +93,7 @@ class LayoutRenderTest {
         )
 
         try {
-            val base = WallpaperFactory(context, 1920).catalog.build(TitleRef(MediaType.TV, 1399))
+            val base = WallpaperFactory(context, 1920, Profile.WALLPAPER).catalog.build(TitleRef(MediaType.TV, 1399))
             assertNotNull(base)
             assertTrue("needs streaming services in Spain", base!!.providerLogoPaths.isNotEmpty())
             assertTrue("needs cast with photos", base.cast.size >= 3 && base.cast.take(3).all { it.profilePath != null })
@@ -128,11 +128,11 @@ class LayoutRenderTest {
                     },
                     logoPath = base.logoPath.takeIf { combo.logo },
                 )
-                Settings.overviewLines = combo.lines
-                Settings.castPhotos = combo.photos
-                Settings.style = combo.style
-                Settings.sourceInline = combo.footer.startsWith("inline")
-                val bitmap = WallpaperFactory(context, 1920).render(info)
+                Profile.WALLPAPER.overviewLines = combo.lines
+                Profile.WALLPAPER.castPhotos = combo.photos
+                Profile.WALLPAPER.style = combo.style
+                Profile.WALLPAPER.sourceInline = combo.footer.startsWith("inline")
+                val bitmap = WallpaperFactory(context, 1920, Profile.WALLPAPER).render(info)
                 val name = "%02d".format(index + 1)
                 File(dir, "$name.jpg").outputStream().use { bitmap.compress(Bitmap.CompressFormat.JPEG, 90, it) }
                 // The info area: the left half, down to where the launcher rows start
@@ -158,11 +158,11 @@ class LayoutRenderTest {
                 File(dir, "sheet${sheetIndex + 1}.jpg").outputStream().use { sheet.compress(Bitmap.CompressFormat.JPEG, 90, it) }
             }
         } finally {
-            Settings.showCast = false
-            Settings.castPhotos = Settings.CAST_PHOTOS_GROUPED
-            Settings.style = Settings.STYLE_FULL
-            Settings.overviewLines = 4
-            Settings.sourceInline = false
+            Profile.WALLPAPER.showCast = false
+            Profile.WALLPAPER.castPhotos = Settings.CAST_PHOTOS_GROUPED
+            Profile.WALLPAPER.style = Settings.STYLE_FULL
+            Profile.WALLPAPER.overviewLines = 4
+            Profile.WALLPAPER.sourceInline = false
         }
     }
 }

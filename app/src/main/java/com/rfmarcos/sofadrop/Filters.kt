@@ -9,7 +9,7 @@ object Filters {
     fun onOff(context: Context) = listOf(context.getString(R.string.filter_off), context.getString(R.string.filter_on))
 
     /** Selected lists with their own filters. */
-    fun customised() = Sources.selected().filter { Settings.listFilters[it.key]?.isDefault == false }
+    fun customised(profile: Profile) = Sources.selected(profile).filter { profile.listFilters[it.key]?.isDefault == false }
 
     fun watchedLabel(context: Context, mode: String) = context.getString(
         when (mode) {
@@ -52,8 +52,8 @@ object Filters {
         if (years == 0) context.getString(R.string.filters_age_none) else context.getString(R.string.filters_rating_age_up_to, years)
 
     /** "Own filters: no age limit, hide" or "Default filters", for list rows. */
-    fun listFiltersSummary(context: Context, source: ListSource): String {
-        val custom = Settings.listFilters[source.key]?.takeUnless { it.isDefault }
+    fun listFiltersSummary(context: Context, profile: Profile, source: ListSource): String {
+        val custom = profile.listFilters[source.key]?.takeUnless { it.isDefault }
             ?: return context.getString(R.string.list_filters_default)
         val parts = listOfNotNull(
             custom.maxAge?.let { ageLabel(context, it) },
@@ -66,13 +66,13 @@ object Filters {
     }
 
     /** One-line summary of the default filters, for the Lists screen. */
-    fun summary(context: Context): String = listOfNotNull(
-        ageLabel(context, Settings.maxAgeMonths),
-        context.getString(R.string.setting_global_hits_title).takeIf { Settings.globalHitsOnly },
-        Settings.maxRatingAge.takeIf { it > 0 }?.let { context.getString(R.string.filters_rating_age_summary, it) },
-        Settings.genreFilter.takeUnless { it.isOff }?.let { genresLabel(context, it) },
-        Settings.minRating.takeIf { it > 0 }?.let { context.getString(R.string.filters_min_rating_summary, ratingLabel(context, it)) },
-        context.getString(R.string.watched_summary_hidden).takeIf { Settings.watchSource != null && Settings.watchedMode == Settings.WATCHED_HIDE },
-        customised().size.takeIf { it > 0 }?.let { context.resources.getQuantityString(R.plurals.lists_customised, it, it) },
+    fun summary(context: Context, profile: Profile): String = listOfNotNull(
+        ageLabel(context, profile.maxAgeMonths),
+        context.getString(R.string.setting_global_hits_title).takeIf { profile.globalHitsOnly },
+        profile.maxRatingAge.takeIf { it > 0 }?.let { context.getString(R.string.filters_rating_age_summary, it) },
+        profile.genreFilter.takeUnless { it.isOff }?.let { genresLabel(context, it) },
+        profile.minRating.takeIf { it > 0 }?.let { context.getString(R.string.filters_min_rating_summary, ratingLabel(context, it)) },
+        context.getString(R.string.watched_summary_hidden).takeIf { Settings.watchSource != null && profile.watchedMode == Settings.WATCHED_HIDE },
+        customised(profile).size.takeIf { it > 0 }?.let { context.resources.getQuantityString(R.plurals.lists_customised, it, it) },
     ).joinToString(" · ")
 }

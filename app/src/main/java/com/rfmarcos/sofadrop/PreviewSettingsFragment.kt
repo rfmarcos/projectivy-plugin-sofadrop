@@ -56,20 +56,20 @@ abstract class PreviewSettingsFragment : BaseSettingsFragment() {
     }
 
     protected fun refreshPending() {
-        val pending = Settings.hasPendingChanges && !Settings.generating && Sources.selected().isNotEmpty()
+        val pending = profile.hasPendingChanges && !profile.generating && Sources.selected(profile).isNotEmpty()
         pendingNotice?.visibility = if (pending) View.VISIBLE else View.GONE
     }
 
     /** Everything that changes how the preview looks. */
     private fun previewKey() = listOf(
-        Settings.token.hashCode(), Settings.language, Settings.region, Settings.signature, Settings.mdbLists.size,
+        Settings.token.hashCode(), Settings.language, Settings.region, profile.signature, Settings.mdbLists.size,
         Settings.tmdbConnected, Settings.previewPin, WallpaperStore(requireContext()).current().size,
     ).joinToString("|")
 
     /** A part the style doesn't draw: its row stays (so rows don't jump), disabled and saying why. */
     protected fun GuidedAction.hiddenBy(drawn: Boolean): GuidedAction {
         if (!drawn) {
-            description = getString(R.string.style_hidden, DetailsFragment.styleLabel(requireContext(), Settings.style))
+            description = getString(R.string.style_hidden, DetailsFragment.styleLabel(requireContext(), profile.style))
             isEnabled = false
         }
         return this
@@ -88,7 +88,7 @@ abstract class PreviewSettingsFragment : BaseSettingsFragment() {
             showPreviewMessage(getString(R.string.preview_no_token))
             return
         }
-        if (Sources.selected().isEmpty() && Settings.previewPin.isEmpty()) {
+        if (Sources.selected(profile).isEmpty() && Settings.previewPin.isEmpty()) {
             showPreviewMessage(getString(R.string.error_no_lists))
             return
         }
@@ -96,7 +96,7 @@ abstract class PreviewSettingsFragment : BaseSettingsFragment() {
         // The previous frame stays on screen while the next one renders
         previewProgress?.visibility = View.VISIBLE
         val context = requireContext().applicationContext
-        background({ renderPreview(context) }) { result ->
+        background({ renderPreview(context, profile) }) { result ->
             if (job != previewJob) return@background
             previewProgress?.visibility = View.GONE
             result.onSuccess { preview ->
@@ -144,9 +144,9 @@ abstract class PreviewSettingsFragment : BaseSettingsFragment() {
         }
 
         /** [pins] that can be a wallpaper (the id exists and has a backdrop), with their TMDB details. */
-        fun pinInfos(context: Context, pins: List<String>): List<Pair<String, WallpaperInfo>> {
+        fun pinInfos(context: Context, profile: Profile, pins: List<String>): List<Pair<String, WallpaperInfo>> {
             Settings.init(context)
-            val catalog = WallpaperFactory(context, PREVIEW_WIDTH).catalog
+            val catalog = WallpaperFactory(context, PREVIEW_WIDTH, profile).catalog
             return pins.mapNotNull { pin -> pinRef(pin)?.let(catalog::build)?.let { pin to it } }
         }
 
@@ -158,10 +158,10 @@ abstract class PreviewSettingsFragment : BaseSettingsFragment() {
          * else the first title of the current set whose list is still selected, else one of the first
          * selected list that has a usable title. Changing a setting redraws the same title.
          */
-        fun renderPreview(context: Context): Pair<Bitmap, String>? {
+        fun renderPreview(context: Context, profile: Profile): Pair<Bitmap, String>? {
             Settings.init(context)
-            val factory = WallpaperFactory(context, PREVIEW_WIDTH)
-            val stored = WallpaperStore(context).current()
+            val factory = WallpaperFactory(context, PREVIEW_WIDTH, profile)
+            val stored = WallpaperStore(context, profile).current()
             val pin = Settings.previewPin
             pinRef(pin)?.let { ref ->
                 val sourceKey = stored.firstOrNull { "${it.type}:${it.tmdbId}" == pin }?.source
@@ -170,7 +170,7 @@ abstract class PreviewSettingsFragment : BaseSettingsFragment() {
                 val info = factory.build(ref, source = source) ?: error(context.getString(R.string.preview_pin_not_found, pin))
                 return factory.render(info) to info.title
             }
-            val selected = Sources.selected()
+            val selected = Sources.selected(profile)
             // Sets made before the list was stored have no source: they still came from the user's lists
             val fromSet = stored.filter { it.source.isEmpty() || selected.any { source -> source.key == it.source } }
             for (wallpaper in fromSet.take(4)) {

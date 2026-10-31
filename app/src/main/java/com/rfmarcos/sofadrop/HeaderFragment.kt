@@ -65,11 +65,11 @@ class HeaderFragment : PreviewSettingsFragment() {
         }
         val certification = checkbox(ID_CERTIFICATION, getString(R.string.header_certification),
             getString(R.string.header_certification_desc, Languages.countryName(Settings.region)),
-            Settings.showsInHeader(Settings.HEADER_CERTIFICATION)).build()
+            profile.showsInHeader(Settings.HEADER_CERTIFICATION)).build()
         val minLabels = Settings.MIN_RATINGS_OPTIONS.map { it.toString() }
         val minRatings = action(ID_MIN_RATINGS, R.drawable.ic_act_count, getString(R.string.header_min_ratings),
-            getString(R.string.header_min_ratings_desc, Settings.minRatings))
-            .subActions(options(ID_MIN_RATINGS, minLabels, Settings.minRatings.toString())).build()
+            getString(R.string.header_min_ratings_desc, profile.minRatings))
+            .subActions(options(ID_MIN_RATINGS, minLabels, profile.minRatings.toString())).build()
 
         val source = action(ID_SOURCE, R.drawable.ic_act_info, getString(R.string.ratings_source_title), sourceLabel(context))
             .hasNext(true).build()
@@ -92,10 +92,10 @@ class HeaderFragment : PreviewSettingsFragment() {
 
     override fun onGuidedActionClicked(action: GuidedAction) {
         when (action.id) {
-            ID_SOURCE -> add(parentFragmentManager, AccountsFragment.newInstance(SourceProvider.MDBLIST))
+            ID_SOURCE -> open(AccountsFragment.newInstance(SourceProvider.MDBLIST))
             ID_CERTIFICATION -> {
-                Settings.headerHidden = if (action.isChecked) Settings.headerHidden - Settings.HEADER_CERTIFICATION
-                else Settings.headerHidden + Settings.HEADER_CERTIFICATION
+                profile.headerHidden = if (action.isChecked) profile.headerHidden - Settings.HEADER_CERTIFICATION
+                else profile.headerHidden + Settings.HEADER_CERTIFICATION
                 schedulePreview()
             }
         }
@@ -105,7 +105,7 @@ class HeaderFragment : PreviewSettingsFragment() {
         val parent = action.id / SUB_ID_BASE
         val choice = (action.id % SUB_ID_BASE).toInt()
         when {
-            parent == ID_MIN_RATINGS -> Settings.minRatings = Settings.MIN_RATINGS_OPTIONS[choice]
+            parent == ID_MIN_RATINGS -> profile.minRatings = Settings.MIN_RATINGS_OPTIONS[choice]
             parent >= ID_PLATFORM -> return movePlatform(platformRows().getOrNull((parent - ID_PLATFORM).toInt()) ?: return true, choice)
             parent >= ID_BLOCK -> return moveBlock(blockRows().getOrNull((parent - ID_BLOCK).toInt()) ?: return true, choice)
         }
@@ -121,12 +121,12 @@ class HeaderFragment : PreviewSettingsFragment() {
         val position = if (block == Settings.HEADER_RATINGS) choice + 1 else choice
         val shown = shownBlocks() - block
         if (position == 0) {
-            Settings.headerHidden = Settings.headerHidden + block
+            profile.headerHidden = profile.headerHidden + block
         } else {
-            Settings.headerHidden = Settings.headerHidden - block
+            profile.headerHidden = profile.headerHidden - block
             val order = shown.toMutableList().apply { add((position - 1).coerceAtMost(size), block) }
             // Hidden blocks keep their place after the shown ones
-            Settings.headerOrder = order + (Settings.headerOrder - order.toSet())
+            profile.headerOrder = order + (profile.headerOrder - order.toSet())
         }
         afterMove(ID_BLOCK + blockRows().indexOf(block))
         return true
@@ -137,7 +137,7 @@ class HeaderFragment : PreviewSettingsFragment() {
         val shown = shownPlatforms() - platform
         val order = if (choice == 0) shown else shown.toMutableList().apply { add((choice - 1).coerceAtMost(size), platform) }
         // Chosen scores that need MDBList stay chosen while it's disconnected
-        Settings.ratingSources = order + Settings.ratingSources.filterNot(::available)
+        profile.ratingSources = order + profile.ratingSources.filterNot(::available)
         afterMove(ID_PLATFORM + platformRows().indexOf(platform))
         return true
     }
@@ -153,7 +153,7 @@ class HeaderFragment : PreviewSettingsFragment() {
 
     private fun available(platform: RatingSource) = !platform.needsMdbList || Settings.mdbListAvailable
 
-    private fun shownPlatforms() = Settings.ratingSources.filter(::available)
+    private fun shownPlatforms() = profile.ratingSources.filter(::available)
 
     /** Shown platforms in order, then the other available ones, then those that need MDBList. */
     private fun platformRows(): List<RatingSource> {
@@ -163,12 +163,12 @@ class HeaderFragment : PreviewSettingsFragment() {
     }
 
     /** Blocks drawn, in order (the badge only with a watch history). */
-    private fun shownBlocks() = Settings.headerOrder.filter { block ->
-        (block == Settings.HEADER_RATINGS || Settings.showsInHeader(block)) && (block != Settings.HEADER_WATCHED || Settings.watchSource != null)
+    private fun shownBlocks() = profile.headerOrder.filter { block ->
+        (block == Settings.HEADER_RATINGS || profile.showsInHeader(block)) && (block != Settings.HEADER_WATCHED || Settings.watchSource != null)
     }
 
     /** Shown blocks in order, then the hidden ones. */
-    private fun blockRows(): List<String> = shownBlocks().let { it + (Settings.headerOrder - it.toSet()) }
+    private fun blockRows(): List<String> = shownBlocks().let { it + (profile.headerOrder - it.toSet()) }
 
     companion object {
         private const val ID_SOURCE = 1L
@@ -196,16 +196,16 @@ class HeaderFragment : PreviewSettingsFragment() {
         }
 
         /** "IMDb RT · year [age] · runtime" for the details screen, in the header's order. */
-        fun summary(context: Context): String {
-            val parts = Settings.headerOrder.mapNotNull { block ->
+        fun summary(context: Context, profile: Profile): String {
+            val parts = profile.headerOrder.mapNotNull { block ->
                 when (block) {
-                    Settings.HEADER_RATINGS -> Settings.ratingSources.joinToString(" ") { it.shortTitle(context) }.ifEmpty { null }
-                    Settings.HEADER_WATCHED -> blockTitle(context, block, short = true).takeIf { Settings.showsInHeader(block) && Settings.watchSource != null }
+                    Settings.HEADER_RATINGS -> profile.ratingSources.joinToString(" ") { it.shortTitle(context) }.ifEmpty { null }
+                    Settings.HEADER_WATCHED -> blockTitle(context, block, short = true).takeIf { profile.showsInHeader(block) && Settings.watchSource != null }
                     Settings.HEADER_YEAR -> listOfNotNull(
-                        blockTitle(context, block, short = true).takeIf { Settings.showsInHeader(block) },
-                        context.getString(R.string.header_certification_short).takeIf { Settings.showsInHeader(Settings.HEADER_CERTIFICATION) },
+                        blockTitle(context, block, short = true).takeIf { profile.showsInHeader(block) },
+                        context.getString(R.string.header_certification_short).takeIf { profile.showsInHeader(Settings.HEADER_CERTIFICATION) },
                     ).joinToString(" ").ifEmpty { null }
-                    else -> blockTitle(context, block, short = true).takeIf { Settings.showsInHeader(block) }
+                    else -> blockTitle(context, block, short = true).takeIf { profile.showsInHeader(block) }
                 }
             }
             return parts.joinToString(" · ").ifEmpty { context.getString(R.string.header_empty) }

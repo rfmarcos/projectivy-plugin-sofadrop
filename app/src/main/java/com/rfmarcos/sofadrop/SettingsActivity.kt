@@ -39,7 +39,12 @@ class SettingsActivity : FragmentActivity() {
     override fun onPause() {
         super.onPause()
         // Leaving the settings applies what changed instead of waiting for the next scheduled update
-        if (isFinishing && Settings.hasPendingChanges && !Settings.generating && Sources.selected().isNotEmpty()) GenerateWallpapersWorker.runNow(this, replace = true)
+        if (!isFinishing) return
+        for (profile in listOf(Profile.WALLPAPER, Profile.SCREENSAVER).filter { it.source == it }) {
+            // The screensaver's own set is made the first time here too
+            val due = profile.hasPendingChanges || (profile.isScreensaver && profile.lastGeneration == 0L)
+            if (due && !profile.generating && Sources.selected(profile).isNotEmpty()) GenerateWallpapersWorker.runNow(this, profile, replace = true)
+        }
     }
 
     private fun PackageManager.isApplicationInstalled(packageName: String): Boolean = try {

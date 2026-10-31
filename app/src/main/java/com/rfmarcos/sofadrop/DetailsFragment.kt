@@ -27,21 +27,21 @@ class DetailsFragment : PreviewSettingsFragment() {
         val context = requireContext()
         val styleLabels = Settings.STYLES.map { styleLabel(context, it) }
         return listOf(
-            action(ID_STYLE, R.drawable.ic_act_visibility, getString(R.string.style_title), styleLabel(context, Settings.style))
-                .subActions(options(ID_STYLE, styleLabels, styleLabel(context, Settings.style),
+            action(ID_STYLE, R.drawable.ic_act_visibility, getString(R.string.style_title), styleLabel(context, profile.style))
+                .subActions(options(ID_STYLE, styleLabels, styleLabel(context, profile.style),
                     Settings.STYLES.map { styleDescription(context, it) })).build(),
-            action(ID_POSITION, R.drawable.ic_act_place, getString(R.string.position_title), positionLabel(context, Settings.position))
-                .subActions(options(ID_POSITION, Settings.POSITIONS.map { positionLabel(context, it) }, positionLabel(context, Settings.position),
+            action(ID_POSITION, R.drawable.ic_act_place, getString(R.string.position_title), positionLabel(context, profile.position))
+                .subActions(options(ID_POSITION, Settings.POSITIONS.map { positionLabel(context, it) }, positionLabel(context, profile.position),
                     // Down where the launcher rows are, in Projectivy's usual layout
                     Settings.POSITIONS.map { if (it.startsWith("top")) null else getString(R.string.position_rows_note) }))
-                .build().hiddenBy(Settings.drawsLogo),
-            screen(ID_LANGUAGE, R.drawable.ic_act_language, R.string.setting_language_title, PartLanguagesFragment.summary(context)),
-            screen(ID_HEADER, R.drawable.ic_act_heart, R.string.header_title, HeaderFragment.summary(context)).hiddenBy(Settings.drawsDetails),
-            screen(ID_SYNOPSIS_CAST, R.drawable.ic_act_count, R.string.synopsis_cast_title, SynopsisCastFragment.summary(context))
-                .hiddenBy(Settings.drawsDetails),
-            screen(ID_FOOTER, R.drawable.ic_act_list, R.string.footer_title, FooterFragment.summary(context)).hiddenBy(Settings.drawsDetails),
-            action(ID_RESOLUTION, R.drawable.ic_act_hd, getString(R.string.setting_resolution_title), resolutionLabel(context, Settings.outputWidth))
-                .subActions(options(ID_RESOLUTION, Settings.WIDTH_OPTIONS.map { resolutionLabel(context, it) }, resolutionLabel(context, Settings.outputWidth),
+                .build().hiddenBy(profile.drawsLogo),
+            screen(ID_LANGUAGE, R.drawable.ic_act_language, R.string.setting_language_title, PartLanguagesFragment.summary(context, profile)),
+            screen(ID_HEADER, R.drawable.ic_act_heart, R.string.header_title, HeaderFragment.summary(context, profile)).hiddenBy(profile.drawsDetails),
+            screen(ID_SYNOPSIS_CAST, R.drawable.ic_act_count, R.string.synopsis_cast_title, SynopsisCastFragment.summary(context, profile))
+                .hiddenBy(profile.drawsDetails),
+            screen(ID_FOOTER, R.drawable.ic_act_list, R.string.footer_title, FooterFragment.summary(context, profile)).hiddenBy(profile.drawsDetails),
+            action(ID_RESOLUTION, R.drawable.ic_act_hd, getString(R.string.setting_resolution_title), resolutionLabel(context, profile.outputWidth))
+                .subActions(options(ID_RESOLUTION, Settings.WIDTH_OPTIONS.map { resolutionLabel(context, it) }, resolutionLabel(context, profile.outputWidth),
                     Settings.WIDTH_OPTIONS.map { width ->
                         if (width > 1920 && DeviceMemory.tightFor4k(context)) getString(R.string.resolution_low_memory) else null
                     }))
@@ -61,11 +61,11 @@ class DetailsFragment : PreviewSettingsFragment() {
 
     override fun onGuidedActionClicked(action: GuidedAction) {
         when (action.id) {
-            ID_LANGUAGE -> add(parentFragmentManager, PartLanguagesFragment())
-            ID_HEADER -> add(parentFragmentManager, HeaderFragment())
-            ID_SYNOPSIS_CAST -> add(parentFragmentManager, SynopsisCastFragment())
-            ID_FOOTER -> add(parentFragmentManager, FooterFragment())
-            ID_PREVIEW_PIN -> add(parentFragmentManager, PreviewPinFragment())
+            ID_LANGUAGE -> open(PartLanguagesFragment())
+            ID_HEADER -> open(HeaderFragment())
+            ID_SYNOPSIS_CAST -> open(SynopsisCastFragment())
+            ID_FOOTER -> open(FooterFragment())
+            ID_PREVIEW_PIN -> open(PreviewPinFragment())
         }
     }
 
@@ -73,12 +73,12 @@ class DetailsFragment : PreviewSettingsFragment() {
         val index = (action.id % SUB_ID_BASE).toInt()
         when (action.id / SUB_ID_BASE) {
             ID_STYLE -> {
-                Settings.style = Settings.STYLES[index]
+                profile.style = Settings.STYLES[index]
                 // Rows of the parts it hides (or brings back) change
                 collapseSubActions()
             }
-            ID_POSITION -> Settings.position = Settings.POSITIONS[index]
-            ID_RESOLUTION -> Settings.outputWidth = Settings.WIDTH_OPTIONS[index]
+            ID_POSITION -> profile.position = Settings.POSITIONS[index]
+            ID_RESOLUTION -> profile.outputWidth = Settings.WIDTH_OPTIONS[index]
         }
         refreshActions(rows())
         schedulePreview(300)
@@ -126,18 +126,18 @@ class DetailsFragment : PreviewSettingsFragment() {
             context.getString(if (width > 1920) R.string.resolution_2160 else R.string.resolution_1080)
 
         /** "English (US) · short synopsis · streaming in US · 1080p", or "Logo only · English (US) · 1080p", for the main screen. */
-        fun summary(context: Context): String = listOfNotNull(
-            styleLabel(context, Settings.style).takeIf { !Settings.drawsDetails },
-            positionLabel(context, Settings.position).takeIf { Settings.position != Settings.POSITION_TOP_LEFT && Settings.drawsLogo },
+        fun summary(context: Context, profile: Profile): String = listOfNotNull(
+            styleLabel(context, profile.style).takeIf { !profile.drawsDetails },
+            positionLabel(context, profile.position).takeIf { profile.position != Settings.POSITION_TOP_LEFT && profile.drawsLogo },
             Languages.displayName(Settings.language),
-            when (Settings.overviewLines) {
+            when (profile.overviewLines) {
                 0 -> context.getString(R.string.synopsis_summary_hidden)
                 2 -> context.getString(R.string.synopsis_summary_short)
                 else -> null
-            }?.takeIf { Settings.drawsDetails },
-            (if (Settings.showProviders) context.getString(R.string.streaming_summary, Settings.region)
-            else context.getString(R.string.streaming_summary_none)).takeIf { Settings.drawsDetails },
-            context.getString(if (Settings.outputWidth > 1920) R.string.resolution_short_2160 else R.string.resolution_short_1080),
+            }?.takeIf { profile.drawsDetails },
+            (if (profile.showProviders) context.getString(R.string.streaming_summary, Settings.region)
+            else context.getString(R.string.streaming_summary_none)).takeIf { profile.drawsDetails },
+            context.getString(if (profile.outputWidth > 1920) R.string.resolution_short_2160 else R.string.resolution_short_1080),
         ).joinToString(" · ")
     }
 }

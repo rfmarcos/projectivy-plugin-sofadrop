@@ -32,13 +32,13 @@ class WallpaperProviderService : Service() {
             val current = store.current()
             // Settings changes wait for the next scheduled update (or "Update now"): only an empty
             // or expired set is regenerated from here, as a safety net for the periodic job
-            val stale = System.currentTimeMillis() - Settings.lastGeneration > Settings.refreshIntervalMillis
+            val stale = System.currentTimeMillis() - Profile.WALLPAPER.lastGeneration > Settings.refreshIntervalMillis
             if (current.isEmpty() || stale) {
                 GenerateWallpapersWorker.runNow(this@WallpaperProviderService)
             }
             GenerateWallpapersWorker.schedule(this@WallpaperProviderService)
 
-            Log.i(TAG, "getWallpapers: ${current.size} wallpapers, stale=$stale, pendingChanges=${Settings.hasPendingChanges}")
+            Log.i(TAG, "getWallpapers: ${current.size} wallpapers, stale=$stale, pendingChanges=${Profile.WALLPAPER.hasPendingChanges}")
             store.markServed()
             return (if (Settings.mixLists) current.shuffled() else current).mapNotNull { wallpaper ->
                 val uri = store.uriOf(wallpaper) ?: return@mapNotNull null

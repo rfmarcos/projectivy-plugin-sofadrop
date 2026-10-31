@@ -48,9 +48,9 @@ class SettingsFragment : PreviewSettingsFragment() {
             .multilineDescription(true).build()
         actions += action(ID_PREVIEW, R.drawable.ic_act_preview, getString(R.string.action_preview), getString(R.string.action_preview_desc))
             .enabled(WallpaperStore(context).current().isNotEmpty()).build()
-        actions += action(ID_LISTS, R.drawable.ic_act_movie, getString(R.string.setting_lists_title), ListsFragment.summary(context))
+        actions += action(ID_LISTS, R.drawable.ic_act_movie, getString(R.string.setting_lists_title), ListsFragment.summary(context, profile))
             .hasNext(true).build()
-        actions += action(ID_DETAILS, R.drawable.ic_act_tv, getString(R.string.setting_details_title), DetailsFragment.summary(context))
+        actions += action(ID_DETAILS, R.drawable.ic_act_tv, getString(R.string.setting_details_title), DetailsFragment.summary(context, profile))
             .hasNext(true).build()
         actions += action(ID_CLICK, R.drawable.ic_act_play, getString(R.string.click_action_title), ClickActionFragment.summary(context))
             .hasNext(true).build()
@@ -66,8 +66,8 @@ class SettingsFragment : PreviewSettingsFragment() {
         super.onResume()
         // Sub-screens may have changed lists, filters or details
         val context = requireContext()
-        updateDescription(ID_LISTS, ListsFragment.summary(context))
-        updateDescription(ID_DETAILS, DetailsFragment.summary(context))
+        updateDescription(ID_LISTS, ListsFragment.summary(context, profile))
+        updateDescription(ID_DETAILS, DetailsFragment.summary(context, profile))
         updateDescription(ID_CLICK, ClickActionFragment.summary(context))
         updateDescription(ID_ACCOUNTS, AccountsFragment.summary(context))
         handler.post(statusRefresher)
@@ -81,14 +81,14 @@ class SettingsFragment : PreviewSettingsFragment() {
         val context = requireContext()
         GenerateWallpapersWorker.schedule(context, settingsChanged = true)
         // First run: nothing to show in Projectivy yet, so generate right away
-        if (Settings.lastGeneration == 0L && Settings.token.isNotBlank()) GenerateWallpapersWorker.runNow(context)
+        if (profile.lastGeneration == 0L && Settings.token.isNotBlank()) GenerateWallpapersWorker.runNow(context)
         super.onPause()
     }
 
     override fun onGuidedActionClicked(action: GuidedAction) {
         when (action.id) {
             ID_GENERATE -> {
-                if (Sources.selected().isEmpty()) {
+                if (Sources.selected(profile).isEmpty()) {
                     Toast.makeText(requireContext(), R.string.select_list_first, Toast.LENGTH_SHORT).show()
                     return
                 }
@@ -98,13 +98,13 @@ class SettingsFragment : PreviewSettingsFragment() {
             }
             ID_PREVIEW -> startActivity(Intent(requireContext(), PreviewActivity::class.java))
             // What's new first, when the release says
-            ID_APP_UPDATE -> if (hasNotes()) add(parentFragmentManager, UpdateFragment()) else installUpdate()
+            ID_APP_UPDATE -> if (hasNotes()) open(UpdateFragment()) else installUpdate()
             ID_USE_IN_PROJECTIVY -> Projectivy.openWallpaperSettings(requireContext())
-            ID_LISTS -> add(parentFragmentManager, ListsFragment())
-            ID_DETAILS -> add(parentFragmentManager, DetailsFragment())
-            ID_CLICK -> add(parentFragmentManager, ClickActionFragment())
-            ID_ACCOUNTS -> add(parentFragmentManager, AccountsFragment())
-            ID_ABOUT -> add(parentFragmentManager, AboutFragment())
+            ID_LISTS -> open(ListsFragment())
+            ID_DETAILS -> open(DetailsFragment())
+            ID_CLICK -> open(ClickActionFragment())
+            ID_ACCOUNTS -> open(AccountsFragment())
+            ID_ABOUT -> open(AboutFragment())
         }
     }
 
@@ -177,22 +177,22 @@ class SettingsFragment : PreviewSettingsFragment() {
     private fun statusText(): String {
         val count = WallpaperStore(requireContext()).current().size
         return when {
-            Settings.generating -> Settings.generationProgress?.let { (done, list, lists) ->
+            profile.generating -> profile.generationProgress?.let { (done, list, lists) ->
                 getString(R.string.status_progress, resources.getQuantityString(R.plurals.wallpapers_count, done, done), list, lists)
             } ?: getString(R.string.status_generating)
-            Sources.selected().isEmpty() -> getString(R.string.status_select_list)
+            Sources.selected(profile).isEmpty() -> getString(R.string.status_select_list)
             // A "no lists" error is stale once lists are picked again
-            Settings.lastError.isNotEmpty() && Settings.lastError != getString(R.string.error_no_lists) ->
-                getString(R.string.status_error, Settings.lastError)
+            profile.lastError.isNotEmpty() && profile.lastError != getString(R.string.error_no_lists) ->
+                getString(R.string.status_error, profile.lastError)
             count == 0 -> getString(R.string.status_never)
-            Settings.hasPendingChanges -> getString(R.string.status_pending, count)
+            profile.hasPendingChanges -> getString(R.string.status_pending, count)
             else -> getString(
                 R.string.status_ok, count,
                 // "0 minutes ago" reads oddly; mid-sentence, Spanish and others capitalise it ("Hace 3 minutos")
-                if (System.currentTimeMillis() - Settings.lastGeneration < DateUtils.MINUTE_IN_MILLIS) getString(R.string.time_just_now)
-                else DateUtils.getRelativeTimeSpanString(Settings.lastGeneration, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS)
+                if (System.currentTimeMillis() - profile.lastGeneration < DateUtils.MINUTE_IN_MILLIS) getString(R.string.time_just_now)
+                else DateUtils.getRelativeTimeSpanString(profile.lastGeneration, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS)
                     .toString().replaceFirstChar { it.lowercase() },
-            ) + Settings.lastNotice.takeIf { it.isNotEmpty() }?.let { " · $it" }.orEmpty()
+            ) + profile.lastNotice.takeIf { it.isNotEmpty() }?.let { " · $it" }.orEmpty()
         }
     }
 

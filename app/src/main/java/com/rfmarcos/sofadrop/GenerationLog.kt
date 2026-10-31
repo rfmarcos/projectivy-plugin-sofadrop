@@ -12,7 +12,7 @@ import java.util.Locale
  * What the last generation did, shown in About for bug reports: device, lists, failures and duration.
  * Never keys or tokens: messages lose their URL queries.
  */
-class GenerationLog(private val context: Context) {
+class GenerationLog(private val context: Context, profile: Profile = Profile.WALLPAPER) {
 
     private val started = System.currentTimeMillis()
     private val lines = mutableListOf<String>()
@@ -21,7 +21,7 @@ class GenerationLog(private val context: Context) {
         add("Sofadrop ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE}) · ${DATE.format(Date(started))}")
         add("${Build.MANUFACTURER} ${Build.MODEL} · Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})")
         add(DeviceMemory.describe(context))
-        add("${Settings.outputWidth} px · ${Settings.language} · ${Settings.titlesPerList} per list")
+        add("${"Screensaver · ".takeIf { profile.isScreensaver }.orEmpty()}${profile.outputWidth} px · ${Settings.language} · ${profile.titlesPerList} per list")
     }
 
     @Synchronized

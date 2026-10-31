@@ -18,15 +18,17 @@ import tv.projectivy.plugin.wallpaperprovider.api.WallpaperProviderContract
  */
 class DebugNotifyReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
+        // "--es profile screensaver" for the screensaver's own set
+        val profile = Profile.of(intent.getStringExtra("profile"))
         if (intent.getBooleanExtra("generate", false)) {
-            GenerateWallpapersWorker.runNow(context, replace = true)
+            GenerateWallpapersWorker.runNow(context, profile, replace = true)
             return
         }
         if (intent.getBooleanExtra("preview", false)) {
             val result = goAsync()
             Thread {
                 val start = System.currentTimeMillis()
-                val title = runCatching { PreviewSettingsFragment.renderPreview(context.applicationContext)?.second }.getOrElse { it.toString() }
+                val title = runCatching { PreviewSettingsFragment.renderPreview(context.applicationContext, profile)?.second }.getOrElse { it.toString() }
                 Log.i("DebugNotify", "Preview of $title in ${System.currentTimeMillis() - start} ms")
                 result.finish()
             }.start()

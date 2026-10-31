@@ -39,7 +39,7 @@ class AboutFragment : BaseSettingsFragment() {
     override fun onGuidedActionClicked(action: GuidedAction) {
         when (action.id) {
             ID_VERSION -> checkForUpdate()
-            ID_LOG -> add(parentFragmentManager, GenerationLogFragment())
+            ID_LOG -> open(GenerationLogFragment())
             ID_USE_IN_PROJECTIVY -> Projectivy.openWallpaperSettings(requireContext())
             ID_SUPPORT -> LinkQrDialog.newInstance(BuildConfig.SUPPORT_URL, R.string.about_support, R.string.about_support_scan)
                 .show(parentFragmentManager, "support")

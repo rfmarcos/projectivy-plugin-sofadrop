@@ -23,10 +23,10 @@ class SynopsisCastFragment : PreviewSettingsFragment() {
     private fun rows(): List<GuidedAction> {
         val context = requireContext()
         return listOf(
-            choice(ID_SYNOPSIS, R.drawable.ic_act_count, R.string.synopsis_title, synopsisLabel(context, Settings.overviewLines),
+            choice(ID_SYNOPSIS, R.drawable.ic_act_count, R.string.synopsis_title, synopsisLabel(context, profile.overviewLines),
                 Settings.OVERVIEW_OPTIONS.map { synopsisLabel(context, it) }),
-            action(ID_CAST, R.drawable.ic_act_account, getString(R.string.cast_title), castLabel(context, Settings.showCast))
-                .subActions(options(ID_CAST, listOf(false, true).map { castLabel(context, it) }, castLabel(context, Settings.showCast),
+            action(ID_CAST, R.drawable.ic_act_account, getString(R.string.cast_title), castLabel(context, profile.showCast))
+                .subActions(options(ID_CAST, listOf(false, true).map { castLabel(context, it) }, castLabel(context, profile.showCast),
                     listOf(null, getString(R.string.cast_shown_desc)))).build(),
             castPhotosAction(),
         )
@@ -36,10 +36,10 @@ class SynopsisCastFragment : PreviewSettingsFragment() {
     private fun castPhotosAction(): GuidedAction {
         val context = requireContext()
         val action = action(ID_CAST_PHOTOS, R.drawable.ic_act_account, getString(R.string.cast_photos_title),
-            if (Settings.showCast) castPhotosLabel(context, Settings.castPhotos) else getString(R.string.cast_photos_disabled))
-            .subActions(options(ID_CAST_PHOTOS, Settings.CAST_PHOTO_MODES.map { castPhotosLabel(context, it) }, castPhotosLabel(context, Settings.castPhotos),
+            if (profile.showCast) castPhotosLabel(context, profile.castPhotos) else getString(R.string.cast_photos_disabled))
+            .subActions(options(ID_CAST_PHOTOS, Settings.CAST_PHOTO_MODES.map { castPhotosLabel(context, it) }, castPhotosLabel(context, profile.castPhotos),
                 listOf(null, getString(R.string.cast_photos_grouped_desc), getString(R.string.cast_photos_each_desc)))).build()
-        action.isEnabled = Settings.showCast
+        action.isEnabled = profile.showCast
         return action
     }
 
@@ -47,17 +47,17 @@ class SynopsisCastFragment : PreviewSettingsFragment() {
         val index = (action.id % SUB_ID_BASE).toInt()
         when (action.id / SUB_ID_BASE) {
             ID_SYNOPSIS -> {
-                Settings.overviewLines = Settings.OVERVIEW_OPTIONS[index]
-                updateDescription(ID_SYNOPSIS, synopsisLabel(requireContext(), Settings.overviewLines))
+                profile.overviewLines = Settings.OVERVIEW_OPTIONS[index]
+                updateDescription(ID_SYNOPSIS, synopsisLabel(requireContext(), profile.overviewLines))
             }
             ID_CAST -> {
-                Settings.showCast = index == 1
-                updateDescription(ID_CAST, castLabel(requireContext(), Settings.showCast))
+                profile.showCast = index == 1
+                updateDescription(ID_CAST, castLabel(requireContext(), profile.showCast))
                 refreshActions(rows())
             }
             ID_CAST_PHOTOS -> {
-                Settings.castPhotos = Settings.CAST_PHOTO_MODES[index]
-                updateDescription(ID_CAST_PHOTOS, castPhotosLabel(requireContext(), Settings.castPhotos))
+                profile.castPhotos = Settings.CAST_PHOTO_MODES[index]
+                updateDescription(ID_CAST_PHOTOS, castPhotosLabel(requireContext(), profile.castPhotos))
             }
         }
         schedulePreview(300)
@@ -88,12 +88,12 @@ class SynopsisCastFragment : PreviewSettingsFragment() {
         )
 
         /** "Full synopsis · cast with faces", for the details screen. */
-        fun summary(context: Context): String = listOf(
-            context.getString(R.string.synopsis_cast_summary, synopsisLabel(context, Settings.overviewLines)),
+        fun summary(context: Context, profile: Profile): String = listOf(
+            context.getString(R.string.synopsis_cast_summary, synopsisLabel(context, profile.overviewLines)),
             context.getString(
                 when {
-                    !Settings.showCast -> R.string.cast_summary_hidden
-                    Settings.castPhotos == Settings.CAST_PHOTOS_NONE -> R.string.cast_summary_names
+                    !profile.showCast -> R.string.cast_summary_hidden
+                    profile.castPhotos == Settings.CAST_PHOTOS_NONE -> R.string.cast_summary_names
                     else -> R.string.cast_summary_photos
                 }
             ),

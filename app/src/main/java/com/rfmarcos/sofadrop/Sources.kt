@@ -84,8 +84,8 @@ object Sources {
     }
 
     /** Selected lists that can actually be used (e.g. not a Trakt list after disconnecting); may be empty. */
-    fun selected(): List<ListSource> {
-        val chosen = Settings.lists
+    fun selected(profile: Profile): List<ListSource> {
+        val chosen = profile.lists
         return available().filter { it.key in chosen }
     }
 }

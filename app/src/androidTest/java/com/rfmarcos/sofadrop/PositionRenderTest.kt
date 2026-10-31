@@ -22,21 +22,21 @@ class PositionRenderTest {
             File(dir, "$name.jpg").outputStream().use { bitmap.compress(Bitmap.CompressFormat.JPEG, 90, it) }
 
         try {
-            Settings.style = Settings.STYLE_FULL
+            Profile.WALLPAPER.style = Settings.STYLE_FULL
             for (position in Settings.POSITIONS) {
-                Settings.position = position
-                val factory = WallpaperFactory(context, 1920)
+                Profile.WALLPAPER.position = position
+                val factory = WallpaperFactory(context, 1920, Profile.WALLPAPER)
                 save(position, factory.render(factory.build(TitleRef(MediaType.TV, 1399))!!))
             }
-            Settings.position = "bottom_right"
-            Settings.style = Settings.STYLE_LOGO
-            val factory = WallpaperFactory(context, 1920)
+            Profile.WALLPAPER.position = "bottom_right"
+            Profile.WALLPAPER.style = Settings.STYLE_LOGO
+            val factory = WallpaperFactory(context, 1920, Profile.WALLPAPER)
             val superman = factory.build(TitleRef(MediaType.MOVIE, 1061474))!!
             save("logo_bottom_right", factory.render(superman))
             save("title_bottom_right", factory.render(superman.copy(logoPath = null)))
         } finally {
-            Settings.style = Settings.STYLE_FULL
-            Settings.position = Settings.POSITION_TOP_LEFT
+            Profile.WALLPAPER.style = Settings.STYLE_FULL
+            Profile.WALLPAPER.position = Settings.POSITION_TOP_LEFT
         }
     }
 }

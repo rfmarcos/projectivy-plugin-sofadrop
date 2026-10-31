@@ -40,18 +40,18 @@ class PluginServiceTest {
         Settings.init(context)
         Settings.language = "es-ES"
         Settings.regionOverride = ""
-        Settings.lists = Settings.DEFAULT_LISTS
-        Settings.titlesPerList = 3
-        Settings.outputWidth = 1920
+        Profile.WALLPAPER.lists = Settings.DEFAULT_LISTS
+        Profile.WALLPAPER.titlesPerList = 3
+        Profile.WALLPAPER.outputWidth = 1920
 
-        val before = Settings.lastGeneration
+        val before = Profile.WALLPAPER.lastGeneration
         GenerateWallpapersWorker.runNow(context, replace = true)
         val deadline = System.currentTimeMillis() + 180_000
-        while (Settings.lastGeneration == before && Settings.lastError.isEmpty() && System.currentTimeMillis() < deadline) {
+        while (Profile.WALLPAPER.lastGeneration == before && Profile.WALLPAPER.lastError.isEmpty() && System.currentTimeMillis() < deadline) {
             Thread.sleep(1000)
         }
-        assertEquals("", Settings.lastError)
-        assertTrue("generation did not finish", Settings.lastGeneration > before)
+        assertEquals("", Profile.WALLPAPER.lastError)
+        assertTrue("generation did not finish", Profile.WALLPAPER.lastGeneration > before)
 
         val service = bind()
         val wallpapers = service.getWallpapers(Event.TimeElapsed)
@@ -84,9 +84,9 @@ class PluginServiceTest {
         val exported = service.preferences
         assertTrue(exported.contains("\"language\":\"es-ES\""))
         service.setPreferences(exported.replace("\"titles_per_list\":3", "\"titles_per_list\":5"))
-        assertEquals(5, Settings.titlesPerList)
-        assertEquals(Settings.DEFAULT_LISTS, Settings.lists)
-        Settings.titlesPerList = 3
+        assertEquals(5, Profile.WALLPAPER.titlesPerList)
+        assertEquals(Settings.DEFAULT_LISTS, Profile.WALLPAPER.lists)
+        Profile.WALLPAPER.titlesPerList = 3
     }
 
     /**
@@ -106,8 +106,8 @@ class PluginServiceTest {
             """[{"file":"movie-1.jpg","title":"With trailer","type":"movie","tmdbId":1,"source":"tmdb:trending_movies","trailerKey":"dQw4w9WgXcQ"},""" +
                 """{"file":"movie-2.jpg","title":"Older set","type":"movie","tmdbId":2}]"""
         )
-        val lastGeneration = Settings.lastGeneration
-        Settings.lastGeneration = System.currentTimeMillis() // not stale: no generation from getWallpapers
+        val lastGeneration = Profile.WALLPAPER.lastGeneration
+        Profile.WALLPAPER.lastGeneration = System.currentTimeMillis() // not stale: no generation from getWallpapers
         try {
             val service = bind()
             val wallpapers = service.getWallpapers(Event.TimeElapsed).associateBy { it.title }
@@ -121,7 +121,7 @@ class PluginServiceTest {
             assertTrue(service.getWallpapers(Event.TimeElapsed).all { it.actionUri == null })
         } finally {
             Settings.clickFallback = Settings.CLICK_TRAILER
-            Settings.lastGeneration = lastGeneration
+            Profile.WALLPAPER.lastGeneration = lastGeneration
         }
     }
 
@@ -135,7 +135,7 @@ class PluginServiceTest {
             .associateWith { "test-secret-$it" }
         val saved = secrets.keys.associateWith { prefs.getString(it, null) }
         prefs.edit(commit = true) { secrets.forEach { (key, value) -> putString(key, value) } }
-        Settings.titlesPerList = Settings.titlesPerList
+        Profile.WALLPAPER.titlesPerList = Profile.WALLPAPER.titlesPerList
         try {
             val service = bind()
             val exported = service.preferences

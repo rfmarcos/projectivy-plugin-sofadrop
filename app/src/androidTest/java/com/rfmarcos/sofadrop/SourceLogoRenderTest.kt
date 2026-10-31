@@ -21,18 +21,18 @@ class SourceLogoRenderTest {
         Settings.init(context)
         Settings.language = "es-ES"
         Settings.regionOverride = ""
-        Settings.style = Settings.STYLE_FULL
-        Settings.overviewLines = 0
-        Settings.showCast = false
-        Settings.showProviders = true
-        Settings.sourceFallback = false
+        Profile.WALLPAPER.style = Settings.STYLE_FULL
+        Profile.WALLPAPER.overviewLines = 0
+        Profile.WALLPAPER.showCast = false
+        Profile.WALLPAPER.showProviders = true
+        Profile.WALLPAPER.sourceFallback = false
         val dir = File(context.filesDir, "source_logos").apply { deleteRecursively(); mkdirs() }
-        val base = WallpaperFactory(context, 1920).catalog.build(TitleRef(MediaType.TV, 1399))
+        val base = WallpaperFactory(context, 1920, Profile.WALLPAPER).catalog.build(TitleRef(MediaType.TV, 1399))
         assertNotNull(base)
         for (inline in listOf(false, true)) {
-            Settings.sourceInline = inline
+            Profile.WALLPAPER.sourceInline = inline
             for (provider in SourceProvider.entries) {
-                val bitmap = WallpaperFactory(context, 1920).render(base!!.copy(sourceLabel = "Tendencias", sourceProvider = provider))
+                val bitmap = WallpaperFactory(context, 1920, Profile.WALLPAPER).render(base!!.copy(sourceLabel = "Tendencias", sourceProvider = provider))
                 val name = "${if (inline) "inline" else "below"}-${provider.name.lowercase()}"
                 File(dir, "$name.jpg").outputStream().use { bitmap.compress(Bitmap.CompressFormat.JPEG, 90, it) }
                 bitmap.recycle()

@@ -34,11 +34,11 @@ class ProviderListsFragment : BaseSettingsFragment() {
     }
 
     private fun buildRows(): List<GuidedAction> {
-        val selected = Settings.lists
+        val selected = profile.lists
         val publicUsable = provider != SourceProvider.TRAKT || Settings.traktConfigured
         // Trakt users' lists (public ones and the account's) have their own screen
         val userLists = listOfNotNull(
-            action(ID_USER_LISTS, R.drawable.ic_act_list, getString(R.string.trakt_user_lists_title), TraktListsFragment.summary(requireContext()))
+            action(ID_USER_LISTS, R.drawable.ic_act_list, getString(R.string.trakt_user_lists_title), TraktListsFragment.summary(requireContext(), profile))
                 .hasNext(true).enabled(publicUsable).build().takeIf { provider == SourceProvider.TRAKT },
         )
         return listOf(accountAction()) + userLists + lists.mapIndexed { index, source ->
@@ -46,7 +46,7 @@ class ProviderListsFragment : BaseSettingsFragment() {
             checkbox(ID_LIST_BASE + index, Sources.label(requireContext(), source).substringAfter(" · "),
                 when {
                     !usable -> getString(R.string.list_needs_account)
-                    Settings.listFilters[source.key]?.isDefault == false -> Filters.listFiltersSummary(requireContext(), source)
+                    profile.listFilters[source.key]?.isDefault == false -> Filters.listFiltersSummary(requireContext(), profile, source)
                     else -> null
                 }, usable && source.key in selected)
                 .enabled(usable)
@@ -78,11 +78,11 @@ class ProviderListsFragment : BaseSettingsFragment() {
 
     override fun onGuidedActionClicked(action: GuidedAction) {
         when {
-            action.id == ID_ACCOUNT -> add(parentFragmentManager, AccountsFragment.newInstance(provider))
-            action.id == ID_USER_LISTS -> add(parentFragmentManager, TraktListsFragment())
+            action.id == ID_ACCOUNT -> open(AccountsFragment.newInstance(provider))
+            action.id == ID_USER_LISTS -> open(TraktListsFragment())
             action.id >= ID_LIST_BASE -> {
                 val key = lists.getOrNull((action.id - ID_LIST_BASE).toInt())?.key ?: return
-                Settings.lists = if (action.isChecked) Settings.lists + key else Settings.lists - key
+                profile.lists = if (action.isChecked) profile.lists + key else profile.lists - key
             }
         }
     }
@@ -104,8 +104,8 @@ class ProviderListsFragment : BaseSettingsFragment() {
         }
 
         /** "2 selected · connected as X" for the Lists screen. */
-        fun summary(context: Context, provider: SourceProvider): String {
-            val count = Sources.selected().count { it.provider == provider }
+        fun summary(context: Context, profile: Profile, provider: SourceProvider): String {
+            val count = Sources.selected(profile).count { it.provider == provider }
             val connected = when (provider) {
                 SourceProvider.TRAKT -> Settings.traktConnected
                 SourceProvider.SIMKL -> Settings.simklConnected

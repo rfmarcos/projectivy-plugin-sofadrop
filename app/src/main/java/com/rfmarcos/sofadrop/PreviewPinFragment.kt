@@ -98,7 +98,7 @@ class PreviewPinFragment : PreviewSettingsFragment() {
         val pins = pinCandidates(text)
         val context = requireContext().applicationContext
         // Checked before saving, so a typo doesn't replace the current pin
-        background({ pinInfos(context, pins) }) { result ->
+        background({ pinInfos(context, profile, pins) }) { result ->
             val found = result.getOrDefault(emptyList())
             when {
                 found.size == 1 -> setPin(found[0].first, found[0].second.title)

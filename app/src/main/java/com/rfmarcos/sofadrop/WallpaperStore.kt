@@ -26,12 +26,14 @@ data class StoredWallpaper(
 )
 
 /**
- * Generated wallpapers live in files/wallpapers/<generation>/ with an index.json.
- * A new generation is written to its own folder and swapped in atomically.
+ * Generated wallpapers live in files/wallpapers/<generation>/ with an index.json (the screensaver's own
+ * set in files/screensaver/). A new generation is written to its own folder and swapped in atomically.
  */
-class WallpaperStore(private val context: Context) {
+class WallpaperStore(private val context: Context, profile: Profile = Profile.WALLPAPER) {
 
-    private val root = File(context.filesDir, DIR)
+    /** Whose set it is: the screensaver shows the wallpapers' unless it has its own. */
+    private val set = profile.source
+    private val root = File(context.filesDir, if (set.isScreensaver) SCREENSAVER_DIR else DIR)
     private val currentFile = File(root, "current.txt")
     private val servedFile = File(root, "served.txt")
     private val json = Json { ignoreUnknownKeys = true; prettyPrint = true }
@@ -43,10 +45,11 @@ class WallpaperStore(private val context: Context) {
      * Make [generation] the current set. The set Projectivy was last given is kept: it caches those
      * URIs (for up to [R.integer.items_cache_duration_millis], or until it restarts) and falls back to
      * its own wallpaper when they fail to load. Before anything was served, the previous set is kept.
+     * The screensaver reads its files directly, so its previous set goes.
      */
     fun publish(generation: File, wallpapers: List<StoredWallpaper>) {
         File(generation, INDEX).writeText(json.encodeToString(wallpapers))
-        val keep = servedFile.takeIf { it.exists() }?.readText()?.trim() ?: currentDir()?.name
+        val keep = if (set.isScreensaver) null else servedFile.takeIf { it.exists() }?.readText()?.trim() ?: currentDir()?.name
         val tmp = File(root, "current.tmp")
         tmp.writeText(generation.name)
         tmp.renameTo(currentFile)
@@ -90,5 +93,6 @@ class WallpaperStore(private val context: Context) {
     companion object {
         private const val INDEX = "index.json"
         const val DIR = "wallpapers"
+        private const val SCREENSAVER_DIR = "screensaver"
     }
 }
