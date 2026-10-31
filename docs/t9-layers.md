@@ -14,7 +14,7 @@ Documento para aprobar **antes** de tocar el renderizador de verdad. Las cifras 
 * Coste, solo con el salvapantallas activado:
   * el disco se multiplica por ~2,9 (×3,6 en el prototipo, ver "Por qué ocupa tanto"): 200 fondos en 4K pasan de ~170 MB a ~480 MB;
   * generar tarda algo más, porque hay que codificar dos imágenes más por título.
-* Posiciones propuestas: las cinco, tanto en el fondo como en el salvapantallas.
+* Posiciones: seis (arriba, centro y abajo, a la izquierda y a la derecha; centro derecha se añadió al implementarlo), tanto en el fondo como en el salvapantallas.
   * En el fondo, **arriba a la izquierda** por defecto (como ahora).
   * En el salvapantallas, **abajo a la izquierda** por defecto.
 
@@ -47,8 +47,8 @@ Qué se ve:
 
 | | Posiciones | Por defecto |
 |---|---|---|
-| Fondo de Projectivy | Las cinco | Arriba izquierda |
-| Salvapantallas (T10) | Las cinco | Abajo izquierda, o "como el fondo" |
+| Fondo de Projectivy | Las seis | Arriba izquierda |
+| Salvapantallas (T10) | Las seis | Abajo izquierda, o "como el fondo" |
 
 La explicación del ajuste en el fondo avisa de que, con las filas de Projectivy a la vista, las posiciones de abajo y del centro pueden quedar tapadas.
 
@@ -183,6 +183,6 @@ Ya no se usa para cambiar la posición: eso regenera. Sirve para saber cuánto c
 
 ## Decisiones para Rubén
 
-1. **Posiciones:** las cinco en el fondo y en el salvapantallas, con un aviso sobre las filas de Projectivy (propuesta tras la revisión de Rubén: lo que tapa Projectivy depende de cada configuración).
+1. **Posiciones:** las seis en el fondo y en el salvapantallas, con un aviso sobre las filas de Projectivy (propuesta tras la revisión de Rubén: lo que tapa Projectivy depende de cada configuración).
 2. **Disco:** decidido. Las capas solo se guardan con el salvapantallas activado. Sin él, el disco y el tiempo de generación son los de ahora, y cambiar la posición regenera.
 3. **`info`:** ¿WebP sin pérdida en Android 11 o superior, con PNG de respaldo (propuesta), o PNG siempre por sencillez?

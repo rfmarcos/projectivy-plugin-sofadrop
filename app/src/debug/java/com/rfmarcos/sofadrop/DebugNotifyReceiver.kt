@@ -22,16 +22,6 @@ class DebugNotifyReceiver : BroadcastReceiver() {
             GenerateWallpapersWorker.runNow(context, replace = true)
             return
         }
-        // T9 prototype: `--ez layers true [--ei width 3840] [--ei count 5]`, see LayersBench
-        if (intent.getBooleanExtra("layers", false)) {
-            // Minutes at 4K: not goAsync, which times out
-            val app = context.applicationContext
-            Thread {
-                runCatching { LayersBench.run(app, intent.getIntExtra("width", 1920), intent.getIntExtra("count", 5)) }
-                    .onFailure { Log.e("LayersBench", "Failed", it) }
-            }.start()
-            return
-        }
         if (intent.getBooleanExtra("preview", false)) {
             val result = goAsync()
             Thread {

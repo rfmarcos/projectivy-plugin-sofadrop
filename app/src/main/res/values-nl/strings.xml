@@ -214,7 +214,15 @@
     <string name="style_logo_desc">Het logo (of de titel) over de afbeelding, verder niets</string>
     <string name="style_backdrop_desc">Alleen de afbeelding</string>
     <string name="style_hidden">Verborgen bij de stijl %1$s</string>
-    <string name="details_description">Hoe elke achtergrond eruitziet: stijl (alles, alleen het logo of alleen de afbeelding), taal, lengte van de samenvatting, cast, wat de voettekst toont (de lijst waar hij uit komt, de streamingdiensten) en de resolutie. Met een kortere samenvatting blijft de tekst vrij van de rijen van de launcher. Kopregel bepaalt wat er onder de titel staat: scores, jaar, speelduur, genres. Taal per onderdeel zet het logo of de samenvatting in een andere taal.</string>
+    <string name="position_title">Positie</string>
+    <string name="position_top_left">Linksboven</string>
+    <string name="position_center_left">Links in het midden</string>
+    <string name="position_bottom_left">Linksonder</string>
+    <string name="position_top_right">Rechtsboven</string>
+    <string name="position_center_right">Rechts in het midden</string>
+    <string name="position_bottom_right">Rechtsonder</string>
+    <string name="position_rows_note">De app-rijen van Projectivy kunnen het bedekken, afhankelijk van je indeling</string>
+    <string name="details_description">Hoe elke achtergrond eruitziet: stijl (alles, alleen het logo of alleen de afbeelding), positie, taal, lengte van de samenvatting, cast, wat de voettekst toont (de lijst waar hij uit komt, de streamingdiensten) en de resolutie. Met een kortere samenvatting blijft de tekst vrij van de rijen van de launcher. Kopregel bepaalt wat er onder de titel staat: scores, jaar, speelduur, genres. Taal per onderdeel zet het logo of de samenvatting in een andere taal.</string>
 
     <string name="header_title">Kopregel</string>
     <string name="header_fit_desc">Past de regel niet, dan vallen eerst de scores boven het minimum weg, daarna wat het meest rechts staat (genres één voor één). Zet vooraan wat je niet wilt kwijtraken: het eerste onderdeel en de scores die altijd getoond worden vallen nooit weg.</string>

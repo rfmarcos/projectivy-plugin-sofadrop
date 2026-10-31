@@ -30,6 +30,11 @@ class DetailsFragment : PreviewSettingsFragment() {
             action(ID_STYLE, R.drawable.ic_act_visibility, getString(R.string.style_title), styleLabel(context, Settings.style))
                 .subActions(options(ID_STYLE, styleLabels, styleLabel(context, Settings.style),
                     Settings.STYLES.map { styleDescription(context, it) })).build(),
+            action(ID_POSITION, R.drawable.ic_act_place, getString(R.string.position_title), positionLabel(context, Settings.position))
+                .subActions(options(ID_POSITION, Settings.POSITIONS.map { positionLabel(context, it) }, positionLabel(context, Settings.position),
+                    // Down where the launcher rows are, in Projectivy's usual layout
+                    Settings.POSITIONS.map { if (it.startsWith("top")) null else getString(R.string.position_rows_note) }))
+                .build().hiddenBy(Settings.drawsLogo),
             screen(ID_LANGUAGE, R.drawable.ic_act_language, R.string.setting_language_title, PartLanguagesFragment.summary(context)),
             screen(ID_HEADER, R.drawable.ic_act_heart, R.string.header_title, HeaderFragment.summary(context)).hiddenBy(Settings.drawsDetails),
             screen(ID_SYNOPSIS_CAST, R.drawable.ic_act_count, R.string.synopsis_cast_title, SynopsisCastFragment.summary(context))
@@ -72,6 +77,7 @@ class DetailsFragment : PreviewSettingsFragment() {
                 // Rows of the parts it hides (or brings back) change
                 collapseSubActions()
             }
+            ID_POSITION -> Settings.position = Settings.POSITIONS[index]
             ID_RESOLUTION -> Settings.outputWidth = Settings.WIDTH_OPTIONS[index]
         }
         refreshActions(rows())
@@ -87,6 +93,18 @@ class DetailsFragment : PreviewSettingsFragment() {
         private const val ID_PREVIEW_PIN = 9L
         private const val ID_STYLE = 11L
         private const val ID_SYNOPSIS_CAST = 14L
+        private const val ID_POSITION = 15L
+
+        fun positionLabel(context: Context, position: String) = context.getString(
+            when (position) {
+                "center_left" -> R.string.position_center_left
+                "bottom_left" -> R.string.position_bottom_left
+                "top_right" -> R.string.position_top_right
+                "center_right" -> R.string.position_center_right
+                "bottom_right" -> R.string.position_bottom_right
+                else -> R.string.position_top_left
+            }
+        )
 
         fun styleLabel(context: Context, style: String) = context.getString(
             when (style) {
@@ -110,6 +128,7 @@ class DetailsFragment : PreviewSettingsFragment() {
         /** "English (US) · short synopsis · streaming in US · 1080p", or "Logo only · English (US) · 1080p", for the main screen. */
         fun summary(context: Context): String = listOfNotNull(
             styleLabel(context, Settings.style).takeIf { !Settings.drawsDetails },
+            positionLabel(context, Settings.position).takeIf { Settings.position != Settings.POSITION_TOP_LEFT && Settings.drawsLogo },
             Languages.displayName(Settings.language),
             when (Settings.overviewLines) {
                 0 -> context.getString(R.string.synopsis_summary_hidden)
