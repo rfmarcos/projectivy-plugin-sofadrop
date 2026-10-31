@@ -4,11 +4,14 @@ Documento para aprobar **antes** de tocar el renderizador de verdad. Las cifras 
 
 ## Resumen
 
-* Por cada título se guardan dos capas más: `NN-bg.jpg` (el fondo recortado, con los degradados de arriba y abajo) y `NN-info.png` (el bloque transparente con su sombra, recortado a su caja).
-* El `NN.jpg` que ve Projectivy se sigue guardando: se monta a partir de las capas y sale **igual que ahora**. La diferencia media con el renderizador actual es de 0,05–0,07 sobre 255.
-* Cambiar la posición solo vuelve a montar, sin red. 200 fondos tardan 1 minuto en 1080p y unos 4 en 4K.
+* **Las capas solo se guardan con el salvapantallas activado** (decidido por Rubén). Sin él, todo queda como ahora: un `NN.jpg` por título, ni más disco ni más tiempo.
+* Con el salvapantallas, por cada título se guardan dos capas más:
+  * `NN-bg.jpg`: el fondo recortado, con los degradados de arriba y abajo;
+  * `NN-info.png`: el bloque transparente con su sombra, recortado a su caja.
+* El `NN.jpg` que ve Projectivy se dibuja siempre directamente en la posición elegida, como ahora, y sale **igual que ahora**. La diferencia media entre montarlo desde las capas y el renderizador actual es de 0,05–0,07 sobre 255.
+* Cambiar la posición del fondo regenera el set (con red), como cualquier otro ajuste del diseño hoy.
 * El salvapantallas (T10) dibuja las capas directamente en pantalla: no codifica nada y nunca vuelve a dibujar el fondo.
-* Coste:
+* Coste, solo con el salvapantallas activado:
   * el disco se multiplica por ~2,9 (×3,6 en el prototipo, ver "Por qué ocupa tanto"): 200 fondos en 4K pasan de ~170 MB a ~480 MB;
   * generar tarda algo más, porque hay que codificar dos imágenes más por título.
 * Posiciones propuestas: las cinco, tanto en el fondo como en el salvapantallas.
@@ -57,9 +60,11 @@ En cada generación (`files/wallpapers/gen-<hora>/`):
 
 | Fichero | Qué es | Ya existe |
 |---|---|---|
-| `NN.jpg` | El fondo montado que se entrega a Projectivy, en la posición elegida | Sí, igual que ahora |
+| `NN.jpg` | El fondo que se entrega a Projectivy, dibujado en la posición elegida | Sí, igual que ahora |
 | `NN-bg.jpg` | El fondo recortado al tamaño del fondo de pantalla, con los degradados de arriba (reloj) y abajo (filas) ya pintados. JPEG calidad 85 (ver "Cuánto se puede recortar") | Nuevo |
 | `NN-info.png` | El bloque (logo, cabecera, sinopsis, reparto, pie, insignias) con su sombra, transparente y recortado a su caja | Nuevo |
+
+Las dos capas nuevas solo existen con el salvapantallas activado.
 
 Campos nuevos en cada entrada de `index.json` (`StoredWallpaper`). Todos son opcionales, así que un `index.json` antiguo se sigue leyendo (`ignoreUnknownKeys` y valores por defecto):
 
@@ -69,13 +74,12 @@ val info: String? = null,        // "07-info.png"; null = sin bloque (estilo "so
 val infoLeft: Int = 0,           // dónde va el bloque arriba a la izquierda; el resto de posiciones se calcula
 val infoTop: Int = 0,
 val tint: Int = 0,               // color del degradado lateral, sacado del propio fondo
-val position: String = "top_left", // la posición con la que se montó NN.jpg
 ```
 
 Por qué así:
 
 * **Los degradados de arriba y abajo van dentro de `bg.jpg`.** No dependen de la posición, y pintarlos es lo más caro de montar: en 4K, montar baja de 0,84 s a 0,38 s. Al montar solo se pinta el degradado lateral, que cambia de lado según la posición.
-* **`NN.jpg` se sigue guardando.** Otra opción era montarlo cuando Projectivy lo pide (en `WallpaperContentProvider`): se ahorra ~0,8 MB por título en 4K, pero cada fondo tardaría ~1,5 s en aparecer y Projectivy pide varios seguidos. No compensa.
+* **`NN.jpg` se sigue guardando**, también con el salvapantallas. Otra opción era montarlo cuando Projectivy lo pide (en `WallpaperContentProvider`): se ahorra ~0,8 MB por título en 4K, pero cada fondo tardaría ~1,5 s en aparecer y Projectivy pide varios seguidos. No compensa.
 * **PNG o WebP sin pérdida para `info`.** WebP sin pérdida ocupa un 20–25 % menos y en bloques pesados codifica más rápido (The Batman en 4K: 1,0 MB en 0,99 s, frente a 1,2 MB en 1,59 s con PNG). Pero `WEBP_LOSSLESS` es de Android 11 y la app admite desde Android 8. Propongo WebP sin pérdida en Android 11 o superior, y PNG en los demás; el lector decide por la extensión. WebP con pérdida se descarta: tarda entre 3 y 4 veces más en codificar.
 
 ## Cifras
@@ -116,25 +120,25 @@ Medido con los ficheros 4K de la TV, recodificados en el PC. Al recodificar `NN.
 
   La caché HTTP (150 MB, que Android puede vaciar) no basta para contar con que los fondos sigan allí.
 
-### Disco por set (prototipo; con los recortes de abajo, ~20 % menos)
+### Disco por set, con el salvapantallas (prototipo; con los recortes de arriba, ~20 % menos)
 
 | | 100 fondos (lo que muestra Projectivy) | 200 fondos (el tope) |
 |---|---|---|
 | 1080p | 26 → 94 MB | 52 → 188 MB |
 | 4K | 83 → 295 MB | 166 → 590 MB |
 
-Igual que ahora, mientras Projectivy no pida el set nuevo conviven el servido y el nuevo, así que en el peor caso hay que contar el doble. Al volver a montar por un cambio de posición, las capas no se copian a la generación nueva: se enlazan (enlace duro, y copia si falla).
+Igual que ahora, mientras Projectivy no pida el set nuevo conviven el servido y el nuevo, así que en el peor caso hay que contar el doble. Sin el salvapantallas, el disco es el de ahora.
 
-### Tiempo de montaje (cambio de posición, por título)
+### Tiempo de montaje desde disco (por título, como referencia)
+
+Ya no se usa para cambiar la posición: eso regenera. Sirve para saber cuánto costaría montar un JPEG desde las capas guardadas; el salvapantallas no lo necesita, porque dibuja en la GPU sin codificar.
 
 | | Leer capas | Montar | Codificar `NN.jpg` | Total | 200 fondos |
 |---|---|---|---|---|---|
 | 1080p | 0,09 s | 0,10 s (0,21 sin degradados dentro) | 0,11 s | ~0,3 s | ~1 min |
 | 4K | 0,33 s | 0,38 s (0,84) | 0,41 s | ~1,1 s | ~3,7 min |
 
-Montar directamente sobre el `bg` leído (mutable) tarda lo mismo que crear un bitmap nuevo y en 4K ahorra 33 MB de memoria, así que lo propongo. Con dos hilos debería bajar casi a la mitad, pero no lo he medido.
-
-### Tiempo de generación (por título)
+### Tiempo de generación con el salvapantallas (por título)
 
 * **Dibujar** cuesta lo mismo que ahora. Dibujar en capas y luego montar desde memoria (sin leer ni escribir disco) son las mismas operaciones que el `render()` de ahora: 1,7–2,1 s en 4K y ~0,6 s en 1080p, sin contar la red.
 * **Lo nuevo es codificar `bg.jpg` e `info`:**
@@ -145,13 +149,10 @@ Montar directamente sobre el `bg` leído (mutable) tarda lo mismo que crear un b
 ## Migración de los sets existentes
 
 * **Sets hechos antes de T9** (sin `background` en `index.json`): siguen funcionando igual. Projectivy recibe sus `NN.jpg` y nada se regenera al actualizar.
-* **Cambiar la posición con un set antiguo:** se regenera entero (con red), como hoy al cambiar cualquier ajuste de diseño al salir de los ajustes (`hasPendingChanges`). El set nuevo ya tiene capas.
-* **Cambiar la posición con un set con capas:**
-  * se monta una **generación nueva** (carpeta nueva y URIs nuevas), porque Projectivy guarda en caché las URIs que ya le dimos y no volvería a leer un `NN.jpg` sobrescrito;
-  * se publica con `WallpaperStore.publish`, como una generación normal;
-  * Projectivy la recoge en su siguiente petición (máximo 10 min).
-* **Cualquier otro ajuste que cambie el bloque** (estilo, reparto, idioma, valoraciones…) cambia el contenido de `info.png`, así que sigue necesitando regenerar, como ahora. Solo la posición, y el salvapantallas, aprovechan las capas.
-* **El salvapantallas con un set antiguo:** muestra los `NN.jpg` tal cual (con el bloque arriba a la izquierda) hasta la siguiente generación, que suele ser en pocas horas. No hace falta forzar nada.
+* **Cambiar la posición del fondo:** se regenera el set (con red), como hoy al cambiar cualquier ajuste del diseño al salir de los ajustes (`hasPendingChanges`). Projectivy recoge el set nuevo en su siguiente petición (máximo 10 min).
+* **Activar el salvapantallas:** cuenta como cambio pendiente, así que al salir de los ajustes se regenera y el set nuevo ya trae capas.
+* **Desactivarlo:** las capas se dejan de generar. Las del set actual se borran con él en la siguiente generación.
+* **El salvapantallas con un fondo sin capas** (por ejemplo, mientras se regenera): muestra el `NN.jpg` tal cual, con el bloque donde esté en el fondo. No hace falta forzar nada.
 
 ## Salvapantallas (para T10)
 
@@ -161,18 +162,22 @@ Montar directamente sobre el `bg` leído (mutable) tarda lo mismo que crear un b
 
 ## Si se aprueba: pasos
 
-1. El worker guarda las capas y monta `NN.jpg` desde memoria (sin dibujar dos veces). Las capas se codifican en otro hilo. Los campos nuevos van en `StoredWallpaper`.
-2. Nuevo ajuste "Posición del bloque", junto a Estilo, con su explicación en en/es/nl. Al cambiarlo: volver a montar si el set tiene capas, o regenerar si no.
-3. La vista previa de los ajustes usa el mismo montaje.
-4. Pruebas:
+1. **T9:**
+   * el renderizador dibuja el bloque en la posición elegida;
+   * nuevo ajuste "Posición del bloque", junto a Estilo, con su explicación en en/es/nl (incluye el aviso de las filas);
+   * cambiarlo regenera, como cualquier otro ajuste del diseño;
+   * la vista previa de los ajustes también usa la posición.
+2. **T10:**
+   * con el salvapantallas activado, el worker guarda además las capas (`renderLayers`) y monta `NN.jpg` desde memoria, sin dibujar dos veces;
+   * las capas se codifican en otro hilo;
+   * los campos nuevos van en `StoredWallpaper`.
+3. **Pruebas:**
    * test unitario de que se lee un `index.json` antiguo;
    * render instrumentado de las posiciones en el emulador;
-   * medición del tiempo de generación y de montaje en la TV (Dev) a 1080p y 4K.
+   * medición del tiempo de generación en la TV (Dev), a 1080p y 4K, con y sin salvapantallas.
 
 ## Decisiones para Rubén
 
 1. **Posiciones:** las cinco en el fondo y en el salvapantallas, con un aviso sobre las filas de Projectivy (propuesta tras la revisión de Rubén: lo que tapa Projectivy depende de cada configuración).
-2. **Disco en 4K:** ¿aceptamos ~480 MB para 200 fondos en 4K (~240 MB para 100)? Si es mucho, las alternativas son:
-   * guardar capas solo cuando se usan: con el salvapantallas activado, o con una posición distinta de la de por defecto;
-   * no guardar `bg.jpg` y volver a descargar los fondos al cambiar la posición.
+2. **Disco:** decidido. Las capas solo se guardan con el salvapantallas activado. Sin él, el disco y el tiempo de generación son los de ahora, y cambiar la posición regenera.
 3. **`info`:** ¿WebP sin pérdida en Android 11 o superior, con PNG de respaldo (propuesta), o PNG siempre por sencillez?
