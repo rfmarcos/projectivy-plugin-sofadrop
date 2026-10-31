@@ -593,8 +593,8 @@ class WallpaperRenderer(
         }
         return when (info.sourceProvider) {
             SourceProvider.TRAKT -> {
-                // The full logo's mark is taller than its letters: size it on the mark
-                val height = h * 1.25f
+                // As tall as TMDB's two rows: its letters are bold and would look bigger
+                val height = h * 0.9f
                 val w = height * traktLogo.intrinsicWidth / traktLogo.intrinsicHeight
                 if (canvas != null) {
                     traktLogo.setBounds(x.roundToInt(), (center - height / 2).roundToInt(), (x + w).roundToInt(), (center + height / 2).roundToInt())
@@ -602,13 +602,14 @@ class WallpaperRenderer(
                 }
                 x + w
             }
-            SourceProvider.SIMKL -> drawBitmap(simklLogo, h * 0.8f, x)
-            // MDBList has no wordmark: its app icon followed by the name
+            // A wide, heavy wordmark: lower than TMDB's to weigh the same
+            SourceProvider.SIMKL -> drawBitmap(simklLogo, h * 0.6f, x)
+            // MDBList has no wordmark: its app icon followed by the name, both about TMDB's size
             SourceProvider.MDBLIST -> {
-                val end = drawBitmap(mdbListLogo, h * 1.15f, x)
-                val namePaint = textPaint(medium, s(style.size), Color.WHITE)
-                canvas?.let { drawCentered(it, "MDBList", end + s(14f), center, namePaint) }
-                end + s(14f) + namePaint.measureText("MDBList")
+                val end = drawBitmap(mdbListLogo, h * 0.85f, x)
+                val namePaint = textPaint(medium, s(style.size * 0.8f), Color.WHITE)
+                canvas?.let { drawCentered(it, "MDBList", end + s(10f), center, namePaint) }
+                end + s(10f) + namePaint.measureText("MDBList")
             }
             else -> drawBitmap(tmdbLogo, h, x)
         }
