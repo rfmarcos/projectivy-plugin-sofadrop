@@ -159,6 +159,11 @@ Ya no se usa para cambiar la posición: eso regenera. Sirve para saber cuánto c
 * Dibuja `bg` + degradado lateral (`LinearGradient` en la GPU, prácticamente gratis) + `info` en una `View`. No codifica nada.
 * En el Chromecast, la pantalla de la app es de 1920 px aunque la salida sea 4K. Se lee `bg` reducido al tamaño de pantalla (`inSampleSize`): unos 8 MB por fondo, y dos a la vez durante la transición.
 * Su posición es independiente de la del fondo. Las posiciones de abajo tienen sentido allí porque no hay filas.
+* **Si usa la misma posición que el fondo**, podría mostrar el `NN.jpg` tal cual y no guardar capas, así que no ocuparía más. Pero eso solo vale si el salvapantallas no necesita el bloque aparte. Algunas cosas del PR #13 sí lo necesitan:
+  * el zoom lento, que tiene que mover el fondo sin mover el texto;
+  * elegir qué partes del bloque se muestran.
+
+  Esto se decide en T10.
 
 ## Si se aprueba: pasos
 
