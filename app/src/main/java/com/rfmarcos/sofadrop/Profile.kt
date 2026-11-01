@@ -131,6 +131,11 @@ class Profile private constructor(val id: String) {
         get() = preferences.getString(look(KEY_STYLE), null)?.takeIf { it in Settings.STYLES } ?: Settings.STYLE_FULL
         set(value) = preferences.edit { putString(look(KEY_STYLE), value) }
 
+    /** See [Settings.SHADES]. */
+    var shade: String
+        get() = preferences.getString(look(KEY_SHADE), null)?.takeIf { it in Settings.SHADES } ?: Settings.SHADE_TINT
+        set(value) = preferences.edit { putString(look(KEY_SHADE), value) }
+
     /** See [Settings.POSITIONS]; Projectivy's rows may cover the bottom ones, depending on the user's layout. */
     var position: String
         get() = preferences.getString(look(KEY_POSITION), null)?.takeIf { it in Settings.POSITIONS } ?: Settings.POSITION_TOP_LEFT
@@ -165,6 +170,11 @@ class Profile private constructor(val id: String) {
     var synopsisLanguage: String
         get() = Settings.partLanguage(look(KEY_SYNOPSIS_LANGUAGE))
         set(value) = preferences.edit { putString(look(KEY_SYNOPSIS_LANGUAGE), value) }
+
+    /** English instead of the original language (or an untranslated title) when the original is in another alphabet. */
+    var latinOriginals: Boolean
+        get() = preferences.getBoolean(look(KEY_LATIN_ORIGINALS), false)
+        set(value) = preferences.edit { putBoolean(look(KEY_LATIN_ORIGINALS), value) }
 
     /** [titleLanguage] and [synopsisLanguage] as TMDB locales. */
     val partLanguages: PartLanguages
@@ -301,7 +311,8 @@ class Profile private constructor(val id: String) {
                 "ratingage:$maxRatingAge".takeIf { maxRatingAge > 0 }, "minrating:$minRating".takeIf { minRating > 0 },
                 "order:${headerOrder.joinToString(",")}".takeIf { headerOrder != HEADER_BLOCKS },
                 "minratings:$minRatings".takeIf { minRatings != 2 }, "cast".takeIf { showCast }, "castphotos:$castPhotos".takeIf { showCast && castPhotos != CAST_PHOTOS_GROUPED }, "style:$style".takeIf { style != STYLE_FULL },
-                "position:$position".takeIf { position != POSITION_TOP_LEFT && drawsLogo },
+                "position:$position".takeIf { position != POSITION_TOP_LEFT && drawsLogo }, "shade:$shade".takeIf { shade != SHADE_TINT },
+                "latin".takeIf { latinOriginals },
                 "trailerlang:$trailerLanguage".takeIf { trailerLanguage != LANGUAGE_AUTO }, "trailerfallback:$trailerFallback".takeIf { trailerFallback != TRAILER_ENGLISH },
                 "genres:${genreFilter.only}:${genreFilter.ids.sorted()}".takeIf { !genreFilter.isOff },
                 "blocked:${blockedTitles.map { "${it.type.path}:${it.tmdbId}" }.sorted().hashCode()}".takeIf { blockedTitles.isNotEmpty() })).joinToString("|")
@@ -336,6 +347,8 @@ class Profile private constructor(val id: String) {
         private const val KEY_WIDTH = "output_width"
         private const val KEY_STYLE = "style"
         private const val KEY_POSITION = "block_position"
+        private const val KEY_SHADE = "shade"
+        private const val KEY_LATIN_ORIGINALS = "latin_originals"
         private const val KEY_LOGO_MODE = "logo_mode"
         private const val KEY_LOGO_FALLBACK = "logo_fallback"
         private const val KEY_REQUIRE_LOGO = "require_logo"
@@ -368,6 +381,7 @@ class Profile private constructor(val id: String) {
             KEY_GENRE_FILTER, KEY_SKIP_DUPLICATES, KEY_SELECTION, KEY_WATCHED, KEY_LIST_FILTERS)
         val LOOK_KEYS = listOf(KEY_WIDTH, KEY_STYLE, KEY_POSITION, KEY_LOGO_MODE, KEY_LOGO_FALLBACK, KEY_REQUIRE_LOGO, KEY_SYNOPSIS_MODE,
             KEY_TITLE_LANGUAGE, KEY_SYNOPSIS_LANGUAGE, KEY_PROVIDERS, KEY_OVERVIEW_LINES, KEY_CAST, KEY_CAST_PHOTOS, KEY_CAST_PHOTO_MODE,
-            KEY_SOURCE_FALLBACK, KEY_SOURCE_INLINE, KEY_SHOW_SOURCE, KEY_RATINGS, KEY_HEADER_HIDDEN, KEY_HEADER_ORDER, KEY_MIN_RATINGS)
+            KEY_SOURCE_FALLBACK, KEY_SOURCE_INLINE, KEY_SHOW_SOURCE, KEY_RATINGS, KEY_HEADER_HIDDEN, KEY_HEADER_ORDER, KEY_MIN_RATINGS,
+            KEY_SHADE, KEY_LATIN_ORIGINALS)
     }
 }

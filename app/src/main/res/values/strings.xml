@@ -217,6 +217,12 @@
     <string name="style_backdrop_desc">Just the image</string>
     <string name="style_hidden">Hidden with the %1$s style</string>
     <string name="position_title">Position</string>
+    <string name="shade_title">Shading</string>
+    <string name="shade_tint">Backdrop\'s colour</string>
+    <string name="shade_tint_desc">Dark, in the colour of each backdrop</string>
+    <string name="shade_black">Black (OLED)</string>
+    <string name="shade_black_desc">Pure black behind the text and at the bottom: an OLED screen turns those pixels off</string>
+    <string name="shade_summary_black">black shading</string>
     <string name="position_top_left">Top left</string>
     <string name="position_center_left">Center left</string>
     <string name="position_bottom_left">Bottom left</string>
@@ -446,6 +452,9 @@
     <string name="part_summary_logo">Logo: %1$s</string>
     <string name="part_summary_synopsis">Synopsis: %1$s</string>
     <string name="part_summary_skips">skips titles</string>
+    <string name="part_summary_latin">other alphabets in English</string>
+    <string name="latin_originals_title">Other alphabets in English</string>
+    <string name="latin_originals_desc">Japanese, Korean, Chinese, Cyrillic… titles: logo, title and synopsis in English where they\'d be in the original language or untranslated</string>
     <string name="logo_language_title">Logo language</string>
     <string name="general_language_title">General language</string>
     <string name="synopsis_language_title">Synopsis language</string>

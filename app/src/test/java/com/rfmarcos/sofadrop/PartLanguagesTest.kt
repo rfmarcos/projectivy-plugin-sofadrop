@@ -4,7 +4,9 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /** Title, logo and synopsis picked per language, from trimmed TMDB details, translations and images. */
@@ -96,5 +98,27 @@ class PartLanguagesTest {
         // Original logo wanted, none: the fallback is the English one
         assertNull(logo(null, from = noJapanese))
         assertEquals("/en.png", logo(null, fallback = true, from = noJapanese))
+    }
+
+    @Test
+    fun otherAlphabets() {
+        assertTrue(TmdbCatalog.nonLatin("千と千尋の神隠し"))
+        assertTrue(TmdbCatalog.nonLatin("오징어 게임"))
+        assertTrue(TmdbCatalog.nonLatin("Мастер и Маргарита"))
+        assertFalse(TmdbCatalog.nonLatin("Das Boot"))
+        assertFalse(TmdbCatalog.nonLatin("Amélie"))
+        // Mostly Latin letters: readable as it is
+        assertFalse(TmdbCatalog.nonLatin("SPY×FAMILY"))
+        assertFalse(TmdbCatalog.nonLatin("1917"))
+        assertTrue(TmdbCatalog.nonLatinOriginal(MediaType.MOVIE, item))
+    }
+
+    @Test
+    fun englishOnlyLeavesTheOriginalLogoOut() {
+        val noEnglish = logos.filter { it.toString().contains("\"ja\"") }
+        // German, untranslated: the original logo reads like the title, unless only English will do
+        assertEquals("/ja.png", logo("de-DE", from = noEnglish))
+        assertNull(TmdbCatalog.pickLogo(noEnglish, item, MediaType.MOVIE, all, "en-US", "es-ES", fallback = true, englishOnly = true))
+        assertEquals("/en.png", TmdbCatalog.pickLogo(logos, item, MediaType.MOVIE, all, "de-DE", "es-ES", fallback = true, englishOnly = true))
     }
 }

@@ -49,7 +49,16 @@ class PartLanguagesFragment : PreviewSettingsFragment() {
             fallbackRow(ID_SYNOPSIS_MODE, R.string.synopsis_mode_title, synopsisModeLabel(context, synopsisMode),
                 synopsisModes.map { synopsisModeLabel(context, it) },
                 synopsisModes.map { mode -> synopsisModeDescription(context, mode) }).hiddenBy(profile.drawsDetails),
+            checkbox(ID_LATIN, getString(R.string.latin_originals_title), getString(R.string.latin_originals_desc), profile.latinOriginals)
+                .multilineDescription(true).build().hiddenBy(profile.drawsLogo),
         )
+    }
+
+    override fun onGuidedActionClicked(action: GuidedAction) {
+        if (action.id == ID_LATIN) {
+            profile.latinOriginals = action.isChecked
+            schedulePreview(300)
+        }
     }
 
     private fun languageRow(id: Long, title: Int, current: String): GuidedAction {
@@ -97,6 +106,7 @@ class PartLanguagesFragment : PreviewSettingsFragment() {
         private const val ID_SYNOPSIS_LANGUAGE = 3L
         private const val ID_SYNOPSIS_MODE = 4L
         private const val ID_LANGUAGE = 6L
+        private const val ID_LATIN = 7L
 
         /** A synopsis already in English has no English one to fall back to. */
         private fun englishSynopsis(profile: Profile) = profile.partLanguages.synopsis?.let(Languages::code) == "en"
@@ -158,6 +168,7 @@ class PartLanguagesFragment : PreviewSettingsFragment() {
             profile.synopsisLanguage.takeIf { it != Settings.LANGUAGE_AUTO && profile.drawsDetails }
                 ?.let { context.getString(R.string.part_summary_synopsis, languageLabel(context, it)) },
             context.getString(R.string.part_summary_skips).takeIf { profile.requireLogo || profile.requireSynopsis },
+            context.getString(R.string.part_summary_latin).takeIf { profile.latinOriginals && profile.drawsLogo },
         ).joinToString(" · ")
     }
 }

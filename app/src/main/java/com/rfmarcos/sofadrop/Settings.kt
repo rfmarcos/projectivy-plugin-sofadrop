@@ -144,6 +144,10 @@ object Settings {
     const val STYLE_LOGO = "logo"
     const val STYLE_BACKDROP = "backdrop"
     val STYLES = listOf(STYLE_FULL, STYLE_LOGO, STYLE_BACKDROP)
+    /** Colour of the shading behind the text and over the launcher rows: the backdrop's own, darkened, or black for OLED screens. */
+    const val SHADE_TINT = "tint"
+    const val SHADE_BLACK = "black"
+    val SHADES = listOf(SHADE_TINT, SHADE_BLACK)
     /** Where the info block goes on the wallpaper. */
     const val POSITION_TOP_LEFT = "top_left"
     val POSITIONS = listOf(POSITION_TOP_LEFT, "center_left", "bottom_left", "top_right", "center_right", "bottom_right")

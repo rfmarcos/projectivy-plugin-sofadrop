@@ -36,7 +36,7 @@ class WallpaperFactory(context: Context, val width: Int, val profile: Profile) {
         renderers.getOrPut(width) {
             WallpaperRenderer(appContext, width, Languages.texts(Settings.language), profile.overviewLines,
                 profile.headerOrder, profile.minRatings, profile.style, castPhotos,
-                profile.showProviders && !profile.sourceFallback && profile.sourceInline, profile.position)
+                profile.showProviders && !profile.sourceFallback && profile.sourceInline, profile.position, profile.shade == Settings.SHADE_BLACK)
         }
     }
 

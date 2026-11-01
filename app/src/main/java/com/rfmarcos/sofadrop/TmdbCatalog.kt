@@ -292,7 +292,7 @@ class TmdbCatalog(
         return WallpaperInfo(
             type = type,
             id = ref.tmdbId,
-            title = titleIn(type, item, { translations(ref) }, parts.title, language),
+            title = titleIn(type, item, { translations(ref) }, partsFor(ref, item).title, language),
             overview = overview,
             year = item.str(if (type == MediaType.MOVIE) "release_date" else "first_air_date").orEmpty().take(4),
             rating = item.double("vote_average") ?: 0.0,
@@ -343,14 +343,29 @@ class TmdbCatalog(
 
     private fun logoPath(ref: TitleRef, item: JsonObject): String? {
         val originalLanguage = item.str("original_language").orEmpty()
-        val code = parts.title?.let(Languages::code) ?: originalLanguage
+        val title = partsFor(ref, item).title
+        val code = title?.let(Languages::code) ?: originalLanguage
         val logos = client.get("${ref.type.path}/${ref.tmdbId}/images?include_image_language=$code,$originalLanguage,en")
             ?.objects("logos").orEmpty()
-        return pickLogo(logos, item, ref.type, { translations(ref) }, parts.title, language, profile.logoFallback)
+        return pickLogo(logos, item, ref.type, { translations(ref) }, title, language, profile.logoFallback, englishOnly(ref, item))
     }
 
     /** Synopsis in the synopsis language, from another country if needed (es-MX for es-ES); empty when there is none. */
-    private fun localOverview(ref: TitleRef, item: JsonObject): String = overviewIn(item, { translations(ref) }, parts.synopsis, language)
+    private fun localOverview(ref: TitleRef, item: JsonObject): String = overviewIn(item, { translations(ref) }, partsFor(ref, item).synopsis, language)
+
+    /** The profile asks for English where the original is in another alphabet, and this title's is. */
+    private fun englishOnly(ref: TitleRef, item: JsonObject) = profile.latinOriginals && nonLatinOriginal(ref.type, item)
+
+    /**
+     * [parts] for this title: with [englishOnly], English instead of the original language, and instead of
+     * a language with no translation of the title (TMDB then gives the original name).
+     */
+    private fun partsFor(ref: TitleRef, item: JsonObject): PartLanguages {
+        if (!englishOnly(ref, item)) return parts
+        val original = item.str(originalKey(ref.type)).orEmpty()
+        val title = parts.title?.takeIf { similarity(titleIn(ref.type, item, { translations(ref) }, it, language), original) <= 0.9 }
+        return PartLanguages(title ?: ENGLISH, parts.synopsis ?: ENGLISH)
+    }
 
     /** TMDB translations of a title (title and synopsis), one per language and country. */
     private fun translations(ref: TitleRef): List<JsonObject> = translations.getOrPut(ref) {
@@ -380,6 +395,7 @@ class TmdbCatalog(
     }
 
     companion object {
+        private const val ENGLISH = "en-US"
         private const val RANKING_MIN_VOTES = 300
         private const val RANKING_PRIOR = 6.5
         private const val MIN_VOTES_OTHER_LANGUAGES = 1000
@@ -481,6 +497,15 @@ class TmdbCatalog(
 
         private fun originalKey(type: MediaType) = if (type == MediaType.MOVIE) "original_title" else "original_name"
 
+        /** Mostly letters of another alphabet than the Latin one: Japanese, Korean, Chinese, Cyrillic, Arabic… */
+        fun nonLatin(text: String): Boolean {
+            val letters = text.filter(Char::isLetter)
+            return letters.isNotEmpty() && letters.count { Character.UnicodeScript.of(it.code) == Character.UnicodeScript.LATIN } * 2 < letters.length
+        }
+
+        /** The title's original name is in another alphabet, see [nonLatin]. */
+        fun nonLatinOriginal(type: MediaType, item: JsonObject) = nonLatin(item.str(originalKey(type)).orEmpty())
+
         /** Language of the title's own translation: TMDB marks Cantonese titles "cn" and translates them as "zh". */
         private fun originalCode(item: JsonObject) = item.str("original_language").orEmpty().let { if (it == "cn") "zh" else it }
 
@@ -515,11 +540,12 @@ class TmdbCatalog(
 
         /**
          * Logo in [locale] (null: the original language), else one in another language whose title reads
-         * the same, else with [fallback] the original-language or English one; null to write the title.
+         * the same, else with [fallback] the original-language or English one ([englishOnly]: just the
+         * English one, for originals in another alphabet); null to write the title.
          */
         fun pickLogo(
             logos: List<JsonObject>, item: JsonObject, type: MediaType, translations: () -> List<JsonObject>,
-            locale: String?, general: String, fallback: Boolean,
+            locale: String?, general: String, fallback: Boolean, englishOnly: Boolean = false,
         ): String? {
             val original = item.str(originalKey(type)).orEmpty()
             val originalLanguage = item.str("original_language").orEmpty()
@@ -541,12 +567,14 @@ class TmdbCatalog(
                 logo = local.firstOrNull { l -> titles[l.str("iso_3166_1")]?.let { similarity(it, title) > 0.9 } == true }?.str("file_path")
             }
             // An untranslated title reads the same on the original-language logo
-            if (logo == null && similarity(title, original) > 0.9) logo = inLanguage(originalLanguage).firstOrNull()?.str("file_path")
+            if (logo == null && !englishOnly && similarity(title, original) > 0.9) logo = inLanguage(originalLanguage).firstOrNull()?.str("file_path")
             if (logo == null && originalLanguage != "en" && similarity(title, titleIn(type, item, translations, "en-US", general)) > 0.9) {
                 logo = inLanguage("en").firstOrNull()?.str("file_path")
             }
             // Optional: a logo in another language beats the title written as plain text
-            if (logo == null && fallback) logo = (inLanguage(originalLanguage) + inLanguage("en")).firstOrNull()?.str("file_path")
+            if (logo == null && fallback) {
+                logo = ((if (englishOnly) emptyList() else inLanguage(originalLanguage)) + inLanguage("en")).firstOrNull()?.str("file_path")
+            }
             return logo
         }
 

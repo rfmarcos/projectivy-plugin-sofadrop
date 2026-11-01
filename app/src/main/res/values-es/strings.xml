@@ -207,6 +207,12 @@
     <string name="style_backdrop_desc">Solo la imagen</string>
     <string name="style_hidden">Oculto con el estilo %1$s</string>
     <string name="position_title">Posición</string>
+    <string name="shade_title">Sombreado</string>
+    <string name="shade_tint">Color del fondo</string>
+    <string name="shade_tint_desc">Oscuro, del color de cada imagen</string>
+    <string name="shade_black">Negro (OLED)</string>
+    <string name="shade_black_desc">Negro puro detrás del texto y abajo: una pantalla OLED apaga esos píxeles</string>
+    <string name="shade_summary_black">sombreado negro</string>
     <string name="position_top_left">Arriba a la izquierda</string>
     <string name="position_center_left">En el centro a la izquierda</string>
     <string name="position_bottom_left">Abajo a la izquierda</string>
@@ -428,6 +434,9 @@
     <string name="part_summary_logo">Logo: %1$s</string>
     <string name="part_summary_synopsis">Sinopsis: %1$s</string>
     <string name="part_summary_skips">descarta títulos</string>
+    <string name="part_summary_latin">otros alfabetos en inglés</string>
+    <string name="latin_originals_title">Otros alfabetos, en inglés</string>
+    <string name="latin_originals_desc">Títulos en japonés, coreano, chino, cirílico…: logo, título y sinopsis en inglés donde irían en el idioma original o sin traducir</string>
     <string name="logo_language_title">Idioma del logo</string>
     <string name="general_language_title">Idioma general</string>
     <string name="synopsis_language_title">Idioma de la sinopsis</string>

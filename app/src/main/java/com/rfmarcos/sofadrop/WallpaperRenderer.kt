@@ -52,6 +52,8 @@ class WallpaperRenderer(
     private val sourceInline: Boolean = false,
     /** Where the info block goes, see [Settings.POSITIONS]. */
     private val position: String = Settings.POSITION_TOP_LEFT,
+    /** Black shading instead of the backdrop's colour, see [Settings.SHADES]. */
+    private val black: Boolean = false,
 ) {
 
     private val height = width * 9 / 16
@@ -95,7 +97,7 @@ class WallpaperRenderer(
         // Full-bleed backdrop
         drawCover(canvas, backdrop)
 
-        drawGradients(canvas, tintOf(backdrop), right = position.endsWith("_right"))
+        drawGradients(canvas, if (black) Color.BLACK else tintOf(backdrop), right = position.endsWith("_right"))
         if (style == Settings.STYLE_BACKDROP) return
 
         // Info block on its own layer, so it can cast a soft shadow
@@ -119,17 +121,22 @@ class WallpaperRenderer(
         )
     }
 
-    /** Gradients tinted with the backdrop's colour: on the info's side, bottom (launcher rows), top (clock). */
+    /**
+     * Gradients tinted with the backdrop's colour (or black): on the info's side, bottom (launcher rows),
+     * top (clock). Black ones reach full black at the edges, so an OLED screen turns those pixels off.
+     */
     private fun drawGradients(canvas: Canvas, tint: Int, right: Boolean) {
         drawSideGradient(canvas, tint, right)
-        drawGradient(canvas, tint, horizontal = false) { t -> 0.98f * smoothstep((t - 0.42f) / 0.46f) }
+        val bottom = if (black) 1f else 0.98f
+        drawGradient(canvas, tint, horizontal = false) { t -> bottom * smoothstep((t - 0.42f) / 0.46f) }
         drawGradient(canvas, tint, horizontal = false) { t -> 0.45f * (1 - smoothstep(t / 0.22f)) }
     }
 
     private fun drawSideGradient(canvas: Canvas, tint: Int, right: Boolean) {
         // The side one is there for the text: lighter behind a logo alone, none on the bare backdrop
+        val full = if (black) 1f else 0.96f
         val side: ((Float) -> Float)? = when (style) {
-            Settings.STYLE_FULL -> { t -> 0.96f * (1 - smoothstep((t - 0.28f) / 0.45f)) }
+            Settings.STYLE_FULL -> { t -> full * (1 - smoothstep((t - 0.28f) / 0.45f)) }
             Settings.STYLE_LOGO -> { t -> 0.75f * (1 - smoothstep((t - 0.12f) / 0.45f)) }
             else -> null
         }

@@ -35,6 +35,10 @@ class DetailsFragment : PreviewSettingsFragment() {
                     // Down where the launcher rows are, in Projectivy's usual layout (no rows over the screensaver)
                     Settings.POSITIONS.map { if (it.startsWith("top") || profile.isScreensaver) null else getString(R.string.position_rows_note) }))
                 .build().hiddenBy(profile.drawsLogo),
+            action(ID_SHADE, R.drawable.ic_act_layout, getString(R.string.shade_title), shadeLabel(context, profile.shade))
+                .subActions(options(ID_SHADE, Settings.SHADES.map { shadeLabel(context, it) }, shadeLabel(context, profile.shade),
+                    listOf(getString(R.string.shade_tint_desc), getString(R.string.shade_black_desc))))
+                .build(),
             screen(ID_LANGUAGE, R.drawable.ic_act_language, R.string.setting_language_title, PartLanguagesFragment.summary(context, profile)),
             screen(ID_HEADER, R.drawable.ic_act_heart, R.string.header_title, HeaderFragment.summary(context, profile)).hiddenBy(profile.drawsDetails),
             screen(ID_SYNOPSIS_CAST, R.drawable.ic_act_count, R.string.synopsis_cast_title, SynopsisCastFragment.summary(context, profile))
@@ -78,6 +82,7 @@ class DetailsFragment : PreviewSettingsFragment() {
                 collapseSubActions()
             }
             ID_POSITION -> profile.position = Settings.POSITIONS[index]
+            ID_SHADE -> profile.shade = Settings.SHADES[index]
             ID_RESOLUTION -> profile.outputWidth = Settings.WIDTH_OPTIONS[index]
         }
         refreshActions(rows())
@@ -94,6 +99,10 @@ class DetailsFragment : PreviewSettingsFragment() {
         private const val ID_STYLE = 11L
         private const val ID_SYNOPSIS_CAST = 14L
         private const val ID_POSITION = 15L
+        private const val ID_SHADE = 16L
+
+        fun shadeLabel(context: Context, shade: String) =
+            context.getString(if (shade == Settings.SHADE_BLACK) R.string.shade_black else R.string.shade_tint)
 
         fun positionLabel(context: Context, position: String) = context.getString(
             when (position) {
@@ -129,6 +138,7 @@ class DetailsFragment : PreviewSettingsFragment() {
         fun summary(context: Context, profile: Profile): String = listOfNotNull(
             styleLabel(context, profile.style).takeIf { !profile.drawsDetails },
             positionLabel(context, profile.position).takeIf { profile.position != Settings.POSITION_TOP_LEFT && profile.drawsLogo },
+            context.getString(R.string.shade_summary_black).takeIf { profile.shade == Settings.SHADE_BLACK },
             Languages.displayName(Settings.language),
             when (profile.overviewLines) {
                 0 -> context.getString(R.string.synopsis_summary_hidden)

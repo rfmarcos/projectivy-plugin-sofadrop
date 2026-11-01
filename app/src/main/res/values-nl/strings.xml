@@ -215,6 +215,12 @@
     <string name="style_backdrop_desc">Alleen de afbeelding</string>
     <string name="style_hidden">Verborgen bij de stijl %1$s</string>
     <string name="position_title">Positie</string>
+    <string name="shade_title">Schaduw</string>
+    <string name="shade_tint">Kleur van de achtergrond</string>
+    <string name="shade_tint_desc">Donker, in de kleur van elke afbeelding</string>
+    <string name="shade_black">Zwart (OLED)</string>
+    <string name="shade_black_desc">Puur zwart achter de tekst en onderaan: een OLED-scherm zet die pixels uit</string>
+    <string name="shade_summary_black">zwarte schaduw</string>
     <string name="position_top_left">Linksboven</string>
     <string name="position_center_left">Links in het midden</string>
     <string name="position_bottom_left">Linksonder</string>
@@ -436,6 +442,9 @@
     <string name="part_summary_logo">Logo: %1$s</string>
     <string name="part_summary_synopsis">Samenvatting: %1$s</string>
     <string name="part_summary_skips">slaat titels over</string>
+    <string name="part_summary_latin">andere alfabetten in het Engels</string>
+    <string name="latin_originals_title">Andere alfabetten in het Engels</string>
+    <string name="latin_originals_desc">Japanse, Koreaanse, Chinese, Cyrillische… titels: logo, titel en samenvatting in het Engels waar ze in de originele taal of onvertaald zouden staan</string>
     <string name="logo_language_title">Taal van het logo</string>
     <string name="general_language_title">Algemene taal</string>
     <string name="synopsis_language_title">Taal van de samenvatting</string>
