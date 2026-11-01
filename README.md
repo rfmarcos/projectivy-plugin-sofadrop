@@ -32,8 +32,10 @@ Sofadrop is a wallpaper plugin for [Projectivy Launcher](https://github.com/spoc
 | ![Mutiny on Projectivy's home screen](docs/images/projectivy_home_mutiny.jpg) | ![Avengers: Doomsday](docs/images/wallpaper_en_avengers.jpg) |
 | ![A title marked as watched from your Trakt history](docs/images/wallpaper_en_watched.jpg) | ![Streaming services available in your country](docs/images/wallpaper_en_streaming.jpg) |
 | ![Avatar: Aang, in Spanish](docs/images/wallpaper_es_avatar.jpg) | ![The Mandalorian & Grogu, in Spanish](docs/images/wallpaper_es_mandalorian.jpg) |
+| ![Stranger Things, each actor's photo next to their name](docs/images/wallpaper_en_cast.jpg) | ![Oppenheimer, with the text on the right](docs/images/wallpaper_en_right.jpg) |
+| ![Andor, with black shading for OLED screens](docs/images/wallpaper_en_oled.jpg) | ![Sofascreen, the screensaver, with its clock](docs/images/screensaver_en.jpg) |
 
-*Ratings come with each platform's logo (IMDb and Trakt above, no account needed; Rotten Tomatoes, Metacritic and more with MDBList), next to the age rating. Titles watched on Trakt or Simkl get a badge (or can be hidden), the footer shows where to watch each title, the cast can go under the synopsis, and wallpapers come in 19 languages (Spanish above).*
+*Ratings come with each platform's logo (IMDb and Trakt above, no account needed; Rotten Tomatoes, Metacritic and more with MDBList), next to the age rating. Titles watched on Trakt or Simkl get a badge (or can be hidden), the footer shows where to watch each title, the cast can go under the synopsis with their photos, the text can go in any corner, the shading can be pure black for OLED screens, and wallpapers come in 19 languages (Spanish above). The last one is Sofascreen, the screensaver.*
 
 ## 📥 Installation
 
@@ -42,6 +44,8 @@ Sofadrop is a wallpaper plugin for [Projectivy Launcher](https://github.com/spoc
 3. In Projectivy go to **Settings → Appearance → Wallpaper → Launcher wallpaper** and pick **🔌 Sofadrop**.
 
 Then choose **Configure** in the same screen (or open Sofadrop from your apps): the first time, a short **guided setup** asks for your style, lists and amount, with a preview, and the first wallpapers are ready in a minute or two. You can open it again from *Settings → About*.
+
+![The guided setup: pick a style and see it in the preview](docs/images/setup_en.jpg)
 
 > **Google Play Protect** may block the install with *"Play Protect doesn't recognise other apps from this developer"*. Sofadrop isn't on Google Play, so Google doesn't know its developer yet. Choose **More details → Install anyway**.
 
