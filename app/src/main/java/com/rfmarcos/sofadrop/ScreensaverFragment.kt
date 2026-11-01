@@ -40,7 +40,13 @@ class ScreensaverFragment : BaseSettingsFragment() {
         actions += rows()
         val context = requireContext()
         explanations[ID_SYSTEM] = listOfNotNull(
-            getString(if (ScreensaverSetupFragment.hasSystemPicker(context)) R.string.screensaver_system_explain else R.string.screensaver_system_explain_steps),
+            getString(
+                when (ScreensaverSetupFragment.route(context)) {
+                    ScreensaverSetupFragment.Route.PICKER -> R.string.screensaver_system_explain
+                    ScreensaverSetupFragment.Route.SETTINGS -> R.string.screensaver_system_explain_path
+                    ScreensaverSetupFragment.Route.COMPUTER -> R.string.screensaver_system_explain_steps
+                },
+            ),
             getString(R.string.screensaver_projectivy_tip).takeIf { Projectivy.isInstalled(context) },
         ).joinToString("\n\n")
         for (id in listOf(ID_OWN_LISTS, ID_OWN_LOOK, ID_GENERATE)) explanations[id] = getString(R.string.screensaver_own_explain)

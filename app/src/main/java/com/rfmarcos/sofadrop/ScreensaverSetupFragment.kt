@@ -59,14 +59,36 @@ class ScreensaverSetupFragment : BaseSettingsFragment() {
         GuidedAction.Builder(requireContext()).id(id).icon(ColorDrawable(Color.TRANSPARENT)).title(title).description(description)
             .multilineDescription(true).build()
 
+    enum class Route {
+        /** Android's screensaver picker opens directly */
+        PICKER,
+
+        /** Android TV without a link to its picker (Philips): Android's settings, and the path to follow */
+        SETTINGS,
+
+        /** Google TV lists no other apps' screensavers: once with adb */
+        COMPUTER,
+    }
+
     companion object {
         private const val ID_UNDO = 10L
         private const val GUIDE_URL = "https://github.com/rfmarcos/projectivy-plugin-sofadrop#screensaver"
         private const val GOOGLE_SCREENSAVER = "com.google.android.apps.tv.dreamx/.service.Backdrop"
+        // Google TV (Chromecast); the older Android TV (Philips) doesn't have it
+        private const val GOOGLE_TV_FEATURE = "com.google.android.feature.AMATI_EXPERIENCE"
 
-        /** Whether Android has a screensaver picker that lists Sofascreen (not on Google TV). */
-        fun hasSystemPicker(context: Context) =
-            Intent(android.provider.Settings.ACTION_DREAM_SETTINGS).resolveActivity(context.packageManager) != null
+        /** How Sofascreen is made the screensaver on this TV. */
+        fun route(context: Context): Route {
+            val packageManager = context.packageManager
+            return when {
+                packageManager.hasSystemFeature(GOOGLE_TV_FEATURE) -> Route.COMPUTER
+                Intent(android.provider.Settings.ACTION_DREAM_SETTINGS).resolveActivity(packageManager) != null -> Route.PICKER
+                Intent(android.provider.Settings.ACTION_SETTINGS).resolveActivity(packageManager) != null -> Route.SETTINGS
+                else -> Route.COMPUTER
+            }
+        }
+
+        fun needsComputer(context: Context) = route(context) == Route.COMPUTER
 
         /** Sofascreen is Android's screensaver; null where Android doesn't let apps read that setting. */
         fun isActive(context: Context): Boolean? = runCatching {
@@ -79,7 +101,13 @@ class ScreensaverSetupFragment : BaseSettingsFragment() {
 
         /** "On", or "Not on yet · how to switch it on" (Android's settings where it has a picker). */
         fun status(context: Context): String {
-            val how = context.getString(if (hasSystemPicker(context)) R.string.screensaver_system_opens_settings else R.string.screensaver_system_opens_steps)
+            val how = context.getString(
+                when (route(context)) {
+                    Route.PICKER -> R.string.screensaver_system_opens_settings
+                    Route.SETTINGS -> R.string.screensaver_system_opens_path
+                    Route.COMPUTER -> R.string.screensaver_system_opens_steps
+                },
+            )
             return when (isActive(context)) {
                 true -> context.getString(R.string.screensaver_system_on)
                 false -> context.getString(R.string.screensaver_system_off) + " · " + how
@@ -87,12 +115,16 @@ class ScreensaverSetupFragment : BaseSettingsFragment() {
             }
         }
 
-        /** Android's screensaver picker, or these steps where there is none. */
+        /** Android's screensaver picker (or its settings, where there's no link to it), or these steps where there is none. */
         fun open(from: GuidedStepSupportFragment) {
-            val context = from.requireContext()
-            if (hasSystemPicker(context)) {
+            val action = when (route(from.requireContext())) {
+                Route.PICKER -> android.provider.Settings.ACTION_DREAM_SETTINGS
+                Route.SETTINGS -> android.provider.Settings.ACTION_SETTINGS
+                Route.COMPUTER -> null
+            }
+            if (action != null) {
                 try {
-                    from.startActivity(Intent(android.provider.Settings.ACTION_DREAM_SETTINGS))
+                    from.startActivity(Intent(action))
                     return
                 } catch (_: ActivityNotFoundException) {
                 }

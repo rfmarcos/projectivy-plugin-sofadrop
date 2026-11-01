@@ -11,8 +11,10 @@
     <string name="screensaver_system_on">Activado: Sofascreen es el salvapantallas de la TV</string>
     <string name="screensaver_system_opens_settings">abre los ajustes de salvapantallas de Android</string>
     <string name="screensaver_system_opens_steps">cómo activarlo</string>
+    <string name="screensaver_system_opens_path">abre los ajustes de Android: Preferencias del dispositivo → Salvapantallas</string>
     <string name="screensaver_system_explain">Elige Sofascreen en los ajustes de salvapantallas de Android.</string>
     <string name="screensaver_system_explain_steps">Google TV no deja elegir los salvapantallas de otras apps en sus ajustes: se activa una vez desde un ordenador. Pulsa OK para ver los pasos.</string>
+    <string name="screensaver_system_explain_path">En los ajustes de Android, ve a Preferencias del dispositivo → Salvapantallas y elige Sofascreen. Los nombres pueden cambiar según la marca de la TV.</string>
     <string name="screensaver_projectivy_tip">Con Projectivy, desactiva Ajustes → Apariencia → Modo inactivo del lanzador → \"Evitar el protector de pantalla del sistema\" y reinicia la TV: si no, Projectivy impide que arranque cualquier salvapantallas del sistema.</string>
     <string name="screensaver_set_header">Fondos</string>
     <string name="screensaver_lists_title">Listas</string>

@@ -12,8 +12,10 @@
     <string name="screensaver_system_on">On: Sofascreen is the TV\'s screensaver</string>
     <string name="screensaver_system_opens_settings">opens Android\'s screensaver settings</string>
     <string name="screensaver_system_opens_steps">how to switch it on</string>
+    <string name="screensaver_system_opens_path">opens Android\'s settings: Device Preferences → Screen saver</string>
     <string name="screensaver_system_explain">Choose Sofascreen in Android\'s screensaver settings.</string>
     <string name="screensaver_system_explain_steps">Google TV doesn\'t list other apps\' screensavers in its settings: it\'s switched on once from a computer. Press OK for the steps.</string>
+    <string name="screensaver_system_explain_path">In Android\'s settings, go to Device Preferences → Screen saver and choose Sofascreen. The names can change with the TV\'s brand.</string>
     <string name="screensaver_projectivy_tip">With Projectivy, turn off Settings → Appearance → Launcher Idle Mode → \"Prevent system screensaver\", then restart the TV: otherwise Projectivy keeps any system screensaver from starting.</string>
     <string name="screensaver_set_header">Wallpapers</string>
     <string name="screensaver_lists_title">Lists</string>

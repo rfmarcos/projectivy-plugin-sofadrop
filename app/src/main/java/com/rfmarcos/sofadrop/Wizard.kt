@@ -440,7 +440,7 @@ class WizardScreensaverFragment : WizardStepFragment() {
     override val titleRes = R.string.wizard_screensaver_title
 
     override fun text() = getString(R.string.wizard_screensaver_text) +
-        if (ScreensaverSetupFragment.hasSystemPicker(requireContext())) "" else "\n\n" + getString(R.string.wizard_screensaver_google_tv)
+        if (ScreensaverSetupFragment.needsComputer(requireContext())) "\n\n" + getString(R.string.wizard_screensaver_google_tv) else ""
 
     override fun onCreateActions(actions: MutableList<GuidedAction>, savedInstanceState: Bundle?) {
         actions += rows()
