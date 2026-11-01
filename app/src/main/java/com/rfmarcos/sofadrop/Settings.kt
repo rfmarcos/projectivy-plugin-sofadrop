@@ -171,6 +171,7 @@ object Settings {
     // Internal state, not exported in Projectivy backups
     private const val KEY_UPDATE_VERSION = "_update_version"
     private const val KEY_PROJECTIVY_ASKED = "_projectivy_asked_at"
+    private const val KEY_WIZARD_SHOWN = "_wizard_shown"
     private const val KEY_SCREENSAVER_SHOWN = "_screensaver_shown_at"
     private const val KEY_UPDATE_APK = "_update_apk"
     private const val KEY_UPDATE_NOTES = "_update_notes"
@@ -421,6 +422,11 @@ object Settings {
     var projectivyAskedAt: Long
         get() = preferences.getLong(KEY_PROJECTIVY_ASKED, 0)
         set(value) = preferences.edit { putLong(KEY_PROJECTIVY_ASKED, value) }
+
+    /** The setup wizard opened by itself once (see [Wizard.offer]). */
+    var wizardShown: Boolean
+        get() = preferences.getBoolean(KEY_WIZARD_SHOWN, false)
+        set(value) = preferences.edit { putBoolean(KEY_WIZARD_SHOWN, value) }
 
     /**
      * Latest release found by [Updater.check] ("1.0.1", empty until checked), its APK, its release notes

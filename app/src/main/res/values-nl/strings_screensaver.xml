@@ -7,10 +7,13 @@
     <string name="screensaver_try">Uitproberen</string>
     <string name="screensaver_try_desc">Elke knop stopt hem</string>
     <string name="screensaver_system_title">Inschakelen</string>
-    <string name="screensaver_system_never">Nog niet getoond · opent de screensaverinstellingen van Android</string>
-    <string name="screensaver_system_shown">Laatst getoond %1$s · opent de screensaverinstellingen van Android</string>
-    <string name="screensaver_system_explain">Kies Sofascreen in de screensaverinstellingen van Android. Google TV toont geen screensavers van andere apps: stel hem daar eenmalig in vanaf een computer met\n\nadb shell settings put secure screensaver_components %1$s\n\nMet Projectivy: zet Instellingen → Weergave → Launcher inactieve modus → \"Voorkom dat het systeem de screensaver activeert\" uit, anders houdt Projectivy elke screensaver van het systeem tegen.</string>
-    <string name="screensaver_system_missing">Deze tv heeft geen screensaverinstellingen voor andere apps: zie het linkerdeel</string>
+    <string name="screensaver_system_never">Nog niet getoond</string>
+    <string name="screensaver_system_shown">Laatst getoond %1$s</string>
+    <string name="screensaver_system_opens_settings">opent de screensaverinstellingen van Android</string>
+    <string name="screensaver_system_opens_steps">hoe je hem inschakelt</string>
+    <string name="screensaver_system_explain">Kies Sofascreen in de screensaverinstellingen van Android.</string>
+    <string name="screensaver_system_explain_steps">Google TV toont geen screensavers van andere apps in zijn instellingen: hij wordt eenmalig vanaf een computer ingeschakeld. Druk op OK voor de stappen.</string>
+    <string name="screensaver_projectivy_tip">Met Projectivy: zet Instellingen → Weergave → Launcher inactieve modus → \"Voorkom dat het systeem de screensaver activeert\" uit en start de tv opnieuw op, anders houdt Projectivy elke screensaver van het systeem tegen.</string>
     <string name="screensaver_set_header">Achtergronden</string>
     <string name="screensaver_lists_title">Lijsten</string>
     <string name="screensaver_look_title">Uiterlijk</string>

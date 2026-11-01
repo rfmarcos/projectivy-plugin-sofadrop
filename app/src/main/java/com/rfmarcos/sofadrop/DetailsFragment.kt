@@ -114,7 +114,7 @@ class DetailsFragment : PreviewSettingsFragment() {
             }
         )
 
-        private fun styleDescription(context: Context, style: String) = context.getString(
+        fun styleDescription(context: Context, style: String) = context.getString(
             when (style) {
                 Settings.STYLE_LOGO -> R.string.style_logo_desc
                 Settings.STYLE_BACKDROP -> R.string.style_backdrop_desc

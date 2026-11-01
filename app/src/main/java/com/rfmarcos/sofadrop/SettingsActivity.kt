@@ -13,6 +13,8 @@ class SettingsActivity : FragmentActivity() {
 
         if (savedInstanceState == null) {
             GuidedStepSupportFragment.addAsRoot(this, SettingsFragment(), android.R.id.content)
+            // First run: the wizard over the settings, which are there when it ends
+            if (Wizard.shouldOffer()) Wizard.start(supportFragmentManager)
         }
 
         // Back on the first screen finishes the settings. Otherwise Android 12+ moves a launcher task to

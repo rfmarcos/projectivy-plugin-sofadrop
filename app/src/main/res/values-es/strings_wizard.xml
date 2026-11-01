@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- El asistente de configuración (Wizard.kt) y los pasos para activar el salvapantallas (ScreensaverSetupFragment) -->
+<resources>
+    <string name="wizard_title">Configuración guiada</string>
+    <string name="wizard_desc">Las preguntas del primer día, con la vista previa</string>
+    <string name="wizard_step">Paso %1$d de %2$d</string>
+    <string name="wizard_next">Siguiente</string>
+    <string name="wizard_more_options">Más opciones</string>
+
+    <string name="wizard_welcome_title">Te damos la bienvenida</string>
+    <string name="wizard_welcome_text">Sofadrop crea fondos de pantalla con las películas y series que elijas, para Projectivy y como salvapantallas.\n\nSon unas pocas preguntas y en cada una ves cómo queda. Todo se puede cambiar después en Ajustes.</string>
+    <string name="wizard_start">Empezar</string>
+    <string name="wizard_start_desc">Unos dos minutos</string>
+    <string name="wizard_skip">Saltar y usar lo recomendado</string>
+    <string name="wizard_skip_desc">Tendencias de TMDB, estilo completo y 1080p</string>
+
+    <string name="wizard_style_title">¿Cómo quieres los fondos?</string>
+    <string name="wizard_style_text">Elige una y la vista previa la muestra. Más detalles (notas, reparto, idiomas) en Ajustes → Detalles del fondo.</string>
+
+    <string name="wizard_lists_title">¿Qué películas y series?</string>
+    <string name="wizard_lists_text">Marca una o varias. Ninguna necesita cuenta, salvo tu propia lista.</string>
+    <string name="wizard_lists_now">Elegidas ahora: %1$s</string>
+    <string name="wizard_lists_trending">Lo más visto ahora</string>
+    <string name="wizard_lists_trending_desc">Las películas y series más vistas esta semana</string>
+    <string name="wizard_lists_platform_desc">Lo que hay en %1$s (listas públicas de MDBList)</string>
+    <string name="wizard_lists_top_rated">Las mejor valoradas</string>
+    <string name="wizard_lists_top_rated_desc">Las películas y series con mejor nota en TMDB</string>
+    <string name="wizard_lists_upcoming">Próximos estrenos</string>
+    <string name="wizard_lists_upcoming_desc">Películas que se estrenan pronto</string>
+    <string name="wizard_lists_anime">Anime</string>
+    <string name="wizard_lists_anime_desc">Tendencias de Simkl</string>
+    <string name="wizard_lists_own">Mi lista</string>
+    <string name="wizard_lists_connect">Conecta Trakt o Simkl con el móvil para usar tu watchlist</string>
+    <string name="wizard_lists_by_hand">Elegir listas una a una</string>
+
+    <string name="wizard_amount_title">Cantidad y calidad</string>
+    <string name="wizard_amount_total">%1$s × %2$s = %3$s</string>
+    <string name="wizard_amount_text">Como mucho 200 por actualización; Projectivy enseña 100 de ellos al azar cada vez. 4K se ve más nítido en una TV 4K, pero tarda más y ocupa más.</string>
+    <string name="wizard_amount_count">Fondos por lista</string>
+    <string name="wizard_amount_4k">Esta TV tiene memoria suficiente</string>
+
+    <string name="wizard_click_title">¿Qué abre el fondo?</string>
+    <string name="wizard_click_platforms">La plataforma donde está</string>
+    <string name="wizard_click_platforms_desc">Instaladas en esta TV: %1$s. Si no está en ninguna, el tráiler</string>
+    <string name="wizard_click_no_platforms">No hay plataformas de streaming instaladas en esta TV</string>
+    <string name="wizard_click_app">Una app</string>
+    <string name="wizard_click_no_app">%1$s: ninguna instalada en esta TV</string>
+
+    <string name="wizard_screensaver_title">¿También como salvapantallas?</string>
+    <string name="wizard_screensaver_text">Cuando no tocas el mando, la TV pasa los fondos a pantalla completa, con reloj.</string>
+    <string name="wizard_screensaver_google_tv">En Google TV se activa una vez desde un ordenador: el último paso explica cómo.</string>
+    <string name="wizard_screensaver_yes">Sí, con los mismos fondos</string>
+    <string name="wizard_screensaver_yes_desc">Listas y aspecto propios, más tarde en Ajustes → Salvapantallas</string>
+    <string name="wizard_screensaver_no">No</string>
+
+    <string name="wizard_done_title">Listo</string>
+    <string name="wizard_done_lists">Listas: %1$s</string>
+    <string name="wizard_done_look">Aspecto: %1$s</string>
+    <string name="wizard_done_click">El fondo abre: %1$s</string>
+    <string name="wizard_done_screensaver">Salvapantallas: %1$s</string>
+    <string name="wizard_done_yes">sí</string>
+    <string name="wizard_done_no">no</string>
+    <string name="wizard_done_switch_on">Activar el salvapantallas</string>
+    <string name="wizard_done_wallpapers">Fondos</string>
+    <string name="wizard_done_settings">Ir a Ajustes</string>
+
+    <string name="setup_title">Actívalo una vez desde un ordenador</string>
+    <string name="setup_text">Google TV no deja elegir los salvapantallas de otras apps en sus ajustes: hace falta un ordenador en la misma wifi, una sola vez.\n\nLa dirección de esta TV: %1$s\n\nEl código QR abre estos pasos, con capturas, en el móvil.</string>
+    <string name="setup_ip_unknown">sin conexión</string>
+    <string name="setup_developer_title">Activa las opciones para desarrolladores</string>
+    <string name="setup_developer_desc">Ajustes → Sistema → Información → pulsa OK 7 veces en \"Compilación del SO de Android TV\".</string>
+    <string name="setup_debugging_title">Activa la depuración inalámbrica</string>
+    <string name="setup_debugging_desc">Ajustes → Sistema → Opciones para desarrolladores → Depuración inalámbrica → \"Vincular dispositivo con código de sincronización\". Deja esa pantalla abierta.</string>
+    <string name="setup_adb_title">En el ordenador, con adb (las platform-tools de Android)</string>
+    <string name="setup_adb_desc">adb pair %1$s:PUERTO CÓDIGO\nadb connect %1$s:PUERTO\nadb shell settings put secure screensaver_components %2$s\n\nEl puerto y el código para vincular salen en la pantalla de la TV; el puerto para conectar, en Depuración inalámbrica.</string>
+    <string name="setup_projectivy_title">Si usas Projectivy</string>
+    <string name="setup_projectivy_desc">Projectivy → Ajustes → Apariencia → Modo inactivo del lanzador → desactiva \"Evitar el protector de pantalla del sistema\" y reinicia la TV.</string>
+    <string name="setup_undo_title">Volver al salvapantallas de Google</string>
+    <string name="setup_undo_desc">adb shell settings put secure screensaver_components %1$s</string>
+</resources>

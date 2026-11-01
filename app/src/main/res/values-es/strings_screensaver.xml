@@ -7,10 +7,13 @@
     <string name="screensaver_try">Probarlo</string>
     <string name="screensaver_try_desc">Cualquier botón lo detiene</string>
     <string name="screensaver_system_title">Activarlo</string>
-    <string name="screensaver_system_never">Aún no se ha mostrado · abre los ajustes de salvapantallas de Android</string>
-    <string name="screensaver_system_shown">Se mostró por última vez %1$s · abre los ajustes de salvapantallas de Android</string>
-    <string name="screensaver_system_explain">Elige Sofascreen en los ajustes de salvapantallas de Android. Google TV no muestra los salvapantallas de otras apps: ahí, actívalo una vez desde un ordenador con\n\nadb shell settings put secure screensaver_components %1$s\n\nCon Projectivy, desactiva Ajustes → Apariencia → Modo inactivo del lanzador → \"Evitar el protector de pantalla del sistema\": si no, Projectivy impide que arranque cualquier salvapantallas del sistema.</string>
-    <string name="screensaver_system_missing">Esta TV no tiene ajustes de salvapantallas para otras apps: mira el panel de la izquierda</string>
+    <string name="screensaver_system_never">Aún no se ha mostrado</string>
+    <string name="screensaver_system_shown">Se mostró por última vez %1$s</string>
+    <string name="screensaver_system_opens_settings">abre los ajustes de salvapantallas de Android</string>
+    <string name="screensaver_system_opens_steps">cómo activarlo</string>
+    <string name="screensaver_system_explain">Elige Sofascreen en los ajustes de salvapantallas de Android.</string>
+    <string name="screensaver_system_explain_steps">Google TV no deja elegir los salvapantallas de otras apps en sus ajustes: se activa una vez desde un ordenador. Pulsa OK para ver los pasos.</string>
+    <string name="screensaver_projectivy_tip">Con Projectivy, desactiva Ajustes → Apariencia → Modo inactivo del lanzador → \"Evitar el protector de pantalla del sistema\" y reinicia la TV: si no, Projectivy impide que arranque cualquier salvapantallas del sistema.</string>
     <string name="screensaver_set_header">Fondos</string>
     <string name="screensaver_lists_title">Listas</string>
     <string name="screensaver_look_title">Aspecto</string>

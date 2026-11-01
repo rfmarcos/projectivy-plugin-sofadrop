@@ -42,6 +42,10 @@
         <package android:name="no.nrk.tv" />
         <package android:name="se.svt.android.svtplay" />
         <package android:name="com.yle.webtv" />
+        <!-- Android's screensaver picker, missing on Google TV (ScreensaverSetupFragment) -->
+        <intent>
+            <action android:name="android.settings.DREAM_SETTINGS" />
+        </intent>
     </queries>
 
     <application

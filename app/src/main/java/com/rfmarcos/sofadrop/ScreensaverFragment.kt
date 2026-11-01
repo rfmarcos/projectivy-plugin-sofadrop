@@ -1,6 +1,5 @@
 package com.rfmarcos.sofadrop
 
-import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -39,7 +38,11 @@ class ScreensaverFragment : BaseSettingsFragment() {
 
     override fun onCreateActions(actions: MutableList<GuidedAction>, savedInstanceState: Bundle?) {
         actions += rows()
-        explanations[ID_SYSTEM] = getString(R.string.screensaver_system_explain, component(requireContext()))
+        val context = requireContext()
+        explanations[ID_SYSTEM] = listOfNotNull(
+            getString(if (ScreensaverSetupFragment.hasSystemPicker(context)) R.string.screensaver_system_explain else R.string.screensaver_system_explain_steps),
+            getString(R.string.screensaver_projectivy_tip).takeIf { Projectivy.isInstalled(context) },
+        ).joinToString("\n\n")
         for (id in listOf(ID_OWN_LISTS, ID_OWN_LOOK, ID_GENERATE)) explanations[id] = getString(R.string.screensaver_own_explain)
         explanations[ID_POSITION] = getString(R.string.screensaver_clock_explain)
         explanations[ID_WEATHER] = getString(R.string.screensaver_weather_explain)
@@ -54,7 +57,9 @@ class ScreensaverFragment : BaseSettingsFragment() {
         val shownAt = Settings.screensaverShownAt
         return listOfNotNull(
             action(ID_SYSTEM, R.drawable.ic_act_tv, getString(R.string.screensaver_system_title),
-                if (shownAt == 0L) getString(R.string.screensaver_system_never) else getString(R.string.screensaver_system_shown, timeAgo(shownAt)))
+                (if (shownAt == 0L) getString(R.string.screensaver_system_never) else getString(R.string.screensaver_system_shown, timeAgo(shownAt))) +
+                    " · " + getString(if (ScreensaverSetupFragment.hasSystemPicker(context)) R.string.screensaver_system_opens_settings
+                    else R.string.screensaver_system_opens_steps))
                 .build(),
             action(ID_TRY, R.drawable.ic_act_preview, getString(R.string.screensaver_try), getString(R.string.screensaver_try_desc))
                 .enabled(WallpaperStore(context, profile).current().isNotEmpty()).build(),
@@ -134,12 +139,7 @@ class ScreensaverFragment : BaseSettingsFragment() {
             ID_ZOOM -> Settings.screensaverZoom = action.isChecked
             ID_DATE -> Settings.screensaverDate = action.isChecked
             ID_WEATHER -> Settings.screensaverWeather = action.isChecked
-            ID_SYSTEM -> try {
-                startActivity(Intent(android.provider.Settings.ACTION_DREAM_SETTINGS))
-            } catch (_: ActivityNotFoundException) {
-                // Google TV has no screensaver picker for other apps: the left pane gives the adb command
-                Toast.makeText(requireContext(), R.string.screensaver_system_missing, Toast.LENGTH_LONG).show()
-            }
+            ID_SYSTEM -> ScreensaverSetupFragment.open(this)
         }
     }
 

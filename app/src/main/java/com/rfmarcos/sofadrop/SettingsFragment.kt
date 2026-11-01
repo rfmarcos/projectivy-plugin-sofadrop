@@ -68,6 +68,7 @@ class SettingsFragment : PreviewSettingsFragment() {
             .hasNext(true).build()
         actions += choice(ID_REFRESH, R.drawable.ic_act_schedule, R.string.setting_refresh_title, refreshLabel(Settings.refreshHours),
             Settings.REFRESH_OPTIONS.map(::refreshLabel))
+        actions += action(ID_WIZARD, R.drawable.ic_act_check, getString(R.string.wizard_title), getString(R.string.wizard_desc)).build()
         actions += action(ID_ABOUT, R.drawable.ic_act_info, getString(R.string.setting_about_title),
             getString(R.string.setting_about_desc, BuildConfig.VERSION_NAME)).hasNext(true).build()
     }
@@ -91,8 +92,8 @@ class SettingsFragment : PreviewSettingsFragment() {
         handler.removeCallbacks(statusRefresher)
         val context = requireContext()
         GenerateWallpapersWorker.schedule(context, settingsChanged = true)
-        // First run: nothing to show in Projectivy yet, so generate right away
-        if (profile.lastGeneration == 0L && Settings.token.isNotBlank()) GenerateWallpapersWorker.runNow(context)
+        // First run: nothing to show in Projectivy yet, so generate right away (the wizard does it with its answers)
+        if (profile.lastGeneration == 0L && Settings.token.isNotBlank() && !Wizard.open) GenerateWallpapersWorker.runNow(context)
         super.onPause()
     }
 
@@ -116,6 +117,7 @@ class SettingsFragment : PreviewSettingsFragment() {
             ID_SCREENSAVER, ID_SCREENSAVER_ONLY -> add(parentFragmentManager, ScreensaverFragment().forProfile(Profile.SCREENSAVER))
             ID_CLICK -> open(ClickActionFragment())
             ID_ACCOUNTS -> open(AccountsFragment())
+            ID_WIZARD -> Wizard.start(parentFragmentManager)
             ID_ABOUT -> open(AboutFragment())
         }
     }
@@ -206,5 +208,6 @@ class SettingsFragment : PreviewSettingsFragment() {
         private const val ID_CLICK = 24L
         private const val ID_SCREENSAVER = 25L
         private const val ID_SCREENSAVER_ONLY = 26L
+        private const val ID_WIZARD = 27L
     }
 }
