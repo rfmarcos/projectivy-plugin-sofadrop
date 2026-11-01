@@ -10,7 +10,7 @@
     <string name="screensaver_system_title">Switch it on</string>
     <string name="screensaver_system_never">Not shown yet · opens Android\'s screensaver settings</string>
     <string name="screensaver_system_shown">Last shown %1$s · opens Android\'s screensaver settings</string>
-    <string name="screensaver_system_explain">Choose Sofascreen in Android\'s screensaver settings. Google TV doesn\'t list other apps\' screensavers: there, set it once from a computer with\n\nadb shell settings put secure screensaver_components %1$s\n\nWith Projectivy, turn off Settings → Power → \"Enable internal idle detection\": otherwise Projectivy keeps any system screensaver from starting.</string>
+    <string name="screensaver_system_explain">Choose Sofascreen in Android\'s screensaver settings. Google TV doesn\'t list other apps\' screensavers: there, set it once from a computer with\n\nadb shell settings put secure screensaver_components %1$s\n\nWith Projectivy, turn off Settings → Appearance → Launcher Idle Mode → \"Prevent system screensaver\": otherwise Projectivy keeps any system screensaver from starting.</string>
     <string name="screensaver_system_missing">This TV has no screensaver settings for other apps: see the left pane</string>
     <string name="screensaver_set_header">Wallpapers</string>
     <string name="screensaver_lists_title">Lists</string>

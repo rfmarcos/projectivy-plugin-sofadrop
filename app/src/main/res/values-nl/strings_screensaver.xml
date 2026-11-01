@@ -9,7 +9,7 @@
     <string name="screensaver_system_title">Inschakelen</string>
     <string name="screensaver_system_never">Nog niet getoond · opent de screensaverinstellingen van Android</string>
     <string name="screensaver_system_shown">Laatst getoond %1$s · opent de screensaverinstellingen van Android</string>
-    <string name="screensaver_system_explain">Kies Sofascreen in de screensaverinstellingen van Android. Google TV toont geen screensavers van andere apps: stel hem daar eenmalig in vanaf een computer met\n\nadb shell settings put secure screensaver_components %1$s\n\nMet Projectivy: zet Instellingen → Energie → \"Enable internal idle detection\" uit, anders houdt Projectivy elke screensaver van het systeem tegen.</string>
+    <string name="screensaver_system_explain">Kies Sofascreen in de screensaverinstellingen van Android. Google TV toont geen screensavers van andere apps: stel hem daar eenmalig in vanaf een computer met\n\nadb shell settings put secure screensaver_components %1$s\n\nMet Projectivy: zet Instellingen → Weergave → Launcher inactieve modus → \"Voorkom dat het systeem de screensaver activeert\" uit, anders houdt Projectivy elke screensaver van het systeem tegen.</string>
     <string name="screensaver_system_missing">Deze tv heeft geen screensaverinstellingen voor andere apps: zie het linkerdeel</string>
     <string name="screensaver_set_header">Achtergronden</string>
     <string name="screensaver_lists_title">Lijsten</string>
