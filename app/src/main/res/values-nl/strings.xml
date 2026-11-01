@@ -184,7 +184,7 @@
 
     <!-- About -->
     <string name="setting_about_title">Over</string>
-    <string name="setting_about_desc">Versie %1$s · steun, broncode en vermeldingen</string>
+    <string name="setting_about_desc">Versie %1$s · begeleide installatie, steun, broncode en vermeldingen</string>
     <string name="about_version">Versie</string>
     <string name="about_support">Steun het project</string>
     <string name="about_support_desc">Vind je de plug-in fijn, dan kun je me een kop koffie geven op Ko-fi</string>

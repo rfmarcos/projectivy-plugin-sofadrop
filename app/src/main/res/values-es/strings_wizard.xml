@@ -11,7 +11,7 @@
     <string name="wizard_welcome_text">Sofadrop crea fondos de pantalla con las películas y series que elijas, para Projectivy y como salvapantallas.\n\nSon unas pocas preguntas y en cada una ves cómo queda. Todo se puede cambiar después en Ajustes.</string>
     <string name="wizard_start">Empezar</string>
     <string name="wizard_start_desc">Unos dos minutos</string>
-    <string name="wizard_skip">Saltar y usar lo recomendado</string>
+    <string name="wizard_skip">Saltar y usar los ajustes por defecto</string>
     <string name="wizard_skip_desc">Tendencias de TMDB, estilo completo y 1080p</string>
 
     <string name="wizard_style_title">¿Cómo quieres los fondos?</string>
@@ -65,7 +65,7 @@
     <string name="wizard_done_settings">Ir a Ajustes</string>
 
     <string name="setup_title">Actívalo una vez desde un ordenador</string>
-    <string name="setup_text">Google TV no deja elegir los salvapantallas de otras apps en sus ajustes: hace falta un ordenador en la misma wifi, una sola vez.\n\nLa dirección de esta TV: %1$s\n\nEl código QR abre estos pasos, con capturas, en el móvil.</string>
+    <string name="setup_text">Google TV no deja elegir los salvapantallas de otras apps en sus ajustes: hace falta un ordenador en la misma wifi, una sola vez.\n\nLa dirección de esta TV: %1$s\n\nEl código QR abre estos pasos en el móvil.</string>
     <string name="setup_ip_unknown">sin conexión</string>
     <string name="setup_developer_title">Activa las opciones para desarrolladores</string>
     <string name="setup_developer_desc">Ajustes → Sistema → Información → pulsa OK 7 veces en \"Compilación del SO de Android TV\".</string>

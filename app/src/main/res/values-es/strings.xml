@@ -176,7 +176,7 @@
 
     <!-- Acerca de -->
     <string name="setting_about_title">Acerca de</string>
-    <string name="setting_about_desc">Versión %1$s · apoyar el proyecto, código y créditos</string>
+    <string name="setting_about_desc">Versión %1$s · configuración guiada, apoyar el proyecto, código y créditos</string>
     <string name="about_version">Versión</string>
     <string name="about_support">Apoyar el proyecto</string>
     <string name="about_support_desc">Si te gusta el plugin, puedes invitarme a un café en Ko-fi</string>

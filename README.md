@@ -19,6 +19,7 @@ Sofadrop is a wallpaper plugin for [Projectivy Launcher](https://github.com/spoc
 * 🎯 **Filters**: maximum age, global hits only, no adult content, no repeats, skip some genres (or use only some), and only titles with a logo or a synopsis in your language. Every list can have its own.
 * 🔎 **Explore your lists**: see each list's titles in order and which ones are used or skipped, and why.
 * 🔀 **Mixed or in order**: all lists shuffled together, or one after another.
+* 🌙 **Screensaver too**: Sofascreen shows the wallpapers full screen as Android's screensaver, with a clock and the weather, also without Projectivy ([how to switch it on](#screensaver)).
 * 🌍 **Languages**: English, Spanish, Portuguese, French, Italian, German, Dutch, Swedish, Norwegian, Danish, Finnish, Polish, Czech, Hungarian, Romanian, Turkish, Greek, Russian and Ukrainian wallpapers. When TMDB has no logo or synopsis in yours, you choose what to show instead.
 * 🔄 **Updates itself**: new versions are offered inside the app.
 
@@ -39,7 +40,7 @@ Sofadrop is a wallpaper plugin for [Projectivy Launcher](https://github.com/spoc
 2. Install it on your Android TV (Downloader does it for you; otherwise use *Send Files to TV* or `adb install`).
 3. In Projectivy go to **Settings → Appearance → Wallpaper → Launcher wallpaper** and pick **🔌 Sofadrop**.
 
-That's it: the first wallpapers are ready in a minute or two. Choose **Configure** in the same screen (or open Sofadrop from your apps) to pick your lists and style.
+Then choose **Configure** in the same screen (or open Sofadrop from your apps): the first time, a short **guided setup** asks for your style, lists and amount, with a preview, and the first wallpapers are ready in a minute or two. You can open it again from *Settings → About*.
 
 > **Google Play Protect** may block the install with *"Play Protect doesn't recognise other apps from this developer"*. Sofadrop isn't on Google Play, so Google doesn't know its developer yet. Choose **More details → Install anyway**.
 
@@ -57,6 +58,7 @@ The left side of the settings shows a **live preview** of a wallpaper with your 
   * **Filters & explore lists**: the filters for every list, then your lists. Open one to see its titles and give it its own filters.
 * **Wallpaper details**: language, the header under the title (which ratings, in what order, and whether to show the year, runtime, genres and watched badge; hiding details leaves room for more ratings), synopsis length, the footer (streaming services and/or the list source), the streaming country, what to do when the logo or synopsis isn't in your language, and resolution (1080p or 4K).
 * **Accounts**: connect TMDB, Trakt, Simkl and MDBList with a QR code, see what each one adds, and update the IMDb ratings data.
+* **Screensaver**: the same wallpapers, or lists and a look of its own; time per wallpaper, transition, slow zoom, clock, date, brightness and weather. See [Screensaver](#screensaver).
 * **Update every**: how often a new set is generated (6 hours to 7 days). How often the wallpaper *changes on screen* is set in Projectivy itself.
 
 ### Connecting your accounts (optional)
@@ -64,6 +66,34 @@ The left side of the settings shows a **live preview** of a wallpaper with your 
 * **Trakt**: *Accounts → Trakt*, then scan the QR code. Adds your recommendations and watchlist, and your history can mark or hide watched titles.
 * **Simkl**: trending anime, movies and shows work without an account. Connect it to add your *Plan to watch* and *Watching* lists and your history.
 * **MDBList**: tick a suggested public list or add any public one by `user/list` or its URL, no account needed. Connect your account to load your own lists, private ones included, and to show Rotten Tomatoes, Metacritic, Letterboxd and MyAnimeList ratings (*Wallpaper details → Header*). Ratings take one request per list from your MDBList daily quota.
+
+<a id="screensaver"></a>
+## 🌙 Screensaver
+
+Sofadrop includes **Sofascreen**, a screensaver that shows your wallpapers full screen with a clock (and the weather, if you want). It works with or without Projectivy. Set it up in *Settings → Screensaver*; **Try it** shows it right away.
+
+To make it the TV's screensaver, choose *Settings → Screensaver → Switch it on*:
+
+* **Android TV** devices that list other apps' screensavers open Android's screensaver settings: choose **Sofascreen**.
+* **Google TV** (Chromecast with Google TV, Google TV Streamer, TVs with Google TV) only offers Google's own screensavers. Sofascreen is switched on **once** from a computer on the same Wi-Fi, with `adb` from Google's [platform-tools](https://developer.android.com/tools/releases/platform-tools). Sofadrop shows these same steps with your TV's address filled in:
+  1. Turn on the developer options: *Settings → System → About*, then press **OK** 7 times on *Android TV OS build*.
+  2. Turn on wireless debugging: *Settings → System → Developer options → Wireless debugging*, then *Pair device with pairing code*. Leave that screen open: it shows the TV's address, a port and a code.
+  3. On the computer, with the TV's address (`IP`):
+     ```
+     adb pair IP:PORT CODE
+     adb connect IP:PORT
+     adb shell settings put secure screensaver_components com.rfmarcos.sofadrop/com.rfmarcos.sofadrop.SofascreenService
+     ```
+     `adb pair` takes the port and code from the pairing screen; `adb connect` takes the port shown under *Wireless debugging* (*IP address & port*).
+  4. That's all: wireless debugging and the developer options can be turned off again.
+
+> **With Projectivy**, turn off *Settings → Appearance → Launcher Idle Mode → Prevent system screensaver*, then restart the TV: otherwise Projectivy keeps any system screensaver from starting.
+
+To go back to Google's screensaver:
+
+```
+adb shell settings put secure screensaver_components com.google.android.apps.tv.dreamx/.service.Backdrop
+```
 
 ## 🔄 Updates
 

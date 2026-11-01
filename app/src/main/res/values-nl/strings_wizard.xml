@@ -11,7 +11,7 @@
     <string name="wizard_welcome_text">Sofadrop maakt achtergronden met de films en series die je kiest, voor Projectivy en als screensaver.\n\nEen paar vragen, en bij elke vraag zie je hoe het eruitziet. Alles is later te wijzigen in Instellingen.</string>
     <string name="wizard_start">Beginnen</string>
     <string name="wizard_start_desc">Ongeveer twee minuten</string>
-    <string name="wizard_skip">Overslaan en de aanbevolen instellingen gebruiken</string>
+    <string name="wizard_skip">Overslaan en de standaardinstellingen gebruiken</string>
     <string name="wizard_skip_desc">Trending op TMDB, de volledige stijl en 1080p</string>
 
     <string name="wizard_style_title">Hoe moeten ze eruitzien?</string>
@@ -65,7 +65,7 @@
     <string name="wizard_done_settings">Naar Instellingen</string>
 
     <string name="setup_title">Eenmalig inschakelen vanaf een computer</string>
-    <string name="setup_text">Google TV toont geen screensavers van andere apps in zijn instellingen: je hebt eenmalig een computer op hetzelfde wifi-netwerk nodig.\n\nHet adres van deze tv: %1$s\n\nDe QR-code opent deze stappen, met afbeeldingen, op je telefoon.</string>
+    <string name="setup_text">Google TV toont geen screensavers van andere apps in zijn instellingen: je hebt eenmalig een computer op hetzelfde wifi-netwerk nodig.\n\nHet adres van deze tv: %1$s\n\nDe QR-code opent deze stappen op je telefoon.</string>
     <string name="setup_ip_unknown">niet verbonden</string>
     <string name="setup_developer_title">Schakel de ontwikkelaarsopties in</string>
     <string name="setup_developer_desc">Instellingen → Systeem → Over → druk 7 keer op OK bij \"Android TV OS-build\".</string>

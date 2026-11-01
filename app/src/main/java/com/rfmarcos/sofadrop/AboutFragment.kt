@@ -22,6 +22,7 @@ class AboutFragment : BaseSettingsFragment() {
             .focusable(Updater.canCheck).build()
         actions += action(ID_USE_IN_PROJECTIVY, R.drawable.ic_act_tv, getString(R.string.use_in_projectivy_title),
             getString(R.string.use_in_projectivy_desc)).multilineDescription(true).build()
+        actions += action(ID_WIZARD, R.drawable.ic_act_check, getString(R.string.wizard_title), getString(R.string.wizard_desc)).build()
         if (BuildConfig.SUPPORT_URL.isNotBlank()) {
             actions += action(ID_SUPPORT, R.drawable.ic_act_heart, getString(R.string.about_support), getString(R.string.about_support_desc)).build()
         }
@@ -41,6 +42,7 @@ class AboutFragment : BaseSettingsFragment() {
             ID_VERSION -> checkForUpdate()
             ID_LOG -> open(GenerationLogFragment())
             ID_USE_IN_PROJECTIVY -> Projectivy.openWallpaperSettings(requireContext())
+            ID_WIZARD -> Wizard.start(parentFragmentManager)
             ID_SUPPORT -> LinkQrDialog.newInstance(BuildConfig.SUPPORT_URL, R.string.about_support, R.string.about_support_scan)
                 .show(parentFragmentManager, "support")
             ID_SOURCE -> LinkQrDialog.newInstance(BuildConfig.SOURCE_URL, R.string.about_source, R.string.about_source_scan)
@@ -76,5 +78,6 @@ class AboutFragment : BaseSettingsFragment() {
         private const val ID_CREDITS = 4L
         private const val ID_USE_IN_PROJECTIVY = 5L
         private const val ID_LOG = 6L
+        private const val ID_WIZARD = 7L
     }
 }
