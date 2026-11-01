@@ -15,7 +15,8 @@
     <string name="wizard_skip_desc">Trending on TMDB, the complete style and 1080p</string>
 
     <string name="wizard_style_title">How should they look?</string>
-    <string name="wizard_style_text">Pick one and the preview shows it. More details (ratings, cast, languages) in Settings → Wallpaper details.</string>
+    <string name="wizard_style_text">Pick one and the preview shows it. Later, in Settings → Wallpaper details, you choose what each part shows, or hide it: ratings, synopsis, cast, footer, languages…</string>
+    <string name="wizard_style_full_desc">Logo, header, synopsis and footer; each part can be changed or hidden later</string>
 
     <string name="wizard_lists_title">Which movies and shows?</string>
     <string name="wizard_lists_text">Pick one or more. None of them needs an account, except your own list.</string>
@@ -62,7 +63,7 @@
     <string name="wizard_done_no">no</string>
     <string name="wizard_done_switch_on">Switch the screensaver on</string>
     <string name="wizard_done_wallpapers">Wallpapers</string>
-    <string name="wizard_done_settings">Go to Settings</string>
+    <string name="wizard_finish">Finish</string>
 
     <string name="setup_title">Switch it on once from a computer</string>
     <string name="setup_text">Google TV doesn\'t list other apps\' screensavers in its settings: it takes a computer on the same Wi-Fi, once.\n\nThis TV\'s address: %1$s\n\nThe QR code opens these steps on your phone.</string>

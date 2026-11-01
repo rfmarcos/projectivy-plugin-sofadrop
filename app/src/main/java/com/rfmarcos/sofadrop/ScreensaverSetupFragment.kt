@@ -1,6 +1,7 @@
 package com.rfmarcos.sofadrop
 
 import android.content.ActivityNotFoundException
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
@@ -66,6 +67,25 @@ class ScreensaverSetupFragment : BaseSettingsFragment() {
         /** Whether Android has a screensaver picker that lists Sofascreen (not on Google TV). */
         fun hasSystemPicker(context: Context) =
             Intent(android.provider.Settings.ACTION_DREAM_SETTINGS).resolveActivity(context.packageManager) != null
+
+        /** Sofascreen is Android's screensaver; null where Android doesn't let apps read that setting. */
+        fun isActive(context: Context): Boolean? = runCatching {
+            val resolver = context.contentResolver
+            val components = android.provider.Settings.Secure.getString(resolver, "screensaver_components").orEmpty()
+            val ours = ComponentName(context, SofascreenService::class.java)
+            android.provider.Settings.Secure.getInt(resolver, "screensaver_enabled", 1) == 1 &&
+                components.split(',').any { ComponentName.unflattenFromString(it.trim()) == ours }
+        }.getOrNull()
+
+        /** "On", or "Not on yet · how to switch it on" (Android's settings where it has a picker). */
+        fun status(context: Context): String {
+            val how = context.getString(if (hasSystemPicker(context)) R.string.screensaver_system_opens_settings else R.string.screensaver_system_opens_steps)
+            return when (isActive(context)) {
+                true -> context.getString(R.string.screensaver_system_on)
+                false -> context.getString(R.string.screensaver_system_off) + " · " + how
+                null -> how.replaceFirstChar { it.uppercase() }
+            }
+        }
 
         /** Android's screensaver picker, or these steps where there is none. */
         fun open(from: GuidedStepSupportFragment) {

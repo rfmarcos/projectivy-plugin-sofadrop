@@ -7,8 +7,8 @@
     <string name="screensaver_try">Probarlo</string>
     <string name="screensaver_try_desc">Cualquier botón lo detiene</string>
     <string name="screensaver_system_title">Activarlo</string>
-    <string name="screensaver_system_never">Aún no se ha mostrado</string>
-    <string name="screensaver_system_shown">Se mostró por última vez %1$s</string>
+    <string name="screensaver_system_off">Sin activar</string>
+    <string name="screensaver_system_on">Activado: Sofascreen es el salvapantallas de la TV</string>
     <string name="screensaver_system_opens_settings">abre los ajustes de salvapantallas de Android</string>
     <string name="screensaver_system_opens_steps">cómo activarlo</string>
     <string name="screensaver_system_explain">Elige Sofascreen en los ajustes de salvapantallas de Android.</string>

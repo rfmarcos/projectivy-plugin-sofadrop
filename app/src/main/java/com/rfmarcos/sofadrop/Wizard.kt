@@ -187,8 +187,9 @@ class WizardStyleFragment : WizardStepFragment() {
         val context = requireContext()
         val position = DetailsFragment.positionLabel(context, profile.position)
         return Settings.STYLES.mapIndexed { index, style ->
-            radio(ID_STYLE_BASE + index, DetailsFragment.styleLabel(context, style), DetailsFragment.styleDescription(context, style),
-                profile.style == style).build()
+            // "As set below" means the Details screen: here, that it can be set later
+            val description = if (style == Settings.STYLE_FULL) getString(R.string.wizard_style_full_desc) else DetailsFragment.styleDescription(context, style)
+            radio(ID_STYLE_BASE + index, DetailsFragment.styleLabel(context, style), description, profile.style == style).build()
         } + action(ID_POSITION, R.drawable.ic_act_place, getString(R.string.position_title), position)
             .subActions(options(ID_POSITION, Settings.POSITIONS.map { DetailsFragment.positionLabel(context, it) }, position,
                 Settings.POSITIONS.map { if (it.startsWith("top")) null else getString(R.string.position_rows_note) }))
@@ -520,16 +521,17 @@ class WizardDoneFragment : WizardStepFragment() {
         }
         if (Wizard.screensaver) {
             actions += action(ID_SCREENSAVER, R.drawable.ic_act_screensaver, getString(R.string.wizard_done_switch_on),
-                getString(if (ScreensaverSetupFragment.hasSystemPicker(context)) R.string.screensaver_system_opens_settings
-                else R.string.screensaver_system_opens_steps)).build()
+                ScreensaverSetupFragment.status(context)).build()
         }
         actions += action(ID_STATUS, R.drawable.ic_act_refresh, getString(R.string.wizard_done_wallpapers), generationStatus())
             .multilineDescription(true).build()
-        actions += action(ID_SETTINGS, R.drawable.ic_act_check, getString(R.string.wizard_done_settings), null).build()
+        actions += action(ID_SETTINGS, R.drawable.ic_act_check, getString(R.string.wizard_finish), null).build()
     }
 
     override fun onResume() {
         super.onResume()
+        // Back from Android's screensaver settings
+        if (Wizard.screensaver) updateDescription(ID_SCREENSAVER, ScreensaverSetupFragment.status(requireContext()))
         handler.post(statusRefresher)
     }
 

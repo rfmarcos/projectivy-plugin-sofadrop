@@ -15,7 +15,8 @@
     <string name="wizard_skip_desc">Tendencias de TMDB, estilo completo y 1080p</string>
 
     <string name="wizard_style_title">¿Cómo quieres los fondos?</string>
-    <string name="wizard_style_text">Elige una y la vista previa la muestra. Más detalles (notas, reparto, idiomas) en Ajustes → Detalles del fondo.</string>
+    <string name="wizard_style_text">Elige una y la vista previa la muestra. Después, en Ajustes → Detalles del fondo, eliges qué enseña cada parte o la quitas: notas, sinopsis, reparto, pie, idiomas…</string>
+    <string name="wizard_style_full_desc">Logo, cabecera, sinopsis y pie; cada parte se puede cambiar o quitar después</string>
 
     <string name="wizard_lists_title">¿Qué películas y series?</string>
     <string name="wizard_lists_text">Marca una o varias. Ninguna necesita cuenta, salvo tu propia lista.</string>
@@ -62,7 +63,7 @@
     <string name="wizard_done_no">no</string>
     <string name="wizard_done_switch_on">Activar el salvapantallas</string>
     <string name="wizard_done_wallpapers">Fondos</string>
-    <string name="wizard_done_settings">Ir a Ajustes</string>
+    <string name="wizard_finish">Finalizar</string>
 
     <string name="setup_title">Actívalo una vez desde un ordenador</string>
     <string name="setup_text">Google TV no deja elegir los salvapantallas de otras apps en sus ajustes: hace falta un ordenador en la misma wifi, una sola vez.\n\nLa dirección de esta TV: %1$s\n\nEl código QR abre estos pasos en el móvil.</string>

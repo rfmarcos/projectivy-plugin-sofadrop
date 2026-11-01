@@ -15,7 +15,8 @@
     <string name="wizard_skip_desc">Trending op TMDB, de volledige stijl en 1080p</string>
 
     <string name="wizard_style_title">Hoe moeten ze eruitzien?</string>
-    <string name="wizard_style_text">Kies er een en het voorbeeld laat hem zien. Meer details (beoordelingen, cast, talen) in Instellingen → Achtergronddetails.</string>
+    <string name="wizard_style_text">Kies er een en het voorbeeld laat hem zien. Later kies je in Instellingen → Achtergronddetails wat elk deel toont, of verberg je het: beoordelingen, samenvatting, cast, voettekst, talen…</string>
+    <string name="wizard_style_full_desc">Logo, kopregel, samenvatting en voettekst; elk deel kun je later aanpassen of verbergen</string>
 
     <string name="wizard_lists_title">Welke films en series?</string>
     <string name="wizard_lists_text">Kies er één of meer. Geen ervan heeft een account nodig, behalve je eigen lijst.</string>
@@ -62,7 +63,7 @@
     <string name="wizard_done_no">nee</string>
     <string name="wizard_done_switch_on">De screensaver inschakelen</string>
     <string name="wizard_done_wallpapers">Achtergronden</string>
-    <string name="wizard_done_settings">Naar Instellingen</string>
+    <string name="wizard_finish">Voltooien</string>
 
     <string name="setup_title">Eenmalig inschakelen vanaf een computer</string>
     <string name="setup_text">Google TV toont geen screensavers van andere apps in zijn instellingen: je hebt eenmalig een computer op hetzelfde wifi-netwerk nodig.\n\nHet adres van deze tv: %1$s\n\nDe QR-code opent deze stappen op je telefoon.</string>

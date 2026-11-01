@@ -8,8 +8,8 @@
     <string name="screensaver_try">Try it</string>
     <string name="screensaver_try_desc">Any button stops it</string>
     <string name="screensaver_system_title">Switch it on</string>
-    <string name="screensaver_system_never">Not shown yet</string>
-    <string name="screensaver_system_shown">Last shown %1$s</string>
+    <string name="screensaver_system_off">Not on yet</string>
+    <string name="screensaver_system_on">On: Sofascreen is the TV\'s screensaver</string>
     <string name="screensaver_system_opens_settings">opens Android\'s screensaver settings</string>
     <string name="screensaver_system_opens_steps">how to switch it on</string>
     <string name="screensaver_system_explain">Choose Sofascreen in Android\'s screensaver settings.</string>

@@ -54,13 +54,8 @@ class ScreensaverFragment : BaseSettingsFragment() {
         val clockOn = Settings.screensaverClock != Settings.CLOCK_OFF
         val ownLists = Settings.screensaverOwnLists
         val ownLook = Settings.screensaverOwnLook
-        val shownAt = Settings.screensaverShownAt
         return listOfNotNull(
-            action(ID_SYSTEM, R.drawable.ic_act_tv, getString(R.string.screensaver_system_title),
-                (if (shownAt == 0L) getString(R.string.screensaver_system_never) else getString(R.string.screensaver_system_shown, timeAgo(shownAt))) +
-                    " · " + getString(if (ScreensaverSetupFragment.hasSystemPicker(context)) R.string.screensaver_system_opens_settings
-                    else R.string.screensaver_system_opens_steps))
-                .build(),
+            action(ID_SYSTEM, R.drawable.ic_act_tv, getString(R.string.screensaver_system_title), ScreensaverSetupFragment.status(context)).build(),
             action(ID_TRY, R.drawable.ic_act_preview, getString(R.string.screensaver_try), getString(R.string.screensaver_try_desc))
                 .enabled(WallpaperStore(context, profile).current().isNotEmpty()).build(),
 

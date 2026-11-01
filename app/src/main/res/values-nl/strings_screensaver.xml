@@ -7,8 +7,8 @@
     <string name="screensaver_try">Uitproberen</string>
     <string name="screensaver_try_desc">Elke knop stopt hem</string>
     <string name="screensaver_system_title">Inschakelen</string>
-    <string name="screensaver_system_never">Nog niet getoond</string>
-    <string name="screensaver_system_shown">Laatst getoond %1$s</string>
+    <string name="screensaver_system_off">Nog niet aan</string>
+    <string name="screensaver_system_on">Aan: Sofascreen is de screensaver van de tv</string>
     <string name="screensaver_system_opens_settings">opent de screensaverinstellingen van Android</string>
     <string name="screensaver_system_opens_steps">hoe je hem inschakelt</string>
     <string name="screensaver_system_explain">Kies Sofascreen in de screensaverinstellingen van Android.</string>
