@@ -2,7 +2,7 @@
 
 **Movie & TV backdrops for Projectivy Launcher.**
 
-Sofadrop is a wallpaper plugin for [Projectivy Launcher](https://github.com/spocky/miproja1) (Android TV) that turns your home screen into a rotating showcase of **movies and TV shows** from the lists you choose: what's trending, your Trakt or Simkl lists, any public MDBList list… Everything is generated **on your TV** and set up from inside the launcher, with a live preview.
+Sofadrop is a wallpaper plugin for [Projectivy Launcher](https://github.com/spocky/miproja1) (Android TV) that turns your home screen into a rotating showcase of **movies and TV shows** from the lists you choose: what's trending, your Trakt or Simkl lists, any public Trakt or MDBList list… Everything is generated **on your TV** and set up from inside the launcher, with a live preview.
 
 ![Sofadrop on Projectivy's home screen](docs/images/projectivy_home_en.jpg)
 
@@ -10,17 +10,18 @@ Sofadrop is a wallpaper plugin for [Projectivy Launcher](https://github.com/spoc
 
 ## ✨ Features
 
-* 🎬 **Your lists**: TMDB trending, popular, in cinemas, upcoming, top rated and on the air (no account needed); Trakt, Simkl and MDBList lists, including your watchlists and any public MDBList list.
+* 🎬 **Your lists**: TMDB trending, popular, in cinemas, upcoming, top rated and on the air (no account needed); Trakt, Simkl and MDBList lists, including your watchlists and any public Trakt or MDBList list.
 * 📱 **Nothing to type on the TV**: accounts connect by scanning a QR code with your phone.
-* 🖼️ **Clean, readable wallpapers**: textless backdrops with the title's logo, rating, year, runtime or seasons, genres and synopsis, kept clear of the launcher rows.
+* 🖼️ **Clean, readable wallpapers**: textless backdrops with the title's logo, rating, year, runtime or seasons, genres, synopsis and cast (with their photos), kept clear of the launcher rows. Put the text in any corner, and use black shading on OLED screens.
 * ⭐ **The ratings you trust**: IMDb, Rotten Tomatoes (critics and audience), Metacritic, Letterboxd, TMDB, Trakt or MyAnimeList, with their logos, in the order you choose. IMDb, TMDB and Trakt work without any account; the others come from MDBList.
 * 📺 **Where to watch it**: the streaming services that have each title in your country, or the list it came from.
+* ▶️ **Open it from the wallpaper**: Projectivy's play button opens the title on your streaming platforms (Netflix, Prime Video, Disney+, HBO Max, Apple TV…), in Nuvio, Stremio or Jellyfin, or its trailer on YouTube.
 * ✅ **Watched titles**: with your Trakt or Simkl history, mark what you've seen ("✓ Watched", "▶ Watching · 3/8") or hide it.
-* 🎯 **Filters**: maximum age, global hits only, no adult content, no repeats, skip some genres (or use only some), and only titles with a logo or a synopsis in your language. Every list can have its own.
+* 🎯 **Filters**: maximum age (or from a year on), minimum TMDB rating, age rating, global hits only, no adult content, no repeats, skip some genres (or use only some), and only titles with a logo or a synopsis in your language. Every list can have its own, and any title can be blocked.
 * 🔎 **Explore your lists**: see each list's titles in order and which ones are used or skipped, and why.
 * 🔀 **Mixed or in order**: all lists shuffled together, or one after another.
 * 🌙 **Screensaver too**: Sofascreen shows the wallpapers full screen as Android's screensaver, with a clock and the weather, also without Projectivy ([how to switch it on](#screensaver)).
-* 🌍 **Languages**: English, Spanish, Portuguese, French, Italian, German, Dutch, Swedish, Norwegian, Danish, Finnish, Polish, Czech, Hungarian, Romanian, Turkish, Greek, Russian and Ukrainian wallpapers. When TMDB has no logo or synopsis in yours, you choose what to show instead.
+* 🌍 **Languages**: English, Spanish, Portuguese, French, Italian, German, Dutch, Swedish, Norwegian, Danish, Finnish, Polish, Czech, Hungarian, Romanian, Turkish, Greek, Russian and Ukrainian wallpapers. When TMDB has no logo or synopsis in yours, you choose what to show instead, and titles from other alphabets (Japanese, Korean…) can show in English.
 * 🔄 **Updates itself**: new versions are offered inside the app.
 
 ## 📸 Screenshots
@@ -51,19 +52,21 @@ The left side of the settings shows a **live preview** of a wallpaper with your 
 ![Sofadrop settings with the live preview](docs/images/settings_en.jpg)
 
 * **Update now** also shows the status: how many wallpapers you have, when they were updated, or the progress while generating.
-* **View wallpapers** shows the current set full screen (◀ ▶ to browse, **OK** to use one in the preview).
+* **View wallpapers** shows the current set full screen (◀ ▶ to browse, **OK** to use one in the preview, ▲ to open what the wallpaper opens from Projectivy, ▼ to block the title).
 * **Lists**
-  * *Titles per list*, *Title picking* (at random or the top of each list) and *Order in the launcher* (mixed or one list after another).
-  * One screen per service, **TMDB**, **Trakt**, **Simkl** and **MDBList**, to tick lists and connect your account.
-  * **Filters & explore lists**: the filters for every list, then your lists. Open one to see its titles and give it its own filters.
-* **Wallpaper details**: language, the header under the title (which ratings, in what order, and whether to show the year, runtime, genres and watched badge; hiding details leaves room for more ratings), synopsis length, the footer (streaming services and/or the list source), the streaming country, what to do when the logo or synopsis isn't in your language, and resolution (1080p or 4K).
+  * *Titles per list*, *Title picking* (at random or the top of each list) and *Order in the launcher* (mixed or one list after another). An update makes at most 200 wallpapers, shared among the lists; Projectivy shows 100 of them at a time, a different 100 at random each time it reloads.
+  * One screen per service, **TMDB**, **Trakt**, **Simkl** and **MDBList**, to tick lists and connect your account. Trakt and MDBList also take any public list by its URL or `user/list`.
+  * **Filters & explore lists**: the filters for every list, then your lists. Open one to see its titles, block one, or give the list its own filters. *Blocked titles* lists the ones you blocked, to unblock them.
+* **Wallpaper details**: style (complete, logo only or backdrop only), position of the text, shading (the backdrop's colour or black for OLED) and resolution (1080p or 4K); then by parts: the language of each part, the header under the title (which ratings, in what order, and whether to show the year, runtime, genres and watched badge; hiding details leaves room for more ratings), synopsis length and cast (names only or with their photos), and the footer (streaming services and/or the list source, and the streaming country).
+* **On wallpaper click**: what Projectivy's play button (or *About this wallpaper*) opens. Your streaming platforms in the order you pick, then, if the title is on none of them, its trailer (in the language you choose), Nuvio, Stremio or Jellyfin, or nothing.
 * **Accounts**: connect TMDB, Trakt, Simkl and MDBList with a QR code, see what each one adds, and update the IMDb ratings data.
 * **Screensaver**: the same wallpapers, or lists and a look of its own; time per wallpaper, transition, slow zoom, clock, date, brightness and weather. See [Screensaver](#screensaver).
 * **Update every**: how often a new set is generated (6 hours to 7 days). How often the wallpaper *changes on screen* is set in Projectivy itself.
+* **About**: the guided setup again, the *Last generation log* (lists, failures and how long the last update took) and *Version*, which checks for updates.
 
 ### Connecting your accounts (optional)
 
-* **Trakt**: *Accounts → Trakt*, then scan the QR code. Adds your recommendations and watchlist, and your history can mark or hide watched titles.
+* **Trakt**: public lists need no account. Connect it in *Accounts → Trakt* by scanning the QR code to add your recommendations, watchlist and your own lists; your history can mark or hide watched titles.
 * **Simkl**: trending anime, movies and shows work without an account. Connect it to add your *Plan to watch* and *Watching* lists and your history.
 * **MDBList**: tick a suggested public list or add any public one by `user/list` or its URL, no account needed. Connect your account to load your own lists, private ones included, and to show Rotten Tomatoes, Metacritic, Letterboxd and MyAnimeList ratings (*Wallpaper details → Header*). Ratings take one request per list from your MDBList daily quota.
 
@@ -74,7 +77,7 @@ Sofadrop includes **Sofascreen**, a screensaver that shows your wallpapers full 
 
 To make it the TV's screensaver, choose *Settings → Screensaver → Switch it on*:
 
-* **Android TV** devices that list other apps' screensavers open Android's screensaver settings: choose **Sofascreen**.
+* **Android TV** devices that list other apps' screensavers open Android's screensaver settings: choose **Sofascreen**. On TVs without a direct link it opens Android's settings instead: go to *Device Preferences → Screen saver* (the names can change with the TV's brand).
 * **Google TV** (Chromecast with Google TV, Google TV Streamer, TVs with Google TV) only offers Google's own screensavers. Sofascreen is switched on **once** from a computer on the same Wi-Fi, with `adb` from Google's [platform-tools](https://developer.android.com/tools/releases/platform-tools). Sofadrop shows these same steps with your TV's address filled in:
   1. Turn on the developer options: *Settings → System → About*, then press **OK** 7 times on *Android TV OS build*.
   2. Turn on wireless debugging: *Settings → System → Developer options → Wireless debugging*, then *Pair device with pairing code*. Leave that screen open: it shows the TV's address, a port and a code.
@@ -97,7 +100,7 @@ adb shell settings put secure screensaver_components com.google.android.apps.tv.
 
 ## 🔄 Updates
 
-When a new version is published, **Update available** appears at the top of the settings. Choose it to download and install it; your settings are kept. The first time, Android asks you to allow Sofadrop to install apps. If Play Protect blocks it, choose **More details → Install anyway**.
+When a new version is published, **Update available** appears at the top of the settings, within about 12 hours (or right away with *About → Version*). Choose it to see what's new and install it; your settings are kept. The first time, Android asks you to allow Sofadrop to install apps. If Play Protect blocks it, choose **More details → Install anyway**.
 
 ## ☕ Support
 
@@ -113,7 +116,8 @@ Bug reports and ideas are welcome in the [issues](../../issues). Want to build i
 * Movie and TV data, images and logos from [TMDB](https://www.themoviedb.org/). *This product uses the TMDB API but is not endorsed or certified by TMDB.*
 * Lists and watch history from [Trakt](https://trakt.tv/), [Simkl](https://simkl.com/) and [MDBList](https://mdblist.com/). *Sofadrop uses Trakt but is not endorsed or certified by Trakt.*
 * The Trakt logo is the official dark-background logo from [trakt.tv/branding](https://trakt.tv/branding), used unaltered; the Simkl and MDBList logos come from their own sites. Ratings come from MDBList and Trakt; without MDBList, IMDb ratings come from IMDb's official [dataset](https://developer.imdb.com/non-commercial-datasets/) (about 9 MB, refreshed weekly). *Information courtesy of IMDb (https://www.imdb.com). Used with permission.* The IMDb, Rotten Tomatoes, Metacritic, Letterboxd and MyAnimeList logos are the versions on [Wikimedia Commons](https://commons.wikimedia.org/), used unaltered next to each score. All names and logos belong to their owners.
-* Streaming availability from TMDB Watch Providers, powered by [JustWatch](https://www.justwatch.com/).
+* Streaming availability from TMDB Watch Providers, powered by [JustWatch](https://www.justwatch.com/); links to each title on the streaming apps from [Wikidata](https://www.wikidata.org/).
+* Sofascreen, the screensaver, started from [schumi2004](https://github.com/schumi2004)'s work, who also contributed the Dutch translation, the minimum rating, the block list and more. Weather by [Open-Meteo](https://open-meteo.com/). The Projectivy screensaver tip comes from Sofadrop Screensaver by ilee ([itslee.nl](https://itslee.nl)).
 * [Roboto](https://github.com/googlefonts/roboto) (Apache 2.0) and [Nunito](https://github.com/googlefonts/nunito) (SIL Open Font License 1.1) fonts, and Material Icons (Apache 2.0).
 * Thanks to [adelatour11/androidtvbackground](https://github.com/adelatour11/androidtvbackground), the script that started [androidtvbackground-reddit](https://github.com/rfmarcos/androidtvbackground-reddit) and, through it, this plugin.
 
