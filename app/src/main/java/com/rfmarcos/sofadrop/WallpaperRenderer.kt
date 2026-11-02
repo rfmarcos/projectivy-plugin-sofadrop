@@ -25,6 +25,7 @@ import android.text.TextUtils
 import android.util.Size
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.res.ResourcesCompat
+import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.max
@@ -698,13 +699,75 @@ class WallpaperRenderer(
         var x = s(MARGIN_LEFT) + labelPaint.measureText(label) + s(30f)
 
         val paint = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
+        val outline = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            strokeWidth = s(1.5f)
+            color = Color.argb(64, 255, 255, 255)
+        }
         for (logo in providerLogos.take(4)) {
-            val rounded = roundedSquare(logo, iconSize.roundToInt(), s(20f))
-            canvas.drawBitmap(rounded, x, center - iconSize / 2, paint)
+            val tile = ProviderTile.of(logo)
+            val rounded = roundedSquare(tile.bitmap, iconSize.roundToInt(), s(20f))
+            val y = center - iconSize / 2
+            canvas.drawBitmap(rounded, x, y, paint)
+            // A dark tile (HBO Max, Peacock) would melt into a dark wallpaper: a faint edge keeps its shape
+            if (tile.dark) {
+                val inset = outline.strokeWidth / 2
+                canvas.drawRoundRect(x + inset, y + inset, x + iconSize - inset, y + iconSize - inset, s(20f), s(20f), outline)
+            }
             rounded.recycle()
+            if (tile.bitmap !== logo) tile.bitmap.recycle()
             x += iconSize + s(22f)
         }
         return x - s(22f)
+    }
+
+    /**
+     * A platform's TMDB logo made into a tile: some (HBO Max, Peacock) are a small mark on a wide flat
+     * background, nearly invisible once shrunk to an icon. Those are cropped around the mark.
+     */
+    private class ProviderTile(val bitmap: Bitmap, val dark: Boolean) {
+        companion object {
+            /** The mark takes less than this of the logo: it's cropped. */
+            private const val MIN_CONTENT = 0.7f
+            /** Room left around the mark, on each side, when cropped. */
+            private const val PADDING = 0.12f
+
+            fun of(logo: Bitmap): ProviderTile {
+                val width = logo.width
+                val height = logo.height
+                val pixels = IntArray(width * height).also { logo.getPixels(it, 0, width, 0, 0, width, height) }
+                val border = pixels[0]
+                val dark = Color.alpha(border) > 200 && luminance(border) < 40
+                var left = width
+                var top = height
+                var right = -1
+                var bottom = -1
+                for (y in 0 until height) for (x in 0 until width) {
+                    if (difference(pixels[y * width + x], border) > 60) {
+                        if (x < left) left = x
+                        if (x > right) right = x
+                        if (y < top) top = y
+                        if (y > bottom) bottom = y
+                    }
+                }
+                if (right < 0) return ProviderTile(logo, dark)
+                val content = maxOf(right - left + 1, bottom - top + 1)
+                if (content >= minOf(width, height) * MIN_CONTENT) return ProviderTile(logo, dark)
+                // A square around the mark, the background colour filling whatever goes past the logo's edges
+                val side = (content * (1 + 2 * PADDING)).roundToInt()
+                val cropped = Bitmap.createBitmap(side, side, Bitmap.Config.ARGB_8888)
+                Canvas(cropped).apply {
+                    drawColor(border)
+                    drawBitmap(logo, side / 2f - (left + right + 1) / 2f, side / 2f - (top + bottom + 1) / 2f, null)
+                }
+                return ProviderTile(cropped, dark)
+            }
+
+            private fun luminance(color: Int) = 0.299 * Color.red(color) + 0.587 * Color.green(color) + 0.114 * Color.blue(color)
+
+            private fun difference(a: Int, b: Int) =
+                abs(Color.red(a) - Color.red(b)) + abs(Color.green(a) - Color.green(b)) + abs(Color.blue(a) - Color.blue(b)) + abs(Color.alpha(a) - Color.alpha(b))
+        }
     }
 
     // --- Helpers ---
