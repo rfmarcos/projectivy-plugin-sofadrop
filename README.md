@@ -21,7 +21,7 @@ Sofadrop is a wallpaper plugin for [Projectivy Launcher](https://github.com/spoc
 * 🔎 **Explore your lists**: see each list's titles in order and which ones are used or skipped, and why.
 * 🔀 **Mixed or in order**: all lists shuffled together, or one after another.
 * 🌙 **Screensaver too**: Sofascreen shows the wallpapers full screen as Android's screensaver, with a clock and the weather, also without Projectivy ([how to switch it on](#screensaver)).
-* 🌍 **Languages**: English, Spanish, Portuguese, French, Italian, German, Dutch, Swedish, Norwegian, Danish, Finnish, Polish, Czech, Hungarian, Romanian, Turkish, Greek, Russian, Ukrainian and Chinese (simplified, Taiwan and Hong Kong) wallpapers. When TMDB has no logo or synopsis in yours, you choose what to show instead, and titles from other alphabets (Japanese, Korean…) can show in English.
+* 🌍 **Languages**: English, Spanish, Portuguese, French, Italian, German, Dutch, Swedish, Norwegian, Danish, Finnish, Polish, Czech, Hungarian, Romanian, Turkish, Greek, Russian, Ukrainian, Japanese, Korean and Chinese (simplified, Taiwan and Hong Kong) wallpapers. When TMDB has no logo or synopsis in yours, you choose what to show instead, and titles in another alphabet than yours (Japanese, Korean…) can show in English.
 * 🔄 **Updates itself**: new versions are offered inside the app.
 
 ## 📸 Screenshots
@@ -35,7 +35,7 @@ Sofadrop is a wallpaper plugin for [Projectivy Launcher](https://github.com/spoc
 | ![Stranger Things, each actor's photo next to their name](docs/images/wallpaper_en_cast.jpg) | ![Oppenheimer, with the text on the right](docs/images/wallpaper_en_right.jpg) |
 | ![Andor, with black shading for OLED screens](docs/images/wallpaper_en_oled.jpg) | ![Sofascreen, the screensaver, with its clock](docs/images/screensaver_en.jpg) |
 
-*Ratings come with each platform's logo (IMDb and Trakt above, no account needed; Rotten Tomatoes, Metacritic and more with MDBList), next to the age rating. Titles watched on Trakt or Simkl get a badge (or can be hidden), the footer shows where to watch each title, the cast can go under the synopsis with their photos, the text can go in any corner, the shading can be pure black for OLED screens, and wallpapers come in 20 languages (Spanish above). The last one is Sofascreen, the screensaver.*
+*Ratings come with each platform's logo (IMDb and Trakt above, no account needed; Rotten Tomatoes, Metacritic and more with MDBList), next to the age rating. Titles watched on Trakt or Simkl get a badge (or can be hidden), the footer shows where to watch each title, the cast can go under the synopsis with their photos, the text can go in any corner, the shading can be pure black for OLED screens, and wallpapers come in 22 languages (Spanish above). The last one is Sofascreen, the screensaver.*
 
 ## 📥 Installation
 

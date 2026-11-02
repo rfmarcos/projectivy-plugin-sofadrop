@@ -450,7 +450,7 @@
     <string name="part_summary_skips">slaat titels over</string>
     <string name="part_summary_latin">andere alfabetten in het Engels</string>
     <string name="latin_originals_title">Andere alfabetten in het Engels</string>
-    <string name="latin_originals_desc">Japanse, Koreaanse, Chinese, Cyrillische… titels: logo, titel en samenvatting in het Engels waar ze in de originele taal of onvertaald zouden staan</string>
+    <string name="latin_originals_desc">Titels in een ander alfabet dan dat van de taal van de achtergrond (Japans, Koreaans, Cyrillisch… bij een Latijns): logo, titel en samenvatting in het Engels waar ze in de originele taal of onvertaald zouden staan</string>
     <string name="logo_language_title">Taal van het logo</string>
     <string name="general_language_title">Algemene taal</string>
     <string name="synopsis_language_title">Taal van de samenvatting</string>

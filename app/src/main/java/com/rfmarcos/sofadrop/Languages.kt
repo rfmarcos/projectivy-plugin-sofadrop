@@ -15,9 +15,14 @@ data class WallpaperTexts(
     val seasonsFew: String? = null,
     /** Between genres: "Horror, Action", "恐怖、动作". */
     val listSeparator: String = ", ",
+    /** The whole count where the number doesn't go first: "3シーズン", "시즌 3개". */
+    val countFormat: String? = null,
+    /** The wallpaper language, for the shapes of Chinese characters (they differ in Japanese, and in Taiwan). */
+    val locale: Locale = Locale.US,
 ) {
     /** "1 Season", "3 Seasons", with the language's plural forms. */
     fun seasonCount(n: Int): String {
+        countFormat?.let { return String.format(Locale.US, it, n) }
         val few = n % 10 in 2..4 && n % 100 !in 12..14
         val word = when (plural) {
             Plural.ONE_OTHER -> if (n == 1) season else seasons
@@ -73,6 +78,8 @@ object Languages {
         "el-GR" to "Ελληνικά",
         "ru-RU" to "Русский",
         "uk-UA" to "Українська",
+        "ja-JP" to "日本語",
+        "ko-KR" to "한국어",
         "zh-CN" to "简体中文",
         "zh-TW" to "繁體中文 (台灣)",
         "zh-HK" to "繁體中文 (香港)",
@@ -81,7 +88,7 @@ object Languages {
     /** Countries offered for streaming services. */
     val REGIONS = listOf(
         "US", "GB", "CA", "ES", "MX", "AR", "CO", "CL", "BR", "PT", "FR", "IT", "DE", "NL", "SE", "NO", "DK", "FI",
-        "PL", "CZ", "HU", "RO", "TR", "GR", "RU", "UA", "TW", "HK",
+        "PL", "CZ", "HU", "RO", "TR", "GR", "RU", "UA", "JP", "KR", "TW", "HK",
     )
 
     /** Original languages that never need the "global hit" vote threshold. */
@@ -108,6 +115,8 @@ object Languages {
         "el" to WallpaperTexts("Διαθέσιμο σε", "Κύκλος", "Κύκλοι", "Το είδατε", "Σε εξέλιξη · %d/%d"),
         "ru" to WallpaperTexts("Доступно на", "Сезон", "Сезонов", "Просмотрено", "Смотрю · %d/%d", Plural.EAST_SLAVIC, "Сезона"),
         "uk" to WallpaperTexts("Доступно на", "Сезон", "Сезонів", "Переглянуто", "Дивлюся · %d/%d", Plural.EAST_SLAVIC, "Сезони"),
+        "ja" to WallpaperTexts("配信中", "シーズン", "シーズン", "視聴済み", "視聴中 · %d/%d", listSeparator = "、", countFormat = "%dシーズン"),
+        "ko" to WallpaperTexts("시청 가능", "시즌", "시즌", "시청함", "시청 중 · %d/%d", countFormat = "시즌 %d개"),
         // Chinese has no plural: "1 季", "3 季"
         "zh" to WallpaperTexts("播放平台", "季", "季", "已看", "在看 · %d/%d", listSeparator = "、"),
         TRADITIONAL to WallpaperTexts("播放平台", "季", "季", "已看", "觀看中 · %d/%d", listSeparator = "、"),
@@ -153,6 +162,10 @@ object Languages {
             "Кассовые сборы", "Подобрано для вас", "Ваш список", "Избранное", "Аниме в тренде", "Буду смотреть", "Смотрю"),
         "uk" to listOf("У тренді", "Популярне", "Найкраще за оцінками", "У кіно", "Незабаром", "В ефірі", "Найочікуваніші",
             "Касові збори", "Підібрано для вас", "Ваш список", "Обране", "Аніме в тренді", "Буду дивитися", "Дивлюся"),
+        "ja" to listOf("トレンド", "人気", "高評価", "上映中", "近日公開", "放送中", "期待作",
+            "興行収入", "あなたへのおすすめ", "ウォッチリスト", "お気に入り", "トレンドアニメ", "見たい", "視聴中"),
+        "ko" to listOf("트렌드", "인기", "높은 평점", "상영 중", "개봉 예정", "방영 중", "기대작",
+            "박스오피스", "추천작", "보고 싶어요", "즐겨찾기", "인기 애니", "볼 예정", "시청 중"),
         "zh" to listOf("热门趋势", "人气之选", "高分佳作", "正在热映", "即将上映", "正在播出", "最受期待",
             "票房榜", "为你推荐", "你的待看", "你的收藏", "热门动画", "想看", "在看"),
         TRADITIONAL to listOf("熱門趨勢", "人氣之選", "高分佳作", "現正熱映", "即將上映", "現正播出", "最受期待",
@@ -225,6 +238,16 @@ object Languages {
         "ro" to mapOf(10766 to "Telenovelă", 10767 to "Talk-show"),
         "tr" to mapOf(10767 to "Talk şov"),
         "el" to mapOf(10766 to "Σαπουνόπερα", 10767 to "Talk show"),
+        // Japanese movie genres come oddly translated ("履歴" is a log, not History)
+        "ja" to mapOf(
+            36 to "歴史", 9648 to "ミステリー", 37 to "西部劇", 878 to "SF", 10759 to "アクション＆アドベンチャー", 10762 to "キッズ",
+            10763 to "ニュース", 10764 to "リアリティ", 10765 to "SF＆ファンタジー", 10766 to "ソープオペラ", 10767 to "トーク",
+            10768 to "戦争＆政治",
+        ),
+        "ko" to mapOf(
+            10759 to "액션 & 어드벤처", 10762 to "키즈", 10763 to "뉴스", 10764 to "리얼리티", 10765 to "SF & 판타지",
+            10766 to "연속극", 10767 to "토크", 10768 to "전쟁 & 정치",
+        ),
         "zh" to mapOf(10765 to "科幻奇幻", 10768 to "战争政治"),
         TRADITIONAL to mapOf(10765 to "科幻奇幻", 10768 to "戰爭政治"),
     )
@@ -233,7 +256,22 @@ object Languages {
 
     fun regionOf(language: String) = language.substringAfter('-', "US").uppercase()
 
-    fun texts(language: String) = TEXTS[textsKey(language)] ?: TEXTS.getValue("en")
+    fun texts(language: String) = (TEXTS[textsKey(language)] ?: TEXTS.getValue("en")).copy(locale = Locale.forLanguageTag(language))
+
+    /** Alphabets a wallpaper language is written in besides the Latin one, which every reader reads. */
+    private val SCRIPTS = mapOf(
+        "ru" to setOf(Character.UnicodeScript.CYRILLIC),
+        "uk" to setOf(Character.UnicodeScript.CYRILLIC),
+        "el" to setOf(Character.UnicodeScript.GREEK),
+        "ja" to setOf(Character.UnicodeScript.HAN, Character.UnicodeScript.HIRAGANA, Character.UnicodeScript.KATAKANA),
+        "ko" to setOf(Character.UnicodeScript.HANGUL),
+        "zh" to setOf(Character.UnicodeScript.HAN),
+    )
+
+    /** Can a reader of [language] read this letter? Latin ones always; "ー" and the like belong to no alphabet. */
+    fun reads(language: String, letter: Char): Boolean = Character.UnicodeScript.of(letter.code).let {
+        it == Character.UnicodeScript.LATIN || it == Character.UnicodeScript.COMMON || it in SCRIPTS[code(language)].orEmpty()
+    }
 
     /** Key of this file's tables: the language code, except Taiwan's and Hong Kong's Chinese (traditional characters). */
     private fun textsKey(language: String) = if (language in setOf("zh-TW", "zh-HK")) TRADITIONAL else code(language)

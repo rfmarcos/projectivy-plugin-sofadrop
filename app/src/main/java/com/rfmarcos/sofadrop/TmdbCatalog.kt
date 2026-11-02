@@ -327,7 +327,8 @@ class TmdbCatalog(
     // Its own request, only for the titles drawn: a series' aggregate credits (whole run, by episodes)
     // can be 300 KB, and its plain credits only list the latest season (no Pedro Pascal in The Last of Us)
     private fun cast(ref: TitleRef): List<CastMember> = castNames(
-        client.get("${ref.type.path}/${ref.tmdbId}/${if (ref.type == MediaType.TV) "aggregate_credits" else "credits"}?language=$language")
+        client.get("${ref.type.path}/${ref.tmdbId}/${if (ref.type == MediaType.TV) "aggregate_credits" else "credits"}?language=$language"),
+        language,
     )
 
     /** Prefer a backdrop without baked-in text, so it doesn't clash with the logo. */
@@ -352,8 +353,8 @@ class TmdbCatalog(
     /** Synopsis in the synopsis language, from another country if needed (es-MX for es-ES); empty when there is none. */
     private fun localOverview(ref: TitleRef, item: JsonObject): String = overviewIn(item, { translations(ref) }, partsFor(ref, item).synopsis, language)
 
-    /** The profile asks for English where the original is in another alphabet, and this title's is. */
-    private fun englishOnly(ref: TitleRef, item: JsonObject) = profile.latinOriginals && nonLatinOriginal(ref.type, item)
+    /** The profile asks for English where the original is in another alphabet than the wallpaper's, and this title's is. */
+    private fun englishOnly(ref: TitleRef, item: JsonObject) = profile.latinOriginals && foreignOriginal(ref.type, item, language)
 
     /**
      * [parts] for this title: with [englishOnly], English instead of the original language, and instead of
@@ -444,13 +445,12 @@ class TmdbCatalog(
 
         /**
          * First actors of TMDB credits, with their photo (already ordered by importance, or by episodes for a series),
-         * skipping the ones only written in another script: TMDB gives a person's name in Latin letters
-         * when it has it ("Lee Jung-jae") and in Hangul or kanji otherwise, which every wallpaper language
-         * (all in Latin script) would show as foreign text.
+         * skipping the ones only written in an alphabet [language] isn't: TMDB gives a person's name in Latin
+         * letters when it has it ("Lee Jung-jae") and in Hangul or kanji otherwise (fine on a Korean wallpaper).
          */
-        fun castNames(credits: JsonObject?): List<CastMember> = credits?.objects("cast").orEmpty()
+        fun castNames(credits: JsonObject?, language: String): List<CastMember> = credits?.objects("cast").orEmpty()
             .mapNotNull { person -> person.str("name")?.trim()?.takeIf(String::isNotEmpty)?.let { CastMember(it, person.str("profile_path")) } }
-            .filter { member -> member.name.all { !it.isLetter() || Character.UnicodeScript.of(it.code) == Character.UnicodeScript.LATIN } }
+            .filter { member -> member.name.all { !it.isLetter() || Languages.reads(language, it) } }
             .distinctBy { it.name }
             .take(MAX_CAST)
 
@@ -496,14 +496,14 @@ class TmdbCatalog(
 
         private fun originalKey(type: MediaType) = if (type == MediaType.MOVIE) "original_title" else "original_name"
 
-        /** Mostly letters of another alphabet than the Latin one: Japanese, Korean, Chinese, Cyrillic, Arabic… */
-        fun nonLatin(text: String): Boolean {
+        /** Mostly letters of an alphabet [language] isn't written in: Japanese, Korean, Cyrillic… on a Latin one. */
+        fun foreignScript(text: String, language: String): Boolean {
             val letters = text.filter(Char::isLetter)
-            return letters.isNotEmpty() && letters.count { Character.UnicodeScript.of(it.code) == Character.UnicodeScript.LATIN } * 2 < letters.length
+            return letters.isNotEmpty() && letters.count { Languages.reads(language, it) } * 2 < letters.length
         }
 
-        /** The title's original name is in another alphabet, see [nonLatin]. */
-        fun nonLatinOriginal(type: MediaType, item: JsonObject) = nonLatin(item.str(originalKey(type)).orEmpty())
+        /** The title's original name is in another alphabet than [language]'s, see [foreignScript]. */
+        fun foreignOriginal(type: MediaType, item: JsonObject, language: String) = foreignScript(item.str(originalKey(type)).orEmpty(), language)
 
         /** Language of the title's own translation: TMDB marks Cantonese titles "cn" and translates them as "zh". */
         private fun originalCode(item: JsonObject) = item.str("original_language").orEmpty().let { if (it == "cn") "zh" else it }

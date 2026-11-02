@@ -102,15 +102,25 @@ class PartLanguagesTest {
 
     @Test
     fun otherAlphabets() {
-        assertTrue(TmdbCatalog.nonLatin("千と千尋の神隠し"))
-        assertTrue(TmdbCatalog.nonLatin("오징어 게임"))
-        assertTrue(TmdbCatalog.nonLatin("Мастер и Маргарита"))
-        assertFalse(TmdbCatalog.nonLatin("Das Boot"))
-        assertFalse(TmdbCatalog.nonLatin("Amélie"))
+        assertTrue(TmdbCatalog.foreignScript("千と千尋の神隠し", "en-US"))
+        assertTrue(TmdbCatalog.foreignScript("오징어 게임", "es-ES"))
+        assertTrue(TmdbCatalog.foreignScript("Мастер и Маргарита", "de-DE"))
+        assertFalse(TmdbCatalog.foreignScript("Das Boot", "en-US"))
+        assertFalse(TmdbCatalog.foreignScript("Amélie", "en-US"))
         // Mostly Latin letters: readable as it is
-        assertFalse(TmdbCatalog.nonLatin("SPY×FAMILY"))
-        assertFalse(TmdbCatalog.nonLatin("1917"))
-        assertTrue(TmdbCatalog.nonLatinOriginal(MediaType.MOVIE, item))
+        assertFalse(TmdbCatalog.foreignScript("SPY×FAMILY", "en-US"))
+        assertFalse(TmdbCatalog.foreignScript("1917", "en-US"))
+        assertTrue(TmdbCatalog.foreignOriginal(MediaType.MOVIE, item, "en-US"))
+        // Foreign to the wallpaper language, not to the Latin alphabet
+        assertFalse(TmdbCatalog.foreignScript("Мастер и Маргарита", "ru-RU"))
+        assertFalse(TmdbCatalog.foreignScript("流浪地球", "zh-CN"))
+        assertFalse(TmdbCatalog.foreignScript("千と千尋の神隠し", "ja-JP"))
+        assertFalse(TmdbCatalog.foreignScript("ドライブ・マイ・カー", "ja-JP"))
+        assertFalse(TmdbCatalog.foreignScript("오징어 게임", "ko-KR"))
+        assertTrue(TmdbCatalog.foreignScript("오징어 게임", "zh-CN"))
+        assertTrue(TmdbCatalog.foreignScript("ドライブ・マイ・カー", "zh-TW"))
+        assertTrue(TmdbCatalog.foreignScript("Мастер и Маргарита", "el-GR"))
+        assertFalse(TmdbCatalog.foreignOriginal(MediaType.MOVIE, item, "ja-JP"))
     }
 
     @Test

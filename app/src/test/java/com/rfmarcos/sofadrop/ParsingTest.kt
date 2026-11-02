@@ -134,9 +134,11 @@ class ParsingTest {
         ) as kotlinx.serialization.json.JsonObject
         assertEquals(
             listOf(CastMember("Lee Jung-jae", "/lee.jpg"), CastMember("Yim Si-wan"), CastMember("Zoë Kravitz", "/zoe.jpg"), CastMember("Lee Byung-hun")),
-            TmdbCatalog.castNames(credits),
+            TmdbCatalog.castNames(credits, "en-US"),
         )
-        assertEquals(emptyList<CastMember>(), TmdbCatalog.castNames(null))
+        assertEquals(emptyList<CastMember>(), TmdbCatalog.castNames(null, "en-US"))
+        // On a Korean wallpaper, Hangul names are readable
+        assertEquals(listOf("Lee Jung-jae", "위하준", "Yim Si-wan", "강하늘"), TmdbCatalog.castNames(credits, "ko-KR").map { it.name })
     }
 
     @Test
@@ -165,6 +167,11 @@ class ParsingTest {
         assertEquals("觀看中 · %d/%d", Languages.texts("zh-HK").watching)
         assertEquals("戰爭政治", Languages.genreName("zh-TW", 10768, "War & Politics"))
         assertEquals("3 季", Languages.texts("zh-CN").seasonCount(3))
+        assertEquals("3シーズン", Languages.texts("ja-JP").seasonCount(3))
+        assertEquals("시즌 1개", Languages.texts("ko-KR").seasonCount(1))
+        assertEquals("ja-JP", Languages.defaultFor(java.util.Locale.forLanguageTag("ja-JP")))
+        assertEquals("歴史", Languages.genreName("ja-JP", 36, "履歴"))
+        assertEquals(java.util.Locale.TRADITIONAL_CHINESE.language, Languages.texts("zh-TW").locale.language)
         // Every language has its own texts and list names, not the English fallback
         Languages.OPTIONS.keys.filterNot { it.startsWith("en") }.forEach { language ->
             assertNotEquals(language, Languages.texts("en-US"), Languages.texts(language))

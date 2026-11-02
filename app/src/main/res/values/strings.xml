@@ -460,7 +460,7 @@
     <string name="part_summary_skips">skips titles</string>
     <string name="part_summary_latin">other alphabets in English</string>
     <string name="latin_originals_title">Other alphabets in English</string>
-    <string name="latin_originals_desc">Japanese, Korean, Chinese, Cyrillic… titles: logo, title and synopsis in English where they\'d be in the original language or untranslated</string>
+    <string name="latin_originals_desc">Titles in another alphabet than the wallpaper language (Japanese, Korean, Cyrillic… on a Latin one): logo, title and synopsis in English where they\'d be in the original language or untranslated</string>
     <string name="logo_language_title">Logo language</string>
     <string name="general_language_title">General language</string>
     <string name="synopsis_language_title">Synopsis language</string>

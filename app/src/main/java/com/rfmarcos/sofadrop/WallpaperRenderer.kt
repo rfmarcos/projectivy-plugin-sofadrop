@@ -774,6 +774,7 @@ class WallpaperRenderer(
 
     private fun textPaint(typeface: Typeface, size: Float, color: Int) = Paint(Paint.ANTI_ALIAS_FLAG or Paint.SUBPIXEL_TEXT_FLAG).apply {
         this.typeface = typeface
+        textLocale = texts.locale
         textSize = size
         this.color = color
     }
