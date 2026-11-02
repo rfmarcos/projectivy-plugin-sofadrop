@@ -6,6 +6,10 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- Updates come from the GitHub releases (no store): the system installer still asks the user -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- Android 9 and older: saving the settings file in Download (see SettingsFile) -->
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
 
     <uses-feature
         android:name="android.hardware.touchscreen"
@@ -16,6 +20,15 @@
 
     <queries>
         <package android:name="com.spocky.projengmenu" />
+        <!-- The settings file: a picker to import it, apps to share it with (see SettingsFile) -->
+        <intent>
+            <action android:name="android.intent.action.OPEN_DOCUMENT" />
+            <data android:mimeType="*/*" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.SEND" />
+            <data android:mimeType="application/json" />
+        </intent>
         <!-- Where a wallpaper can open its title (TitleApp) and its trailer -->
         <package android:name="com.nuvio.tv" />
         <package android:name="com.nuvio.app" />
@@ -65,6 +78,16 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.LAUNCHER" />
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+            <!-- A settings file (sofadrop-settings.json) opened or shared from a file manager: see SettingsFile -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" />
+                <data android:mimeType="application/json" />
+                <data android:mimeType="text/json" />
+                <data android:mimeType="text/x-json" />
             </intent-filter>
         </activity>
 
@@ -141,6 +164,17 @@
                 android:name="updateMode"
                 android:value="1" />
         </service>
+
+        <!-- The settings file shared with another app (see SettingsFile.shareIntent) -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.files"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/shared_files" />
+        </provider>
 
         <!-- Shares the generated wallpapers with Projectivy -->
         <!-- Read-only wallpapers for Projectivy, no per-URI grants (see WallpaperContentProvider) -->

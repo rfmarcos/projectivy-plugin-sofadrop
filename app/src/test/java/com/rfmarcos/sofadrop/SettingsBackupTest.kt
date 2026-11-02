@@ -52,6 +52,17 @@ class SettingsBackupTest {
     }
 
     @Test
+    fun settingsFileIsMarkedAndTheMarkIsNotImported() {
+        val file = """{"_sofadrop":"1.2.0",""" + Settings.exportJson(choices).removePrefix("{")
+        assertEquals("1.2.0", SettingsFile.version(file))
+        assertEquals(choices, Settings.importValues(file))
+        // A Projectivy backup or any other JSON isn't a settings file
+        assertNull(SettingsFile.version(Settings.exportJson(choices)))
+        assertNull(SettingsFile.version("not json"))
+        assertNull(SettingsFile.version("""["_sofadrop"]"""))
+    }
+
+    @Test
     fun choicesSurviveARoundTrip() {
         assertEquals(choices, Settings.importValues(Settings.exportJson(choices)))
     }

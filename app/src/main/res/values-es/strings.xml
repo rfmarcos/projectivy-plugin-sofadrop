@@ -532,4 +532,25 @@
         <item quantity="one">Elige otra vez para desbloquear %d título</item>
         <item quantity="other">Elige otra vez para desbloquear los %d títulos</item>
     </plurals>
+    <string name="settings_file_title">Exportar e importar ajustes</string>
+    <string name="settings_file_desc">Configura otra TV igual, con un archivo</string>
+    <string name="settings_file_explanation">Para configurar otra TV igual: guarda los ajustes en un archivo, llévalo allí (Send files to TV, un USB, Google Drive, un gestor de archivos…) e impórtalo con Sofadrop. Las cuentas y las claves de API no van en el archivo: vuelve a conectarlas en la otra TV.</string>
+    <string name="settings_file_save">Guardar en Descargas</string>
+    <string name="settings_file_in_downloads">Download/%1$s</string>
+    <string name="settings_file_saved">Guardado en Download/%1$s</string>
+    <string name="settings_file_save_failed">No se ha podido guardar el archivo</string>
+    <string name="settings_file_share">Compartir el archivo</string>
+    <string name="settings_file_share_desc">Envíalo a un gestor de archivos, Google Drive u otra app</string>
+    <string name="settings_file_share_none">Ninguna app de esta TV puede recibirlo: guárdalo en Descargas</string>
+    <string name="settings_file_import">Importar desde un archivo</string>
+    <string name="settings_file_import_desc">Elige un archivo %1$s</string>
+    <string name="settings_file_import_no_picker">Abre %1$s con Sofadrop desde un gestor de archivos</string>
+    <string name="settings_import_title">¿Importar estos ajustes?</string>
+    <string name="settings_import_desc">Sustituyen las listas, los filtros, los detalles del fondo y el salvapantallas de esta TV, y los fondos se vuelven a generar. Las cuentas se quedan como están.</string>
+    <string name="settings_import_confirm">Importar</string>
+    <string name="settings_import_reading">Leyendo el archivo…</string>
+    <string name="settings_import_from">%1$s · de Sofadrop %2$s</string>
+    <string name="settings_import_done">Ajustes importados</string>
+    <string name="settings_import_invalid">Este archivo no es de ajustes de Sofadrop</string>
+    <string name="settings_import_unreadable">No se ha podido leer el archivo</string>
 </resources>

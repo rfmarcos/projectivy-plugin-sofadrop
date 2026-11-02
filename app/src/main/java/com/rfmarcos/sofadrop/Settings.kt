@@ -683,7 +683,8 @@ object Settings {
 
     fun export(): String = exportJson(preferences.all)
 
-    fun import(prefs: String): Boolean {
+    /** With [replace], the settings the backup doesn't have (never changed there) go back to their defaults. */
+    fun import(prefs: String, replace: Boolean = false): Boolean {
         val values = try {
             importValues(prefs)
         } catch (e: Exception) {
@@ -692,6 +693,7 @@ object Settings {
         }
         val stored = preferences.all
         preferences.edit {
+            if (replace) stored.keys.filter { inBackup(it) && it !in values }.forEach { remove(it) }
             // Another place: its coordinates are looked up again (see inBackup)
             if (values[KEY_WEATHER_PLACE] != stored[KEY_WEATHER_PLACE]) remove(KEY_WEATHER_COORDINATES)
             values.forEach { (key, imported) ->

@@ -1,5 +1,7 @@
 package com.rfmarcos.sofadrop
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.addCallback
 import androidx.fragment.app.FragmentActivity
@@ -13,8 +15,11 @@ class SettingsActivity : FragmentActivity() {
 
         if (savedInstanceState == null) {
             GuidedStepSupportFragment.addAsRoot(this, SettingsFragment(), android.R.id.content)
+            val file = settingsFile(intent)
+            // A settings file opened with Sofadrop (from a file manager): asks before importing it
+            if (file != null) GuidedStepSupportFragment.add(supportFragmentManager, SettingsImportFragment.newInstance(file))
             // First run: the wizard over the settings, which are there when it ends
-            if (Wizard.shouldOffer()) Wizard.start(supportFragmentManager)
+            else if (Wizard.shouldOffer()) Wizard.start(supportFragmentManager)
         }
 
         // Back on the first screen finishes the settings. Otherwise Android 12+ moves a launcher task to
@@ -30,6 +35,13 @@ class SettingsActivity : FragmentActivity() {
                 isEnabled = true
             }
         }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun settingsFile(intent: Intent?): Uri? = when (intent?.action) {
+        Intent.ACTION_VIEW -> intent.data
+        Intent.ACTION_SEND -> intent.getParcelableExtra(Intent.EXTRA_STREAM)
+        else -> null
     }
 
     override fun onPause() {

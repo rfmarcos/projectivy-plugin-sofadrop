@@ -540,4 +540,25 @@
         <item quantity="one">Kies nog eens om %d titel te deblokkeren</item>
         <item quantity="other">Kies nog eens om alle %d titels te deblokkeren</item>
     </plurals>
+    <string name="settings_file_title">Instellingen exporteren en importeren</string>
+    <string name="settings_file_desc">Stel een andere tv op dezelfde manier in, met een bestand</string>
+    <string name="settings_file_explanation">Om een andere tv op dezelfde manier in te stellen: sla de instellingen op in een bestand, breng het daarheen (Send files to TV, een usb-stick, Google Drive, een bestandsbeheerder…) en importeer het met Sofadrop. Accounts en API-sleutels staan niet in het bestand: verbind ze opnieuw op de andere tv.</string>
+    <string name="settings_file_save">Opslaan in Downloads</string>
+    <string name="settings_file_in_downloads">Download/%1$s</string>
+    <string name="settings_file_saved">Opgeslagen in Download/%1$s</string>
+    <string name="settings_file_save_failed">Kan het bestand niet opslaan</string>
+    <string name="settings_file_share">Bestand delen</string>
+    <string name="settings_file_share_desc">Stuur het naar een bestandsbeheerder, Google Drive of een andere app</string>
+    <string name="settings_file_share_none">Geen app op deze tv kan het ontvangen: sla het op in Downloads</string>
+    <string name="settings_file_import">Importeren uit een bestand</string>
+    <string name="settings_file_import_desc">Kies een bestand %1$s</string>
+    <string name="settings_file_import_no_picker">Open %1$s met Sofadrop vanuit een bestandsbeheerder</string>
+    <string name="settings_import_title">Deze instellingen importeren?</string>
+    <string name="settings_import_desc">Ze vervangen de lijsten, filters, achtergronddetails en screensaver van deze tv, en de achtergronden worden opnieuw gemaakt. Accounts blijven zoals ze zijn.</string>
+    <string name="settings_import_confirm">Importeren</string>
+    <string name="settings_import_reading">Bestand lezen…</string>
+    <string name="settings_import_from">%1$s · van Sofadrop %2$s</string>
+    <string name="settings_import_done">Instellingen geïmporteerd</string>
+    <string name="settings_import_invalid">Dit is geen instellingenbestand van Sofadrop</string>
+    <string name="settings_import_unreadable">Kan het bestand niet lezen</string>
 </resources>

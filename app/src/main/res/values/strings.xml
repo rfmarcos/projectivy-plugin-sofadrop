@@ -550,4 +550,25 @@
         <item quantity="one">Choose again to unblock %d title</item>
         <item quantity="other">Choose again to unblock all %d titles</item>
     </plurals>
+    <string name="settings_file_title">Export and import settings</string>
+    <string name="settings_file_desc">Set up another TV the same way, with a file</string>
+    <string name="settings_file_explanation">To set up another TV the same way: save the settings in a file, take it there (Send files to TV, a USB stick, Google Drive, a file manager…) and import it with Sofadrop. Accounts and API keys aren\'t in the file: connect them again on the other TV.</string>
+    <string name="settings_file_save">Save in Downloads</string>
+    <string name="settings_file_in_downloads">Download/%1$s</string>
+    <string name="settings_file_saved">Saved in Download/%1$s</string>
+    <string name="settings_file_save_failed">Couldn\'t save the file</string>
+    <string name="settings_file_share">Share the file</string>
+    <string name="settings_file_share_desc">Send it to a file manager, Google Drive or another app</string>
+    <string name="settings_file_share_none">No app on this TV can receive it: save it in Downloads instead</string>
+    <string name="settings_file_import">Import from a file</string>
+    <string name="settings_file_import_desc">Choose a %1$s file</string>
+    <string name="settings_file_import_no_picker">Open %1$s with Sofadrop from a file manager</string>
+    <string name="settings_import_title">Import these settings?</string>
+    <string name="settings_import_desc">They replace this TV\'s lists, filters, wallpaper details and screensaver, and the wallpapers are made again. Accounts stay as they are.</string>
+    <string name="settings_import_confirm">Import</string>
+    <string name="settings_import_reading">Reading the file…</string>
+    <string name="settings_import_from">%1$s · from Sofadrop %2$s</string>
+    <string name="settings_import_done">Settings imported</string>
+    <string name="settings_import_invalid">This isn\'t a Sofadrop settings file</string>
+    <string name="settings_import_unreadable">Couldn\'t read the file</string>
 </resources>
