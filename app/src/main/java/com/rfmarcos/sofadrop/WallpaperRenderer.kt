@@ -313,7 +313,7 @@ class WallpaperRenderer(
                 Settings.HEADER_WATCHED -> info.watchStatus?.let { WatchBlock(it) }
                 Settings.HEADER_YEAR -> YearBlock(info.year, info.certification.orEmpty(), metaPaint).takeIf { it.width > 0 }
                 Settings.HEADER_RUNTIME -> info.extraInfo.takeIf { it.isNotEmpty() }?.let { TextBlock(it, metaPaint) }
-                Settings.HEADER_GENRES -> genres.take(genreCount).takeIf { it.isNotEmpty() }?.let { TextBlock(it.joinToString(", "), metaPaint) }
+                Settings.HEADER_GENRES -> genres.take(genreCount).takeIf { it.isNotEmpty() }?.let { TextBlock(it.joinToString(texts.listSeparator), metaPaint) }
                 else -> null
             }?.also { it.key = block }
         }
@@ -839,27 +839,52 @@ class WallpaperRenderer(
         }
 
         /** Word wrap by measured width, ending with "…" when truncated. */
-        fun wrap(text: String, paint: Paint, maxWidth: Float, maxLines: Int): List<String> {
+        fun wrap(text: String, paint: Paint, maxWidth: Float, maxLines: Int): List<String> =
+            wrap(text, maxWidth, maxLines) { paint.measureText(it) }
+
+        fun wrap(text: String, maxWidth: Float, maxLines: Int, measure: (String) -> Float): List<String> {
             val lines = mutableListOf<String>()
             var current = ""
-            for (word in text.split(Regex("\\s+")).filter { it.isNotEmpty() }) {
-                val candidate = if (current.isEmpty()) word else "$current $word"
-                if (paint.measureText(candidate) <= maxWidth || current.isEmpty()) {
+            for (piece in pieces(text)) {
+                val candidate = current + piece
+                if (measure(candidate.trimEnd()) <= maxWidth || current.isBlank()) {
                     current = candidate
                 } else {
-                    lines += current
-                    current = word
+                    lines += current.trimEnd()
+                    current = piece
                 }
             }
-            if (current.isNotEmpty()) lines += current
+            if (current.isNotBlank()) lines += current.trimEnd()
             if (lines.size <= maxLines) return lines
 
             val kept = lines.take(maxLines).toMutableList()
-            var last = kept.last()
-            while (' ' in last && paint.measureText("$last…") > maxWidth) last = last.substringBeforeLast(' ')
-            kept[kept.lastIndex] = last.trimEnd(',', '.', ';', ':') + "…"
+            val last = pieces(kept.last()).toMutableList()
+            while (last.size > 1 && measure(last.joinToString("").trimEnd() + "…") > maxWidth) last.removeAt(last.lastIndex)
+            kept[kept.lastIndex] = last.joinToString("").trimEnd().trimEnd(',', '.', ';', ':', '，', '。', '、', '；', '：') + "…"
             return kept
         }
+
+        /**
+         * Where a line may end: after each word (with its space), and in Chinese and Japanese, which
+         * don't use spaces, also between characters (the line break rules keep "。" off a line start).
+         */
+        private fun pieces(text: String): List<String> = text.split(Regex("\\s+")).filter { it.isNotEmpty() }.flatMap { word ->
+            if (word.none(::isCjk)) return@flatMap listOf("$word ")
+            val breaks = java.text.BreakIterator.getLineInstance().apply { setText(word) }
+            val parts = mutableListOf<String>()
+            var start = breaks.first()
+            var end = breaks.next()
+            while (end != java.text.BreakIterator.DONE) {
+                parts += word.substring(start, end)
+                start = end
+                end = breaks.next()
+            }
+            parts[parts.lastIndex] = parts.last() + " "
+            parts
+        }
+
+        private fun isCjk(c: Char) = Character.UnicodeScript.of(c.code) in
+            setOf(Character.UnicodeScript.HAN, Character.UnicodeScript.HIRAGANA, Character.UnicodeScript.KATAKANA)
 
         /** Side of a cast face on a [width]-pixel wallpaper. */
         fun castPhotoSize(width: Int) = CAST_PHOTO_SIZE * width / 3840

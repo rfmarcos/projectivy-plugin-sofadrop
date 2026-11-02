@@ -13,6 +13,8 @@ data class WallpaperTexts(
     val plural: Plural = Plural.ONE_OTHER,
     /** Slavic form for 2–4 seasons ("2 sezony"). */
     val seasonsFew: String? = null,
+    /** Between genres: "Horror, Action", "恐怖、动作". */
+    val listSeparator: String = ", ",
 ) {
     /** "1 Season", "3 Seasons", with the language's plural forms. */
     fun seasonCount(n: Int): String {
@@ -71,12 +73,15 @@ object Languages {
         "el-GR" to "Ελληνικά",
         "ru-RU" to "Русский",
         "uk-UA" to "Українська",
+        "zh-CN" to "简体中文",
+        "zh-TW" to "繁體中文 (台灣)",
+        "zh-HK" to "繁體中文 (香港)",
     )
 
     /** Countries offered for streaming services. */
     val REGIONS = listOf(
         "US", "GB", "CA", "ES", "MX", "AR", "CO", "CL", "BR", "PT", "FR", "IT", "DE", "NL", "SE", "NO", "DK", "FI",
-        "PL", "CZ", "HU", "RO", "TR", "GR", "RU", "UA",
+        "PL", "CZ", "HU", "RO", "TR", "GR", "RU", "UA", "TW", "HK",
     )
 
     /** Original languages that never need the "global hit" vote threshold. */
@@ -103,6 +108,9 @@ object Languages {
         "el" to WallpaperTexts("Διαθέσιμο σε", "Κύκλος", "Κύκλοι", "Το είδατε", "Σε εξέλιξη · %d/%d"),
         "ru" to WallpaperTexts("Доступно на", "Сезон", "Сезонов", "Просмотрено", "Смотрю · %d/%d", Plural.EAST_SLAVIC, "Сезона"),
         "uk" to WallpaperTexts("Доступно на", "Сезон", "Сезонів", "Переглянуто", "Дивлюся · %d/%d", Plural.EAST_SLAVIC, "Сезони"),
+        // Chinese has no plural: "1 季", "3 季"
+        "zh" to WallpaperTexts("播放平台", "季", "季", "已看", "在看 · %d/%d", listSeparator = "、"),
+        TRADITIONAL to WallpaperTexts("播放平台", "季", "季", "已看", "觀看中 · %d/%d", listSeparator = "、"),
     )
 
     /** Short list names for the wallpaper footer ("Trending · TMDB"), by kind of list. */
@@ -145,6 +153,10 @@ object Languages {
             "Кассовые сборы", "Подобрано для вас", "Ваш список", "Избранное", "Аниме в тренде", "Буду смотреть", "Смотрю"),
         "uk" to listOf("У тренді", "Популярне", "Найкраще за оцінками", "У кіно", "Незабаром", "В ефірі", "Найочікуваніші",
             "Касові збори", "Підібрано для вас", "Ваш список", "Обране", "Аніме в тренді", "Буду дивитися", "Дивлюся"),
+        "zh" to listOf("热门趋势", "人气之选", "高分佳作", "正在热映", "即将上映", "正在播出", "最受期待",
+            "票房榜", "为你推荐", "你的待看", "你的收藏", "热门动画", "想看", "在看"),
+        TRADITIONAL to listOf("熱門趨勢", "人氣之選", "高分佳作", "現正熱映", "即將上映", "現正播出", "最受期待",
+            "票房榜", "為你推薦", "你的待看", "你的收藏", "熱門動畫", "想看", "觀看中"),
     )
 
     /** Same order as each [SOURCE_LABELS] list; matched against the list key without its provider. */
@@ -162,7 +174,7 @@ object Languages {
         val key = source.key.substringAfter(':')
         // Longest match first, so "trending_anime" wins over "trending"
         val kind = SOURCE_KINDS.withIndex().filter { key.startsWith(it.value) }.maxByOrNull { it.value.length }?.index ?: 0
-        return (SOURCE_LABELS[code(language)] ?: SOURCE_LABELS.getValue("en"))[kind]
+        return (SOURCE_LABELS[textsKey(language)] ?: SOURCE_LABELS.getValue("en"))[kind]
     }
 
     // TMDB returns some genres untranslated (mostly the TV-only ones) or, in Norwegian, blank; by genre id
@@ -213,20 +225,27 @@ object Languages {
         "ro" to mapOf(10766 to "Telenovelă", 10767 to "Talk-show"),
         "tr" to mapOf(10767 to "Talk şov"),
         "el" to mapOf(10766 to "Σαπουνόπερα", 10767 to "Talk show"),
+        "zh" to mapOf(10765 to "科幻奇幻", 10768 to "战争政治"),
+        TRADITIONAL to mapOf(10765 to "科幻奇幻", 10768 to "戰爭政治"),
     )
 
     fun code(language: String) = language.substringBefore('-').lowercase()
 
     fun regionOf(language: String) = language.substringAfter('-', "US").uppercase()
 
-    fun texts(language: String) = TEXTS[code(language)] ?: TEXTS.getValue("en")
+    fun texts(language: String) = TEXTS[textsKey(language)] ?: TEXTS.getValue("en")
+
+    /** Key of this file's tables: the language code, except Taiwan's and Hong Kong's Chinese (traditional characters). */
+    private fun textsKey(language: String) = if (language in setOf("zh-TW", "zh-HK")) TRADITIONAL else code(language)
+
+    private const val TRADITIONAL = "zh-Hant"
 
     /**
      * Genre name in [language]: TMDB's [name] unless it is missing or untranslated; null when there is
      * none. Capitalised, since TMDB writes some in lower case (Russian movie genres).
      */
     fun genreName(language: String, id: Int?, name: String?): String? =
-        (GENRE_NAMES[code(language)]?.get(id) ?: name)?.trim()?.takeIf { it.isNotEmpty() }?.replaceFirstChar { it.titlecase() }
+        (GENRE_NAMES[textsKey(language)]?.get(id) ?: name)?.trim()?.takeIf { it.isNotEmpty() }?.replaceFirstChar { it.titlecase() }
 
     fun defaultFor(locale: Locale): String {
         val tag = "${locale.language}-${locale.country}"
@@ -235,6 +254,8 @@ object Languages {
             locale.language == "es" -> "es-ES"
             locale.language == "pt" -> "pt-BR"
             locale.language in setOf("nb", "nn", "no") -> "no-NO"
+            // Macau, or traditional characters elsewhere
+            locale.language == "zh" -> if (locale.country == "MO") "zh-HK" else if (locale.script == "Hant") "zh-TW" else "zh-CN"
             else -> OPTIONS.keys.firstOrNull { it.startsWith(locale.language + "-") } ?: "en-US"
         }
     }

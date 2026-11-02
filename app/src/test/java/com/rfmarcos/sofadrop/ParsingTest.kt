@@ -157,6 +157,14 @@ class ParsingTest {
         assertEquals("Ужасы", Languages.genreName("ru-RU", 27, "ужасы"))
         assertEquals("no-NO", Languages.defaultFor(java.util.Locale.forLanguageTag("nb-NO")))
         assertEquals("uk-UA", Languages.defaultFor(java.util.Locale.forLanguageTag("uk-UA")))
+        // Chinese: simplified, or traditional characters for Taiwan and Hong Kong
+        assertEquals("zh-CN", Languages.defaultFor(java.util.Locale.forLanguageTag("zh-Hans-CN")))
+        assertEquals("zh-TW", Languages.defaultFor(java.util.Locale.forLanguageTag("zh-Hant-TW")))
+        assertEquals("zh-HK", Languages.defaultFor(java.util.Locale.forLanguageTag("zh-MO")))
+        assertEquals("在看 · %d/%d", Languages.texts("zh-CN").watching)
+        assertEquals("觀看中 · %d/%d", Languages.texts("zh-HK").watching)
+        assertEquals("戰爭政治", Languages.genreName("zh-TW", 10768, "War & Politics"))
+        assertEquals("3 季", Languages.texts("zh-CN").seasonCount(3))
         // Every language has its own texts and list names, not the English fallback
         Languages.OPTIONS.keys.filterNot { it.startsWith("en") }.forEach { language ->
             assertNotEquals(language, Languages.texts("en-US"), Languages.texts(language))
@@ -176,6 +184,25 @@ class ParsingTest {
         assertEquals(listOf("1 Сезон", "3 Сезони", "5 Сезонів"), count("uk-UA", 1, 3, 5))
         assertEquals(listOf("1 Sezon", "19 Sezoane", "20 de Sezoane", "36 de Sezoane"), count("ro-RO", 1, 19, 20, 36))
         assertEquals(listOf("1 Évad", "5 Évad"), count("hu-HU", 1, 5))
+    }
+
+    @Test
+    fun wrapBreaksWordsAndChineseText() {
+        // One unit per character, so a line holds up to 10
+        fun wrap(text: String, lines: Int) = WallpaperRenderer.wrap(text, 10f, lines) { it.length.toFloat() }
+        assertEquals(listOf("The quick", "brown fox", "jumps"), wrap("The quick  brown fox jumps", 9))
+        assertEquals(listOf("The quick", "brown fox…"), wrap("The quick brown fox jumps", 2))
+        assertEquals(listOf("The quick", "brownish…"), wrap("The quick brownish fox jumps", 2))
+        // No spaces: between characters, and "，" / "。" never start a line
+        val synopsis = "道姆·柯布与同事阿瑟和纳什在一次行动中失败，反被齐藤利用。齐藤威逼利诱柯布帮他。"
+        val lines = wrap(synopsis, 9)
+        assertEquals(synopsis, lines.joinToString(""))
+        assertTrue(lines.all { it.length <= 10 })
+        assertTrue(lines.none { it.startsWith("，") || it.startsWith("。") })
+        assertEquals(2, wrap(synopsis, 2).size)
+        assertTrue(wrap(synopsis, 2).last().endsWith("…"))
+        // Latin names inside Chinese text keep their space
+        assertEquals(listOf("Dom Cobb 是", "一名精于潜盗的神偷"), wrap("Dom Cobb 是一名精于潜盗的神偷", 9))
     }
 
     @Test
