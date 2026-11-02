@@ -184,18 +184,30 @@ def render_icon(px, shape="square", transparent=False, ss=4):
     return img.resize((px, px), Image.LANCZOS)
 
 
-def render_banner(w, h, font_path):
+def render_banner(w, h, font_path, transparent=False):
+    """Icon on the left, wordmark on the right; transparent: no background or tile, the pair centred."""
     ss = 4; W, H = w * ss, h * ss
-    img = Image.new("RGBA", (W, H), hex2rgb("#0E0E14") + (255,))
-    # Icon tile on the left, wordmark on the right
-    tile = int(H * 0.56); tx = int(H * 0.12); ty = (H - tile) // 2
-    icon = render_icon(tile // ss, "rounded").resize((tile, tile), Image.LANCZOS)
-    img.alpha_composite(icon, (tx, ty))
+    img = Image.new("RGBA", (W, H), (0, 0, 0, 0) if transparent else hex2rgb("#0E0E14") + (255,))
     font = ImageFont.truetype(font_path, int(H * 0.215))
     d = ImageDraw.Draw(img)
     tb = d.textbbox((0, 0), "Sofadrop", font=font)
-    d.text((tx + tile + int(H * 0.09), (H - (tb[3] - tb[1])) // 2 - tb[1]), "Sofadrop", font=font, fill=(255, 255, 255, 255))
-    return img.resize((w, h), Image.LANCZOS).convert("RGB")
+    tile = int(H * 0.56)
+    if transparent:
+        # Without the tile the artwork is all there is: as tall as the tile, then the text, centred together
+        art = render_icon(tile // ss, transparent=True).resize((tile, tile), Image.LANCZOS)
+        art = art.crop(art.getbbox())
+        art = art.resize((art.width * int(H * 0.5) // art.height, int(H * 0.5)), Image.LANCZOS)
+        gap = int(H * 0.09)
+        tx = (W - art.width - gap - (tb[2] - tb[0])) // 2
+        img.alpha_composite(art, (tx, (H - art.height) // 2))
+        text_x = tx + art.width + gap - tb[0]
+    else:
+        tx = int(H * 0.12)
+        img.alpha_composite(render_icon(tile // ss, "rounded").resize((tile, tile), Image.LANCZOS), (tx, (H - tile) // 2))
+        text_x = tx + tile + int(H * 0.09)
+    d.text((text_x, (H - (tb[3] - tb[1])) // 2 - tb[1]), "Sofadrop", font=font, fill=(255, 255, 255, 255))
+    img = img.resize((w, h), Image.LANCZOS)
+    return img if transparent else img.convert("RGB")
 
 
 def vector_xml(foreground):
@@ -276,6 +288,7 @@ def export(out):
             f.write(svg(background))
         render_icon(1024, transparent=not background, ss=3).save(os.path.join(out, f"{name}.png"), optimize=True)
     render_banner(1280, 720, font).save(os.path.join(out, "sofadrop-banner.png"), optimize=True)
+    render_banner(1280, 720, font, transparent=True).save(os.path.join(out, "sofadrop-banner-transparent.png"), optimize=True)
 
 
 if __name__ == "__main__":
