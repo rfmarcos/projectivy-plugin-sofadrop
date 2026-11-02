@@ -371,6 +371,7 @@
     <string name="list_simkl_recommended_shows">Simkl · Series recomendadas para ti</string>
     <string name="list_simkl_recommended_anime">Simkl · Anime recomendado para ti</string>
     <string name="list_simkl_premium">Con Simkl PRO o VIP</string>
+    <string name="list_needs_simkl_premium">Conecta una cuenta de Simkl PRO o VIP para usarla</string>
     <string name="error_simkl_premium">Las recomendaciones de Simkl necesitan una cuenta PRO o VIP</string>
     <string name="simkl_lists_description">Listas de Simkl, el tracker de series, películas y anime. Conecta tu cuenta para tus listas Pendientes y Viendo, y con PRO o VIP tus recomendaciones; su historial puede marcar u ocultar lo que has visto (Historial de vistos, en Filtros y explorar listas).</string>
     <string name="simkl_login_ok">Simkl conectado como %1$s</string>

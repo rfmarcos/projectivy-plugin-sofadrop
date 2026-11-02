@@ -379,6 +379,7 @@
     <string name="list_simkl_recommended_shows">Simkl · Aanbevolen series voor jou</string>
     <string name="list_simkl_recommended_anime">Simkl · Aanbevolen anime voor jou</string>
     <string name="list_simkl_premium">Met Simkl PRO of VIP</string>
+    <string name="list_needs_simkl_premium">Verbind een Simkl PRO- of VIP-account om deze te gebruiken</string>
     <string name="error_simkl_premium">De aanbevelingen van Simkl vereisen een PRO- of VIP-account</string>
     <string name="simkl_lists_description">Lijsten van Simkl, de tracker voor series, films en anime. Verbind je account voor je lijsten Plan to watch en Watching, en met PRO of VIP je aanbevelingen; met de geschiedenis kun je markeren of verbergen wat je al gezien hebt (Kijkgeschiedenis, bij Filters &amp; lijsten verkennen).</string>
     <string name="simkl_login_ok">Simkl verbonden als %1$s</string>

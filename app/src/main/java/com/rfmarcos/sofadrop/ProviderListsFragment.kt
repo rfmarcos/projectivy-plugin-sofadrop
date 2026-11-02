@@ -43,11 +43,12 @@ class ProviderListsFragment : BaseSettingsFragment() {
         )
         return listOf(accountAction()) + userLists + lists.mapIndexed { index, source ->
             val usable = publicUsable && !(source.needsAccount && !connected)
+            val premium = source.key.startsWith("simkl:recommended")
             checkbox(ID_LIST_BASE + index, Sources.label(requireContext(), source).substringAfter(" · "),
                 when {
-                    !usable -> getString(R.string.list_needs_account)
+                    !usable -> getString(if (premium) R.string.list_needs_simkl_premium else R.string.list_needs_account)
                     profile.listFilters[source.key]?.isDefault == false -> Filters.listFiltersSummary(requireContext(), profile, source)
-                    source.key.startsWith("simkl:recommended") -> getString(R.string.list_simkl_premium)
+                    premium -> getString(R.string.list_simkl_premium)
                     else -> null
                 }, usable && source.key in selected)
                 .enabled(usable)
