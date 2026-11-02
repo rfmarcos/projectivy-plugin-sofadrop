@@ -13,6 +13,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.floatOrNull
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
@@ -112,8 +113,10 @@ object Settings {
     fun isYear(maxAge: Int) = maxAge >= FIRST_YEAR
 
     /** A typed year, when it is one (1900 to next year). */
-    fun parseYear(text: String): Int? =
-        text.trim().toIntOrNull()?.takeIf { it in FIRST_YEAR..java.util.Calendar.getInstance().get(java.util.Calendar.YEAR) + 1 }
+    fun parseYear(text: String): Int? = text.trim().toIntOrNull()?.takeIf { it in FIRST_YEAR..lastYear }
+
+    /** The latest year that can be typed: next year. */
+    val lastYear: Int get() = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR) + 1
     /** Years; 0 means no limit. */
     val MAX_RATING_AGE_OPTIONS = listOf(0, 7, 12, 16)
     /** TMDB score out of 10; 0 means no limit. */
@@ -176,6 +179,7 @@ object Settings {
     private const val KEY_UPDATE_VERSION = "_update_version"
     private const val KEY_PROJECTIVY_ASKED = "_projectivy_asked_at"
     private const val KEY_WIZARD_SHOWN = "_wizard_shown"
+    private const val KEY_FRESH_INSTALL = "_fresh_install"
     private const val KEY_SCREENSAVER_SHOWN = "_screensaver_shown_at"
     private const val KEY_UPDATE_APK = "_update_apk"
     private const val KEY_UPDATE_NOTES = "_update_notes"
@@ -209,6 +213,12 @@ object Settings {
     fun init(context: Context) {
         if (!::preferences.isInitialized) {
             preferences = PreferenceManager.getDefaultSharedPreferences(context.applicationContext)
+            // A fresh install, whatever opens first (the settings or Projectivy's request): the guided setup is
+            // due, and the cast is on. Someone updating keeps what they had
+            if (preferences.all.isEmpty()) {
+                preferences.edit { putBoolean(KEY_FRESH_INSTALL, true) }
+                Profile.WALLPAPER.showCast = true
+            }
             // Scopes of earlier versions (replaced by per-list filters) and the dropped launcher guide
             preferences.edit { OLD_FILTER_KEYS.forEach(::remove) }
         }
@@ -427,10 +437,13 @@ object Settings {
         get() = preferences.getLong(KEY_PROJECTIVY_ASKED, 0)
         set(value) = preferences.edit { putLong(KEY_PROJECTIVY_ASKED, value) }
 
-    /** The setup wizard opened by itself once (see [Wizard.offer]). */
+    /** The setup wizard opened by itself once (see [Wizard.shouldOffer]). */
     var wizardShown: Boolean
         get() = preferences.getBoolean(KEY_WIZARD_SHOWN, false)
         set(value) = preferences.edit { putBoolean(KEY_WIZARD_SHOWN, value) }
+
+    /** Installed from scratch, not updated (see [init]). */
+    val freshInstall: Boolean get() = preferences.getBoolean(KEY_FRESH_INSTALL, false)
 
     /**
      * Latest release found by [Updater.check] ("1.0.1", empty until checked), its APK, its release notes
@@ -662,8 +675,11 @@ object Settings {
      */
     private val SECRET_KEYS = setOf(KEY_TOKEN, KEY_TRAKT_CLIENT_ID, KEY_TRAKT_CLIENT_SECRET, KEY_MDBLIST_KEY)
 
-    /** True for the preferences a Projectivy backup carries: the user's choices, not internal state or keys. */
-    fun inBackup(key: String): Boolean = !key.startsWith("_") && key !in SECRET_KEYS
+    /**
+     * True for the preferences a Projectivy backup carries: the user's choices, not internal state or keys.
+     * The weather place goes without its coordinates (looked up again when needed): no exact location.
+     */
+    fun inBackup(key: String): Boolean = !key.startsWith("_") && key !in SECRET_KEYS && key != KEY_WEATHER_COORDINATES
 
     fun export(): String = exportJson(preferences.all)
 
@@ -674,8 +690,13 @@ object Settings {
             Log.e("Settings", "Error importing preferences", e)
             return false
         }
+        val stored = preferences.all
         preferences.edit {
-            values.forEach { (key, value) ->
+            // Another place: its coordinates are looked up again (see inBackup)
+            if (values[KEY_WEATHER_PLACE] != stored[KEY_WEATHER_PLACE]) remove(KEY_WEATHER_COORDINATES)
+            values.forEach { (key, imported) ->
+                // A value of another type than the stored one (an older or edited backup) would crash its getter
+                val value = matchingType(imported, stored[key]) ?: return@forEach
                 @Suppress("UNCHECKED_CAST")
                 when (value) {
                     is Set<*> -> putStringSet(key, value as Set<String>)
@@ -683,10 +704,19 @@ object Settings {
                     is Boolean -> putBoolean(key, value)
                     is Int -> putInt(key, value)
                     is Long -> putLong(key, value)
+                    is Float -> putFloat(key, value)
                 }
             }
         }
         return true
+    }
+
+    /** [imported] as the type of [stored] (any when nothing is stored); null when it can't be. */
+    fun matchingType(imported: Any, stored: Any?): Any? = when {
+        stored == null || stored::class == imported::class -> imported
+        stored is Float && imported is Number -> imported.toFloat()
+        stored is Long && imported is Int -> imported.toLong()
+        else -> null
     }
 
     /** The backup of [values] (the stored preferences) as JSON. */
@@ -696,6 +726,7 @@ object Settings {
             when (value) {
                 is Int -> put(key, JsonPrimitive(value))
                 is Long -> put(key, JsonPrimitive(value))
+                is Float -> put(key, JsonPrimitive(value))
                 is Boolean -> put(key, JsonPrimitive(value))
                 is String -> put(key, JsonPrimitive(value))
                 is Set<*> -> put(key, JsonArray(value.map { JsonPrimitive(it.toString()) }))
@@ -714,6 +745,8 @@ object Settings {
                 value.booleanOrNull != null -> value.booleanOrNull!!
                 value.intOrNull != null -> value.intOrNull!!
                 value.longOrNull != null -> value.longOrNull!!
+                // Decimals are Floats, the only kind stored ("min_rating")
+                value.floatOrNull != null -> value.floatOrNull!!
                 else -> null
             }?.let { key to it }
         }.toMap()

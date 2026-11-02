@@ -53,8 +53,12 @@ class WallpaperStore(private val context: Context, profile: Profile = Profile.WA
         val tmp = File(root, "current.tmp")
         tmp.writeText(generation.name)
         tmp.renameTo(currentFile)
-        root.listFiles()?.filter { it.isDirectory && it.name != generation.name && it.name != keep }?.forEach { it.deleteRecursively() }
+        // Only older sets: a newer one may be another generation still being written (two can overlap)
+        root.listFiles()?.filter { it.isDirectory && it.name != keep && startedAt(it) < startedAt(generation) }?.forEach { it.deleteRecursively() }
     }
+
+    /** When the generation in [dir] ("gen-1761560000000") started; 0 for anything else, which goes. */
+    private fun startedAt(dir: File): Long = dir.name.removePrefix("gen-").toLongOrNull() ?: 0L
 
     /** True once Projectivy has been given a set (since 1.0.1). */
     val everServed: Boolean get() = servedFile.exists()

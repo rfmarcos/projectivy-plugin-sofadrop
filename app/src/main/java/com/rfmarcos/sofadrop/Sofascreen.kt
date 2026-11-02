@@ -150,15 +150,20 @@ class SofascreenView(context: Context) : FrameLayout(context) {
         val file = store.fileOf(playlist[position])
         val width = resources.displayMetrics.widthPixels
         decoder.execute {
-            val bitmap = file?.takeIf { it.isFile }?.let { decode(it.path, width) }
+            val exists = file?.isFile == true
+            // Errors too (out of memory): a wallpaper that can't be read mustn't stop the screensaver
+            val bitmap = if (exists) runCatching { decode(file!!.path, width) }.getOrNull() else null
             handler.post {
                 if (!running) return@post
-                if (bitmap == null) {
+                when {
+                    bitmap != null -> show(bitmap, animate)
                     // Removed by a newer set: start the round again from that one
-                    playlist = emptyList()
-                    handler.postDelayed(next, 500)
-                } else {
-                    show(bitmap, animate)
+                    !exists -> {
+                        playlist = emptyList()
+                        handler.postDelayed(next, 500)
+                    }
+                    // Damaged, or too big for the memory left: the next one
+                    else -> handler.postDelayed(next, 500)
                 }
             }
         }
@@ -282,7 +287,7 @@ class SofascreenView(context: Context) : FrameLayout(context) {
             clock.addView(clockText(if (h24) "HH:mm" else "h:mm", height * 0.11f, digits))
             if (Settings.screensaverDate) date = smallText(small, light).also { clock.addView(it) }
         }
-        if (Settings.screensaverWeather && Settings.weatherCoordinates != null) {
+        if (Settings.screensaverWeather && Settings.weatherPlace.isNotEmpty()) {
             weather = smallText(small * 0.85f, light).also {
                 it.visibility = GONE // until there is a reading
                 it.setPadding(0, (small * 0.4f).toInt(), 0, 0)
@@ -318,6 +323,8 @@ class SofascreenView(context: Context) : FrameLayout(context) {
         style(this, sizePx, font)
         setAllCaps(true)
         letterSpacing = 0.04f
+        // Thin and small: a stronger shadow than the digits' keeps it readable on a light wallpaper
+        setShadowLayer(sizePx * 0.25f, 0f, sizePx * 0.04f, Color.argb(220, 0, 0, 0))
     }
 
     private fun style(view: TextView, sizePx: Float, font: android.graphics.Typeface?) = view.apply {
@@ -344,9 +351,12 @@ class SofascreenView(context: Context) : FrameLayout(context) {
 
     /** "12° · Partly cloudy" under the clock, off the main thread; the line stays hidden while there is none. */
     private fun updateWeather() {
-        val coordinates = Settings.weatherCoordinates ?: return
+        val place = Settings.weatherPlace.takeIf { it.isNotEmpty() } ?: return
         network.execute {
-            val now = Weather.current(coordinates)
+            // A restored backup has the place but not its coordinates: look it up again
+            val coordinates = Settings.weatherCoordinates ?: runCatching { Weather.find(place.substringBefore(',')) }.getOrNull()
+                ?.also { Settings.setWeatherPlace(it.copy(name = place)) }?.let { it.latitude to it.longitude }
+            val now = coordinates?.let { Weather.current(it) }
             handler.post {
                 val line = weather ?: return@post
                 if (!running) return@post

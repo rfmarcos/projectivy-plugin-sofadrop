@@ -41,7 +41,16 @@ class GenerateWallpapersWorker(context: Context, params: WorkerParameters) : Wor
             runForScreensaver(applicationContext)
             return Result.success()
         }
-        return generateSet().also { if (!profile.isScreensaver) runForScreensaver(applicationContext) }
+        val signature = profile.signature
+        val result = generateSet()
+        // Settings changed while it ran (the guided setup, or leaving the settings, found it busy): again with those
+        if (profile.signature != signature && !isStopped && Sources.selected(profile).isNotEmpty()) {
+            Log.i(TAG, "Settings changed during the generation: generating again")
+            runNow(applicationContext, profile, after = true)
+            return Result.success()
+        }
+        if (!profile.isScreensaver) runForScreensaver(applicationContext)
+        return result
     }
 
     private fun generateSet(): Result {
@@ -187,7 +196,8 @@ class GenerateWallpapersWorker(context: Context, params: WorkerParameters) : Wor
      * platform. Without Wikidata they open the fallback instead: not worth failing the generation for.
      */
     private fun withPlatformLinks(stored: List<StoredWallpaper>, log: GenerationLog): List<StoredWallpaper> {
-        if (Settings.clickPlatforms.isEmpty()) return stored
+        // Nothing opens from the screensaver
+        if (Settings.clickPlatforms.isEmpty() || profile.isScreensaver) return stored
         val refs = stored.filter { wallpaper -> wallpaper.providerIds.any { Platform.ofProvider(it) != null } }
             .associateWith { wallpaper -> TitleRef(MediaType.entries.first { it.path == wallpaper.type }, wallpaper.tmdbId) }
         if (refs.isEmpty()) return stored
@@ -277,9 +287,10 @@ class GenerateWallpapersWorker(context: Context, params: WorkerParameters) : Wor
 
         /**
          * Generate [profile]'s set as soon as possible (the wallpapers' when the screensaver shows those).
-         * [replace] restarts a generation already running.
+         * [replace] restarts a generation already running; [after] queues this one behind it (from the
+         * running worker itself, which KEEP would ignore).
          */
-        fun runNow(context: Context, profile: Profile = Profile.WALLPAPER, replace: Boolean = false) {
+        fun runNow(context: Context, profile: Profile = Profile.WALLPAPER, replace: Boolean = false, after: Boolean = false) {
             Settings.init(context)
             val set = profile.source
             set.generating = true
@@ -289,9 +300,21 @@ class GenerateWallpapersWorker(context: Context, params: WorkerParameters) : Wor
                 .build()
             WorkManager.getInstance(context).enqueueUniqueWork(
                 if (set.isScreensaver) "$UNIQUE_NOW-${set.id}" else UNIQUE_NOW,
-                if (replace) ExistingWorkPolicy.REPLACE else ExistingWorkPolicy.KEEP,
+                when {
+                    replace -> ExistingWorkPolicy.REPLACE
+                    after -> ExistingWorkPolicy.APPEND_OR_REPLACE
+                    else -> ExistingWorkPolicy.KEEP
+                },
                 request,
             )
+        }
+
+        /** Stop the screensaver's own generation, running or waiting (the wallpapers' isn't stopped from the app). */
+        fun cancel(context: Context, profile: Profile) {
+            if (!profile.isScreensaver) return
+            WorkManager.getInstance(context).cancelUniqueWork("$UNIQUE_NOW-${profile.id}")
+            profile.generating = false
+            profile.generationProgress = null
         }
 
         /**

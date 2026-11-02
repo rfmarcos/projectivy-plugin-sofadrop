@@ -12,7 +12,7 @@ import java.util.Locale
  * What the last generation did, shown in About for bug reports: device, lists, failures and duration.
  * Never keys or tokens: messages lose their URL queries.
  */
-class GenerationLog(private val context: Context, profile: Profile = Profile.WALLPAPER) {
+class GenerationLog(private val context: Context, private val profile: Profile = Profile.WALLPAPER) {
 
     private val started = System.currentTimeMillis()
     private val lines = mutableListOf<String>()
@@ -40,7 +40,7 @@ class GenerationLog(private val context: Context, profile: Profile = Profile.WAL
     /** Write the log with its last line, [result], and how long it all took. */
     fun finish(result: String) {
         add("$result · ${(System.currentTimeMillis() - started + 500) / 1000} s")
-        runCatching { file(context).writeText(text()) }
+        runCatching { file(context, profile).writeText(text()) }
     }
 
     @Synchronized
@@ -49,10 +49,17 @@ class GenerationLog(private val context: Context, profile: Profile = Profile.WAL
     companion object {
         private val DATE = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US)
 
-        private fun file(context: Context) = File(context.filesDir, "last-generation.txt")
+        /** One per set, so the screensaver's generation doesn't replace the wallpapers' log. */
+        private fun file(context: Context, profile: Profile) =
+            File(context.filesDir, if (profile.isScreensaver) "last-generation-screensaver.txt" else "last-generation.txt")
 
-        /** The last generation's log, or null before the first one. */
-        fun read(context: Context): String? = file(context).takeIf { it.exists() }?.let { runCatching { it.readText() }.getOrNull() }
+        /** [profile]'s last generation log, or null before the first one. */
+        fun read(context: Context, profile: Profile = Profile.WALLPAPER): String? =
+            file(context, profile).takeIf { it.exists() }?.let { runCatching { it.readText() }.getOrNull() }
+
+        /** The wallpapers' log, then the screensaver's when it has a set of its own; null when there is none. */
+        fun readAll(context: Context): String? =
+            listOfNotNull(read(context), read(context, Profile.SCREENSAVER)).joinToString("\n\n").ifEmpty { null }
 
         /** "OutOfMemoryError: Failed to allocate…", with URL queries (where keys could go) left out. */
         fun describe(error: Throwable): String =

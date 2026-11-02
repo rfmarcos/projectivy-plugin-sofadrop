@@ -40,6 +40,7 @@ class WallpaperProviderService : Service() {
 
             Log.i(TAG, "getWallpapers: ${current.size} wallpapers, stale=$stale, pendingChanges=${Profile.WALLPAPER.hasPendingChanges}")
             store.markServed()
+            val apps = ClickTargets.Apps(this@WallpaperProviderService)
             return (if (Settings.mixLists) current.shuffled() else current).mapNotNull { wallpaper ->
                 val uri = store.uriOf(wallpaper) ?: return@mapNotNull null
                 Wallpaper(
@@ -50,7 +51,7 @@ class WallpaperProviderService : Service() {
                     source = "https://www.themoviedb.org/${wallpaper.type}/${wallpaper.tmdbId}",
                     author = "TMDB",
                     // "Watch" in Projectivy's "About this wallpaper" and a play button on its status bar
-                    actionUri = actionUri(this@WallpaperProviderService, wallpaper),
+                    actionUri = actionUri(this@WallpaperProviderService, wallpaper, apps),
                 )
             }
         }
@@ -70,7 +71,7 @@ class WallpaperProviderService : Service() {
          * What Projectivy opens from [wallpaper] (see [ClickTargets]); applied when served, without
          * regenerating (except the platforms' pages).
          */
-        fun actionUri(context: Context, wallpaper: StoredWallpaper): String? =
-            ClickTargets.candidates(context, wallpaper).firstOrNull()?.toUri(Intent.URI_INTENT_SCHEME)
+        fun actionUri(context: Context, wallpaper: StoredWallpaper, apps: ClickTargets.Apps = ClickTargets.Apps(context)): String? =
+            ClickTargets.candidates(context, wallpaper, apps).firstOrNull()?.toUri(Intent.URI_INTENT_SCHEME)
     }
 }

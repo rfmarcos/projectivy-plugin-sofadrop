@@ -302,8 +302,8 @@ class Profile private constructor(val id: String) {
             // Only when changed, so existing installs don't see a pending change after updating
             ).plus(listOfNotNull(overviewLines.takeIf { it != 4 }, "nosource".takeIf { !showSource }, "fallback".takeIf { showSource && showProviders && sourceFallback },
                 "inline".takeIf { showSource && showProviders && !sourceFallback && sourceInline },
-                // Its pages are looked up when generating
-                "platform".takeIf { clickPlatforms.isNotEmpty() },
+                // Its pages are looked up when generating; nothing opens from the screensaver
+                "platform".takeIf { clickPlatforms.isNotEmpty() && !this@Profile.isScreensaver },
                 "dups".takeIf { !skipDuplicates }, "logo:$logoMode".takeIf { logoMode != LOGO_TEXT }, "synopsis:$synopsisMode".takeIf { synopsisMode != SYNOPSIS_HIDE },
                 "titlelang:$titleLanguage".takeIf { titleLanguage != LANGUAGE_AUTO }, "synopsislang:$synopsisLanguage".takeIf { synopsisLanguage != LANGUAGE_AUTO },
                 "ratings:$ratingSourcesKey:$mdbListAvailable".takeIf { ratingSourcesKey != RatingSource.TMDB.key },
@@ -313,7 +313,8 @@ class Profile private constructor(val id: String) {
                 "minratings:$minRatings".takeIf { minRatings != 2 }, "cast".takeIf { showCast }, "castphotos:$castPhotos".takeIf { showCast && castPhotos != CAST_PHOTOS_GROUPED }, "style:$style".takeIf { style != STYLE_FULL },
                 "position:$position".takeIf { position != POSITION_TOP_LEFT && drawsLogo }, "shade:$shade".takeIf { shade != SHADE_TINT },
                 "latin".takeIf { latinOriginals },
-                "trailerlang:$trailerLanguage".takeIf { trailerLanguage != LANGUAGE_AUTO }, "trailerfallback:$trailerFallback".takeIf { trailerFallback != TRAILER_ENGLISH },
+                "trailerlang:$trailerLanguage".takeIf { trailerLanguage != LANGUAGE_AUTO && !this@Profile.isScreensaver },
+                "trailerfallback:$trailerFallback".takeIf { trailerFallback != TRAILER_ENGLISH && !this@Profile.isScreensaver },
                 "genres:${genreFilter.only}:${genreFilter.ids.sorted()}".takeIf { !genreFilter.isOff },
                 "blocked:${blockedTitles.map { "${it.type.path}:${it.tmdbId}" }.sorted().hashCode()}".takeIf { blockedTitles.isNotEmpty() })).joinToString("|")
         }

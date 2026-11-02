@@ -4,6 +4,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -22,12 +23,15 @@ class SettingsBackupTest {
         "titles_per_list" to 20,
         "global_hits_only" to true,
         "lists" to setOf("tmdb:trending_movies", "trakt:watchlist_movies"),
+        "min_rating" to 6.5f,
+        "weather_place" to "Amsterdam, North Holland, NL",
     )
 
     private val state = mapOf(
         "_trakt_access_token" to "trakt-access-token",
         "_mdblist_refresh_token" to "mdblist-refresh-token",
         "_last_generation" to 1761560000000L,
+        "weather_coordinates" to "52.37,4.89",
     )
 
     private fun keys(json: String) = (Json.parseToJsonElement(json) as JsonObject).keys
@@ -50,6 +54,17 @@ class SettingsBackupTest {
     @Test
     fun choicesSurviveARoundTrip() {
         assertEquals(choices, Settings.importValues(Settings.exportJson(choices)))
+    }
+
+    @Test
+    fun importedValuesTakeTheStoredType() {
+        assertEquals(7f, Settings.matchingType(7, 6.5f))
+        assertEquals(7f, Settings.matchingType(7.0f, 6.5f))
+        assertEquals(5L, Settings.matchingType(5, 1L))
+        assertEquals("x", Settings.matchingType("x", null))
+        // Would crash the getter of a stored Int or Boolean
+        assertNull(Settings.matchingType("x", 20))
+        assertNull(Settings.matchingType(3, true))
     }
 
     @Test

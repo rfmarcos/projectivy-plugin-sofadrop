@@ -7,10 +7,10 @@ import androidx.appcompat.content.res.AppCompatResources
 import androidx.leanback.widget.GuidanceStylist.Guidance
 import androidx.leanback.widget.GuidedAction
 
-/** The last generation's log ([GenerationLog]). */
+/** The last generations' logs ([GenerationLog]): the wallpapers', then the screensaver's. */
 class GenerationLogFragment : BaseSettingsFragment() {
 
-    private val log by lazy { GenerationLog.read(requireContext()).orEmpty() }
+    private val log by lazy { GenerationLog.readAll(requireContext()).orEmpty() }
 
     override fun onCreateGuidance(savedInstanceState: Bundle?) = Guidance(
         getString(R.string.about_log),

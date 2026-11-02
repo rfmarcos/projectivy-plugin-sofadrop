@@ -31,6 +31,8 @@ object Weather {
 
     private const val TAG = "Weather"
     private const val MAX_AGE = 30 * 60_000L
+    /** How old a reading may be shown when Open-Meteo can't be reached. */
+    private const val STALE_MAX_AGE = 3 * 60 * 60_000L
 
     private val http = OkHttpClient.Builder()
         .connectTimeout(10, TimeUnit.SECONDS)
@@ -54,7 +56,10 @@ object Weather {
         return Place(label, result["latitude"]!!.jsonPrimitive.double, result["longitude"]!!.jsonPrimitive.double)
     }
 
-    /** The weather now at [coordinates]; the last reading when it is recent, null when it can't be had. */
+    /**
+     * The weather now at [coordinates]; the last reading when it is recent, or when a new one can't be had
+     * (better a slightly old temperature than none); null when there is none.
+     */
     @Synchronized
     fun current(coordinates: Pair<Double, Double>): CurrentWeather? {
         if (cachedFor == coordinates && System.currentTimeMillis() - cachedAt < MAX_AGE) return cached
@@ -71,7 +76,7 @@ object Weather {
             cached = it
             cachedFor = coordinates
             cachedAt = System.currentTimeMillis()
-        }
+        } ?: cached.takeIf { cachedFor == coordinates && System.currentTimeMillis() - cachedAt < STALE_MAX_AGE }
     }
 
     /** Countries that use °F. */

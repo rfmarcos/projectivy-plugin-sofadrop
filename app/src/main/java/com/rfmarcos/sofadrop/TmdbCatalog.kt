@@ -223,9 +223,8 @@ class TmdbCatalog(
         }
     }
 
-    /** Local-market titles only pass when they are worldwide hits. */
+    /** Local-market titles only pass when they are worldwide hits (when the list's filters ask for it). */
     private fun isLocalMarket(item: JsonObject): Boolean {
-        if (!profile.globalHitsOnly) return false
         val originalLanguage = item.str("original_language")?.lowercase().orEmpty()
         return originalLanguage !in Languages.MAINSTREAM && originalLanguage != languageCode &&
             (item.int("vote_count") ?: 0) < MIN_VOTES_OTHER_LANGUAGES
@@ -288,7 +287,7 @@ class TmdbCatalog(
         }
 
         // Also for opening the title on its platform, whose app the wallpaper picks from these
-        val providers = if (showProviders || Settings.clickPlatforms.isNotEmpty()) providers(ref) else emptyList()
+        val providers = if (showProviders || (Settings.clickPlatforms.isNotEmpty() && !profile.isScreensaver)) providers(ref) else emptyList()
         return WallpaperInfo(
             type = type,
             id = ref.tmdbId,
