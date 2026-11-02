@@ -61,6 +61,10 @@ object Sources {
         ListSource("simkl:trending_shows", SourceProvider.SIMKL, R.string.list_simkl_trending_shows),
         ListSource("simkl:plantowatch", SourceProvider.SIMKL, R.string.list_simkl_plantowatch, needsSimklAccount = true),
         ListSource("simkl:watching", SourceProvider.SIMKL, R.string.list_simkl_watching, needsSimklAccount = true),
+        ListSource("simkl:recommended_movies", SourceProvider.SIMKL, R.string.list_simkl_recommended_movies, needsSimklAccount = true),
+        ListSource("simkl:recommended_shows", SourceProvider.SIMKL, R.string.list_simkl_recommended_shows, needsSimklAccount = true),
+        ListSource("simkl:recommended_anime", SourceProvider.SIMKL, R.string.list_simkl_recommended_anime,
+            needsSimklAccount = true, localMarketFilter = false),
     )
 
     fun label(context: android.content.Context, source: ListSource): String =

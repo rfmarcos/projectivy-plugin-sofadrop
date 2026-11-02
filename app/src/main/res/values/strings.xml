@@ -204,7 +204,7 @@
     <string name="accounts_api_key">Connected with an API key</string>
     <string name="enables_tmdb">TMDB account: adds your watchlist and favourites as lists. TMDB\'s lists and ratings work without it.</string>
     <string name="enables_trakt">Trakt account: your recommendations and watchlist as lists, and your watch history for the watched / watching badge and to hide what you\'ve seen. Trakt\'s rating works without it.</string>
-    <string name="enables_simkl">Simkl account: your Plan to watch and Watching lists, and your watch history for the watched / watching badge and to hide what you\'ve seen.</string>
+    <string name="enables_simkl">Simkl account: your Plan to watch and Watching lists, your recommendations (PRO or VIP), and your watch history for the watched / watching badge and to hide what you\'ve seen.</string>
     <string name="enables_mdblist">MDBList account: your own lists, and the Rotten Tomatoes (critics and audience), Metacritic, Letterboxd and MyAnimeList ratings. Free accounts allow 1,000 requests a day; Sofadrop uses one per list each time it generates.</string>
     <string name="enables_imdb">IMDb ratings without MDBList come from IMDb\'s official dataset (about 9 MB). It is downloaded when first needed, again every week, and sooner (at most daily) when a new title is missing. Press to download it now.</string>
     <string name="setting_details_title">Wallpaper details</string>
@@ -385,7 +385,12 @@
     <string name="list_simkl_trending_shows">Simkl · Trending shows</string>
     <string name="list_simkl_plantowatch">Simkl · Plan to watch</string>
     <string name="list_simkl_watching">Simkl · Watching</string>
-    <string name="simkl_lists_description">Lists from Simkl, the tracker for TV, movies and anime. Connect your account for your Plan to watch and Watching lists; its history can mark or hide what you\'ve watched (Watch history, in Filters &amp; explore lists).</string>
+    <string name="list_simkl_recommended_movies">Simkl · Recommended movies for you</string>
+    <string name="list_simkl_recommended_shows">Simkl · Recommended shows for you</string>
+    <string name="list_simkl_recommended_anime">Simkl · Recommended anime for you</string>
+    <string name="list_simkl_premium">With Simkl PRO or VIP</string>
+    <string name="error_simkl_premium">Simkl\'s recommendations need a PRO or VIP account</string>
+    <string name="simkl_lists_description">Lists from Simkl, the tracker for TV, movies and anime. Connect your account for your Plan to watch and Watching lists, and with PRO or VIP your recommendations; its history can mark or hide what you\'ve watched (Watch history, in Filters &amp; explore lists).</string>
     <string name="simkl_login_ok">Simkl connected as %1$s</string>
     <string name="simkl_failed">Simkl error: %1$s</string>
     <string name="watched_summary_hidden">watched hidden</string>

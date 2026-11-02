@@ -99,6 +99,34 @@ class ParsingTest {
     }
 
     @Test
+    fun simklRecommendationLists() {
+        // GET /lists/user/{id}: only the recommendation lists of the media type, in Simkl's order
+        val lists = obj("""
+            {"pagination": {"page": 1, "limit": 100, "total_items": 4, "total_pages": 1},
+             "lists": [{"id": 123456, "name": "Best 90s sci-fi", "media_type": "movies", "type": "regular"},
+                       {"id": 901, "name": "Recommendations V1", "media_type": "movies", "type": "recommendations"},
+                       {"id": 902, "name": "Recommendations V1", "media_type": "tv", "type": "recommendations"},
+                       {"id": 903, "name": "Recommendations V2", "media_type": "movies", "type": "recommendations"}]}
+        """)
+        assertEquals(listOf(901L, 903L), SimklClient.parseRecommendationLists(lists, "movies"))
+        assertEquals(emptyList<Long>(), SimklClient.parseRecommendationLists(obj("""{"error": "premium_only"}"""), "movies"))
+        // GET /lists/{id}: TMDB ids are strings and may be missing (then the IMDb id is used)
+        val items = obj("""
+            {"id": 901, "media_type": "anime", "items": [
+              {"title": "Ghost in the Shell", "type": "anime", "anime_type": "movie", "ids": {"simkl_id": 53536, "imdb": "tt0113568"}},
+              {"title": "Arcane", "type": "anime", "anime_type": "tv", "ids": {"simkl_id": 548312, "imdb": "tt11126994", "tmdb": "94605"}},
+              {"title": "No ids", "type": "movie", "ids": {"simkl_id": 1}}]}
+        """)
+        assertEquals(
+            listOf(
+                SimklClient.Companion.ListItem(MediaType.MOVIE, null, "tt0113568", anime = true),
+                SimklClient.Companion.ListItem(MediaType.TV, "94605", "tt11126994", anime = true),
+            ),
+            SimklClient.parseListItems(items),
+        )
+    }
+
+    @Test
     fun castInLatinLettersOnly() {
         // Squid Game's aggregate credits: two of the first five only have their Hangul name
         val credits = kotlinx.serialization.json.Json.parseToJsonElement(

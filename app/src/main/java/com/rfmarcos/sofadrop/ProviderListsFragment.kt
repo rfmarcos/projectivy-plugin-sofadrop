@@ -47,6 +47,7 @@ class ProviderListsFragment : BaseSettingsFragment() {
                 when {
                     !usable -> getString(R.string.list_needs_account)
                     profile.listFilters[source.key]?.isDefault == false -> Filters.listFiltersSummary(requireContext(), profile, source)
+                    source.key.startsWith("simkl:recommended") -> getString(R.string.list_simkl_premium)
                     else -> null
                 }, usable && source.key in selected)
                 .enabled(usable)

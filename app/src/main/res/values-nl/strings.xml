@@ -202,7 +202,7 @@
     <string name="accounts_api_key">Verbonden met een API-sleutel</string>
     <string name="enables_tmdb">TMDB-account: voegt je kijklijst en favorieten toe als lijsten. De lijsten en scores van TMDB werken ook zonder.</string>
     <string name="enables_trakt">Trakt-account: je aanbevelingen en kijklijst als lijsten, en je kijkgeschiedenis voor het label bekeken / bezig en om te verbergen wat je al gezien hebt. De Trakt-score werkt ook zonder.</string>
-    <string name="enables_simkl">Simkl-account: je lijsten Plan to watch en Watching, en je kijkgeschiedenis voor het label bekeken / bezig en om te verbergen wat je al gezien hebt.</string>
+    <string name="enables_simkl">Simkl-account: je lijsten Plan to watch en Watching, je aanbevelingen (PRO of VIP) en je kijkgeschiedenis voor het label bekeken / bezig en om te verbergen wat je al gezien hebt.</string>
     <string name="enables_mdblist">MDBList-account: je eigen lijsten, en de scores van Rotten Tomatoes (critici en publiek), Metacritic, Letterboxd en MyAnimeList. Gratis accounts mogen 1.000 verzoeken per dag doen; Sofadrop gebruikt er één per lijst bij elke keer maken.</string>
     <string name="enables_imdb">IMDb-scores zonder MDBList komen uit de officiële dataset van IMDb (ongeveer 9 MB). Die wordt gedownload zodra hij nodig is, daarna elke week opnieuw, en eerder (hoogstens dagelijks) als een nieuwe titel ontbreekt. Druk om hem nu te downloaden.</string>
     <string name="setting_details_title">Achtergronddetails</string>
@@ -375,7 +375,12 @@
     <string name="list_simkl_trending_shows">Simkl · Trending series</string>
     <string name="list_simkl_plantowatch">Simkl · Plan to watch</string>
     <string name="list_simkl_watching">Simkl · Watching</string>
-    <string name="simkl_lists_description">Lijsten van Simkl, de tracker voor series, films en anime. Verbind je account voor je lijsten Plan to watch en Watching; met de geschiedenis kun je markeren of verbergen wat je al gezien hebt (Kijkgeschiedenis, bij Filters &amp; lijsten verkennen).</string>
+    <string name="list_simkl_recommended_movies">Simkl · Aanbevolen films voor jou</string>
+    <string name="list_simkl_recommended_shows">Simkl · Aanbevolen series voor jou</string>
+    <string name="list_simkl_recommended_anime">Simkl · Aanbevolen anime voor jou</string>
+    <string name="list_simkl_premium">Met Simkl PRO of VIP</string>
+    <string name="error_simkl_premium">De aanbevelingen van Simkl vereisen een PRO- of VIP-account</string>
+    <string name="simkl_lists_description">Lijsten van Simkl, de tracker voor series, films en anime. Verbind je account voor je lijsten Plan to watch en Watching, en met PRO of VIP je aanbevelingen; met de geschiedenis kun je markeren of verbergen wat je al gezien hebt (Kijkgeschiedenis, bij Filters &amp; lijsten verkennen).</string>
     <string name="simkl_login_ok">Simkl verbonden als %1$s</string>
     <string name="simkl_failed">Simkl-fout: %1$s</string>
     <string name="watched_summary_hidden">bekeken verborgen</string>

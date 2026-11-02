@@ -194,7 +194,7 @@
     <string name="accounts_api_key">Conectado con clave de API</string>
     <string name="enables_tmdb">Cuenta de TMDB: añade tu lista de seguimiento y tus favoritos como listas. Las listas y la nota de TMDB funcionan sin ella.</string>
     <string name="enables_trakt">Cuenta de Trakt: tus recomendaciones y tu watchlist como listas, y tu historial para la marca de visto / viendo y para ocultar lo que has visto. La nota de Trakt funciona sin ella.</string>
-    <string name="enables_simkl">Cuenta de Simkl: tus listas Plan to watch y Watching, y tu historial para la marca de visto / viendo y para ocultar lo que has visto.</string>
+    <string name="enables_simkl">Cuenta de Simkl: tus listas Plan to watch y Watching, tus recomendaciones (PRO o VIP) y tu historial para la marca de visto / viendo y para ocultar lo que has visto.</string>
     <string name="enables_mdblist">Cuenta de MDBList: tus propias listas y las notas de Rotten Tomatoes (crítica y público), Metacritic, Letterboxd y MyAnimeList. Las cuentas gratuitas permiten 1.000 peticiones al día; Sofadrop usa una por lista cada vez que genera.</string>
     <string name="enables_imdb">Sin MDBList, las notas de IMDb salen del dataset oficial de IMDb (unos 9 MB). Se descarga la primera vez que hace falta, de nuevo cada semana y antes (como mucho a diario) si falta un título nuevo. Pulsa para descargarlo ya.</string>
     <string name="setting_details_title">Detalles del fondo</string>
@@ -367,7 +367,12 @@
     <string name="list_simkl_trending_shows">Simkl · Series en tendencia</string>
     <string name="list_simkl_plantowatch">Simkl · Pendientes</string>
     <string name="list_simkl_watching">Simkl · Viendo</string>
-    <string name="simkl_lists_description">Listas de Simkl, el tracker de series, películas y anime. Conecta tu cuenta para tus listas Pendientes y Viendo; su historial puede marcar u ocultar lo que has visto (Historial de vistos, en Filtros y explorar listas).</string>
+    <string name="list_simkl_recommended_movies">Simkl · Películas recomendadas para ti</string>
+    <string name="list_simkl_recommended_shows">Simkl · Series recomendadas para ti</string>
+    <string name="list_simkl_recommended_anime">Simkl · Anime recomendado para ti</string>
+    <string name="list_simkl_premium">Con Simkl PRO o VIP</string>
+    <string name="error_simkl_premium">Las recomendaciones de Simkl necesitan una cuenta PRO o VIP</string>
+    <string name="simkl_lists_description">Listas de Simkl, el tracker de series, películas y anime. Conecta tu cuenta para tus listas Pendientes y Viendo, y con PRO o VIP tus recomendaciones; su historial puede marcar u ocultar lo que has visto (Historial de vistos, en Filtros y explorar listas).</string>
     <string name="simkl_login_ok">Simkl conectado como %1$s</string>
     <string name="simkl_failed">Error de Simkl: %1$s</string>
     <string name="watched_summary_hidden">vistos ocultos</string>

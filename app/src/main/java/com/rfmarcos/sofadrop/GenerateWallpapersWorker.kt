@@ -91,6 +91,7 @@ class GenerateWallpapersWorker(context: Context, params: WorkerParameters) : Wor
             profile.lastNotice = listOfNotNull(
                 applicationContext.getString(R.string.notice_memory_1080).takeIf { memoryErrors.get() > 0 },
                 applicationContext.getString(R.string.notice_list_unavailable, unavailable.joinToString(", ")).takeIf { unavailable.isNotEmpty() },
+                applicationContext.getString(R.string.error_simkl_premium).takeIf { listErrors.any { it is SimklPremiumException } },
             ).joinToString(" · ")
             if (!profile.isScreensaver) notifyProjectivy(applicationContext)
             Log.i(TAG, "Generated ${stored.size} wallpapers${" for the screensaver".takeIf { profile.isScreensaver }.orEmpty()} (${Settings.language}) in ${System.currentTimeMillis() - start} ms")
@@ -352,6 +353,7 @@ class GenerateWallpapersWorker(context: Context, params: WorkerParameters) : Wor
             error is TmdbException && error.keyRejected -> context.getString(R.string.error_tmdb_key)
             error is TmdbException -> error.message.orEmpty()
             error is ListUnavailableException -> context.getString(R.string.error_list_unavailable, error.name)
+            error is SimklPremiumException -> context.getString(R.string.error_simkl_premium)
             error is UnknownHostException || error is ConnectException || error is SocketTimeoutException || error is SSLException ->
                 context.getString(R.string.error_network)
             else -> GenerationLog.describe(error)

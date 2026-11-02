@@ -71,7 +71,7 @@ The left side of the settings shows a **live preview** of a wallpaper with your 
 ### Connecting your accounts (optional)
 
 * **Trakt**: public lists need no account. Connect it in *Accounts → Trakt* by scanning the QR code to add your recommendations, watchlist and your own lists; your history can mark or hide watched titles.
-* **Simkl**: trending anime, movies and shows work without an account. Connect it to add your *Plan to watch* and *Watching* lists and your history.
+* **Simkl**: trending anime, movies and shows work without an account. Connect it to add your *Plan to watch* and *Watching* lists and your history, and with Simkl PRO or VIP your personal recommendations for movies, shows and anime.
 * **MDBList**: tick a suggested public list or add any public one by `user/list` or its URL, no account needed. Connect your account to load your own lists, private ones included, and to show Rotten Tomatoes, Metacritic, Letterboxd and MyAnimeList ratings (*Wallpaper details → Header*). Ratings take one request per list from your MDBList daily quota.
 
 <a id="screensaver"></a>
