@@ -16,8 +16,12 @@ class SettingsActivity : FragmentActivity() {
         if (savedInstanceState == null) {
             GuidedStepSupportFragment.addAsRoot(this, SettingsFragment(), android.R.id.content)
             val file = settingsFile(intent)
+            val reconnect = intent.getStringArrayExtra(EXTRA_RECONNECT).orEmpty()
+                .mapNotNull { name -> SourceProvider.entries.firstOrNull { it.name == name } }
             // A settings file opened with Sofadrop (from a file manager): asks before importing it
             if (file != null) GuidedStepSupportFragment.add(supportFragmentManager, SettingsImportFragment.newInstance(file))
+            // Just imported: the accounts the other TV had, to connect again
+            else if (reconnect.isNotEmpty()) GuidedStepSupportFragment.add(supportFragmentManager, AccountsFragment.reconnect(reconnect))
             // First run: the wizard over the settings, which are there when it ends
             else if (Wizard.shouldOffer()) Wizard.start(supportFragmentManager)
         }
@@ -35,6 +39,11 @@ class SettingsActivity : FragmentActivity() {
                 isEnabled = true
             }
         }
+    }
+
+    companion object {
+        /** Services to connect again after importing a settings file (see SettingsImportFragment). */
+        const val EXTRA_RECONNECT = "reconnect"
     }
 
     @Suppress("DEPRECATION")

@@ -147,6 +147,11 @@ class WizardWelcomeFragment : WizardStepFragment() {
         actions += action(ID_START, R.drawable.ic_act_play, getString(R.string.wizard_start), getString(R.string.wizard_start_desc)).build()
         actions += choice(ID_LANGUAGE, R.drawable.ic_act_language, R.string.general_language_title, Languages.displayName(Settings.language),
             Languages.OPTIONS.values.toList())
+        // Another TV already set up: its settings file instead of the questions (Google TV has no picker)
+        val canPick = SettingsFile.canPick(requireContext())
+        actions += action(ID_IMPORT, R.drawable.ic_act_add, getString(R.string.wizard_import),
+            getString(if (canPick) R.string.settings_file_import_desc else R.string.settings_file_import_no_picker, SettingsFile.NAME))
+            .multilineDescription(true).focusable(canPick).build()
         actions += if (Wizard.reopened) action(ID_SKIP, R.drawable.ic_act_refresh, getString(R.string.wizard_leave), null).build()
             else action(ID_SKIP, R.drawable.ic_act_refresh, getString(R.string.wizard_skip), getString(R.string.wizard_skip_desc))
                 .multilineDescription(true).build()
@@ -156,7 +161,12 @@ class WizardWelcomeFragment : WizardStepFragment() {
         when (action.id) {
             ID_START -> Wizard.next(this)
             ID_SKIP -> Wizard.finish(this)
+            ID_IMPORT -> runCatching { pick.launch(arrayOf("*/*")) }
         }
+    }
+
+    private val pick = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) open(SettingsImportFragment.newInstance(uri))
     }
 
     override fun onSubGuidedActionClicked(action: GuidedAction): Boolean {
@@ -177,6 +187,7 @@ class WizardWelcomeFragment : WizardStepFragment() {
         const val ID_START = 1L
         const val ID_LANGUAGE = 2L
         const val ID_SKIP = 3L
+        const val ID_IMPORT = 4L
     }
 }
 

@@ -571,4 +571,6 @@
     <string name="settings_import_done">Settings imported</string>
     <string name="settings_import_invalid">This isn\'t a Sofadrop settings file</string>
     <string name="settings_import_unreadable">Couldn\'t read the file</string>
+    <string name="wizard_import">Import settings from another TV</string>
+    <string name="accounts_reconnect">Settings imported. Connect again what the other TV had: %1$s. Accounts aren\'t in the settings file.</string>
 </resources>

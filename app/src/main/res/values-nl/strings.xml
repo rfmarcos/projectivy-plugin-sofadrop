@@ -561,4 +561,6 @@
     <string name="settings_import_done">Instellingen geïmporteerd</string>
     <string name="settings_import_invalid">Dit is geen instellingenbestand van Sofadrop</string>
     <string name="settings_import_unreadable">Kan het bestand niet lezen</string>
+    <string name="wizard_import">Instellingen van een andere tv importeren</string>
+    <string name="accounts_reconnect">Instellingen geïmporteerd. Verbind opnieuw wat de andere tv had: %1$s. Accounts staan niet in het instellingenbestand.</string>
 </resources>

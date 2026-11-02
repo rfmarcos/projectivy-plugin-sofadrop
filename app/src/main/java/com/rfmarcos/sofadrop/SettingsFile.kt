@@ -10,6 +10,7 @@ import android.provider.MediaStore
 import android.provider.OpenableColumns
 import androidx.core.content.FileProvider
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
@@ -26,6 +27,9 @@ object SettingsFile {
 
     /** Marks the file as Sofadrop's, with the version that made it; "_" keys are never imported. */
     private const val MARKER = "_sofadrop"
+
+    /** The services connected where the file was made, by name only: to say which to connect again. */
+    private const val ACCOUNTS = "_accounts"
     private const val MAX_SIZE = 1 shl 20
     private val json = Json { prettyPrint = true }
 
@@ -33,6 +37,7 @@ object SettingsFile {
         val settings = Json.parseToJsonElement(Settings.export()) as JsonObject
         return json.encodeToString(JsonObject.serializer(), buildJsonObject {
             put(MARKER, JsonPrimitive(BuildConfig.VERSION_NAME))
+            put(ACCOUNTS, JsonArray(SourceProvider.entries.filter(AccountsFragment::connected).map { JsonPrimitive(it.name) }))
             settings.forEach { (key, value) -> put(key, value) }
         })
     }
@@ -41,6 +46,13 @@ object SettingsFile {
     fun version(text: String): String? = runCatching {
         ((Json.parseToJsonElement(text) as JsonObject)[MARKER] as JsonPrimitive).content
     }.getOrNull()
+
+    /** The services [text]'s TV had connected (accounts never travel in the file). */
+    fun accounts(text: String): List<SourceProvider> = runCatching {
+        ((Json.parseToJsonElement(text) as JsonObject)[ACCOUNTS] as JsonArray).mapNotNull { name ->
+            SourceProvider.entries.firstOrNull { it.name == (name as JsonPrimitive).content }
+        }
+    }.getOrDefault(emptyList())
 
     /** Android 9 and older need the storage permission to write in Download. */
     val savingNeedsPermission: Boolean get() = Build.VERSION.SDK_INT < Build.VERSION_CODES.Q

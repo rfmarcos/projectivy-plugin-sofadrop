@@ -126,10 +126,13 @@ class SettingsImportFragment : BaseSettingsFragment() {
                     return
                 }
                 Toast.makeText(activity, R.string.settings_import_done, Toast.LENGTH_LONG).show()
+                // The other TV's accounts that aren't connected here: Accounts opens to connect them again
+                val reconnect = SettingsFile.accounts(text.orEmpty()).filterNot(AccountsFragment::connected)
                 // The settings again from the start, showing the imported values (without older screens behind
                 // with the old ones, also when opened from a file manager); leaving makes the wallpapers again
                 activity.startActivity(android.content.Intent(activity, SettingsActivity::class.java)
-                    .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK))
+                    .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                    .putExtra(SettingsActivity.EXTRA_RECONNECT, reconnect.map { it.name }.toTypedArray()))
                 activity.finish()
             }
         }

@@ -63,6 +63,16 @@ class SettingsBackupTest {
     }
 
     @Test
+    fun settingsFileNamesTheConnectedAccountsOnly() {
+        val file = """{"_sofadrop":"1.2.0","_accounts":["TRAKT","SIMKL","UNKNOWN"],""" + Settings.exportJson(choices).removePrefix("{")
+        assertEquals(listOf(SourceProvider.TRAKT, SourceProvider.SIMKL), SettingsFile.accounts(file))
+        assertEquals(choices, Settings.importValues(file))
+        // Files from before 1.2.0's accounts list, or broken ones
+        assertEquals(emptyList<SourceProvider>(), SettingsFile.accounts("""{"_sofadrop":"1.2.0"}"""))
+        assertEquals(emptyList<SourceProvider>(), SettingsFile.accounts("not json"))
+    }
+
+    @Test
     fun choicesSurviveARoundTrip() {
         assertEquals(choices, Settings.importValues(Settings.exportJson(choices)))
     }

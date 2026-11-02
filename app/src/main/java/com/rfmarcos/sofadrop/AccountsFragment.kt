@@ -21,7 +21,10 @@ class AccountsFragment : BaseSettingsFragment() {
 
     override fun onCreateGuidance(savedInstanceState: Bundle?) = Guidance(
         getString(R.string.setting_accounts_title),
-        getString(R.string.accounts_description),
+        arguments?.getStringArray(ARG_RECONNECT)?.let { names ->
+            getString(R.string.accounts_reconnect, names.map { ListsFragment.providerName(requireContext(), SourceProvider.valueOf(it)) }
+                .joinToString(", "))
+        } ?: getString(R.string.accounts_description),
         getString(R.string.settings),
         AppCompatResources.getDrawable(requireActivity(), R.mipmap.ic_launcher),
     )
@@ -49,6 +52,8 @@ class AccountsFragment : BaseSettingsFragment() {
             ID_MDBLIST to getString(R.string.enables_mdblist),
             ID_IMDB to getString(R.string.enables_imdb),
         )
+        // After an import the notice stays on the services to connect again
+        arguments?.getStringArray(ARG_RECONNECT)?.forEach { explanations -= idOf(SourceProvider.valueOf(it)) }
     }
 
     private fun rows(): List<GuidedAction> = SERVICES.map(::serviceAction) + header(ID_NO_ACCOUNT, getString(R.string.accounts_no_account)) +
@@ -157,9 +162,15 @@ class AccountsFragment : BaseSettingsFragment() {
         private const val SUB_RELOAD = 0L
         private const val SUB_DISCONNECT = 1L
         private const val ARG_FOCUS = "focus"
+        private const val ARG_RECONNECT = "reconnect"
 
         /** Accounts with [provider]'s row selected. */
         fun newInstance(provider: SourceProvider) = AccountsFragment().apply { arguments = bundleOf(ARG_FOCUS to provider.name) }
+
+        /** After importing a settings file: says which of the other TV's accounts to connect again, on the first one. */
+        fun reconnect(providers: List<SourceProvider>) = AccountsFragment().apply {
+            arguments = bundleOf(ARG_FOCUS to providers.first().name, ARG_RECONNECT to providers.map { it.name }.toTypedArray())
+        }
 
         private val SERVICES = listOf(SourceProvider.TMDB, SourceProvider.TRAKT, SourceProvider.SIMKL, SourceProvider.MDBLIST)
         private val BADGES = mapOf(

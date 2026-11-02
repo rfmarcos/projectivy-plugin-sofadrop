@@ -553,4 +553,6 @@
     <string name="settings_import_done">Ajustes importados</string>
     <string name="settings_import_invalid">Este archivo no es de ajustes de Sofadrop</string>
     <string name="settings_import_unreadable">No se ha podido leer el archivo</string>
+    <string name="wizard_import">Importar los ajustes de otra TV</string>
+    <string name="accounts_reconnect">Ajustes importados. Conecta de nuevo lo que tenía la otra TV: %1$s. Las cuentas no van en el archivo de ajustes.</string>
 </resources>

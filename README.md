@@ -67,7 +67,7 @@ The left side of the settings shows a **live preview** of a wallpaper with your 
 * **Accounts**: connect TMDB, Trakt, Simkl and MDBList with a QR code, see what each one adds, and update the IMDb ratings data.
 * **Update every**: how often a new set is generated (6 hours to 7 days). How often the wallpaper *changes on screen* is set in Projectivy itself.
 * **About**: the guided setup again, *Export and import settings*, the *Last generation log* (lists, failures and how long the last update took) and *Version*, which checks for updates.
-  * **Export and import settings** sets up another TV the same way: save the settings in *Download/sofadrop-settings.json* or share the file (to a file manager, Google Drive…), take it to the other TV and import it there. On Google TV, which has no file picker, open the file with Sofadrop from a file manager. Accounts and API keys aren't in the file.
+  * **Export and import settings** sets up another TV the same way: save the settings in *Download/sofadrop-settings.json* or share the file (to a file manager, Google Drive…), take it to the other TV and import it there (also from the guided setup's first step). On Google TV, which has no file picker, open the file with Sofadrop from a file manager. Accounts and API keys aren't in the file: after importing, Sofadrop opens *Accounts* and says which ones the other TV had connected.
 
 ### Connecting your accounts (optional)
 
