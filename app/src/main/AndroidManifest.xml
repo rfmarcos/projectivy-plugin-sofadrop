@@ -6,6 +6,10 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- Updates come from the GitHub releases (no store): the system installer still asks the user -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- Android 9 and older: saving the settings file in Download (see SettingsFile) -->
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
 
     <uses-feature
         android:name="android.hardware.touchscreen"
@@ -16,6 +20,45 @@
 
     <queries>
         <package android:name="com.spocky.projengmenu" />
+        <!-- The settings file: a picker to import it, apps to share it with (see SettingsFile) -->
+        <intent>
+            <action android:name="android.intent.action.OPEN_DOCUMENT" />
+            <data android:mimeType="*/*" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.SEND" />
+            <data android:mimeType="application/json" />
+        </intent>
+        <!-- Where a wallpaper can open its title (TitleApp) and its trailer -->
+        <package android:name="com.nuvio.tv" />
+        <package android:name="com.nuvio.app" />
+        <package android:name="com.stremio.one" />
+        <package android:name="org.jellyfin.androidtv" />
+        <package android:name="com.google.android.youtube.tv" />
+        <!-- Streaming platforms (Platform) -->
+        <package android:name="com.netflix.ninja" />
+        <package android:name="com.netflix.mediaclient" />
+        <package android:name="com.amazon.amazonvideo.livingroom" />
+        <package android:name="com.amazon.avod.thirdpartyclient" />
+        <package android:name="com.disney.disneyplus" />
+        <package android:name="com.wbd.stream" />
+        <package android:name="com.apple.atve.androidtv.appletv" />
+        <package android:name="com.mubi" />
+        <package android:name="com.crunchyroll.crunchyroid" />
+        <package android:name="com.hulu.livingroomplus" />
+        <package android:name="com.hulu.plus" />
+        <package android:name="com.tubitv" />
+        <package android:name="com.kanopy" />
+        <package android:name="com.hoopladigital.android" />
+        <package android:name="jp.unext.mediaplayer" />
+        <package android:name="jp.unext.tv.player" />
+        <package android:name="no.nrk.tv" />
+        <package android:name="se.svt.android.svtplay" />
+        <package android:name="com.yle.webtv" />
+        <!-- Android's screensaver picker, missing on Google TV (ScreensaverSetupFragment) -->
+        <intent>
+            <action android:name="android.settings.DREAM_SETTINGS" />
+        </intent>
     </queries>
 
     <application
@@ -36,6 +79,16 @@
                 <category android:name="android.intent.category.LAUNCHER" />
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
+            <!-- A settings file (sofadrop-settings.json) opened or shared from a file manager: see SettingsFile -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" />
+                <data android:mimeType="application/json" />
+                <data android:mimeType="text/json" />
+                <data android:mimeType="text/x-json" />
+            </intent-filter>
         </activity>
 
         <receiver
@@ -44,6 +97,28 @@
 
         <activity
             android:name=".PreviewActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Sofadrop.Preview" />
+
+        <!-- Sofascreen: wallpapers as Android's screensaver (see Sofascreen.kt) -->
+        <service
+            android:name=".SofascreenService"
+            android:exported="true"
+            android:label="@string/screensaver_name"
+            android:icon="@mipmap/ic_launcher"
+            android:permission="android.permission.BIND_DREAM_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.dreams.DreamService" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.dream"
+                android:resource="@xml/sofascreen" />
+        </service>
+
+        <!-- Sofascreen started from the settings to try it -->
+        <activity
+            android:name=".SofascreenActivity"
             android:exported="false"
             android:theme="@style/Theme.Sofadrop.Preview" />
 
@@ -89,6 +164,17 @@
                 android:name="updateMode"
                 android:value="1" />
         </service>
+
+        <!-- The settings file shared with another app (see SettingsFile.shareIntent) -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.files"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/shared_files" />
+        </provider>
 
         <!-- Shares the generated wallpapers with Projectivy -->
         <!-- Read-only wallpapers for Projectivy, no per-URI grants (see WallpaperContentProvider) -->

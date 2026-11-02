@@ -34,14 +34,21 @@ class ProviderListsFragment : BaseSettingsFragment() {
     }
 
     private fun buildRows(): List<GuidedAction> {
-        val selected = Settings.lists
+        val selected = profile.lists
         val publicUsable = provider != SourceProvider.TRAKT || Settings.traktConfigured
-        return listOf(accountAction()) + lists.mapIndexed { index, source ->
+        // Trakt users' lists (public ones and the account's) have their own screen
+        val userLists = listOfNotNull(
+            action(ID_USER_LISTS, R.drawable.ic_act_list, getString(R.string.trakt_user_lists_title), TraktListsFragment.summary(requireContext(), profile))
+                .hasNext(true).enabled(publicUsable).build().takeIf { provider == SourceProvider.TRAKT },
+        )
+        return listOf(accountAction()) + userLists + lists.mapIndexed { index, source ->
             val usable = publicUsable && !(source.needsAccount && !connected)
+            val premium = source.key.startsWith("simkl:recommended")
             checkbox(ID_LIST_BASE + index, Sources.label(requireContext(), source).substringAfter(" · "),
                 when {
-                    !usable -> getString(R.string.list_needs_account)
-                    Settings.listFilters[source.key]?.isDefault == false -> Filters.listFiltersSummary(requireContext(), source)
+                    !usable -> getString(if (premium) R.string.list_needs_simkl_premium else R.string.list_needs_account)
+                    profile.listFilters[source.key]?.isDefault == false -> Filters.listFiltersSummary(requireContext(), profile, source)
+                    premium -> getString(R.string.list_simkl_premium)
                     else -> null
                 }, usable && source.key in selected)
                 .enabled(usable)
@@ -50,7 +57,7 @@ class ProviderListsFragment : BaseSettingsFragment() {
     }
 
     private fun refreshRows() {
-        refreshActions(buildRows()) { newInstance(provider) }
+        refreshActions(buildRows())
     }
 
     private val connected get() = AccountsFragment.connected(provider)
@@ -73,10 +80,11 @@ class ProviderListsFragment : BaseSettingsFragment() {
 
     override fun onGuidedActionClicked(action: GuidedAction) {
         when {
-            action.id == ID_ACCOUNT -> add(parentFragmentManager, AccountsFragment.newInstance(provider))
+            action.id == ID_ACCOUNT -> open(AccountsFragment.newInstance(provider))
+            action.id == ID_USER_LISTS -> open(TraktListsFragment())
             action.id >= ID_LIST_BASE -> {
                 val key = lists.getOrNull((action.id - ID_LIST_BASE).toInt())?.key ?: return
-                Settings.lists = if (action.isChecked) Settings.lists + key else Settings.lists - key
+                profile.lists = if (action.isChecked) profile.lists + key else profile.lists - key
             }
         }
     }
@@ -84,6 +92,7 @@ class ProviderListsFragment : BaseSettingsFragment() {
     companion object {
         private const val ARG_PROVIDER = "provider"
         private const val ID_ACCOUNT = 1L
+        private const val ID_USER_LISTS = 2L
         private const val ID_LIST_BASE = 100L
 
         fun newInstance(provider: SourceProvider) =
@@ -97,8 +106,8 @@ class ProviderListsFragment : BaseSettingsFragment() {
         }
 
         /** "2 selected · connected as X" for the Lists screen. */
-        fun summary(context: Context, provider: SourceProvider): String {
-            val count = Sources.selected().count { it.provider == provider }
+        fun summary(context: Context, profile: Profile, provider: SourceProvider): String {
+            val count = Sources.selected(profile).count { it.provider == provider }
             val connected = when (provider) {
                 SourceProvider.TRAKT -> Settings.traktConnected
                 SourceProvider.SIMKL -> Settings.simklConnected

@@ -11,7 +11,10 @@ import androidx.leanback.widget.GuidedAction
 /** Main settings: what to do now, where titles come from, and how often. Details live in sub-screens. */
 class SettingsFragment : PreviewSettingsFragment() {
 
-    override val showsProjectivyNotice = true
+    /** Without Projectivy, Sofadrop is only a screensaver: the rows about Projectivy go. */
+    private val hasProjectivy by lazy { Projectivy.isInstalled(requireContext()) }
+
+    override val showsProjectivyNotice get() = hasProjectivy
 
     private val statusRefresher = object : Runnable {
         override fun run() {
@@ -27,27 +30,40 @@ class SettingsFragment : PreviewSettingsFragment() {
         AppCompatResources.getDrawable(requireActivity(), R.mipmap.ic_launcher),
     )
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        // Delivered on the way back from the notes, before onResume resets the update row: install after it
+        parentFragmentManager.setFragmentResultListener(UpdateFragment.RESULT_INSTALL, this) { _, _ -> handler.post { installUpdate() } }
+    }
+
     override fun onCreateActions(actions: MutableList<GuidedAction>, savedInstanceState: Bundle?) {
         val context = requireContext()
         Settings.init(context)
 
         // First run: Sofadrop does nothing until it is Projectivy's wallpaper, so say where to pick it
-        if (Settings.projectivyAskedAt == 0L && !WallpaperStore(context).everServed) {
+        if (hasProjectivy && Settings.projectivyAskedAt == 0L && !WallpaperStore(context).everServed) {
             actions += action(ID_USE_IN_PROJECTIVY, R.drawable.ic_act_tv, getString(R.string.use_in_projectivy_title),
                 getString(R.string.use_in_projectivy_desc)).multilineDescription(true).build()
         }
-        if (Updater.available) {
-            actions += action(ID_APP_UPDATE, R.drawable.ic_act_refresh, getString(R.string.update_title),
-                getString(R.string.update_desc, Settings.updateVersion, BuildConfig.VERSION_NAME)).multilineDescription(true).build()
+        // Without Projectivy, until the screensaver has been shown once: that's what Sofadrop is for there
+        if (!hasProjectivy && Settings.screensaverShownAt == 0L) {
+            actions += action(ID_SCREENSAVER_ONLY, R.drawable.ic_act_screensaver, getString(R.string.screensaver_only_title),
+                getString(R.string.screensaver_only_hint)).multilineDescription(true).build()
         }
+        if (Updater.available) actions += updateAction()
         // "Update now" also carries the status, so there is a single place to look
         actions += action(ID_GENERATE, R.drawable.ic_act_refresh, getString(R.string.action_generate_now), statusText())
             .multilineDescription(true).build()
         actions += action(ID_PREVIEW, R.drawable.ic_act_preview, getString(R.string.action_preview), getString(R.string.action_preview_desc))
             .enabled(WallpaperStore(context).current().isNotEmpty()).build()
-        actions += action(ID_LISTS, R.drawable.ic_act_movie, getString(R.string.setting_lists_title), ListsFragment.summary(context))
+        actions += action(ID_LISTS, R.drawable.ic_act_movie, getString(R.string.setting_lists_title), ListsFragment.summary(context, profile))
             .hasNext(true).build()
-        actions += action(ID_DETAILS, R.drawable.ic_act_tv, getString(R.string.setting_details_title), DetailsFragment.summary(context))
+        actions += action(ID_DETAILS, R.drawable.ic_act_tv, getString(R.string.setting_details_title), DetailsFragment.summary(context, profile))
+            .hasNext(true).build()
+        // Part of the wallpapers, before the screensaver
+        if (hasProjectivy) actions += action(ID_CLICK, R.drawable.ic_act_play, getString(R.string.click_action_title), ClickActionFragment.summary(context))
+            .hasNext(true).build()
+        actions += action(ID_SCREENSAVER, R.drawable.ic_act_screensaver, getString(R.string.screensaver_title), ScreensaverFragment.summary(context))
             .hasNext(true).build()
         actions += action(ID_ACCOUNTS, R.drawable.ic_act_account, getString(R.string.setting_accounts_title), AccountsFragment.summary(context))
             .hasNext(true).build()
@@ -61,28 +77,30 @@ class SettingsFragment : PreviewSettingsFragment() {
         super.onResume()
         // Sub-screens may have changed lists, filters or details
         val context = requireContext()
-        updateDescription(ID_LISTS, ListsFragment.summary(context))
-        updateDescription(ID_DETAILS, DetailsFragment.summary(context))
+        updateDescription(ID_LISTS, ListsFragment.summary(context, profile))
+        updateDescription(ID_DETAILS, DetailsFragment.summary(context, profile))
+        updateDescription(ID_SCREENSAVER, ScreensaverFragment.summary(context))
+        updateDescription(ID_CLICK, ClickActionFragment.summary(context))
         updateDescription(ID_ACCOUNTS, AccountsFragment.summary(context))
         handler.post(statusRefresher)
         // Back from the system installer (cancelled, or blocked by Play Protect): offer the update again
-        updateDescription(ID_APP_UPDATE, getString(R.string.update_desc, Settings.updateVersion, BuildConfig.VERSION_NAME))
-        background({ Updater.check() }) { }
+        updateDescription(ID_APP_UPDATE, updateText())
+        background({ Updater.check() }) { showUpdate() }
     }
 
     override fun onPause() {
         handler.removeCallbacks(statusRefresher)
         val context = requireContext()
         GenerateWallpapersWorker.schedule(context, settingsChanged = true)
-        // First run: nothing to show in Projectivy yet, so generate right away
-        if (Settings.lastGeneration == 0L && Settings.token.isNotBlank()) GenerateWallpapersWorker.runNow(context)
+        // First run: nothing to show in Projectivy yet, so generate right away (the wizard does it with its answers)
+        if (profile.lastGeneration == 0L && Settings.token.isNotBlank() && !Wizard.open) GenerateWallpapersWorker.runNow(context)
         super.onPause()
     }
 
     override fun onGuidedActionClicked(action: GuidedAction) {
         when (action.id) {
             ID_GENERATE -> {
-                if (Sources.selected().isEmpty()) {
+                if (Sources.selected(profile).isEmpty()) {
                     Toast.makeText(requireContext(), R.string.select_list_first, Toast.LENGTH_SHORT).show()
                     return
                 }
@@ -91,12 +109,15 @@ class SettingsFragment : PreviewSettingsFragment() {
                 refreshStatus()
             }
             ID_PREVIEW -> startActivity(Intent(requireContext(), PreviewActivity::class.java))
-            ID_APP_UPDATE -> installUpdate()
+            // What's new first, when the release says
+            ID_APP_UPDATE -> if (hasNotes()) open(UpdateFragment()) else installUpdate()
             ID_USE_IN_PROJECTIVY -> Projectivy.openWallpaperSettings(requireContext())
-            ID_LISTS -> add(parentFragmentManager, ListsFragment())
-            ID_DETAILS -> add(parentFragmentManager, DetailsFragment())
-            ID_ACCOUNTS -> add(parentFragmentManager, AccountsFragment())
-            ID_ABOUT -> add(parentFragmentManager, AboutFragment())
+            ID_LISTS -> open(ListsFragment())
+            ID_DETAILS -> open(DetailsFragment())
+            ID_SCREENSAVER, ID_SCREENSAVER_ONLY -> add(parentFragmentManager, ScreensaverFragment().forProfile(Profile.SCREENSAVER))
+            ID_CLICK -> open(ClickActionFragment())
+            ID_ACCOUNTS -> open(AccountsFragment())
+            ID_ABOUT -> open(AboutFragment())
         }
     }
 
@@ -117,6 +138,22 @@ class SettingsFragment : PreviewSettingsFragment() {
         change()
         refreshStatus()
         schedulePreview()
+    }
+
+    private fun hasNotes() = Updater.releaseNotes(Settings.updateNotes).isNotEmpty()
+
+    private fun updateText() = getString(if (hasNotes()) R.string.update_desc_notes else R.string.update_desc,
+        Settings.updateVersion, BuildConfig.VERSION_NAME)
+
+    // Opens the notes first when the release has them (onGuidedActionClicked)
+    private fun updateAction(): GuidedAction =
+        action(ID_APP_UPDATE, R.drawable.ic_act_refresh, getString(R.string.update_title), updateText()).multilineDescription(true).build()
+
+    /** Offer an update found after the screen opened, below the first-run hint, without reopening the screen. */
+    private fun showUpdate() {
+        if (!isAdded || !Updater.available || findActionById(ID_APP_UPDATE) != null) return
+        val index = if (findActionById(ID_USE_IN_PROJECTIVY) != null || findActionById(ID_SCREENSAVER_ONLY) != null) 1 else 0
+        actions = actions.toMutableList().apply { add(index, updateAction()) }
     }
 
     /** Download and install the new version; Android first asks to allow Sofadrop to install apps. */
@@ -150,27 +187,7 @@ class SettingsFragment : PreviewSettingsFragment() {
         refreshPending()
     }
 
-    private fun statusText(): String {
-        val count = WallpaperStore(requireContext()).current().size
-        return when {
-            Settings.generating -> Settings.generationProgress?.let { (done, list, lists) ->
-                getString(R.string.status_progress, resources.getQuantityString(R.plurals.wallpapers_count, done, done), list, lists)
-            } ?: getString(R.string.status_generating)
-            Sources.selected().isEmpty() -> getString(R.string.status_select_list)
-            // A "no lists" error is stale once lists are picked again
-            Settings.lastError.isNotEmpty() && Settings.lastError != getString(R.string.error_no_lists) ->
-                getString(R.string.status_error, Settings.lastError)
-            count == 0 -> getString(R.string.status_never)
-            Settings.hasPendingChanges -> getString(R.string.status_pending, count)
-            else -> getString(
-                R.string.status_ok, count,
-                // "0 minutes ago" reads oddly; mid-sentence, Spanish and others capitalise it ("Hace 3 minutos")
-                if (System.currentTimeMillis() - Settings.lastGeneration < DateUtils.MINUTE_IN_MILLIS) getString(R.string.time_just_now)
-                else DateUtils.getRelativeTimeSpanString(Settings.lastGeneration, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS)
-                    .toString().replaceFirstChar { it.lowercase() },
-            )
-        }
-    }
+    private fun statusText(): String = generationStatus()
 
     // --- Labels ---
 
@@ -187,5 +204,8 @@ class SettingsFragment : PreviewSettingsFragment() {
         private const val ID_APP_UPDATE = 21L
         private const val ID_USE_IN_PROJECTIVY = 22L
         private const val ID_ACCOUNTS = 23L
+        private const val ID_CLICK = 24L
+        private const val ID_SCREENSAVER = 25L
+        private const val ID_SCREENSAVER_ONLY = 26L
     }
 }

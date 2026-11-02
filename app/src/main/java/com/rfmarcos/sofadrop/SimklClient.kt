@@ -4,16 +4,22 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.longOrNull
 import okhttp3.FormBody
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.IOException
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
+
+/** Simkl's recommendations are a PRO and VIP feature: a free account can't read them. */
+class SimklPremiumException : IOException("Simkl recommendations need a PRO or VIP account")
 
 /**
  * Simkl API (https://api.simkl.org). Trending lists come from its public CDN (no key); the user's
- * library (plan to watch, watching, completed) needs the account connected with the device flow.
+ * library (plan to watch, watching, completed) and recommendations need the account connected with the device flow.
  */
 class SimklClient(private val clientId: String, private val tmdb: TmdbClient? = null) {
 
@@ -24,6 +30,9 @@ class SimklClient(private val clientId: String, private val tmdb: TmdbClient? = 
         "simkl:trending_shows" -> trending("tv")
         "simkl:plantowatch" -> library("plantowatch").sortedByDescending { it.addedAt }.asSequence().map { it.ref }
         "simkl:watching" -> library("watching").sortedByDescending { it.watchedAt }.asSequence().map { it.ref }
+        "simkl:recommended_movies" -> recommendations("movies").asSequence()
+        "simkl:recommended_shows" -> recommendations("tv").asSequence()
+        "simkl:recommended_anime" -> recommendations("anime").asSequence()
         else -> emptySequence()
     }.distinct().take(limit * 2).toList()
 
@@ -39,14 +48,42 @@ class SimklClient(private val clientId: String, private val tmdb: TmdbClient? = 
 
     /**
      * Simkl links anime seasons to TMDB *season* ids, so anime series go through their IMDb id
-     * (which names the whole show) and only fall back to the TMDB id.
+     * (which names the whole show) and only fall back to the TMDB id. Titles without a TMDB id
+     * (custom lists don't always have one) are looked up by their IMDb id.
      */
     private fun ref(type: MediaType, tmdbId: String?, imdbId: String?, anime: Boolean): TitleRef? {
-        if (anime && type == MediaType.TV && imdbId != null && tmdb != null) {
-            tmdb.get("find/$imdbId?external_source=imdb_id")?.objects("tv_results")?.firstOrNull()?.int("id")
-                ?.let { return TitleRef(type, it) }
+        val byImdb = { tmdb?.takeIf { imdbId != null }?.get("find/$imdbId?external_source=imdb_id")
+            ?.objects(if (type == MediaType.MOVIE) "movie_results" else "tv_results")?.firstOrNull()?.int("id")
+            ?.let { TitleRef(type, it) } }
+        if (anime && type == MediaType.TV) byImdb()?.let { return it }
+        return tmdbId?.toIntOrNull()?.let { TitleRef(type, it) } ?: byImdb()
+    }
+
+    // --- Recommendations (PRO and VIP) ---
+
+    private val recommendationCache = ConcurrentHashMap<String, List<TitleRef>>()
+
+    /**
+     * The account's personal recommendations of a media type ("movies", "tv" or "anime"): Simkl keeps them as
+     * custom lists of type "recommendations", two per type (V1 and V2), here taken in turns. Read once per
+     * generation (a list read further asks again); a free account throws [SimklPremiumException].
+     */
+    private fun recommendations(mediaType: String): List<TitleRef> = recommendationCache.getOrPut(mediaType) {
+        if (!Settings.simklConnected) return emptyList()
+        val account = (get("users/settings") as? JsonObject)?.obj("account")
+        if (account?.str("type") == "free") throw SimklPremiumException()
+        val userId = account?.int("id") ?: return emptyList()
+        val lists = get("lists/user/$userId", "limit" to "100") as? JsonObject ?: return emptyList()
+        // A free account gets a 200 with this error instead of lists
+        if (lists.str("error") == "premium_only") throw SimklPremiumException()
+        val items = parseRecommendationLists(lists, mediaType).map { id ->
+            val list = get("lists/$id", "limit" to "500") as? JsonObject
+            if (list?.str("error") == "premium_only") throw SimklPremiumException()
+            list?.let { parseListItems(it) }.orEmpty()
         }
-        return tmdbId?.toIntOrNull()?.let { TitleRef(type, it) }
+        // V1, V2, V1, V2…: both engines' best picks first
+        val turns = (0 until (items.maxOfOrNull { it.size } ?: 0)).flatMap { i -> items.mapNotNull { it.getOrNull(i) } }
+        turns.distinct().mapNotNull { ref(it.type, it.tmdbId, it.imdbId, it.anime) }.distinct()
     }
 
     // --- The user's library ---
@@ -83,12 +120,13 @@ class SimklClient(private val clientId: String, private val tmdb: TmdbClient? = 
 
     // --- HTTP ---
 
-    private fun get(path: String): JsonElement? {
+    private fun get(path: String, vararg params: Pair<String, String>): JsonElement? {
         refreshIfNeeded()
         val url = "$API_URL$path".toHttpUrl().newBuilder()
             .addQueryParameter("client_id", clientId)
             .addQueryParameter("app-name", APP_NAME)
             .addQueryParameter("app-version", BuildConfig.VERSION_NAME)
+            .apply { params.forEach { (name, value) -> addQueryParameter(name, value) } }
             .build()
         val request = Request.Builder().url(url).header("User-Agent", USER_AGENT)
             .header("Authorization", "Bearer ${Settings.simklAccessToken}").build()
@@ -195,6 +233,23 @@ class SimklClient(private val clientId: String, private val tmdb: TmdbClient? = 
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .build()
+
+        /** A title of a custom list, before it's linked to TMDB. */
+        data class ListItem(val type: MediaType, val tmdbId: String?, val imdbId: String?, val anime: Boolean)
+
+        /** Ids of the recommendation lists of [mediaType] ("movies", "tv" or "anime") in `GET /lists/user/{id}`. */
+        fun parseRecommendationLists(body: JsonObject, mediaType: String): List<Long> =
+            body.objects("lists").filter { it.str("type") == "recommendations" && it.str("media_type") == mediaType }
+                .mapNotNull { (it["id"] as? JsonPrimitive)?.longOrNull }
+
+        /** The items of `GET /lists/{id}`: movies, shows and anime (an anime film is a movie). */
+        fun parseListItems(body: JsonObject): List<ListItem> = body.objects("items").mapNotNull { item ->
+            val ids = item.obj("ids") ?: return@mapNotNull null
+            val anime = item.str("type") == "anime"
+            val movie = item.str("type") == "movie" || (anime && item.str("anime_type") == "movie")
+            ListItem(if (movie) MediaType.MOVIE else MediaType.TV, ids.str("tmdb"), ids.str("imdb"), anime)
+                .takeIf { it.tmdbId != null || it.imdbId != null }
+        }
 
         /** Library items come grouped as `{ "movies": [...], "shows": [...], "anime": [...] }`. */
         fun parseLibrary(body: JsonObject): List<LibraryItem> {

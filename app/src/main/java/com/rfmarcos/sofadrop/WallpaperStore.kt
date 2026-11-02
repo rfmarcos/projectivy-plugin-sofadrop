@@ -15,15 +15,25 @@ data class StoredWallpaper(
     val tmdbId: Int,
     /** Key of the list it came from (empty in sets made before it was stored). */
     val source: String = "",
+    /** YouTube trailer opened from Projectivy (null: none, or a set made before it was stored). */
+    val trailerKey: String? = null,
+    /** "tt0133093", for the apps that open a title by its IMDb id (see [TitleApp]). */
+    val imdbId: String? = null,
+    /** TMDB ids of its streaming services in the streaming country (see [Platform.pick]). */
+    val providerIds: List<Int> = emptyList(),
+    /** Its pages on the streaming platforms, by [Platform.key] (only when the user has platforms). */
+    val platformLinks: Map<String, String> = emptyMap(),
 )
 
 /**
- * Generated wallpapers live in files/wallpapers/<generation>/ with an index.json.
- * A new generation is written to its own folder and swapped in atomically.
+ * Generated wallpapers live in files/wallpapers/<generation>/ with an index.json (the screensaver's own
+ * set in files/screensaver/). A new generation is written to its own folder and swapped in atomically.
  */
-class WallpaperStore(private val context: Context) {
+class WallpaperStore(private val context: Context, profile: Profile = Profile.WALLPAPER) {
 
-    private val root = File(context.filesDir, DIR)
+    /** Whose set it is: the screensaver shows the wallpapers' unless it has its own. */
+    private val set = profile.source
+    private val root = File(context.filesDir, if (set.isScreensaver) SCREENSAVER_DIR else DIR)
     private val currentFile = File(root, "current.txt")
     private val servedFile = File(root, "served.txt")
     private val json = Json { ignoreUnknownKeys = true; prettyPrint = true }
@@ -35,15 +45,20 @@ class WallpaperStore(private val context: Context) {
      * Make [generation] the current set. The set Projectivy was last given is kept: it caches those
      * URIs (for up to [R.integer.items_cache_duration_millis], or until it restarts) and falls back to
      * its own wallpaper when they fail to load. Before anything was served, the previous set is kept.
+     * The screensaver reads its files directly, so its previous set goes.
      */
     fun publish(generation: File, wallpapers: List<StoredWallpaper>) {
         File(generation, INDEX).writeText(json.encodeToString(wallpapers))
-        val keep = servedFile.takeIf { it.exists() }?.readText()?.trim() ?: currentDir()?.name
+        val keep = if (set.isScreensaver) null else servedFile.takeIf { it.exists() }?.readText()?.trim() ?: currentDir()?.name
         val tmp = File(root, "current.tmp")
         tmp.writeText(generation.name)
         tmp.renameTo(currentFile)
-        root.listFiles()?.filter { it.isDirectory && it.name != generation.name && it.name != keep }?.forEach { it.deleteRecursively() }
+        // Only older sets: a newer one may be another generation still being written (two can overlap)
+        root.listFiles()?.filter { it.isDirectory && it.name != keep && startedAt(it) < startedAt(generation) }?.forEach { it.deleteRecursively() }
     }
+
+    /** When the generation in [dir] ("gen-1761560000000") started; 0 for anything else, which goes. */
+    private fun startedAt(dir: File): Long = dir.name.removePrefix("gen-").toLongOrNull() ?: 0L
 
     /** True once Projectivy has been given a set (since 1.0.1). */
     val everServed: Boolean get() = servedFile.exists()
@@ -82,5 +97,11 @@ class WallpaperStore(private val context: Context) {
     companion object {
         private const val INDEX = "index.json"
         const val DIR = "wallpapers"
+        private const val SCREENSAVER_DIR = "screensaver"
+
+        /** Remove the screensaver's own set, once it shows the wallpapers' again. */
+        fun deleteScreensaverSet(context: Context) {
+            File(context.filesDir, SCREENSAVER_DIR).deleteRecursively()
+        }
     }
 }

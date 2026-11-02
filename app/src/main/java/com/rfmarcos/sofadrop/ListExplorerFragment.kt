@@ -2,6 +2,7 @@ package com.rfmarcos.sofadrop
 
 import android.content.Context
 import android.os.Bundle
+import android.widget.Toast
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.leanback.widget.GuidanceStylist.Guidance
 import androidx.leanback.widget.GuidedAction
@@ -13,6 +14,8 @@ import androidx.leanback.widget.GuidedAction
 class ListExplorerFragment : BaseSettingsFragment() {
 
     private var lists: List<ListSource> = emptyList()
+    /** The blocked titles in the order the "Blocked titles" row lists them. */
+    private var blocked: List<TitleRef> = emptyList()
 
     override fun onCreateGuidance(savedInstanceState: Bundle?) = Guidance(
         getString(R.string.setting_explore_title),
@@ -31,69 +34,106 @@ class ListExplorerFragment : BaseSettingsFragment() {
     }
 
     // Replacing the actions breaks leanback's sub-action expansion, so rows are updated in place
-    private fun refresh() = refreshActions(buildRows()) { ListExplorerFragment() }
+    private fun refresh() = refreshActions(buildRows())
 
     private fun buildRows(): List<GuidedAction> {
         val context = requireContext()
         val trackers = Settings.connectedTrackers
         val rows = mutableListOf(
-            choiceRow(ID_AGE, R.drawable.ic_act_schedule, R.string.filters_age_title, Settings.MAX_AGE_OPTIONS.map { Filters.ageLabel(context, it) },
-                Filters.ageLabel(context, Settings.maxAgeMonths)),
+            choiceRow(ID_AGE, R.drawable.ic_act_schedule, R.string.filters_age_title, ageOptions(profile.maxAgeMonths).map { Filters.ageLabel(context, it) },
+                Filters.ageLabel(context, profile.maxAgeMonths)),
+            yearRow(ID_FROM_YEAR, profile.maxAgeMonths),
             choiceRow(ID_GLOBAL_HITS, R.drawable.ic_act_public, R.string.setting_global_hits_title, Filters.onOff(context),
-                Filters.onOff(context)[if (Settings.globalHitsOnly) 1 else 0]),
+                Filters.onOff(context)[if (profile.globalHitsOnly) 1 else 0]),
             if (trackers.isEmpty()) action(ID_WATCH_SOURCE, R.drawable.ic_act_history, getString(R.string.watch_source_title),
-                describe(context, ID_WATCH_SOURCE)).hasNext(true).build()
+                describe(context, profile, ID_WATCH_SOURCE)).hasNext(true).build()
             else choiceRow(ID_WATCH_SOURCE, R.drawable.ic_act_history, R.string.watch_source_title,
                 (listOf(Settings.WATCH_NONE) + trackers).map { Filters.watchSourceLabel(context, it) },
                 Filters.watchSourceLabel(context, Settings.watchSource)),
             choiceRow(ID_WATCHED, R.drawable.ic_act_visibility, R.string.setting_watched_title, Filters.WATCHED_MODES.map { Filters.watchedLabel(context, it) },
-                Filters.watchedLabel(context, Settings.watchedMode)).also { it.isEnabled = Settings.watchSource != null },
+                Filters.watchedLabel(context, profile.watchedMode)).also { it.isEnabled = Settings.watchSource != null },
             action(ID_ADULT, R.drawable.ic_act_block, getString(R.string.filters_adult_title), null)
-                .checkSetId(GuidedAction.CHECKBOX_CHECK_SET_ID).checked(Settings.excludeAdult).build(),
+                .checkSetId(GuidedAction.CHECKBOX_CHECK_SET_ID).checked(profile.excludeAdult).build(),
             choiceRow(ID_RATING_AGE, R.drawable.ic_act_filter, R.string.filters_rating_age_title,
-                Settings.MAX_RATING_AGE_OPTIONS.map { Filters.ratingAgeLabel(context, it) }, Filters.ratingAgeLabel(context, Settings.maxRatingAge)),
-            action(ID_GENRES, R.drawable.ic_act_movie, getString(R.string.genres_title), Filters.genresLabel(context, Settings.genreFilter))
+                Settings.MAX_RATING_AGE_OPTIONS.map { Filters.ratingAgeLabel(context, it) }, Filters.ratingAgeLabel(context, profile.maxRatingAge)),
+            choiceRow(ID_MIN_RATING, R.drawable.ic_act_status, R.string.filters_min_rating_title,
+                Settings.MIN_RATING_OPTIONS.map { Filters.ratingLabel(context, it) }, Filters.ratingLabel(context, profile.minRating)),
+            action(ID_GENRES, R.drawable.ic_act_movie, getString(R.string.genres_title), Filters.genresLabel(context, profile.genreFilter))
                 .hasNext(true).build(),
             action(ID_DUPLICATES, R.drawable.ic_act_list, getString(R.string.filters_duplicates_title), null)
-                .checkSetId(GuidedAction.CHECKBOX_CHECK_SET_ID).checked(Settings.skipDuplicates).build(),
+                .checkSetId(GuidedAction.CHECKBOX_CHECK_SET_ID).checked(profile.skipDuplicates).build(),
+            blockedRow(),
         )
         explanations.putAll(filterExplanations(context))
         // Only selected lists: duplicates (and so what a list really brings) depend on the others
-        lists = Sources.selected()
+        lists = Sources.selected(profile)
         rows += if (lists.isEmpty()) {
             action(ID_EMPTY, R.drawable.ic_act_info, getString(R.string.explore_empty_title), getString(R.string.explore_empty_desc)).focusable(false).build()
         } else {
             header(ID_HEADER, getString(R.string.explore_lists_header))
         }
         rows += lists.mapIndexed { index, source ->
-            action(LIST_BASE + index, R.drawable.ic_act_list, Sources.label(context, source), Filters.listFiltersSummary(context, source)).hasNext(true).build()
+            action(LIST_BASE + index, R.drawable.ic_act_list, Sources.label(context, source), Filters.listFiltersSummary(context, profile, source)).hasNext(true).build()
         }
         return rows
     }
 
+    /** "3 titles blocked"; expands into the blocked titles (choose one to unblock it) and "Clear all" (twice). */
+    private fun blockedRow(): GuidedAction {
+        val names = Settings.blocked
+        blocked = names.keys.sortedBy { names[it].orEmpty().ifEmpty { "~${it.tmdbId}" }.lowercase() }
+        val count = blocked.size
+        val row = action(ID_BLOCKED, R.drawable.ic_act_block, getString(R.string.filters_blocked_title),
+            resources.getQuantityString(R.plurals.filters_blocked_count, count, count))
+        if (count > 0) row.subActions(blocked.mapIndexed { index, ref ->
+            GuidedAction.Builder(requireContext()).id(ID_BLOCKED * SUB_ID_BASE + 1 + index)
+                .title(names[ref].orEmpty().ifEmpty { "TMDB ${ref.type.path} ${ref.tmdbId}" })
+                .description(getString(R.string.filters_blocked_unblock)).build()
+        } + GuidedAction.Builder(requireContext()).id(ID_BLOCKED * SUB_ID_BASE).title(getString(R.string.filters_blocked_clear)).build())
+        return row.build()
+    }
+
     private fun choiceRow(id: Long, icon: Int, title: Int, values: List<String>, current: String) =
-        action(id, icon, getString(title), describe(requireContext(), id))
+        action(id, icon, getString(title), describe(requireContext(), profile, id))
             .subActions(options(id, values, current)).build()
 
     override fun onGuidedActionClicked(action: GuidedAction) {
         when (action.id) {
-            ID_ADULT -> Settings.excludeAdult = action.isChecked
-            ID_WATCH_SOURCE -> if (Settings.connectedTrackers.isEmpty()) add(parentFragmentManager, AccountsFragment.newInstance(SourceProvider.TRAKT))
-            ID_DUPLICATES -> Settings.skipDuplicates = action.isChecked
-            ID_GENRES -> { add(parentFragmentManager, GenresFragment.newInstance(null)); return }
+            ID_ADULT -> profile.excludeAdult = action.isChecked
+            ID_WATCH_SOURCE -> if (Settings.connectedTrackers.isEmpty()) open(AccountsFragment.newInstance(SourceProvider.TRAKT))
+            ID_DUPLICATES -> profile.skipDuplicates = action.isChecked
+            ID_GENRES -> { open(GenresFragment.newInstance(null)); return }
         }
         val source = lists.getOrNull((action.id - LIST_BASE).toInt()) ?: return
-        add(parentFragmentManager, ListContentsFragment.newInstance(source.key))
+        open(ListContentsFragment.newInstance(source.key))
+    }
+
+    /** A typed year becomes the age limit; emptied, a year limit goes. */
+    override fun onGuidedActionEditedAndProceed(action: GuidedAction): Long {
+        if (action.id != ID_FROM_YEAR) return GuidedAction.ACTION_ID_CURRENT
+        typedYear(requireContext(), action, profile.maxAgeMonths)?.let { profile.maxAgeMonths = it.getOrNull() ?: 0 }
+        refresh()
+        return GuidedAction.ACTION_ID_CURRENT
     }
 
     override fun onSubGuidedActionClicked(action: GuidedAction): Boolean {
         val index = (action.id % SUB_ID_BASE).toInt()
         when (action.id / SUB_ID_BASE) {
-            ID_AGE -> Settings.maxAgeMonths = Settings.MAX_AGE_OPTIONS[index]
-            ID_GLOBAL_HITS -> Settings.globalHitsOnly = index == 1
+            ID_AGE -> profile.maxAgeMonths = ageOptions(profile.maxAgeMonths)[index]
+            ID_GLOBAL_HITS -> profile.globalHitsOnly = index == 1
             ID_WATCH_SOURCE -> Settings.setWatchSource((listOf(Settings.WATCH_NONE) + Settings.connectedTrackers)[index])
-            ID_WATCHED -> Settings.watchedMode = Filters.WATCHED_MODES[index]
-            ID_RATING_AGE -> Settings.maxRatingAge = Settings.MAX_RATING_AGE_OPTIONS[index]
+            ID_WATCHED -> profile.watchedMode = Filters.WATCHED_MODES[index]
+            ID_RATING_AGE -> profile.maxRatingAge = Settings.MAX_RATING_AGE_OPTIONS[index]
+            ID_MIN_RATING -> profile.minRating = Settings.MIN_RATING_OPTIONS[index]
+            ID_BLOCKED -> {
+                // All of them at once can't be undone: a second press
+                if (index == 0 && !confirmed(action, resources.getQuantityString(R.plurals.filters_blocked_clear_confirm, blocked.size, blocked.size))) {
+                    return false
+                }
+                // Close the expanded titles first: the last one gone, the row loses them and leanback would leave them drawn
+                collapseSubActions()
+                blocked.getOrNull(index - 1)?.let { Settings.setBlocked(it, false) } ?: Settings.clearBlocked()
+            }
         }
         refresh() // the watched row follows the watch history
         return true
@@ -110,17 +150,39 @@ class ListExplorerFragment : BaseSettingsFragment() {
         private const val ID_DUPLICATES = 8L
         private const val ID_RATING_AGE = 9L
         private const val ID_GENRES = 10L
+        private const val ID_FROM_YEAR = 11L
+        private const val ID_MIN_RATING = 12L
+        private const val ID_BLOCKED = 13L
         private const val LIST_BASE = 100L
 
+        /** The age limits to choose from, with the typed year when [current] is one. */
+        fun ageOptions(current: Int?) = Settings.MAX_AGE_OPTIONS + listOfNotNull(current?.takeIf { Settings.isYear(it) })
+
+        /**
+         * The year typed in [action] (which is then emptied): success with the year, success with null when
+         * emptied while [current] is a year, or null to change nothing (with a message when it isn't a year).
+         */
+        fun typedYear(context: Context, action: GuidedAction, current: Int?): Result<Int?>? {
+            val text = action.editDescription?.toString().orEmpty().trim()
+            action.editDescription = ""
+            if (text.isEmpty()) return if (current != null && Settings.isYear(current)) Result.success(null) else null
+            val year = Settings.parseYear(text)
+            if (year == null) Toast.makeText(context, context.getString(R.string.filters_year_invalid, text, Settings.lastYear), Toast.LENGTH_LONG).show()
+            return year?.let { Result.success(it) }
+        }
+
         /** Value of a default filter (what it does is shown in the left pane, see [filterExplanations]). */
-        private fun describe(context: Context, id: Long): String = when (id) {
-            ID_AGE -> Filters.ageLabel(context, Settings.maxAgeMonths)
-            ID_GLOBAL_HITS -> Filters.onOff(context)[if (Settings.globalHitsOnly) 1 else 0]
-            ID_RATING_AGE -> Filters.ratingAgeLabel(context, Settings.maxRatingAge)
+        private fun describe(context: Context, profile: Profile, id: Long): String = when (id) {
+            // A year typed below sets the limit: this row says so instead of repeating it
+            ID_AGE -> if (Settings.isYear(profile.maxAgeMonths)) context.getString(R.string.filters_age_replaced)
+                else Filters.ageLabel(context, profile.maxAgeMonths)
+            ID_GLOBAL_HITS -> Filters.onOff(context)[if (profile.globalHitsOnly) 1 else 0]
+            ID_RATING_AGE -> Filters.ratingAgeLabel(context, profile.maxRatingAge)
+            ID_MIN_RATING -> Filters.ratingLabel(context, profile.minRating)
             ID_WATCH_SOURCE -> if (Settings.connectedTrackers.isEmpty()) context.getString(R.string.watch_source_connect)
                 else Filters.watchSourceLabel(context, Settings.watchSource)
             else -> if (Settings.watchSource == null) context.getString(R.string.watched_need_source)
-                else Filters.watchedLabel(context, Settings.watchedMode)
+                else Filters.watchedLabel(context, profile.watchedMode)
         }
 
         /** What each filter does, for the left pane; the list pages use the same ids for their own filters. */
@@ -128,13 +190,16 @@ class ListExplorerFragment : BaseSettingsFragment() {
             val automatic = context.getString(R.string.filters_automatic_note)
             return mapOf(
                 ID_AGE to context.getString(R.string.filters_age_explain) + "\n\n" + automatic,
+                ID_FROM_YEAR to context.getString(R.string.filters_year_explain) + "\n\n" + automatic,
                 ID_GLOBAL_HITS to context.getString(R.string.setting_global_hits_desc) + "\n\n" + automatic,
                 ID_WATCH_SOURCE to context.getString(R.string.watch_source_explain),
                 ID_WATCHED to context.getString(R.string.watched_explain),
                 ID_ADULT to context.getString(R.string.filters_adult_desc),
                 ID_RATING_AGE to context.getString(R.string.filters_rating_age_desc, Languages.countryName(Settings.region)),
                 ID_GENRES to context.getString(R.string.genres_explain) + "\n\n" + automatic,
+                ID_MIN_RATING to context.getString(R.string.filters_min_rating_explain) + "\n\n" + automatic,
                 ID_DUPLICATES to context.getString(R.string.filters_duplicates_desc),
+                ID_BLOCKED to context.getString(R.string.filters_blocked_desc),
             )
         }
     }
@@ -150,6 +215,8 @@ class ListContentsFragment : BaseSettingsFragment() {
     private val source get() = Sources.available().firstOrNull { it.key == sourceKey }
     private var loadJob = 0
     private var filterActions: List<GuidedAction> = emptyList()
+    /** The titles shown and their "Title (year)", to block one. */
+    private var titles: List<Pair<TitleRef, String>> = emptyList()
     /** The genre filter the titles were last loaded with. */
     private var shownGenres: GenreFilter? = null
 
@@ -165,7 +232,7 @@ class ListContentsFragment : BaseSettingsFragment() {
         filterActions = filterRows(list)
         actions += filterActions
         explanations.putAll(ListExplorerFragment.filterExplanations(requireContext()))
-        shownGenres = Settings.filtersFor(list).genres
+        shownGenres = profile.filtersFor(list).genres
         loadTitles(list)
     }
 
@@ -173,7 +240,7 @@ class ListContentsFragment : BaseSettingsFragment() {
         super.onResume()
         // Back from this list's genres
         val list = source ?: return
-        val genres = Settings.filtersFor(list).genres
+        val genres = profile.filtersFor(list).genres
         if (shownGenres == null || genres == shownGenres) return
         shownGenres = genres
         filterRows(list).forEach { fresh -> updateDescription(fresh.id, fresh.description) }
@@ -181,22 +248,47 @@ class ListContentsFragment : BaseSettingsFragment() {
     }
 
     override fun onGuidedActionClicked(action: GuidedAction) {
-        if (action.id == ID_GENRES) add(parentFragmentManager, GenresFragment.newInstance(sourceKey))
+        if (action.id == ID_GENRES) open(GenresFragment.newInstance(sourceKey))
+    }
+
+    /** A typed year becomes this list's age limit; emptied, its year limit goes back to the default. */
+    override fun onGuidedActionEditedAndProceed(action: GuidedAction): Long {
+        val list = source ?: return GuidedAction.ACTION_ID_CURRENT
+        if (action.id != ID_FROM_YEAR) return GuidedAction.ACTION_ID_CURRENT
+        val current = profile.listFilters[list.key] ?: ListFilters()
+        val typed = ListExplorerFragment.typedYear(requireContext(), action, current.maxAge)
+        if (typed != null) profile.listFilters = profile.listFilters + (list.key to current.copy(maxAge = typed.getOrNull()))
+        updateFilterRows(list)
+        if (typed != null) loadTitles(list)
+        return GuidedAction.ACTION_ID_CURRENT
+    }
+
+    /** The filter rows' values and options, in place (replacing them would break the sub-action expansion). */
+    private fun updateFilterRows(list: ListSource) {
+        for (fresh in filterRows(list)) {
+            val row = findActionById(fresh.id) ?: continue
+            row.description = fresh.description
+            row.subActions = fresh.subActions
+            notifyActionChanged(findActionPositionById(fresh.id))
+        }
     }
 
     // --- The list's filters ---
 
     private fun filterRows(list: ListSource): List<GuidedAction> {
         val context = requireContext()
-        val custom = Settings.listFilters[list.key] ?: ListFilters()
+        val custom = profile.listFilters[list.key] ?: ListFilters()
         fun default(label: String) = getString(R.string.list_filter_default, label)
-        val defaultAge = Filters.ageLabel(context, Settings.defaultMaxAge(list))
-        val defaultHits = Filters.onOff(context)[if (Settings.defaultGlobalHits(list)) 1 else 0]
-        val defaultWatched = Filters.watchedLabel(context, Settings.watchedMode)
+        val defaultAge = Filters.ageLabel(context, profile.defaultMaxAge(list))
+        val defaultHits = Filters.onOff(context)[if (profile.defaultGlobalHits(list)) 1 else 0]
+        val defaultWatched = Filters.watchedLabel(context, profile.watchedMode)
+        val defaultRating = Filters.ratingLabel(context, profile.defaultMinRating(list))
         val rows = mutableListOf(
             filterRow(ID_AGE, R.drawable.ic_act_schedule, R.string.filters_age_title,
                 custom.maxAge?.let { Filters.ageLabel(context, it) } ?: default(defaultAge),
-                listOf(default(defaultAge)) + Settings.MAX_AGE_OPTIONS.map { Filters.ageLabel(context, it) }),
+                listOf(default(defaultAge)) + ListExplorerFragment.ageOptions(custom.maxAge).map { Filters.ageLabel(context, it) })
+                .also { if (custom.maxAge?.let(Settings::isYear) == true) it.description = getString(R.string.filters_age_replaced) },
+            yearRow(ID_FROM_YEAR, custom.maxAge),
         )
         // Global hits never applies to lists that are niche on purpose (anime)
         if (list.localMarketFilter) rows += filterRow(ID_HITS, R.drawable.ic_act_public, R.string.setting_global_hits_title,
@@ -206,8 +298,11 @@ class ListContentsFragment : BaseSettingsFragment() {
         if (Settings.watchSource != null) rows += filterRow(ID_WATCHED, R.drawable.ic_act_visibility, R.string.setting_watched_title,
             custom.watched?.let { Filters.watchedLabel(context, it) } ?: default(defaultWatched),
             listOf(default(defaultWatched)) + Filters.WATCHED_MODES.map { Filters.watchedLabel(context, it) })
+        rows += filterRow(ID_MIN_RATING, R.drawable.ic_act_status, R.string.filters_min_rating_title,
+            custom.minRating?.let { Filters.ratingLabel(context, it) } ?: default(defaultRating),
+            listOf(default(defaultRating)) + Settings.MIN_RATING_OPTIONS.map { Filters.ratingLabel(context, it) })
         rows += action(ID_GENRES, R.drawable.ic_act_movie, getString(R.string.genres_title),
-            custom.genres?.let { Filters.genresLabel(context, it) } ?: default(Filters.genresLabel(context, Settings.defaultGenres(list))))
+            custom.genres?.let { Filters.genresLabel(context, it) } ?: default(Filters.genresLabel(context, profile.defaultGenres(list))))
             .hasNext(true).build()
         return rows
     }
@@ -219,18 +314,26 @@ class ListContentsFragment : BaseSettingsFragment() {
 
     override fun onSubGuidedActionClicked(action: GuidedAction): Boolean {
         val list = source ?: return true
+        // A title's only option: block or unblock it
+        val parent = action.id / SUB_ID_BASE
+        if (parent >= TITLE_BASE) {
+            val (ref, name) = titles.getOrNull((parent - TITLE_BASE).toInt()) ?: return true
+            Settings.setBlocked(ref, ref !in Settings.blockedTitles, name)
+            loadTitles(list)
+            return true
+        }
         val index = (action.id % SUB_ID_BASE).toInt()
-        val current = Settings.listFilters[list.key] ?: ListFilters()
+        val current = profile.listFilters[list.key] ?: ListFilters()
         // Option 0 is always "Default (…)"
         val updated = when (action.id / SUB_ID_BASE) {
-            ID_AGE -> current.copy(maxAge = if (index == 0) null else Settings.MAX_AGE_OPTIONS[index - 1])
+            ID_AGE -> current.copy(maxAge = if (index == 0) null else ListExplorerFragment.ageOptions(current.maxAge)[index - 1])
             ID_HITS -> current.copy(globalHits = if (index == 0) null else index == 2)
             ID_WATCHED -> current.copy(watched = if (index == 0) null else Filters.WATCHED_MODES[index - 1])
+            ID_MIN_RATING -> current.copy(minRating = if (index == 0) null else Settings.MIN_RATING_OPTIONS[index - 1])
             else -> return true
         }
-        Settings.listFilters = Settings.listFilters + (list.key to updated)
-        // Update the rows in place (replacing them would break the sub-action expansion)
-        filterRows(list).forEach { fresh -> updateDescription(fresh.id, fresh.description) }
+        profile.listFilters = profile.listFilters + (list.key to updated)
+        updateFilterRows(list)
         loadTitles(list)
         return true
     }
@@ -239,11 +342,11 @@ class ListContentsFragment : BaseSettingsFragment() {
 
     private fun loadTitles(list: ListSource) {
         val context = requireContext().applicationContext
-        val perList = Settings.titlesPerList
+        val perList = profile.titlesPerList
         val job = ++loadJob
         setGuidanceText(getString(R.string.explore_loading))
         background({
-            val factory = WallpaperFactory(context, 1280)
+            val factory = WallpaperFactory(context, 1280, profile)
             val plan = factory.plan(list, perList)
             val usable = plan.usable.take(perList).toSet()
             plan.usable.size to plan.candidates.mapIndexed { index, candidate ->
@@ -264,7 +367,8 @@ class ListContentsFragment : BaseSettingsFragment() {
                     candidate.ref in usable || plan.random -> R.drawable.ic_act_check
                     else -> R.drawable.ic_act_list
                 }
-                Triple("${index + 1}. $title${if (year.isNotBlank()) " ($year)" else ""}", status + watched, icon)
+                val name = "$title${if (year.isNotBlank()) " ($year)" else ""}"
+                Triple(candidate.ref to name, status + watched, icon)
             }
         }) { result ->
             if (job != loadJob) return@background
@@ -272,25 +376,34 @@ class ListContentsFragment : BaseSettingsFragment() {
                 setGuidanceText(when {
                     // Fewer usable titles than asked for: all of them are used, whatever the order
                     usableCount <= perList -> getString(R.string.explore_summary_all, rows.size, usableCount)
-                    Settings.selectionMode == Settings.SELECTION_RANDOM -> getString(R.string.explore_summary_random, rows.size, perList)
+                    profile.selectionMode == Settings.SELECTION_RANDOM -> getString(R.string.explore_summary_random, rows.size, perList)
                     else -> getString(R.string.explore_summary, rows.size, perList)
                 })
+                titles = rows.map { it.first }
+                val blocked = Settings.blockedTitles
                 setActions(filterActions + header(TITLES_HEADER, getString(R.string.explore_titles_header, rows.size)) + rows.mapIndexed { index, (title, status, icon) ->
-                    action(TITLE_BASE + index, icon, title, status).multilineDescription(true).focusable(true).build()
+                    action(TITLE_BASE + index, icon, "${index + 1}. ${title.second}", status).multilineDescription(true).focusable(true)
+                        .subActions(listOf(GuidedAction.Builder(requireContext()).id((TITLE_BASE + index) * SUB_ID_BASE)
+                            .title(getString(if (title.first in blocked) R.string.explore_unblock else R.string.explore_block)).build()))
+                        .build()
                 })
             }.onFailure {
-                setGuidanceText(getString(R.string.preview_error, it.message ?: it.javaClass.simpleName))
+                // A deleted or private Trakt list says so, without the "preview" wording
+                setGuidanceText(if (it is ListUnavailableException) GenerateWallpapersWorker.errorMessage(requireContext(), it)
+                    else getString(R.string.preview_error, it.message ?: it.javaClass.simpleName))
             }
         }
     }
 
     private fun exclusionText(context: android.content.Context, exclusion: Exclusion) = context.getString(
         when (exclusion) {
+            Exclusion.BLOCKED -> R.string.exclusion_blocked
             Exclusion.LOCAL_MARKET -> R.string.exclusion_local_market
             Exclusion.TOO_OLD -> R.string.exclusion_too_old
             Exclusion.ADULT -> R.string.exclusion_adult
             Exclusion.AGE_RATING -> R.string.exclusion_rating_age
             Exclusion.GENRE -> R.string.exclusion_genre
+            Exclusion.LOW_RATING -> R.string.exclusion_low_rating
             Exclusion.NO_LOGO -> R.string.exclusion_no_logo
             Exclusion.NO_SYNOPSIS -> R.string.exclusion_no_synopsis
             Exclusion.WATCHED -> R.string.exclusion_watched
@@ -306,6 +419,8 @@ class ListContentsFragment : BaseSettingsFragment() {
         private const val ID_HITS = 3L
         private const val ID_WATCHED = 5L
         private const val ID_GENRES = 10L
+        private const val ID_FROM_YEAR = 11L
+        private const val ID_MIN_RATING = 12L
         private const val TITLE_BASE = 100L
         private const val TITLES_HEADER = 99L
 

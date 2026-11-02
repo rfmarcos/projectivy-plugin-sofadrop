@@ -4,7 +4,9 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /** Title, logo and synopsis picked per language, from trimmed TMDB details, translations and images. */
@@ -96,5 +98,37 @@ class PartLanguagesTest {
         // Original logo wanted, none: the fallback is the English one
         assertNull(logo(null, from = noJapanese))
         assertEquals("/en.png", logo(null, fallback = true, from = noJapanese))
+    }
+
+    @Test
+    fun otherAlphabets() {
+        assertTrue(TmdbCatalog.foreignScript("千と千尋の神隠し", "en-US"))
+        assertTrue(TmdbCatalog.foreignScript("오징어 게임", "es-ES"))
+        assertTrue(TmdbCatalog.foreignScript("Мастер и Маргарита", "de-DE"))
+        assertFalse(TmdbCatalog.foreignScript("Das Boot", "en-US"))
+        assertFalse(TmdbCatalog.foreignScript("Amélie", "en-US"))
+        // Mostly Latin letters: readable as it is
+        assertFalse(TmdbCatalog.foreignScript("SPY×FAMILY", "en-US"))
+        assertFalse(TmdbCatalog.foreignScript("1917", "en-US"))
+        assertTrue(TmdbCatalog.foreignOriginal(MediaType.MOVIE, item, "en-US"))
+        // Foreign to the wallpaper language, not to the Latin alphabet
+        assertFalse(TmdbCatalog.foreignScript("Мастер и Маргарита", "ru-RU"))
+        assertFalse(TmdbCatalog.foreignScript("流浪地球", "zh-CN"))
+        assertFalse(TmdbCatalog.foreignScript("千と千尋の神隠し", "ja-JP"))
+        assertFalse(TmdbCatalog.foreignScript("ドライブ・マイ・カー", "ja-JP"))
+        assertFalse(TmdbCatalog.foreignScript("오징어 게임", "ko-KR"))
+        assertTrue(TmdbCatalog.foreignScript("오징어 게임", "zh-CN"))
+        assertTrue(TmdbCatalog.foreignScript("ドライブ・マイ・カー", "zh-TW"))
+        assertTrue(TmdbCatalog.foreignScript("Мастер и Маргарита", "el-GR"))
+        assertFalse(TmdbCatalog.foreignOriginal(MediaType.MOVIE, item, "ja-JP"))
+    }
+
+    @Test
+    fun englishOnlyLeavesTheOriginalLogoOut() {
+        val noEnglish = logos.filter { it.toString().contains("\"ja\"") }
+        // German, untranslated: the original logo reads like the title, unless only English will do
+        assertEquals("/ja.png", logo("de-DE", from = noEnglish))
+        assertNull(TmdbCatalog.pickLogo(noEnglish, item, MediaType.MOVIE, all, "en-US", "es-ES", fallback = true, englishOnly = true))
+        assertEquals("/en.png", TmdbCatalog.pickLogo(logos, item, MediaType.MOVIE, all, "de-DE", "es-ES", fallback = true, englishOnly = true))
     }
 }

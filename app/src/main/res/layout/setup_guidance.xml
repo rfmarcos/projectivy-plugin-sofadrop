@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Left panel of the screensaver setup steps: header, text and a QR big enough for a phone across the room.
+     Keeps the leanback guidance ids so GuidanceStylist can fill the texts and icon. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center_vertical"
+    android:orientation="vertical"
+    android:paddingStart="56dp"
+    android:paddingEnd="40dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:id="@id/guidance_icon"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:layout_marginEnd="16dp"
+            android:scaleType="fitCenter"
+            android:importantForAccessibility="no" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@id/guidance_breadcrumb"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#99FFFFFF"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@id/guidance_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/nunito_bold"
+                android:textColor="#FFFFFFFF"
+                android:textSize="32sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <TextView
+        android:id="@id/guidance_description"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:textColor="#B3FFFFFF"
+        android:textSize="16sp" />
+
+    <FrameLayout
+        android:layout_width="168dp"
+        android:layout_height="168dp"
+        android:layout_marginTop="24dp"
+        android:background="@drawable/qr_frame"
+        android:padding="8dp">
+
+        <ImageView
+            android:id="@+id/setup_qr"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:importantForAccessibility="no"
+            android:scaleType="fitCenter" />
+    </FrameLayout>
+</LinearLayout>

@@ -13,6 +13,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.floatOrNull
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
@@ -36,12 +37,15 @@ data class ListFilters(
     val globalHits: Boolean? = null,
     val watched: String? = null,
     val genres: GenreFilter? = null,
+    val minRating: Double? = null,
 ) {
-    val isDefault: Boolean get() = maxAge == null && globalHits == null && watched == null && genres == null
+    val isDefault: Boolean get() = maxAge == null && globalHits == null && watched == null && genres == null && minRating == null
 }
 
 /** The filters a list ends up using. */
-data class FilterValues(val maxAgeMonths: Int, val globalHits: Boolean, val watched: String, val genres: GenreFilter = GenreFilter())
+data class FilterValues(
+    val maxAgeMonths: Int, val globalHits: Boolean, val watched: String, val genres: GenreFilter = GenreFilter(), val minRating: Double = 0.0,
+)
 
 /** An MDBList list: one of the account's (by [id]) or a public one added by its "user/slug" [path]. */
 @Serializable
@@ -49,65 +53,74 @@ data class MdbListRef(val id: Long, val name: String, val path: String = "") {
     val key: String get() = "mdblist:" + path.ifEmpty { id.toString() }
 }
 
+/** A Trakt user's list by its "user/slug" [path]: a public one added by the user, or one of the connected account's ([own]). */
+@Serializable
+data class TraktListRef(val path: String, val name: String, val own: Boolean = false) {
+    val key: String get() = TraktClient.USER_LIST + path
+}
+
 /** User preferences plus a few internal values describing the last generation. */
 object Settings {
     private const val KEY_TOKEN = "tmdb_token"
     private const val KEY_LANGUAGE = "language"
     private const val KEY_REGION = "region"
-    private const val KEY_LISTS = "lists"
-    private const val KEY_COUNT = "titles_per_list"
     private const val KEY_REFRESH_HOURS = "refresh_hours"
-    private const val KEY_WIDTH = "output_width"
-    private const val KEY_GLOBAL_HITS = "global_hits_only"
-    private const val KEY_MAX_AGE = "max_age_months"
-    private const val KEY_EXCLUDE_ADULT = "exclude_adult"
-    private const val KEY_MAX_RATING_AGE = "max_rating_age"
-    private const val KEY_GENRE_FILTER = "genre_filter"
-    private const val KEY_PROVIDERS = "show_providers"
     private const val KEY_TRAKT_CLIENT_ID = "trakt_client_id"
     private const val KEY_TRAKT_CLIENT_SECRET = "trakt_client_secret"
     private const val KEY_MDBLIST_KEY = "mdblist_api_key"
     private const val KEY_MDBLIST_LISTS = "mdblist_lists"
-    private const val KEY_RATINGS = "rating_sources"
-    private const val KEY_HEADER_HIDDEN = "header_hidden"
-    private const val KEY_HEADER_ORDER = "header_order"
-    private const val KEY_MIN_RATINGS = "min_ratings"
+    private const val KEY_TRAKT_LISTS = "trakt_lists"
     private const val KEY_MDBLIST_ACCESS = "_mdblist_access_token"
     private const val KEY_MDBLIST_REFRESH = "_mdblist_refresh_token"
     private const val KEY_MDBLIST_EXPIRES = "_mdblist_expires_at"
     private const val KEY_MDBLIST_USER = "_mdblist_user"
-    private const val KEY_SELECTION = "selection_mode"
-    private const val KEY_OVERVIEW_LINES = "overview_lines"
-    private const val KEY_CAST = "show_cast"
-    private const val KEY_SHOW_SOURCE = "show_source"
-    private const val KEY_LIST_FILTERS = "list_filters"
     private val OLD_FILTER_KEYS = listOf("filter_scope", "age_all_lists", "global_hits_all_lists", "adult_all_lists", "filtered_lists",
         "launcher_guide", "_launcher_layout")
-    private const val KEY_SOURCE_FALLBACK = "source_fallback"
-    private const val KEY_PROGRESS = "_generation_progress"
     private const val KEY_PREVIEW_PIN = "_preview_pin"
     private const val KEY_PREVIEW_PIN_TITLE = "_preview_pin_title"
-    private const val KEY_WATCHED = "watched_mode"
     private const val KEY_WATCH_SOURCE = "watch_source"
-    private const val KEY_SKIP_DUPLICATES = "skip_duplicates"
+    private const val KEY_BLOCKED = "blocked_titles"
     private const val KEY_MIX_LISTS = "mix_lists"
-    private const val KEY_REQUIRE_LOGO = "require_logo"
-    private const val KEY_LOGO_FALLBACK = "logo_fallback"
-    private const val KEY_LOGO_MODE = "logo_mode"
-    private const val KEY_SYNOPSIS_MODE = "synopsis_mode"
-    private const val KEY_TITLE_LANGUAGE = "title_language"
-    private const val KEY_SYNOPSIS_LANGUAGE = "synopsis_language"
-    private const val KEY_STYLE = "style"
+    private const val KEY_SCREENSAVER_OWN_LISTS = "screensaver_own_lists"
+    private const val KEY_SCREENSAVER_OWN_LOOK = "screensaver_own_look"
+    private const val KEY_SCREENSAVER_SECONDS = "screensaver_seconds"
+    private const val KEY_SCREENSAVER_TRANSITION = "screensaver_transition"
+    private const val KEY_SCREENSAVER_ZOOM = "screensaver_zoom"
+    private const val KEY_SCREENSAVER_SHUFFLE = "screensaver_shuffle"
+    private const val KEY_SCREENSAVER_CLOCK = "screensaver_clock"
+    private const val KEY_SCREENSAVER_DATE = "screensaver_date"
+    private const val KEY_SCREENSAVER_CLOCK_BOTTOM = "screensaver_clock_bottom"
+    private const val KEY_SCREENSAVER_CLOCK_FORMAT = "screensaver_clock_format"
+    private const val KEY_SCREENSAVER_BRIGHTNESS = "screensaver_brightness"
+    private const val KEY_SCREENSAVER_WEATHER = "screensaver_weather"
+    private const val KEY_WEATHER_PLACE = "weather_place"
+    private const val KEY_WEATHER_COORDINATES = "weather_coordinates"
+    private const val KEY_CLICK_PLATFORMS = "click_platforms"
+    private const val KEY_CLICK_FALLBACK = "click_fallback"
+    private const val KEY_TRAILER_LANGUAGE = "trailer_language"
+    private const val KEY_TRAILER_FALLBACK = "trailer_fallback"
     private const val KEY_TMDB_SESSION = "_tmdb_session_id"
     private const val KEY_TMDB_ACCOUNT = "_tmdb_account_id"
     private const val KEY_TMDB_USER = "_tmdb_user"
 
     const val SELECTION_ORDER = "order"
     const val SELECTION_RANDOM = "random"
-    /** Months; 0 means no limit. */
-    val MAX_AGE_OPTIONS = listOf(6, 12, 24, 60, 0)
+    /** Months; 0 means no limit. A year (see [isYear]) can be typed as well. */
+    val MAX_AGE_OPTIONS = listOf(6, 12, 24, 60, 120, 0)
+    private const val FIRST_YEAR = 1900
+
+    /** True when an age limit is a year ("from 2000") rather than months. */
+    fun isYear(maxAge: Int) = maxAge >= FIRST_YEAR
+
+    /** A typed year, when it is one (1900 to next year). */
+    fun parseYear(text: String): Int? = text.trim().toIntOrNull()?.takeIf { it in FIRST_YEAR..lastYear }
+
+    /** The latest year that can be typed: next year. */
+    val lastYear: Int get() = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR) + 1
     /** Years; 0 means no limit. */
     val MAX_RATING_AGE_OPTIONS = listOf(0, 7, 12, 16)
+    /** TMDB score out of 10; 0 means no limit. */
+    val MIN_RATING_OPTIONS = listOf(5.0, 6.0, 6.5, 7.0, 7.5, 8.0, 0.0)
     const val WATCHED_SHOW = "show"
     const val WATCHED_MARK = "mark"
     const val WATCHED_HIDE = "hide"
@@ -134,15 +147,42 @@ object Settings {
     const val STYLE_LOGO = "logo"
     const val STYLE_BACKDROP = "backdrop"
     val STYLES = listOf(STYLE_FULL, STYLE_LOGO, STYLE_BACKDROP)
+    /** Colour of the shading behind the text and over the launcher rows: the backdrop's own, darkened, or black for OLED screens. */
+    const val SHADE_TINT = "tint"
+    const val SHADE_BLACK = "black"
+    val SHADES = listOf(SHADE_TINT, SHADE_BLACK)
+    /** Where the info block goes on the wallpaper. */
+    const val POSITION_TOP_LEFT = "top_left"
+    val POSITIONS = listOf(POSITION_TOP_LEFT, "center_left", "bottom_left", "top_right", "center_right", "bottom_right")
+    /** What Projectivy opens from a wallpaper ("Watch" in About this wallpaper, play on its status bar). */
+    const val CLICK_TRAILER = "trailer"
+    const val CLICK_NONE = "none"
+    val CLICK_FALLBACKS = listOf(CLICK_TRAILER, CLICK_NONE)
+    /** Click action opening the title in a [TitleApp]: "app:nuvio". */
+    const val CLICK_APP_PREFIX = "app:"
+    /**
+     * With no official trailer in the trailer language: the English one, the original-language one (then
+     * any trailer for both), any trailer, or none.
+     */
+    const val TRAILER_ENGLISH = "english"
+    const val TRAILER_ORIGINAL = "original"
+    const val TRAILER_ANY = "any"
+    const val TRAILER_NONE = "none"
+    val TRAILER_FALLBACKS = listOf(TRAILER_ENGLISH, TRAILER_ORIGINAL, TRAILER_ANY, TRAILER_NONE)
+    /** Cast photos: none, all together before the names (overlapping), or each one before its name. */
+    const val CAST_PHOTOS_NONE = "none"
+    const val CAST_PHOTOS_GROUPED = "grouped"
+    const val CAST_PHOTOS_EACH = "each"
+    val CAST_PHOTO_MODES = listOf(CAST_PHOTOS_NONE, CAST_PHOTOS_GROUPED, CAST_PHOTOS_EACH)
 
     // Internal state, not exported in Projectivy backups
-    private const val KEY_LAST_GENERATION = "_last_generation"
-    private const val KEY_LAST_SIGNATURE = "_last_signature"
-    private const val KEY_LAST_ERROR = "_last_error"
-    private const val KEY_GENERATING = "_generating"
     private const val KEY_UPDATE_VERSION = "_update_version"
     private const val KEY_PROJECTIVY_ASKED = "_projectivy_asked_at"
+    private const val KEY_WIZARD_SHOWN = "_wizard_shown"
+    private const val KEY_FRESH_INSTALL = "_fresh_install"
+    private const val KEY_SCREENSAVER_SHOWN = "_screensaver_shown_at"
     private const val KEY_UPDATE_APK = "_update_apk"
+    private const val KEY_UPDATE_NOTES = "_update_notes"
     private const val KEY_UPDATE_CHECKED = "_update_checked_at"
     private const val KEY_TRAKT_ACCESS = "_trakt_access_token"
     private const val KEY_TRAKT_REFRESH = "_trakt_refresh_token"
@@ -157,16 +197,28 @@ object Settings {
 
     /** "All": lists are read up to this many titles (TMDB pages, Trakt/Simkl/MDBList limits). */
     const val COUNT_ALL = 100
+
+    /**
+     * Wallpapers per generation, shared among the lists. Projectivy shows 100 of them, picked at random
+     * again on each request: more only costs time, requests and disk (4K above all).
+     */
+    const val MAX_WALLPAPERS = 200
     val REFRESH_OPTIONS = listOf(6, 12, 24, 72, 168)
     val WIDTH_OPTIONS = listOf(1920, 3840)
     val DEFAULT_LISTS = setOf("tmdb:trending_movies", "tmdb:trending_tv")
 
-    private lateinit var preferences: SharedPreferences
+    internal lateinit var preferences: SharedPreferences
     private val json by lazy { Json { ignoreUnknownKeys = true; isLenient = true } }
 
     fun init(context: Context) {
         if (!::preferences.isInitialized) {
             preferences = PreferenceManager.getDefaultSharedPreferences(context.applicationContext)
+            // A fresh install, whatever opens first (the settings or Projectivy's request): the guided setup is
+            // due, and the cast is on. Someone updating keeps what they had
+            if (preferences.all.isEmpty()) {
+                preferences.edit { putBoolean(KEY_FRESH_INSTALL, true) }
+                Profile.WALLPAPER.showCast = true
+            }
             // Scopes of earlier versions (replaced by per-list filters) and the dropped launcher guide
             preferences.edit { OLD_FILTER_KEYS.forEach(::remove) }
         }
@@ -195,51 +247,11 @@ object Settings {
     val region: String
         get() = regionOverride.ifEmpty { Languages.regionOf(language) }
 
-    /** Selected list keys, e.g. "tmdb:trending_movies", "trakt:watchlist_shows", "mdblist:1234". */
-    var lists: Set<String>
-        get() = preferences.getStringSet(KEY_LISTS, null)?.toSet() ?: DEFAULT_LISTS
-        set(value) = preferences.edit { putStringSet(KEY_LISTS, value) }
-
-    var titlesPerList: Int
-        get() = preferences.getInt(KEY_COUNT, 10)
-        set(value) = preferences.edit { putInt(KEY_COUNT, value) }
-
     var refreshHours: Int
         get() = preferences.getInt(KEY_REFRESH_HOURS, 24)
         set(value) = preferences.edit { putInt(KEY_REFRESH_HOURS, value) }
 
-    var outputWidth: Int
-        get() = preferences.getInt(KEY_WIDTH, 1920)
-        set(value) = preferences.edit { putInt(KEY_WIDTH, value) }
-
-    var globalHitsOnly: Boolean
-        get() = preferences.getBoolean(KEY_GLOBAL_HITS, true)
-        set(value) = preferences.edit { putBoolean(KEY_GLOBAL_HITS, value) }
-
     // --- Filters ---
-
-    /** Skip titles released (or, for TV, last aired) longer ago than this; 0 = no limit. */
-    var maxAgeMonths: Int
-        get() = preferences.getInt(KEY_MAX_AGE, 0)
-        set(value) = preferences.edit { putInt(KEY_MAX_AGE, value) }
-
-    var excludeAdult: Boolean
-        get() = preferences.getBoolean(KEY_EXCLUDE_ADULT, true)
-        set(value) = preferences.edit { putBoolean(KEY_EXCLUDE_ADULT, value) }
-
-    /** Skip titles certified for older viewers than this, in every list (see [Certifications.minimumAge]); 0 = no limit. */
-    var maxRatingAge: Int
-        get() = preferences.getInt(KEY_MAX_RATING_AGE, 0)
-        set(value) = preferences.edit { putInt(KEY_MAX_RATING_AGE, value) }
-
-    /** Default genre filter; like the age, it only applies by default to automatic lists (see [filtersFor]). */
-    var genreFilter: GenreFilter
-        get() = try {
-            json.decodeFromString<GenreFilter>(preferences.getString(KEY_GENRE_FILTER, null) ?: "{}")
-        } catch (_: Exception) {
-            GenreFilter()
-        }
-        set(value) = preferences.edit { putString(KEY_GENRE_FILTER, json.encodeToString(value)) }
 
     /**
      * Hand Projectivy the wallpapers shuffled (again on every request) instead of list after list, so
@@ -249,48 +261,29 @@ object Settings {
         get() = preferences.getBoolean(KEY_MIX_LISTS, true)
         set(value) = preferences.edit { putBoolean(KEY_MIX_LISTS, value) }
 
-    /** A title already taken by an earlier list is skipped there, so that list uses its next one. */
-    var skipDuplicates: Boolean
-        get() = preferences.getBoolean(KEY_SKIP_DUPLICATES, true)
-        set(value) = preferences.edit { putBoolean(KEY_SKIP_DUPLICATES, value) }
+    /** Titles that never show, from any list, with the name they were blocked with ("Title (2020)"). */
+    val blocked: Map<TitleRef, String>
+        get() = preferences.getStringSet(KEY_BLOCKED, null).orEmpty().mapNotNull { entry ->
+            // "movie:123<tab>Title (2020)"
+            val (key, name) = entry.split('\t', limit = 2).let { it[0] to it.getOrElse(1) { "" } }
+            val type = MediaType.entries.firstOrNull { it.path == key.substringBefore(':') } ?: return@mapNotNull null
+            key.substringAfter(':').toIntOrNull()?.let { TitleRef(type, it) to name }
+        }.toMap()
+
+    val blockedTitles: Set<TitleRef> get() = blocked.keys
+
+    /** Block or unblock one title; [name] is what the list of blocked titles shows for it. */
+    fun setBlocked(ref: TitleRef, block: Boolean, name: String = "") {
+        val titles = blocked.toMutableMap()
+        if (block) titles[ref] = name else titles -= ref
+        preferences.edit { putStringSet(KEY_BLOCKED, titles.map { (r, n) -> "${r.type.path}:${r.tmdbId}\t$n" }.toSet()) }
+    }
+
+    fun clearBlocked() = preferences.edit { remove(KEY_BLOCKED) }
 
 
-    /** See [LOGO_MODES]; earlier versions stored "logo_fallback" and "require_logo" (read until changed). */
-    var logoMode: String
-        get() = preferences.getString(KEY_LOGO_MODE, null) ?: run {
-            val fallback = preferences.getBoolean(KEY_LOGO_FALLBACK, false)
-            val required = preferences.getBoolean(KEY_REQUIRE_LOGO, false)
-            when {
-                fallback && required -> LOGO_ORIGINAL_OR_SKIP
-                required -> LOGO_SKIP
-                fallback -> LOGO_ORIGINAL
-                else -> LOGO_TEXT
-            }
-        }
-        set(value) = preferences.edit { putString(KEY_LOGO_MODE, value); remove(KEY_REQUIRE_LOGO) }
-
-    /** See [SYNOPSIS_MODES]; "logo_fallback" briefly covered the synopsis too. */
-    var synopsisMode: String
-        get() = preferences.getString(KEY_SYNOPSIS_MODE, null)
-            ?: if (preferences.getBoolean(KEY_LOGO_FALLBACK, false)) SYNOPSIS_ENGLISH else SYNOPSIS_HIDE
-        set(value) = preferences.edit { putString(KEY_SYNOPSIS_MODE, value) }
-
-    /** See [PART_LANGUAGES]; [logoMode] applies when there is no logo in this language. */
-    var titleLanguage: String
-        get() = partLanguage(KEY_TITLE_LANGUAGE)
-        set(value) = preferences.edit { putString(KEY_TITLE_LANGUAGE, value) }
-
-    /** See [PART_LANGUAGES]; [synopsisMode] applies when there is no synopsis in this language. */
-    var synopsisLanguage: String
-        get() = partLanguage(KEY_SYNOPSIS_LANGUAGE)
-        set(value) = preferences.edit { putString(KEY_SYNOPSIS_LANGUAGE, value) }
-
-    private fun partLanguage(key: String) =
+    internal fun partLanguage(key: String) =
         preferences.getString(key, null)?.takeIf { it == LANGUAGE_ORIGINAL || it in Languages.OPTIONS } ?: LANGUAGE_AUTO
-
-    /** [titleLanguage] and [synopsisLanguage] as TMDB locales. */
-    val partLanguages: PartLanguages
-        get() = PartLanguages(resolve(titleLanguage), resolve(synopsisLanguage))
 
     /** A [PART_LANGUAGES] value as a TMDB locale; null for the title's original language. */
     fun resolve(partLanguage: String): String? = when (partLanguage) {
@@ -299,52 +292,35 @@ object Settings {
         else -> partLanguage
     }
 
-    /** See [STYLES]; the settings of the parts a style hides are kept for when they come back. */
-    var style: String
-        get() = preferences.getString(KEY_STYLE, null)?.takeIf { it in STYLES } ?: STYLE_FULL
-        set(value) = preferences.edit { putString(KEY_STYLE, value) }
-
-    /** The style draws the logo (or the title instead). */
-    val drawsLogo: Boolean get() = style != STYLE_BACKDROP
-
-    /** The style draws the header, synopsis, cast and footer (each as set). */
-    val drawsDetails: Boolean get() = style == STYLE_FULL
-
-    // A part the style hides doesn't fetch anything or skip titles
-    val logoFallback: Boolean get() = drawsLogo && (logoMode == LOGO_ORIGINAL || logoMode == LOGO_ORIGINAL_OR_SKIP)
-    val requireLogo: Boolean get() = drawsLogo && (logoMode == LOGO_ORIGINAL_OR_SKIP || logoMode == LOGO_SKIP)
-    val requireSynopsis: Boolean get() = drawsDetails && synopsisMode == SYNOPSIS_SKIP
-
-    /** Per-list overrides of the default filters (list key -> values), set on each list's page in "Filters & explore lists". */
-    var listFilters: Map<String, ListFilters>
-        get() = try {
-            json.decodeFromString<Map<String, ListFilters>>(preferences.getString(KEY_LIST_FILTERS, null) ?: "{}")
-        } catch (_: Exception) {
-            emptyMap()
-        }
-        set(value) = preferences.edit { putString(KEY_LIST_FILTERS, json.encodeToString(value.filterValues { !it.isDefault })) }
+    /**
+     * Streaming platforms the user pays for, in the order a wallpaper tries them (see [ClickTargets]); their
+     * pages are looked up when generating, so adding the first one needs a new set.
+     */
+    var clickPlatforms: List<Platform>
+        get() = preferences.getString(KEY_CLICK_PLATFORMS, null).orEmpty().split(',').mapNotNull(Platform::of).distinct()
+        set(value) = preferences.edit { putString(KEY_CLICK_PLATFORMS, value.joinToString(",") { it.key }) }
 
     /**
-     * Filters a list really uses: its overrides, else the defaults. Age, global hits and genres only apply
-     * by default to automatic lists (trending, popular…), so watchlists and favourites aren't emptied.
+     * What a wallpaper opens when its title is on none of [clickPlatforms]: see [CLICK_FALLBACKS] and
+     * [CLICK_APP_PREFIX] (an app not installed opens the trailer). Applied when served, without a new set.
      */
-    fun filtersFor(source: ListSource): FilterValues {
-        val custom = listFilters[source.key]
-        return FilterValues(
-            maxAgeMonths = custom?.maxAge ?: defaultMaxAge(source),
-            globalHits = (custom?.globalHits ?: defaultGlobalHits(source)) && source.localMarketFilter,
-            watched = custom?.watched ?: watchedMode,
-            genres = custom?.genres ?: defaultGenres(source),
-        )
-    }
+    var clickFallback: String
+        get() = preferences.getString(KEY_CLICK_FALLBACK, null)?.takeIf { it in CLICK_FALLBACKS || clickApp(it) != null } ?: CLICK_TRAILER
+        set(value) = preferences.edit { putString(KEY_CLICK_FALLBACK, value) }
 
-    fun defaultMaxAge(source: ListSource) = if (source.automatic) maxAgeMonths else 0
-    fun defaultGlobalHits(source: ListSource) = source.automatic && globalHitsOnly
-    fun defaultGenres(source: ListSource) = if (source.automatic) genreFilter else GenreFilter()
+    /** The app of a click fallback that opens the title in one ("app:nuvio"), else null. */
+    fun clickApp(action: String = clickFallback): TitleApp? =
+        action.takeIf { it.startsWith(CLICK_APP_PREFIX) }?.let { TitleApp.of(it.removePrefix(CLICK_APP_PREFIX)) }
 
-    var showProviders: Boolean
-        get() = preferences.getBoolean(KEY_PROVIDERS, true)
-        set(value) = preferences.edit { putBoolean(KEY_PROVIDERS, value) }
+    /** See [PART_LANGUAGES]: "Automatic" is the wallpaper language; [trailerFallback] applies when there is none in it. */
+    var trailerLanguage: String
+        get() = partLanguage(KEY_TRAILER_LANGUAGE)
+        set(value) = preferences.edit { putString(KEY_TRAILER_LANGUAGE, value) }
+
+    /** See [TRAILER_FALLBACKS]. */
+    var trailerFallback: String
+        get() = preferences.getString(KEY_TRAILER_FALLBACK, null)?.takeIf { it in TRAILER_FALLBACKS } ?: TRAILER_ENGLISH
+        set(value) = preferences.edit { putString(KEY_TRAILER_FALLBACK, value) }
 
     // --- Trakt ---
 
@@ -382,6 +358,15 @@ object Settings {
     fun clearTraktSession() = preferences.edit {
         remove(KEY_TRAKT_ACCESS); remove(KEY_TRAKT_REFRESH); remove(KEY_TRAKT_EXPIRES); remove(KEY_TRAKT_USER)
     }
+
+    /** Trakt users' lists: the public ones added by the user plus the account's own (refreshed from its screen). */
+    var traktLists: List<TraktListRef>
+        get() = try {
+            json.decodeFromString<List<TraktListRef>>(preferences.getString(KEY_TRAKT_LISTS, null) ?: "[]")
+        } catch (_: Exception) {
+            emptyList()
+        }
+        set(value) = preferences.edit { putString(KEY_TRAKT_LISTS, json.encodeToString(value)) }
 
     // --- Simkl (trending needs nothing; the account is connected with a QR code) ---
 
@@ -445,45 +430,25 @@ object Settings {
 
     // --- Selection and watched content ---
 
-    /** "order": first titles of each list; "random": random picks among the best ones. */
-    var selectionMode: String
-        get() = preferences.getString(KEY_SELECTION, SELECTION_RANDOM) ?: SELECTION_RANDOM
-        set(value) = preferences.edit { putString(KEY_SELECTION, value) }
-
-    /** Synopsis lines on the wallpaper: fewer lines keep the info block clear of the launcher rows. */
-    var overviewLines: Int
-        get() = preferences.getInt(KEY_OVERVIEW_LINES, 4)
-        set(value) = preferences.edit { putInt(KEY_OVERVIEW_LINES, value) }
-
     val OVERVIEW_OPTIONS = listOf(4, 2, 0)
-
-    /** Main cast under the synopsis; off by default, it pushes the footer down. */
-    var showCast: Boolean
-        get() = preferences.getBoolean(KEY_CAST, false)
-        set(value) = preferences.edit { putBoolean(KEY_CAST, value) }
-
-    /**
-     * With both footer parts on, show the list source only when the title has no streaming service.
-     * Default for new installs; existing installs keep showing both (decided once, on first read).
-     */
-    var sourceFallback: Boolean
-        get() {
-            if (!preferences.contains(KEY_SOURCE_FALLBACK)) sourceFallback = lastGeneration == 0L
-            return preferences.getBoolean(KEY_SOURCE_FALLBACK, false)
-        }
-        set(value) = preferences.edit { putBoolean(KEY_SOURCE_FALLBACK, value) }
-
-    /** Footer line naming the list each title came from ("Trending · TMDB"). */
-    var showSource: Boolean
-        get() = preferences.getBoolean(KEY_SHOW_SOURCE, true)
-        set(value) = preferences.edit { putBoolean(KEY_SHOW_SOURCE, value) }
 
     /** Last time Projectivy asked for wallpapers (0 = never: Sofadrop isn't its wallpaper yet). */
     var projectivyAskedAt: Long
         get() = preferences.getLong(KEY_PROJECTIVY_ASKED, 0)
         set(value) = preferences.edit { putLong(KEY_PROJECTIVY_ASKED, value) }
 
-    /** Latest release found by [Updater.check] ("1.0.1", empty until checked), its APK and when it was checked. */
+    /** The setup wizard opened by itself once (see [Wizard.shouldOffer]). */
+    var wizardShown: Boolean
+        get() = preferences.getBoolean(KEY_WIZARD_SHOWN, false)
+        set(value) = preferences.edit { putBoolean(KEY_WIZARD_SHOWN, value) }
+
+    /** Installed from scratch, not updated (see [init]). */
+    val freshInstall: Boolean get() = preferences.getBoolean(KEY_FRESH_INSTALL, false)
+
+    /**
+     * Latest release found by [Updater.check] ("1.0.1", empty until checked), its APK, its release notes
+     * (GitHub markdown, may be empty) and when it was checked.
+     */
     var updateVersion: String
         get() = string(KEY_UPDATE_VERSION)
         set(value) = preferences.edit { putString(KEY_UPDATE_VERSION, value) }
@@ -491,6 +456,10 @@ object Settings {
     var updateApkUrl: String
         get() = string(KEY_UPDATE_APK)
         set(value) = preferences.edit { putString(KEY_UPDATE_APK, value) }
+
+    var updateNotes: String
+        get() = string(KEY_UPDATE_NOTES)
+        set(value) = preferences.edit { putString(KEY_UPDATE_NOTES, value) }
 
     var updateCheckedAt: Long
         get() = preferences.getLong(KEY_UPDATE_CHECKED, 0)
@@ -506,11 +475,6 @@ object Settings {
         putString(KEY_PREVIEW_PIN, pin)
         putString(KEY_PREVIEW_PIN_TITLE, title)
     }
-
-    /** What to do with titles in the watch history: "show", "mark" or "hide". */
-    var watchedMode: String
-        get() = preferences.getString(KEY_WATCHED, WATCHED_MARK) ?: WATCHED_MARK
-        set(value) = preferences.edit { putString(KEY_WATCHED, value) }
 
     // --- MDBList (account connected with a QR code, or an API key set from the phone) ---
 
@@ -558,14 +522,6 @@ object Settings {
         }
         set(value) = preferences.edit { putString(KEY_MDBLIST_LISTS, json.encodeToString(value)) }
 
-    /** Scores shown on the wallpapers, in order; by default TMDB's, as before they could be chosen. */
-    var ratingSources: List<RatingSource>
-        get() = ratingSourcesKey.split(',').mapNotNull(RatingSource::of)
-        set(value) = preferences.edit { putString(KEY_RATINGS, value.joinToString(",") { it.key }) }
-
-    // Read without string(): empty means "no ratings", not the default
-    private val ratingSourcesKey: String get() = preferences.getString(KEY_RATINGS, null) ?: RatingSource.TMDB.key
-
     /** Header items under the title: everything is shown unless hidden here. */
     const val HEADER_YEAR = "year"
     const val HEADER_RUNTIME = "runtime"
@@ -575,92 +531,204 @@ object Settings {
     const val HEADER_CERTIFICATION = "certification"
     val HEADER_ITEMS = listOf(HEADER_YEAR, HEADER_CERTIFICATION, HEADER_RUNTIME, HEADER_GENRES, HEADER_WATCHED)
 
-    var headerHidden: Set<String>
-        get() = preferences.getStringSet(KEY_HEADER_HIDDEN, null)?.toSet() ?: emptySet()
-        set(value) = preferences.edit { putStringSet(KEY_HEADER_HIDDEN, value) }
-
-    fun showsInHeader(item: String) = item !in headerHidden
-
     /** The ratings, as one block of the header; hidden by choosing no platform. */
     const val HEADER_RATINGS = "ratings"
     /** Blocks of the header line in their default order; the user can move them (see [headerOrder]). */
     val HEADER_BLOCKS = listOf(HEADER_RATINGS, HEADER_WATCHED, HEADER_YEAR, HEADER_RUNTIME, HEADER_GENRES)
 
-    /** [HEADER_BLOCKS] in the user's order (blocks added in later versions go last). */
-    var headerOrder: List<String>
-        get() {
-            val saved = string(KEY_HEADER_ORDER).split(',').filter { it in HEADER_BLOCKS }.distinct()
-            return saved + (HEADER_BLOCKS - saved.toSet())
-        }
-        set(value) = preferences.edit { putString(KEY_HEADER_ORDER, value.joinToString(",")) }
-
-    /** Ratings that stay when the line is full (the details give way first); more only where there's room. */
-    var minRatings: Int
-        get() = preferences.getInt(KEY_MIN_RATINGS, 2)
-        set(value) = preferences.edit { putInt(KEY_MIN_RATINGS, value) }
-
     val MIN_RATINGS_OPTIONS = listOf(1, 2, 3)
-
-    // --- Generation state ---
-
-    var lastGeneration: Long
-        get() = preferences.getLong(KEY_LAST_GENERATION, 0L)
-        set(value) = preferences.edit { putLong(KEY_LAST_GENERATION, value) }
-
-    /** Settings signature used for the last successful generation. */
-    var lastSignature: String
-        get() = preferences.getString(KEY_LAST_SIGNATURE, "") ?: ""
-        set(value) = preferences.edit { putString(KEY_LAST_SIGNATURE, value) }
-
-    var lastError: String
-        get() = preferences.getString(KEY_LAST_ERROR, "") ?: ""
-        set(value) = preferences.edit { putString(KEY_LAST_ERROR, value) }
-
-    var generating: Boolean
-        get() = preferences.getBoolean(KEY_GENERATING, false)
-        set(value) = preferences.edit { putBoolean(KEY_GENERATING, value) }
-
-    /** While generating: wallpapers made, current list and number of lists. */
-    var generationProgress: Triple<Int, Int, Int>?
-        get() = preferences.getString(KEY_PROGRESS, null)?.split('|')?.mapNotNull { it.toIntOrNull() }
-            ?.takeIf { it.size == 3 }?.let { Triple(it[0], it[1], it[2]) }
-        set(value) = preferences.edit {
-            if (value == null) remove(KEY_PROGRESS) else putString(KEY_PROGRESS, "${value.first}|${value.second}|${value.third}")
-        }
-
-    /** Everything that changes the generated wallpapers (except the refresh interval). */
-    val signature: String
-        get() = listOf(
-            token.hashCode(), language, region, lists.sorted().joinToString(","), titlesPerList,
-            outputWidth, globalHitsOnly, showProviders, selectionMode, watchSource?.let { "$it:$watchedMode" }.orEmpty(),
-            // Without the genre field lists don't use, so updating doesn't show a pending change
-            maxAgeMonths, excludeAdult, listFilters.toSortedMap().toString().replace(", genres=null", ""),
-        // Only when changed, so existing installs don't see a pending change after updating
-        ).plus(listOfNotNull(overviewLines.takeIf { it != 4 }, "nosource".takeIf { !showSource }, "fallback".takeIf { showSource && showProviders && sourceFallback },
-            "dups".takeIf { !skipDuplicates }, "logo:$logoMode".takeIf { logoMode != LOGO_TEXT }, "synopsis:$synopsisMode".takeIf { synopsisMode != SYNOPSIS_HIDE },
-            "titlelang:$titleLanguage".takeIf { titleLanguage != LANGUAGE_AUTO }, "synopsislang:$synopsisLanguage".takeIf { synopsisLanguage != LANGUAGE_AUTO },
-            "ratings:$ratingSourcesKey:$mdbListAvailable".takeIf { ratingSourcesKey != RatingSource.TMDB.key },
-            "header:${headerHidden.sorted()}".takeIf { headerHidden.isNotEmpty() },
-            "ratingage:$maxRatingAge".takeIf { maxRatingAge > 0 },
-            "order:${headerOrder.joinToString(",")}".takeIf { headerOrder != HEADER_BLOCKS },
-            "minratings:$minRatings".takeIf { minRatings != 2 }, "cast".takeIf { showCast }, "style:$style".takeIf { style != STYLE_FULL },
-            "genres:${genreFilter.only}:${genreFilter.ids.sorted()}".takeIf { !genreFilter.isOff })).joinToString("|")
-
-    /** True when the current wallpapers were generated with different settings. */
-    val hasPendingChanges: Boolean
-        get() = lastGeneration > 0 && lastSignature != signature
 
     val refreshIntervalMillis: Long
         get() = refreshHours * 3_600_000L
 
+    // --- Screensaver ---
+
+    /** The screensaver has lists and filters of its own (see [Profile]); they start as the wallpapers'. */
+    var screensaverOwnLists: Boolean
+        get() = preferences.getBoolean(KEY_SCREENSAVER_OWN_LISTS, false)
+        set(value) = preferences.edit {
+            if (value && !screensaverOwnLists) copyToScreensaver(Profile.LISTS_KEYS)
+            putBoolean(KEY_SCREENSAVER_OWN_LISTS, value)
+        }
+
+    /** The screensaver has a look of its own (see [Profile]); it starts as the wallpapers'. */
+    var screensaverOwnLook: Boolean
+        get() = preferences.getBoolean(KEY_SCREENSAVER_OWN_LOOK, false)
+        set(value) = preferences.edit {
+            if (value && !screensaverOwnLook) copyToScreensaver(Profile.LOOK_KEYS)
+            putBoolean(KEY_SCREENSAVER_OWN_LOOK, value)
+        }
+
+    // How Sofascreen shows the set (see SofascreenView), after PR #13 by schumi2004
+    val SCREENSAVER_SECONDS_OPTIONS = listOf(10, 20, 30, 60, 120, 300)
+    const val TRANSITION_FADE = "fade"
+    const val TRANSITION_BLACK = "black"
+    const val TRANSITION_SLIDE = "slide"
+    const val TRANSITION_ZOOM = "zoom"
+    const val TRANSITION_RANDOM = "random"
+    val TRANSITIONS = listOf(TRANSITION_FADE, TRANSITION_BLACK, TRANSITION_SLIDE, TRANSITION_ZOOM, TRANSITION_RANDOM)
+    const val CLOCK_OFF = "off"
+    const val CLOCK_STACKED = "stacked"
+    const val CLOCK_LINE = "line"
+    val CLOCK_STYLES = listOf(CLOCK_OFF, CLOCK_STACKED, CLOCK_LINE)
+    const val CLOCK_FORMAT_SYSTEM = "system"
+    const val CLOCK_FORMAT_24 = "24"
+    const val CLOCK_FORMAT_12 = "12"
+    val CLOCK_FORMATS = listOf(CLOCK_FORMAT_SYSTEM, CLOCK_FORMAT_24, CLOCK_FORMAT_12)
+    val SCREENSAVER_BRIGHTNESS_OPTIONS = listOf(100, 75, 50)
+
+    /** How long each wallpaper stays on screen. */
+    var screensaverSeconds: Int
+        get() = preferences.getInt(KEY_SCREENSAVER_SECONDS, 30)
+        set(value) = preferences.edit { putInt(KEY_SCREENSAVER_SECONDS, value) }
+
+    /** See [TRANSITIONS]. */
+    var screensaverTransition: String
+        get() = preferences.getString(KEY_SCREENSAVER_TRANSITION, null)?.takeIf { it in TRANSITIONS } ?: TRANSITION_FADE
+        set(value) = preferences.edit { putString(KEY_SCREENSAVER_TRANSITION, value) }
+
+    /** A slow zoom while each wallpaper is shown. */
+    var screensaverZoom: Boolean
+        get() = preferences.getBoolean(KEY_SCREENSAVER_ZOOM, true)
+        set(value) = preferences.edit { putBoolean(KEY_SCREENSAVER_ZOOM, value) }
+
+    /** Random order instead of the set's. */
+    var screensaverShuffle: Boolean
+        get() = preferences.getBoolean(KEY_SCREENSAVER_SHUFFLE, true)
+        set(value) = preferences.edit { putBoolean(KEY_SCREENSAVER_SHUFFLE, value) }
+
+    /** See [CLOCK_STYLES]. */
+    var screensaverClock: String
+        get() = preferences.getString(KEY_SCREENSAVER_CLOCK, null)?.takeIf { it in CLOCK_STYLES } ?: CLOCK_STACKED
+        set(value) = preferences.edit { putString(KEY_SCREENSAVER_CLOCK, value) }
+
+    var screensaverDate: Boolean
+        get() = preferences.getBoolean(KEY_SCREENSAVER_DATE, true)
+        set(value) = preferences.edit { putBoolean(KEY_SCREENSAVER_DATE, value) }
+
+    /** 24 or 12 hours, or as Android is set (see [CLOCK_FORMATS]). */
+    var screensaverClockFormat: String
+        get() = preferences.getString(KEY_SCREENSAVER_CLOCK_FORMAT, null)?.takeIf { it in CLOCK_FORMATS } ?: CLOCK_FORMAT_SYSTEM
+        set(value) = preferences.edit { putString(KEY_SCREENSAVER_CLOCK_FORMAT, value) }
+
+    /** The clock at the bottom of its side instead of the top. */
+    var screensaverClockBottom: Boolean
+        get() = preferences.getBoolean(KEY_SCREENSAVER_CLOCK_BOTTOM, false)
+        set(value) = preferences.edit { putBoolean(KEY_SCREENSAVER_CLOCK_BOTTOM, value) }
+
+    /** Percentage, see [SCREENSAVER_BRIGHTNESS_OPTIONS]. */
+    var screensaverBrightness: Int
+        get() = preferences.getInt(KEY_SCREENSAVER_BRIGHTNESS, 100)
+        set(value) = preferences.edit { putInt(KEY_SCREENSAVER_BRIGHTNESS, value) }
+
+    /** When Android last started Sofascreen as the screensaver (0: never), to tell whether it's switched on. */
+    var screensaverShownAt: Long
+        get() = preferences.getLong(KEY_SCREENSAVER_SHOWN, 0L)
+        set(value) = preferences.edit { putLong(KEY_SCREENSAVER_SHOWN, value) }
+
+    /** The weather at [weatherPlace] under the clock (Open-Meteo, no account). */
+    var screensaverWeather: Boolean
+        get() = preferences.getBoolean(KEY_SCREENSAVER_WEATHER, false)
+        set(value) = preferences.edit { putBoolean(KEY_SCREENSAVER_WEATHER, value) }
+
+    /** "Amsterdam, North Holland": the place found for the location the user typed; empty when not set. */
+    val weatherPlace: String get() = preferences.getString(KEY_WEATHER_PLACE, null).orEmpty()
+
+    /** Latitude and longitude of [weatherPlace]. */
+    val weatherCoordinates: Pair<Double, Double>?
+        get() = preferences.getString(KEY_WEATHER_COORDINATES, null)?.split(',')?.mapNotNull { it.toDoubleOrNull() }
+            ?.takeIf { it.size == 2 }?.let { it[0] to it[1] }
+
+    fun setWeatherPlace(place: Place?) = preferences.edit {
+        if (place == null) {
+            remove(KEY_WEATHER_PLACE)
+            remove(KEY_WEATHER_COORDINATES)
+        } else {
+            putString(KEY_WEATHER_PLACE, place.name)
+            putString(KEY_WEATHER_COORDINATES, "${place.latitude},${place.longitude}")
+        }
+    }
+
+    /** The wallpapers' values of [keys] as the screensaver's own. */
+    private fun SharedPreferences.Editor.copyToScreensaver(keys: List<String>) {
+        val values = preferences.all
+        for (key in keys) {
+            val own = Profile.OWN_PREFIX + key
+            when (val value = values[key]) {
+                is String -> putString(own, value)
+                is Boolean -> putBoolean(own, value)
+                is Int -> putInt(own, value)
+                is Long -> putLong(own, value)
+                is Float -> putFloat(own, value)
+                is Set<*> -> putStringSet(own, value.map { it.toString() }.toSet())
+                else -> remove(own)
+            }
+        }
+    }
+
     // --- Projectivy backup (getPreferences / setPreferences) ---
 
-    fun export(): String = buildJsonObject {
-        preferences.all.forEach { (key, value) ->
-            if (key.startsWith("_")) return@forEach
+    /**
+     * API keys and app credentials, never in a backup. The service that answers getPreferences and
+     * setPreferences is exported for Projectivy, so any installed app can call it: it must not hand
+     * these out, nor let them be replaced. Connections (tokens, "_" keys) aren't backed up either.
+     */
+    private val SECRET_KEYS = setOf(KEY_TOKEN, KEY_TRAKT_CLIENT_ID, KEY_TRAKT_CLIENT_SECRET, KEY_MDBLIST_KEY)
+
+    /**
+     * True for the preferences a Projectivy backup carries: the user's choices, not internal state or keys.
+     * The weather place goes without its coordinates (looked up again when needed): no exact location.
+     */
+    fun inBackup(key: String): Boolean = !key.startsWith("_") && key !in SECRET_KEYS && key != KEY_WEATHER_COORDINATES
+
+    fun export(): String = exportJson(preferences.all)
+
+    /** With [replace], the settings the backup doesn't have (never changed there) go back to their defaults. */
+    fun import(prefs: String, replace: Boolean = false): Boolean {
+        val values = try {
+            importValues(prefs)
+        } catch (e: Exception) {
+            Log.e("Settings", "Error importing preferences", e)
+            return false
+        }
+        val stored = preferences.all
+        preferences.edit {
+            if (replace) stored.keys.filter { inBackup(it) && it !in values }.forEach { remove(it) }
+            // Another place: its coordinates are looked up again (see inBackup)
+            if (values[KEY_WEATHER_PLACE] != stored[KEY_WEATHER_PLACE]) remove(KEY_WEATHER_COORDINATES)
+            values.forEach { (key, imported) ->
+                // A value of another type than the stored one (an older or edited backup) would crash its getter
+                val value = matchingType(imported, stored[key]) ?: return@forEach
+                @Suppress("UNCHECKED_CAST")
+                when (value) {
+                    is Set<*> -> putStringSet(key, value as Set<String>)
+                    is String -> putString(key, value)
+                    is Boolean -> putBoolean(key, value)
+                    is Int -> putInt(key, value)
+                    is Long -> putLong(key, value)
+                    is Float -> putFloat(key, value)
+                }
+            }
+        }
+        return true
+    }
+
+    /** [imported] as the type of [stored] (any when nothing is stored); null when it can't be. */
+    fun matchingType(imported: Any, stored: Any?): Any? = when {
+        stored == null || stored::class == imported::class -> imported
+        stored is Float && imported is Number -> imported.toFloat()
+        stored is Long && imported is Int -> imported.toLong()
+        else -> null
+    }
+
+    /** The backup of [values] (the stored preferences) as JSON. */
+    fun exportJson(values: Map<String, *>): String = buildJsonObject {
+        values.forEach { (key, value) ->
+            if (!inBackup(key)) return@forEach
             when (value) {
                 is Int -> put(key, JsonPrimitive(value))
                 is Long -> put(key, JsonPrimitive(value))
+                is Float -> put(key, JsonPrimitive(value))
                 is Boolean -> put(key, JsonPrimitive(value))
                 is String -> put(key, JsonPrimitive(value))
                 is Set<*> -> put(key, JsonArray(value.map { JsonPrimitive(it.toString()) }))
@@ -668,24 +736,21 @@ object Settings {
         }
     }.toString()
 
-    fun import(prefs: String): Boolean = try {
+    /** The preferences to restore from the backup [prefs], by key; throws when it isn't a valid backup. */
+    fun importValues(prefs: String): Map<String, Any> {
         val root = json.parseToJsonElement(prefs) as JsonObject
-        preferences.edit {
-            root.forEach { (key, value) ->
-                if (key.startsWith("_")) return@forEach
-                when {
-                    value is JsonArray -> putStringSet(key, value.map { it.jsonPrimitive.content }.toSet())
-                    value !is JsonPrimitive -> Unit
-                    value.isString -> putString(key, value.content)
-                    value.booleanOrNull != null -> putBoolean(key, value.booleanOrNull!!)
-                    value.intOrNull != null -> putInt(key, value.intOrNull!!)
-                    value.longOrNull != null -> putLong(key, value.longOrNull!!)
-                }
-            }
-        }
-        true
-    } catch (e: Exception) {
-        Log.e("Settings", "Error importing preferences", e)
-        false
+        return root.filterKeys(::inBackup).mapNotNull { (key, value) ->
+            when {
+                value is JsonArray -> value.map { it.jsonPrimitive.content }.toSet()
+                value !is JsonPrimitive -> null
+                value.isString -> value.content
+                value.booleanOrNull != null -> value.booleanOrNull!!
+                value.intOrNull != null -> value.intOrNull!!
+                value.longOrNull != null -> value.longOrNull!!
+                // Decimals are Floats, the only kind stored ("min_rating")
+                value.floatOrNull != null -> value.floatOrNull!!
+                else -> null
+            }?.let { key to it }
+        }.toMap()
     }
 }

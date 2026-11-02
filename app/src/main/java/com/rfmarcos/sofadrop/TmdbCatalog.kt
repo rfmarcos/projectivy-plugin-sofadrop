@@ -34,11 +34,18 @@ data class WallpaperInfo(
     /** Age certification of the streaming country ("16", "TV-MA"), see [Certifications]. */
     val certification: String? = null,
     /** Main cast, most important first (see [TmdbCatalog.castNames]); empty unless shown. */
-    val cast: List<String> = emptyList(),
+    val cast: List<CastMember> = emptyList(),
+    /** YouTube video opened from the wallpaper (see [TmdbCatalog.trailerKey]). */
+    val trailerKey: String? = null,
+    /** TMDB ids of the streaming services that have it in the streaming country, in TMDB's order (see [Platform]). */
+    val providerIds: List<Int> = emptyList(),
 )
 
+/** An actor of the cast row, with their TMDB profile photo when there is one. */
+data class CastMember(val name: String, val profilePath: String? = null)
+
 /** Why a title of a list is not used. */
-enum class Exclusion { LOCAL_MARKET, TOO_OLD, ADULT, AGE_RATING, GENRE, NO_LOGO, NO_SYNOPSIS, WATCHED, NO_IMAGE, DUPLICATE }
+enum class Exclusion { BLOCKED, LOCAL_MARKET, TOO_OLD, ADULT, AGE_RATING, GENRE, LOW_RATING, NO_LOGO, NO_SYNOPSIS, WATCHED, NO_IMAGE, DUPLICATE }
 
 /** A title of a list and, when it is filtered out, the reason. */
 data class Candidate(val ref: TitleRef, val exclusion: Exclusion? = null)
@@ -55,6 +62,11 @@ class TmdbCatalog(
     /** The logo and synopsis may use other languages than the rest of the wallpaper. */
     private val parts: PartLanguages = PartLanguages(language, language),
     private val showCast: Boolean = false,
+    /** TMDB locale of the trailer, null for the title's original language; [trailerFallback] is a [Settings.TRAILER_FALLBACKS]. */
+    private val trailerLanguage: String? = language,
+    private val trailerFallback: String = Settings.TRAILER_ENGLISH,
+    /** Whose filters and look it follows. */
+    private val profile: Profile = Profile.WALLPAPER,
 ) {
     private val languageCode = Languages.code(language)
     private val texts = Languages.texts(language)
@@ -63,37 +75,57 @@ class TmdbCatalog(
 
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
     private val today = dateFormat.format(Calendar.getInstance().time)
-    /** Oldest release / last air date allowed for an age limit, or null without one. */
-    private fun cutoff(months: Int): String? = months.takeIf { it > 0 }?.let {
-        dateFormat.format(Calendar.getInstance().apply { add(Calendar.MONTH, -it) }.time)
+    /** Oldest release / air date allowed for an age limit (months, or a year), or null without one. */
+    private fun cutoff(maxAge: Int): String? = when {
+        maxAge <= 0 -> null
+        Settings.isYear(maxAge) -> "$maxAge-01-01"
+        else -> dateFormat.format(Calendar.getInstance().apply { add(Calendar.MONTH, -maxAge) }.time)
     }
 
     /**
      * Candidate titles of a list, in the order they should be tried, including the ones filtered out
-     * (with the reason), using the list's own filters (see [Settings.filtersFor]).
-     * With [shuffle] the whole list is shuffled first (random selection).
+     * (with the reason), using the list's own filters (see [Profile.filtersFor]) and then [runExclusion]
+     * (titles an earlier list took, hidden watched titles), so both count against the same pool.
+     * With [shuffle] the whole list is shuffled first (random selection). A list that comes up short is
+     * read further, up to [MAX_FETCH] titles, while it has fewer than [enough] usable ones (the rest of the
+     * pool is a reserve from the titles already read: reading further costs a TMDB request per title).
      */
-    fun candidates(source: ListSource, pool: Int, trakt: TraktClient?, simkl: SimklClient?, mdbList: MdbListClient?, shuffle: Boolean = false): List<Candidate> {
-        val fetch = if (shuffle) RANDOM_POOL else pool + 5
-        val filters = Settings.filtersFor(source)
+    fun candidates(
+        source: ListSource, pool: Int, trakt: TraktClient?, simkl: SimklClient?, mdbList: MdbListClient?,
+        shuffle: Boolean = false, runExclusion: ((TitleRef) -> Exclusion?)? = null, enough: Int = pool,
+    ): List<Candidate> {
+        val filters = profile.filtersFor(source)
         val cutoff = cutoff(filters.maxAgeMonths)
-        var refs = when (source.provider) {
-            SourceProvider.TMDB -> tmdbRefs(source.key, fetch, cutoff)
-            SourceProvider.TRAKT -> trakt?.titles(source.key, fetch).orEmpty()
-            SourceProvider.SIMKL -> simkl?.titles(source.key, fetch).orEmpty()
+        fun load(count: Int) = when (source.provider) {
+            SourceProvider.TMDB -> tmdbRefs(source.key, count, cutoff)
+            SourceProvider.TRAKT -> trakt?.titles(source.key, count).orEmpty()
+            SourceProvider.SIMKL -> simkl?.titles(source.key, count).orEmpty()
             SourceProvider.MDBLIST -> source.key.removePrefix("mdblist:").let { list ->
-                if ('/' in list) MdbListClient.publicTitles(list, fetch)
-                else list.toLongOrNull()?.let { mdbList?.titles(it, fetch, client) }.orEmpty()
+                if ('/' in list) MdbListClient.publicTitles(list, count)
+                else list.toLongOrNull()?.let { mdbList?.titles(it, count, client) }.orEmpty()
             }
         }.distinct()
+        val blocked = Settings.blockedTitles
+        val check = cutoff != null || filters.globalHits || profile.excludeAdult || profile.maxRatingAge > 0 ||
+            !filters.genres.isOff || filters.minRating > 0 || profile.requireLogo || profile.requireSynopsis || blocked.isNotEmpty()
+        // Each title is checked once, also when the list is read again further
+        val checked = ConcurrentHashMap<TitleRef, Candidate>()
+        val filter = if (check) { ref: TitleRef -> checked.getOrPut(ref) { Candidate(ref, exclusion(ref, cutoff, filters, blocked)) }.exclusion } else null
+        var fetch = fetchCount(pool, shuffle, strict = check || runExclusion != null)
+        var refs = load(fetch)
         if (shuffle) refs = refs.shuffled()
-        val check = cutoff != null || filters.globalHits || Settings.excludeAdult || Settings.maxRatingAge > 0 ||
-            !filters.genres.isOff || Settings.requireLogo || Settings.requireSynopsis
-        // Checked a batch at a time in parallel: at most one batch more than needed
-        return refs.asSequence()
-            .chunked(CHECK_BATCH)
-            .flatMap { batch -> WallpaperFactory.parallel(batch) { Candidate(it, if (check) exclusion(it, cutoff, filters) else null) } }
-            .takeIncluded(pool)
+        while (true) {
+            val selected = select(refs, pool, filter, runExclusion)
+            // Short on usable titles (strict filters, or a later list whose titles earlier lists took):
+            // read further into the list, until it has enough or has no more titles
+            if (selected.count { it.exclusion == null } >= enough) return selected
+            val bigger = grow(fetch) ?: return selected
+            val more = load(bigger)
+            if (more.size <= refs.size) return selected
+            fetch = bigger
+            // The titles already in order stay first; only the new ones are shuffled behind them
+            refs = if (shuffle) refs + (more - refs.toSet()).shuffled() else more
+        }
     }
 
     /** Title and year of a title in the configured language (for listing a list's contents). */
@@ -141,7 +173,7 @@ class TmdbCatalog(
         }
         val items = linkedMapOf<Int, JsonObject>()
         // Both sources overlap, so read about as many pages of each as the list needs (20 titles per page)
-        val pageCount = ((count + 19) / 20).coerceIn(1, 5)
+        val pageCount = ((count + 19) / 20).coerceIn(1, MAX_PAGES)
         for (page in 1..pageCount) {
             val queries = listOf("trending/${type.path}/week?language=$language&page=$page", "$discover&page=$page")
             WallpaperFactory.parallel(queries) { client.get(it) }.forEach { page ->
@@ -157,21 +189,10 @@ class TmdbCatalog(
     /** Pages of a paginated TMDB list (20 titles per page). */
     private fun pages(path: String, type: MediaType, count: Int): List<TitleRef> {
         val separator = if ('?' in path) '&' else '?'
-        val pageCount = ((count + 19) / 20).coerceIn(1, 5)
+        val pageCount = ((count + 19) / 20).coerceIn(1, MAX_PAGES)
         return WallpaperFactory.parallel((1..pageCount).toList()) { page ->
             client.get("$path${separator}language=$language&page=$page")?.objects("results").orEmpty()
         }.flatten().toList().mapNotNull { item -> item.int("id")?.let { TitleRef(type, it) } }
-    }
-
-    /** Keep candidates until [count] of them are usable (filtered ones are kept to explain them). */
-    private fun Sequence<Candidate>.takeIncluded(count: Int): List<Candidate> {
-        val result = mutableListOf<Candidate>()
-        var included = 0
-        for (candidate in this) {
-            result += candidate
-            if (candidate.exclusion == null && ++included >= count) break
-        }
-        return result
     }
 
     /** Bayesian average: few votes pull the score towards a typical TMDB rating. */
@@ -183,36 +204,49 @@ class TmdbCatalog(
 
     // --- Filters (from the TMDB details of each title) ---
 
-    private fun exclusion(ref: TitleRef, cutoff: String?, filters: FilterValues): Exclusion? {
+    private fun exclusion(ref: TitleRef, cutoff: String?, filters: FilterValues, blocked: Set<TitleRef>): Exclusion? {
+        // First, and without its TMDB details
+        if (ref in blocked) return Exclusion.BLOCKED
         val item = details(ref) ?: return null
         return when {
             filters.globalHits && isLocalMarket(item) -> Exclusion.LOCAL_MARKET
-            isTooOld(ref.type, item, cutoff) -> Exclusion.TOO_OLD
-            Settings.excludeAdult && isAdult(ref, item) -> Exclusion.ADULT
+            isTooOld(ref.type, item, cutoff, Settings.isYear(filters.maxAgeMonths)) -> Exclusion.TOO_OLD
+            profile.excludeAdult && isAdult(ref, item) -> Exclusion.ADULT
             // Unrated titles (mostly not released yet) pass
-            Settings.maxRatingAge > 0 && (Certifications.minimumAge(ref.type, item, region) ?: 0) > Settings.maxRatingAge -> Exclusion.AGE_RATING
+            profile.maxRatingAge > 0 && (Certifications.minimumAge(ref.type, item, region) ?: 0) > profile.maxRatingAge -> Exclusion.AGE_RATING
             !filters.genres.allows(item.objects("genres").mapNotNull { it.int("id") }) -> Exclusion.GENRE
+            isLowRated(item, filters.minRating) -> Exclusion.LOW_RATING
             // Last: it costs an images request per title
-            Settings.requireLogo && logoPath(ref, item) == null -> Exclusion.NO_LOGO
-            Settings.requireSynopsis && localOverview(ref, item).isBlank() -> Exclusion.NO_SYNOPSIS
+            profile.requireLogo && logoPath(ref, item) == null -> Exclusion.NO_LOGO
+            profile.requireSynopsis && localOverview(ref, item).isBlank() -> Exclusion.NO_SYNOPSIS
             else -> null
         }
     }
 
-    /** Local-market titles only pass when they are worldwide hits. */
+    /** Local-market titles only pass when they are worldwide hits (when the list's filters ask for it). */
     private fun isLocalMarket(item: JsonObject): Boolean {
-        if (!Settings.globalHitsOnly) return false
         val originalLanguage = item.str("original_language")?.lowercase().orEmpty()
         return originalLanguage !in Languages.MAINSTREAM && originalLanguage != languageCode &&
             (item.int("vote_count") ?: 0) < MIN_VOTES_OTHER_LANGUAGES
     }
 
-    /** Released (movies) or last aired (TV) before the age limit. */
-    private fun isTooOld(type: MediaType, item: JsonObject, cutoff: String?): Boolean {
+    /**
+     * Released (movies) or last aired (TV) before the age limit. From a year, TV counts from its first
+     * air date, the year the wallpaper shows: a show from 1963 that still airs isn't "from 2000".
+     */
+    private fun isTooOld(type: MediaType, item: JsonObject, cutoff: String?, fromYear: Boolean): Boolean {
         val limit = cutoff ?: return false
-        val date = item.str(if (type == MediaType.MOVIE) "release_date" else "last_air_date")
+        val date = item.str(when {
+            type == MediaType.MOVIE -> "release_date"
+            fromYear -> "first_air_date"
+            else -> "last_air_date"
+        })
         return !date.isNullOrEmpty() && date < limit
     }
+
+    /** A TMDB score below [minimum]; titles with too few votes to tell (new or unreleased) pass. */
+    private fun isLowRated(item: JsonObject, minimum: Double): Boolean =
+        minimum > 0 && (item.int("vote_count") ?: 0) >= MIN_VOTES_FOR_RATING && (item.double("vote_average") ?: 0.0) < minimum
 
     private fun isAdult(ref: TitleRef, item: JsonObject): Boolean =
         item.bool("adult") == true || item.obj("keywords")
@@ -220,10 +254,11 @@ class TmdbCatalog(
             ?.any { it.str("name")?.lowercase() in EXCLUDED_KEYWORDS } == true
 
     // Series only have their IMDb id in external_ids (movies carry imdb_id); keywords for the adult filter;
-    // release dates and content ratings for the age certification
+    // release dates and content ratings for the age certification; videos for the trailer
     private fun details(ref: TitleRef): JsonObject? =
-        details[ref] ?: client.get("${ref.type.path}/${ref.tmdbId}?language=$language&append_to_response=keywords," +
-            if (ref.type == MediaType.TV) "external_ids,content_ratings" else "release_dates")
+        details[ref] ?: client.get("${ref.type.path}/${ref.tmdbId}?language=$language&append_to_response=keywords,videos," +
+            (if (ref.type == MediaType.TV) "external_ids,content_ratings" else "release_dates") +
+            "&include_video_language=$VIDEO_LANGUAGES")
             ?.also { details[ref] = it }
 
     // --- Wallpaper data ---
@@ -247,14 +282,16 @@ class TmdbCatalog(
         }
 
         // Untranslated synopsis: English only when the user prefers it to none
-        val overview = if (!Settings.drawsDetails) "" else localOverview(ref, item).ifBlank {
-            if (Settings.synopsisMode == Settings.SYNOPSIS_ENGLISH) translated(translations(ref), "en", "US", "overview") else ""
+        val overview = if (!profile.drawsDetails) "" else localOverview(ref, item).ifBlank {
+            if (profile.synopsisMode == Settings.SYNOPSIS_ENGLISH) translated(translations(ref), "en", "US", "overview") else ""
         }
 
+        // Also for opening the title on its platform, whose app the wallpaper picks from these
+        val providers = if (showProviders || (Settings.clickPlatforms.isNotEmpty() && !profile.isScreensaver)) providers(ref) else emptyList()
         return WallpaperInfo(
             type = type,
             id = ref.tmdbId,
-            title = titleIn(type, item, { translations(ref) }, parts.title, language),
+            title = titleIn(type, item, { translations(ref) }, partsFor(ref, item).title, language),
             overview = overview,
             year = item.str(if (type == MediaType.MOVIE) "release_date" else "first_air_date").orEmpty().take(4),
             rating = item.double("vote_average") ?: 0.0,
@@ -267,18 +304,31 @@ class TmdbCatalog(
                 .take(2)
                 .joinToString(", "),
             backdropPath = backdrop,
-            logoPath = if (Settings.drawsLogo) logoPath(ref, item) else null,
-            providerLogoPaths = if (showProviders) providerLogoPaths(ref) else emptyList(),
+            logoPath = if (profile.drawsLogo) logoPath(ref, item) else null,
+            providerLogoPaths = if (showProviders) providerLogoPaths(providers) else emptyList(),
+            providerIds = providers.mapNotNull { it.int("provider_id") },
             imdbId = item.str("imdb_id") ?: item.obj("external_ids")?.str("imdb_id"),
             certification = Certifications.of(type, item, region)?.let { Certifications.label(region, it) },
             cast = if (showCast) cast(ref) else emptyList(),
+            trailerKey = trailerKey(item.obj("videos"), trailerLanguages(item), anyTrailer = trailerFallback != Settings.TRAILER_NONE),
         )
     }
 
+    /** Languages an official trailer is looked for in, in order: the trailer language, then its fallback. */
+    private fun trailerLanguages(item: JsonObject): List<String> = listOfNotNull(
+        trailerLanguage?.let(Languages::code) ?: originalCode(item),
+        when (trailerFallback) {
+            Settings.TRAILER_ENGLISH -> "en"
+            Settings.TRAILER_ORIGINAL -> originalCode(item)
+            else -> null
+        },
+    ).distinct()
+
     // Its own request, only for the titles drawn: a series' aggregate credits (whole run, by episodes)
     // can be 300 KB, and its plain credits only list the latest season (no Pedro Pascal in The Last of Us)
-    private fun cast(ref: TitleRef): List<String> = castNames(
-        client.get("${ref.type.path}/${ref.tmdbId}/${if (ref.type == MediaType.TV) "aggregate_credits" else "credits"}?language=$language")
+    private fun cast(ref: TitleRef): List<CastMember> = castNames(
+        client.get("${ref.type.path}/${ref.tmdbId}/${if (ref.type == MediaType.TV) "aggregate_credits" else "credits"}?language=$language"),
+        language,
     )
 
     /** Prefer a backdrop without baked-in text, so it doesn't clash with the logo. */
@@ -293,26 +343,43 @@ class TmdbCatalog(
 
     private fun logoPath(ref: TitleRef, item: JsonObject): String? {
         val originalLanguage = item.str("original_language").orEmpty()
-        val code = parts.title?.let(Languages::code) ?: originalLanguage
+        val title = partsFor(ref, item).title
+        val code = title?.let(Languages::code) ?: originalLanguage
         val logos = client.get("${ref.type.path}/${ref.tmdbId}/images?include_image_language=$code,$originalLanguage,en")
             ?.objects("logos").orEmpty()
-        return pickLogo(logos, item, ref.type, { translations(ref) }, parts.title, language, Settings.logoFallback)
+        return pickLogo(logos, item, ref.type, { translations(ref) }, title, language, profile.logoFallback, englishOnly(ref, item))
     }
 
     /** Synopsis in the synopsis language, from another country if needed (es-MX for es-ES); empty when there is none. */
-    private fun localOverview(ref: TitleRef, item: JsonObject): String = overviewIn(item, { translations(ref) }, parts.synopsis, language)
+    private fun localOverview(ref: TitleRef, item: JsonObject): String = overviewIn(item, { translations(ref) }, partsFor(ref, item).synopsis, language)
+
+    /** The profile asks for English where the original is in another alphabet than the wallpaper's, and this title's is. */
+    private fun englishOnly(ref: TitleRef, item: JsonObject) = profile.latinOriginals && foreignOriginal(ref.type, item, language)
+
+    /**
+     * [parts] for this title: with [englishOnly], English instead of the original language, and instead of
+     * a language with no translation of the title (TMDB then gives the original name).
+     */
+    private fun partsFor(ref: TitleRef, item: JsonObject): PartLanguages {
+        if (!englishOnly(ref, item)) return parts
+        val original = item.str(originalKey(ref.type)).orEmpty()
+        val title = parts.title?.takeIf { similarity(titleIn(ref.type, item, { translations(ref) }, it, language), original) <= 0.9 }
+        return PartLanguages(title ?: ENGLISH, parts.synopsis ?: ENGLISH)
+    }
 
     /** TMDB translations of a title (title and synopsis), one per language and country. */
     private fun translations(ref: TitleRef): List<JsonObject> = translations.getOrPut(ref) {
         client.get("${ref.type.path}/${ref.tmdbId}/translations")?.objects("translations").orEmpty()
     }
 
-    private fun providerLogoPaths(ref: TitleRef): List<String> {
-        val providers = client.get("${ref.type.path}/${ref.tmdbId}/watch/providers")
+    /** Streaming services (not rent or buy) that have the title in the streaming country, TMDB's first. */
+    private fun providers(ref: TitleRef): List<JsonObject> =
+        client.get("${ref.type.path}/${ref.tmdbId}/watch/providers")
             ?.obj("results")?.obj(region)?.objects("flatrate")
             ?.sortedBy { it.int("display_priority") ?: 999 }
             .orEmpty()
 
+    private fun providerLogoPaths(providers: List<JsonObject>): List<String> {
         val logos = mutableListOf<String>()
         val seenNames = mutableListOf<String>()
         for (provider in providers) {
@@ -328,27 +395,87 @@ class TmdbCatalog(
     }
 
     companion object {
+        private const val ENGLISH = "en-US"
         private const val RANKING_MIN_VOTES = 300
         private const val RANKING_PRIOR = 6.5
         private const val MIN_VOTES_OTHER_LANGUAGES = 1000
+        /** Fewer votes than this and a score says too little to filter on. */
+        private const val MIN_VOTES_FOR_RATING = 20
         private const val MAX_PROVIDERS = 4
         private const val RANDOM_POOL = 100
+        /** Titles read beyond the pool, for the ones a filter or an earlier list takes. */
+        private const val DEFAULT_MARGIN = 5
+        private const val FILTERED_MARGIN = 20
+        /** Most titles read from one list that comes up short (TMDB: 20 a page). */
+        private const val MAX_FETCH = 100
+        private const val MAX_PAGES = MAX_FETCH / 20
         private const val CHECK_BATCH = 8
+
+        /** Titles to read from a list: a bigger margin when filters or the run can reject part of it. */
+        fun fetchCount(pool: Int, shuffle: Boolean, strict: Boolean): Int =
+            if (shuffle) RANDOM_POOL else pool + (if (strict) FILTERED_MARGIN else DEFAULT_MARGIN)
+
+        /** The next, bigger number of titles to read from a list that came up short; null at the limit. */
+        fun grow(fetch: Int): Int? = if (fetch >= MAX_FETCH) null else minOf(fetch * 2, MAX_FETCH)
+
+        /**
+         * Candidates of [refs] in order until [pool] of them are usable (filtered ones are kept to explain
+         * them). The list's own [filter] goes before the run's exclusions ([runExclusion]), so an old title
+         * stays "too old" rather than "duplicate". Checked [batch] titles at a time in parallel: at most one
+         * batch more than needed.
+         */
+        fun select(
+            refs: List<TitleRef>, pool: Int, filter: ((TitleRef) -> Exclusion?)?, runExclusion: ((TitleRef) -> Exclusion?)?,
+            batch: Int = CHECK_BATCH,
+        ): List<Candidate> {
+            val result = mutableListOf<Candidate>()
+            var included = 0
+            val checked = refs.asSequence().chunked(batch).flatMap { titles ->
+                WallpaperFactory.parallel(titles) { Candidate(it, filter?.invoke(it) ?: runExclusion?.invoke(it)) }
+            }
+            for (candidate in checked) {
+                result += candidate
+                if (candidate.exclusion == null && ++included >= pool) break
+            }
+            return result
+        }
         private val EXCLUDED_KEYWORDS = setOf("adult")
         /** Names kept for the cast row; the renderer draws the ones that fit on its line. */
         private const val MAX_CAST = 4
 
         /**
-         * First names of TMDB credits (already ordered by importance, or by episodes for a series),
-         * skipping the ones only written in another script: TMDB gives a person's name in Latin letters
-         * when it has it ("Lee Jung-jae") and in Hangul or kanji otherwise, which every wallpaper language
-         * (all in Latin script) would show as foreign text.
+         * First actors of TMDB credits, with their photo (already ordered by importance, or by episodes for a series),
+         * skipping the ones only written in an alphabet [language] isn't: TMDB gives a person's name in Latin
+         * letters when it has it ("Lee Jung-jae") and in Hangul or kanji otherwise (fine on a Korean wallpaper).
          */
-        fun castNames(credits: JsonObject?): List<String> = credits?.objects("cast").orEmpty()
-            .mapNotNull { it.str("name")?.trim()?.takeIf(String::isNotEmpty) }
-            .filter { name -> name.all { !it.isLetter() || Character.UnicodeScript.of(it.code) == Character.UnicodeScript.LATIN } }
-            .distinct()
+        fun castNames(credits: JsonObject?, language: String): List<CastMember> = credits?.objects("cast").orEmpty()
+            .mapNotNull { person -> person.str("name")?.trim()?.takeIf(String::isNotEmpty)?.let { CastMember(it, person.str("profile_path")) } }
+            .filter { member -> member.name.all { !it.isLetter() || Languages.reads(language, it) } }
+            .distinctBy { it.name }
             .take(MAX_CAST)
+
+        /**
+         * Videos asked for with the details: the trailer and its fallback may be in any wallpaper language or
+         * the title's original one, unknown until then, so all of them (and those without a language).
+         */
+        private val VIDEO_LANGUAGES = (Languages.OPTIONS.keys.map(Languages::code) +
+            listOf("ko", "ja", "zh", "hi", "ru", "tr", "sv", "da", "no", "fi", "th", "null")).distinct().joinToString(",")
+
+        /**
+         * YouTube key of the video to open from the wallpaper: an official trailer in the first of [languages]
+         * (language codes, "es") that has one, else with [anyTrailer] any trailer, else a teaser; the newest of each.
+         */
+        fun trailerKey(videos: JsonObject?, languages: List<String>, anyTrailer: Boolean = true): String? {
+            val youTube = videos?.objects("results").orEmpty()
+                .filter { it.str("site") == "YouTube" && !it.str("key").isNullOrBlank() }
+                .sortedByDescending { it.str("published_at").orEmpty() }
+            fun JsonObject.isOfficialTrailer() = str("type") == "Trailer" && bool("official") == true
+            for (language in languages) {
+                youTube.firstOrNull { it.isOfficialTrailer() && it.str("iso_639_1") == language }?.let { return it.str("key") }
+            }
+            if (!anyTrailer) return null
+            return (youTube.firstOrNull { it.str("type") == "Trailer" } ?: youTube.firstOrNull { it.str("type") == "Teaser" })?.str("key")
+        }
 
         private val PROVIDER_VARIANT_SUFFIX = Regex(
             "\\s+(amazon channel|apple tv channel|roku premium channel|channel" +
@@ -368,6 +495,15 @@ class TmdbCatalog(
         private fun titleKey(type: MediaType) = if (type == MediaType.MOVIE) "title" else "name"
 
         private fun originalKey(type: MediaType) = if (type == MediaType.MOVIE) "original_title" else "original_name"
+
+        /** Mostly letters of an alphabet [language] isn't written in: Japanese, Korean, Cyrillic… on a Latin one. */
+        fun foreignScript(text: String, language: String): Boolean {
+            val letters = text.filter(Char::isLetter)
+            return letters.isNotEmpty() && letters.count { Languages.reads(language, it) } * 2 < letters.length
+        }
+
+        /** The title's original name is in another alphabet than [language]'s, see [foreignScript]. */
+        fun foreignOriginal(type: MediaType, item: JsonObject, language: String) = foreignScript(item.str(originalKey(type)).orEmpty(), language)
 
         /** Language of the title's own translation: TMDB marks Cantonese titles "cn" and translates them as "zh". */
         private fun originalCode(item: JsonObject) = item.str("original_language").orEmpty().let { if (it == "cn") "zh" else it }
@@ -403,11 +539,12 @@ class TmdbCatalog(
 
         /**
          * Logo in [locale] (null: the original language), else one in another language whose title reads
-         * the same, else with [fallback] the original-language or English one; null to write the title.
+         * the same, else with [fallback] the original-language or English one ([englishOnly]: just the
+         * English one, for originals in another alphabet); null to write the title.
          */
         fun pickLogo(
             logos: List<JsonObject>, item: JsonObject, type: MediaType, translations: () -> List<JsonObject>,
-            locale: String?, general: String, fallback: Boolean,
+            locale: String?, general: String, fallback: Boolean, englishOnly: Boolean = false,
         ): String? {
             val original = item.str(originalKey(type)).orEmpty()
             val originalLanguage = item.str("original_language").orEmpty()
@@ -429,12 +566,14 @@ class TmdbCatalog(
                 logo = local.firstOrNull { l -> titles[l.str("iso_3166_1")]?.let { similarity(it, title) > 0.9 } == true }?.str("file_path")
             }
             // An untranslated title reads the same on the original-language logo
-            if (logo == null && similarity(title, original) > 0.9) logo = inLanguage(originalLanguage).firstOrNull()?.str("file_path")
+            if (logo == null && !englishOnly && similarity(title, original) > 0.9) logo = inLanguage(originalLanguage).firstOrNull()?.str("file_path")
             if (logo == null && originalLanguage != "en" && similarity(title, titleIn(type, item, translations, "en-US", general)) > 0.9) {
                 logo = inLanguage("en").firstOrNull()?.str("file_path")
             }
             // Optional: a logo in another language beats the title written as plain text
-            if (logo == null && fallback) logo = (inLanguage(originalLanguage) + inLanguage("en")).firstOrNull()?.str("file_path")
+            if (logo == null && fallback) {
+                logo = ((if (englishOnly) emptyList() else inLanguage(originalLanguage)) + inLanguage("en")).firstOrNull()?.str("file_path")
+            }
             return logo
         }
 

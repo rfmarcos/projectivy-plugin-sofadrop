@@ -16,7 +16,7 @@ class BadgeRenderTest {
     fun rendersWatchedBadges() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         Settings.init(context)
-        val factory = WallpaperFactory(context, 1920)
+        val factory = WallpaperFactory(context, 1920, Profile.WALLPAPER)
         val dir = File(context.filesDir, "badge_test").apply { mkdirs() }
 
         val movie = factory.catalog.build(TitleRef(MediaType.MOVIE, 1084244))

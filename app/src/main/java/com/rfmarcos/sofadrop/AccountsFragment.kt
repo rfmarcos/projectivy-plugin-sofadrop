@@ -21,7 +21,10 @@ class AccountsFragment : BaseSettingsFragment() {
 
     override fun onCreateGuidance(savedInstanceState: Bundle?) = Guidance(
         getString(R.string.setting_accounts_title),
-        getString(R.string.accounts_description),
+        arguments?.getStringArray(ARG_RECONNECT)?.let { names ->
+            getString(R.string.accounts_reconnect, names.map { ListsFragment.providerName(requireContext(), SourceProvider.valueOf(it)) }
+                .joinToString(", "))
+        } ?: getString(R.string.accounts_description),
         getString(R.string.settings),
         AppCompatResources.getDrawable(requireActivity(), R.mipmap.ic_launcher),
     )
@@ -49,12 +52,14 @@ class AccountsFragment : BaseSettingsFragment() {
             ID_MDBLIST to getString(R.string.enables_mdblist),
             ID_IMDB to getString(R.string.enables_imdb),
         )
+        // After an import the notice stays on the services to connect again
+        arguments?.getStringArray(ARG_RECONNECT)?.forEach { explanations -= idOf(SourceProvider.valueOf(it)) }
     }
 
     private fun rows(): List<GuidedAction> = SERVICES.map(::serviceAction) + header(ID_NO_ACCOUNT, getString(R.string.accounts_no_account)) +
-        action(ID_IMDB, R.drawable.ic_act_refresh, getString(R.string.imdb_data_title), imdbLabel(requireContext())).build()
+        action(ID_IMDB, R.drawable.ic_act_refresh, getString(R.string.imdb_data_title), imdbLabel(requireContext(), profile)).build()
 
-    private fun refreshRows() = refreshActions(rows()) { AccountsFragment() }
+    private fun refreshRows() = refreshActions(rows())
 
     private fun serviceAction(provider: SourceProvider): GuidedAction {
         val context = requireContext()
@@ -110,7 +115,13 @@ class AccountsFragment : BaseSettingsFragment() {
     /** Sign out and drop the lists that only work with that account, so wallpapers don't keep using them. */
     private fun disconnect(provider: SourceProvider) {
         when (provider) {
-            SourceProvider.TRAKT -> Settings.clearTraktSession()
+            SourceProvider.TRAKT -> {
+                Settings.clearTraktSession()
+                // Like MDBList: the account's own lists go, the public ones stay
+                val own = Settings.traktLists.filter { it.own }
+                Settings.traktLists -= own.toSet()
+                profile.lists -= own.map { it.key }.toSet()
+            }
             SourceProvider.SIMKL -> Settings.clearSimklSession()
             SourceProvider.TMDB -> Settings.clearTmdbSession()
             SourceProvider.MDBLIST -> {
@@ -119,7 +130,7 @@ class AccountsFragment : BaseSettingsFragment() {
                 Settings.clearMdbListSession()
                 Settings.mdbListKey = ""
                 Settings.mdbLists = Settings.mdbLists.filter { it.path.isNotEmpty() }
-                Settings.lists -= accountKeys
+                profile.lists -= accountKeys
                 return
             }
         }
@@ -128,7 +139,7 @@ class AccountsFragment : BaseSettingsFragment() {
             SourceProvider.SIMKL -> Sources.SIMKL
             else -> Sources.TMDB
         }
-        Settings.lists -= lists.filter { it.needsAccount }.map { it.key }.toSet()
+        profile.lists -= lists.filter { it.needsAccount }.map { it.key }.toSet()
     }
 
     private fun downloadImdb() {
@@ -137,7 +148,7 @@ class AccountsFragment : BaseSettingsFragment() {
         updateDescription(ID_IMDB, getString(R.string.imdb_data_downloading))
         background({ ImdbRatings.refresh(requireContext().applicationContext) }) { result ->
             downloading = false
-            updateDescription(ID_IMDB, result.exceptionOrNull()?.let { getString(R.string.imdb_data_failed, it.message) } ?: imdbLabel(requireContext()))
+            updateDescription(ID_IMDB, result.exceptionOrNull()?.let { getString(R.string.imdb_data_failed, it.message) } ?: imdbLabel(requireContext(), profile))
         }
     }
 
@@ -151,9 +162,15 @@ class AccountsFragment : BaseSettingsFragment() {
         private const val SUB_RELOAD = 0L
         private const val SUB_DISCONNECT = 1L
         private const val ARG_FOCUS = "focus"
+        private const val ARG_RECONNECT = "reconnect"
 
         /** Accounts with [provider]'s row selected. */
         fun newInstance(provider: SourceProvider) = AccountsFragment().apply { arguments = bundleOf(ARG_FOCUS to provider.name) }
+
+        /** After importing a settings file: says which of the other TV's accounts to connect again, on the first one. */
+        fun reconnect(providers: List<SourceProvider>) = AccountsFragment().apply {
+            arguments = bundleOf(ARG_FOCUS to providers.first().name, ARG_RECONNECT to providers.map { it.name }.toTypedArray())
+        }
 
         private val SERVICES = listOf(SourceProvider.TMDB, SourceProvider.TRAKT, SourceProvider.SIMKL, SourceProvider.MDBLIST)
         private val BADGES = mapOf(
@@ -202,8 +219,8 @@ class AccountsFragment : BaseSettingsFragment() {
             SERVICES.filter(::connected).joinToString(", ") { ListsFragment.providerName(context, it) }
                 .let { if (it.isEmpty()) context.getString(R.string.accounts_none) else context.getString(R.string.accounts_summary, it) }
 
-        fun imdbLabel(context: Context): String {
-            if (RatingSource.IMDB !in Settings.ratingSources || Settings.mdbListAvailable) return context.getString(R.string.imdb_data_unused)
+        fun imdbLabel(context: Context, profile: Profile): String {
+            if (RatingSource.IMDB !in profile.ratingSources || Settings.mdbListAvailable) return context.getString(R.string.imdb_data_unused)
             val date = ImdbRatings.downloadedAt(context)
             return if (date == 0L) context.getString(R.string.imdb_data_never)
             else context.getString(R.string.imdb_data_date, DateUtils.formatDateTime(context, date, DateUtils.FORMAT_SHOW_DATE or DateUtils.FORMAT_ABBREV_MONTH))

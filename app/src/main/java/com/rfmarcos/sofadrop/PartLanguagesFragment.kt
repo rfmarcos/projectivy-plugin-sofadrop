@@ -10,13 +10,14 @@ import androidx.leanback.widget.GuidanceStylist.Guidance
 import androidx.leanback.widget.GuidedAction
 
 /**
- * Language of the logo (and of the title written instead) and of the synopsis, each followed by what to
- * do when TMDB has none in it. "Automatic" follows the wallpaper language, like everything else drawn.
+ * The general language, then the language of the logo (and of the title written instead) and of the
+ * synopsis, each followed by what to do when TMDB has none in it. "Automatic" follows the wallpaper
+ * language, like everything else drawn.
  */
 class PartLanguagesFragment : PreviewSettingsFragment() {
 
     override fun onCreateGuidance(savedInstanceState: Bundle?) = Guidance(
-        getString(R.string.part_languages_title),
+        getString(R.string.setting_language_title),
         getString(R.string.part_languages_desc, Languages.displayName(Settings.language)),
         getString(R.string.setting_details_title),
         AppCompatResources.getDrawable(requireActivity(), R.mipmap.ic_launcher),
@@ -32,29 +33,35 @@ class PartLanguagesFragment : PreviewSettingsFragment() {
         guidanceStylist.descriptionView?.visibility = View.VISIBLE
     }
 
-    // Back from the preview title
-    override fun onResume() {
-        super.onResume()
-        refreshActions(rows()) { PartLanguagesFragment() }
-    }
-
     private fun rows(): List<GuidedAction> {
         val context = requireContext()
-        val originalLogo = Settings.partLanguages.title == null
+        val originalLogo = profile.partLanguages.title == null
         val logoModes = Settings.LOGO_MODES.map { logoModeLabel(context, it, originalLogo) }
-        val synopsisModes = synopsisModes()
-        val synopsisMode = shownSynopsisMode()
+        val synopsisModes = synopsisModes(profile)
+        val synopsisMode = shownSynopsisMode(profile)
         return listOf(
-            languageRow(ID_TITLE_LANGUAGE, R.string.logo_language_title, Settings.titleLanguage),
-            fallbackRow(ID_LOGO_MODE, R.string.logo_mode_title, logoModeLabel(context, Settings.logoMode, originalLogo), logoModes,
-                Settings.LOGO_MODES.map { logoModeDescription(context, it, originalLogo) }),
-            languageRow(ID_SYNOPSIS_LANGUAGE, R.string.synopsis_language_title, Settings.synopsisLanguage).hiddenBy(Settings.drawsDetails),
+            // One language for both sets: from the screensaver it would change the wallpapers' too
+            if (profile.isScreensaver) action(ID_LANGUAGE, R.drawable.ic_act_language, getString(R.string.general_language_title),
+                getString(R.string.general_language_shared, Languages.displayName(Settings.language))).multilineDescription(true).enabled(false).build()
+            else choice(ID_LANGUAGE, R.drawable.ic_act_language, R.string.general_language_title, Languages.displayName(Settings.language),
+                Languages.OPTIONS.values.toList()),
+            languageRow(ID_TITLE_LANGUAGE, R.string.logo_language_title, profile.titleLanguage).hiddenBy(profile.drawsLogo),
+            fallbackRow(ID_LOGO_MODE, R.string.logo_mode_title, logoModeLabel(context, profile.logoMode, originalLogo), logoModes,
+                Settings.LOGO_MODES.map { logoModeDescription(context, it, originalLogo) }).hiddenBy(profile.drawsLogo),
+            languageRow(ID_SYNOPSIS_LANGUAGE, R.string.synopsis_language_title, profile.synopsisLanguage).hiddenBy(profile.drawsDetails),
             fallbackRow(ID_SYNOPSIS_MODE, R.string.synopsis_mode_title, synopsisModeLabel(context, synopsisMode),
                 synopsisModes.map { synopsisModeLabel(context, it) },
-                synopsisModes.map { mode -> synopsisModeDescription(context, mode) }).hiddenBy(Settings.drawsDetails),
-            action(ID_PREVIEW_PIN, R.drawable.ic_act_preview, getString(R.string.preview_pin_title), PreviewPinFragment.summary(context))
-                .hasNext(true).build(),
+                synopsisModes.map { mode -> synopsisModeDescription(context, mode) }).hiddenBy(profile.drawsDetails),
+            checkbox(ID_LATIN, getString(R.string.latin_originals_title), getString(R.string.latin_originals_desc), profile.latinOriginals)
+                .multilineDescription(true).build().hiddenBy(profile.drawsLogo),
         )
+    }
+
+    override fun onGuidedActionClicked(action: GuidedAction) {
+        if (action.id == ID_LATIN) {
+            profile.latinOriginals = action.isChecked
+            schedulePreview(300)
+        }
     }
 
     private fun languageRow(id: Long, title: Int, current: String): GuidedAction {
@@ -76,21 +83,22 @@ class PartLanguagesFragment : PreviewSettingsFragment() {
         GuidedAction.Builder(requireContext()).id(id).icon(ColorDrawable(Color.TRANSPARENT)).title(getString(title)).description(current)
             .subActions(options(id, labels, current, descriptions)).build()
 
-    override fun onGuidedActionClicked(action: GuidedAction) {
-        if (action.id == ID_PREVIEW_PIN) add(parentFragmentManager, PreviewPinFragment())
-    }
-
     override fun onSubGuidedActionClicked(action: GuidedAction): Boolean {
         val index = (action.id % SUB_ID_BASE).toInt()
         when (action.id / SUB_ID_BASE) {
-            ID_TITLE_LANGUAGE -> Settings.titleLanguage = Settings.PART_LANGUAGES[index]
-            ID_LOGO_MODE -> Settings.logoMode = Settings.LOGO_MODES[index]
-            ID_SYNOPSIS_LANGUAGE -> Settings.synopsisLanguage = Settings.PART_LANGUAGES[index]
-            ID_SYNOPSIS_MODE -> Settings.synopsisMode = synopsisModes()[index]
+            ID_LANGUAGE -> {
+                Settings.language = Languages.OPTIONS.keys.elementAt(index)
+                // What Automatic stands for
+                setGuidanceText(getString(R.string.part_languages_desc, Languages.displayName(Settings.language)))
+            }
+            ID_TITLE_LANGUAGE -> profile.titleLanguage = Settings.PART_LANGUAGES[index]
+            ID_LOGO_MODE -> profile.logoMode = Settings.LOGO_MODES[index]
+            ID_SYNOPSIS_LANGUAGE -> profile.synopsisLanguage = Settings.PART_LANGUAGES[index]
+            ID_SYNOPSIS_MODE -> profile.synopsisMode = synopsisModes(profile)[index]
         }
-        // A language changes the options of its fallback row
+        // A language changes the options of its fallback row, and the wallpaper's what Automatic says
         collapseSubActions()
-        refreshActions(rows()) { PartLanguagesFragment() }
+        refreshActions(rows())
         schedulePreview(300)
         return true
     }
@@ -100,17 +108,18 @@ class PartLanguagesFragment : PreviewSettingsFragment() {
         private const val ID_LOGO_MODE = 2L
         private const val ID_SYNOPSIS_LANGUAGE = 3L
         private const val ID_SYNOPSIS_MODE = 4L
-        private const val ID_PREVIEW_PIN = 5L
+        private const val ID_LANGUAGE = 6L
+        private const val ID_LATIN = 7L
 
         /** A synopsis already in English has no English one to fall back to. */
-        private fun englishSynopsis() = Settings.partLanguages.synopsis?.let(Languages::code) == "en"
+        private fun englishSynopsis(profile: Profile) = profile.partLanguages.synopsis?.let(Languages::code) == "en"
 
-        private fun synopsisModes() =
-            if (englishSynopsis()) Settings.SYNOPSIS_MODES - Settings.SYNOPSIS_ENGLISH else Settings.SYNOPSIS_MODES
+        private fun synopsisModes(profile: Profile) =
+            if (englishSynopsis(profile)) Settings.SYNOPSIS_MODES - Settings.SYNOPSIS_ENGLISH else Settings.SYNOPSIS_MODES
 
         /** "Show it in English" works as "Leave it out" for an English synopsis. */
-        private fun shownSynopsisMode() =
-            Settings.synopsisMode.takeIf { it in synopsisModes() } ?: Settings.SYNOPSIS_HIDE
+        private fun shownSynopsisMode(profile: Profile) =
+            profile.synopsisMode.takeIf { it in synopsisModes(profile) } ?: Settings.SYNOPSIS_HIDE
 
         /** "Automatic", "Original language" or the language; [long] adds what Automatic stands for. */
         fun languageLabel(context: Context, value: String, long: Boolean = false): String = when (value) {
@@ -154,14 +163,15 @@ class PartLanguagesFragment : PreviewSettingsFragment() {
             else -> null
         }
 
-        /** "All in Español (España)", or what differs: "Logo: Original language · skips titles", for the details screen. */
-        fun summary(context: Context): String {
-            val languages = listOfNotNull(
-                Settings.titleLanguage.takeIf { it != Settings.LANGUAGE_AUTO }?.let { context.getString(R.string.part_summary_logo, languageLabel(context, it)) },
-                Settings.synopsisLanguage.takeIf { it != Settings.LANGUAGE_AUTO }?.let { context.getString(R.string.part_summary_synopsis, languageLabel(context, it)) },
-            ).ifEmpty { listOf(context.getString(R.string.part_summary_all, Languages.displayName(Settings.language))) }
-            val skips = Settings.requireLogo || Settings.requireSynopsis
-            return (languages + listOfNotNull(context.getString(R.string.part_summary_skips).takeIf { skips })).joinToString(" · ")
-        }
+        /** "Español (España)", plus the parts that differ: "Español (España) · Logo: Original language · skips titles", for the details screen. */
+        fun summary(context: Context, profile: Profile): String = listOfNotNull(
+            Languages.displayName(Settings.language),
+            profile.titleLanguage.takeIf { it != Settings.LANGUAGE_AUTO && profile.drawsLogo }
+                ?.let { context.getString(R.string.part_summary_logo, languageLabel(context, it)) },
+            profile.synopsisLanguage.takeIf { it != Settings.LANGUAGE_AUTO && profile.drawsDetails }
+                ?.let { context.getString(R.string.part_summary_synopsis, languageLabel(context, it)) },
+            context.getString(R.string.part_summary_skips).takeIf { profile.requireLogo || profile.requireSynopsis },
+            context.getString(R.string.part_summary_latin).takeIf { profile.latinOriginals && profile.drawsLogo },
+        ).joinToString(" · ")
     }
 }

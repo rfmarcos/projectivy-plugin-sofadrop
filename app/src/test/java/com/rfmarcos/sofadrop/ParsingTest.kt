@@ -99,13 +99,46 @@ class ParsingTest {
     }
 
     @Test
+    fun simklRecommendationLists() {
+        // GET /lists/user/{id}: only the recommendation lists of the media type, in Simkl's order
+        val lists = obj("""
+            {"pagination": {"page": 1, "limit": 100, "total_items": 4, "total_pages": 1},
+             "lists": [{"id": 123456, "name": "Best 90s sci-fi", "media_type": "movies", "type": "regular"},
+                       {"id": 901, "name": "Recommendations V1", "media_type": "movies", "type": "recommendations"},
+                       {"id": 902, "name": "Recommendations V1", "media_type": "tv", "type": "recommendations"},
+                       {"id": 903, "name": "Recommendations V2", "media_type": "movies", "type": "recommendations"}]}
+        """)
+        assertEquals(listOf(901L, 903L), SimklClient.parseRecommendationLists(lists, "movies"))
+        assertEquals(emptyList<Long>(), SimklClient.parseRecommendationLists(obj("""{"error": "premium_only"}"""), "movies"))
+        // GET /lists/{id}: TMDB ids are strings and may be missing (then the IMDb id is used)
+        val items = obj("""
+            {"id": 901, "media_type": "anime", "items": [
+              {"title": "Ghost in the Shell", "type": "anime", "anime_type": "movie", "ids": {"simkl_id": 53536, "imdb": "tt0113568"}},
+              {"title": "Arcane", "type": "anime", "anime_type": "tv", "ids": {"simkl_id": 548312, "imdb": "tt11126994", "tmdb": "94605"}},
+              {"title": "No ids", "type": "movie", "ids": {"simkl_id": 1}}]}
+        """)
+        assertEquals(
+            listOf(
+                SimklClient.Companion.ListItem(MediaType.MOVIE, null, "tt0113568", anime = true),
+                SimklClient.Companion.ListItem(MediaType.TV, "94605", "tt11126994", anime = true),
+            ),
+            SimklClient.parseListItems(items),
+        )
+    }
+
+    @Test
     fun castInLatinLettersOnly() {
         // Squid Game's aggregate credits: two of the first five only have their Hangul name
         val credits = kotlinx.serialization.json.Json.parseToJsonElement(
-            """{"cast":[{"name":"Lee Jung-jae"},{"name":"위하준"},{"name":"Yim Si-wan"},{"name":"강하늘"},{"name":"Zoë Kravitz"},{"name":" "},{"name":"Lee Byung-hun"},{"name":"Park Gyu-young"}]}"""
+            """{"cast":[{"name":"Lee Jung-jae","profile_path":"/lee.jpg"},{"name":"위하준"},{"name":"Yim Si-wan","profile_path":null},{"name":"강하늘"},{"name":"Zoë Kravitz","profile_path":"/zoe.jpg"},{"name":" "},{"name":"Lee Byung-hun"},{"name":"Park Gyu-young"}]}"""
         ) as kotlinx.serialization.json.JsonObject
-        assertEquals(listOf("Lee Jung-jae", "Yim Si-wan", "Zoë Kravitz", "Lee Byung-hun"), TmdbCatalog.castNames(credits))
-        assertEquals(emptyList<String>(), TmdbCatalog.castNames(null))
+        assertEquals(
+            listOf(CastMember("Lee Jung-jae", "/lee.jpg"), CastMember("Yim Si-wan"), CastMember("Zoë Kravitz", "/zoe.jpg"), CastMember("Lee Byung-hun")),
+            TmdbCatalog.castNames(credits, "en-US"),
+        )
+        assertEquals(emptyList<CastMember>(), TmdbCatalog.castNames(null, "en-US"))
+        // On a Korean wallpaper, Hangul names are readable
+        assertEquals(listOf("Lee Jung-jae", "위하준", "Yim Si-wan", "강하늘"), TmdbCatalog.castNames(credits, "ko-KR").map { it.name })
     }
 
     @Test
@@ -126,6 +159,19 @@ class ParsingTest {
         assertEquals("Ужасы", Languages.genreName("ru-RU", 27, "ужасы"))
         assertEquals("no-NO", Languages.defaultFor(java.util.Locale.forLanguageTag("nb-NO")))
         assertEquals("uk-UA", Languages.defaultFor(java.util.Locale.forLanguageTag("uk-UA")))
+        // Chinese: simplified, or traditional characters for Taiwan and Hong Kong
+        assertEquals("zh-CN", Languages.defaultFor(java.util.Locale.forLanguageTag("zh-Hans-CN")))
+        assertEquals("zh-TW", Languages.defaultFor(java.util.Locale.forLanguageTag("zh-Hant-TW")))
+        assertEquals("zh-HK", Languages.defaultFor(java.util.Locale.forLanguageTag("zh-MO")))
+        assertEquals("在看 · %d/%d", Languages.texts("zh-CN").watching)
+        assertEquals("觀看中 · %d/%d", Languages.texts("zh-HK").watching)
+        assertEquals("戰爭政治", Languages.genreName("zh-TW", 10768, "War & Politics"))
+        assertEquals("3 季", Languages.texts("zh-CN").seasonCount(3))
+        assertEquals("3シーズン", Languages.texts("ja-JP").seasonCount(3))
+        assertEquals("시즌 1개", Languages.texts("ko-KR").seasonCount(1))
+        assertEquals("ja-JP", Languages.defaultFor(java.util.Locale.forLanguageTag("ja-JP")))
+        assertEquals("歴史", Languages.genreName("ja-JP", 36, "履歴"))
+        assertEquals(java.util.Locale.TRADITIONAL_CHINESE.language, Languages.texts("zh-TW").locale.language)
         // Every language has its own texts and list names, not the English fallback
         Languages.OPTIONS.keys.filterNot { it.startsWith("en") }.forEach { language ->
             assertNotEquals(language, Languages.texts("en-US"), Languages.texts(language))
@@ -145,6 +191,25 @@ class ParsingTest {
         assertEquals(listOf("1 Сезон", "3 Сезони", "5 Сезонів"), count("uk-UA", 1, 3, 5))
         assertEquals(listOf("1 Sezon", "19 Sezoane", "20 de Sezoane", "36 de Sezoane"), count("ro-RO", 1, 19, 20, 36))
         assertEquals(listOf("1 Évad", "5 Évad"), count("hu-HU", 1, 5))
+    }
+
+    @Test
+    fun wrapBreaksWordsAndChineseText() {
+        // One unit per character, so a line holds up to 10
+        fun wrap(text: String, lines: Int) = WallpaperRenderer.wrap(text, 10f, lines) { it.length.toFloat() }
+        assertEquals(listOf("The quick", "brown fox", "jumps"), wrap("The quick  brown fox jumps", 9))
+        assertEquals(listOf("The quick", "brown fox…"), wrap("The quick brown fox jumps", 2))
+        assertEquals(listOf("The quick", "brownish…"), wrap("The quick brownish fox jumps", 2))
+        // No spaces: between characters, and "，" / "。" never start a line
+        val synopsis = "道姆·柯布与同事阿瑟和纳什在一次行动中失败，反被齐藤利用。齐藤威逼利诱柯布帮他。"
+        val lines = wrap(synopsis, 9)
+        assertEquals(synopsis, lines.joinToString(""))
+        assertTrue(lines.all { it.length <= 10 })
+        assertTrue(lines.none { it.startsWith("，") || it.startsWith("。") })
+        assertEquals(2, wrap(synopsis, 2).size)
+        assertTrue(wrap(synopsis, 2).last().endsWith("…"))
+        // Latin names inside Chinese text keep their space
+        assertEquals(listOf("Dom Cobb 是", "一名精于潜盗的神偷"), wrap("Dom Cobb 是一名精于潜盗的神偷", 9))
     }
 
     @Test

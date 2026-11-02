@@ -1,8 +1,8 @@
 package com.rfmarcos.sofadrop
 
-import android.content.pm.PackageManager
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.addCallback
 import androidx.fragment.app.FragmentActivity
 import androidx.leanback.app.GuidedStepSupportFragment
@@ -13,12 +13,17 @@ class SettingsActivity : FragmentActivity() {
         super.onCreate(savedInstanceState)
         Settings.init(this)
 
-        if (!packageManager.isApplicationInstalled(Projectivy.PACKAGE)) {
-            Toast.makeText(this, R.string.projectivy_not_installed, Toast.LENGTH_LONG).show()
-        }
-
         if (savedInstanceState == null) {
             GuidedStepSupportFragment.addAsRoot(this, SettingsFragment(), android.R.id.content)
+            val file = settingsFile(intent)
+            val reconnect = intent.getStringArrayExtra(EXTRA_RECONNECT).orEmpty()
+                .mapNotNull { name -> SourceProvider.entries.firstOrNull { it.name == name } }
+            // A settings file opened with Sofadrop (from a file manager): asks before importing it
+            if (file != null) GuidedStepSupportFragment.add(supportFragmentManager, SettingsImportFragment.newInstance(file))
+            // Just imported: the accounts the other TV had, to connect again
+            else if (reconnect.isNotEmpty()) GuidedStepSupportFragment.add(supportFragmentManager, AccountsFragment.reconnect(reconnect))
+            // First run: the wizard over the settings, which are there when it ends
+            else if (Wizard.shouldOffer()) Wizard.start(supportFragmentManager)
         }
 
         // Back on the first screen finishes the settings. Otherwise Android 12+ moves a launcher task to
@@ -36,16 +41,26 @@ class SettingsActivity : FragmentActivity() {
         }
     }
 
+    companion object {
+        /** Services to connect again after importing a settings file (see SettingsImportFragment). */
+        const val EXTRA_RECONNECT = "reconnect"
+    }
+
+    @Suppress("DEPRECATION")
+    private fun settingsFile(intent: Intent?): Uri? = when (intent?.action) {
+        Intent.ACTION_VIEW -> intent.data
+        Intent.ACTION_SEND -> intent.getParcelableExtra(Intent.EXTRA_STREAM)
+        else -> null
+    }
+
     override fun onPause() {
         super.onPause()
         // Leaving the settings applies what changed instead of waiting for the next scheduled update
-        if (isFinishing && Settings.hasPendingChanges && !Settings.generating && Sources.selected().isNotEmpty()) GenerateWallpapersWorker.runNow(this, replace = true)
-    }
-
-    private fun PackageManager.isApplicationInstalled(packageName: String): Boolean = try {
-        getApplicationInfo(packageName, 0)
-        true
-    } catch (_: PackageManager.NameNotFoundException) {
-        false
+        if (!isFinishing) return
+        for (profile in listOf(Profile.WALLPAPER, Profile.SCREENSAVER).filter { it.source == it }) {
+            // The screensaver's own set is made the first time here too
+            val due = profile.hasPendingChanges || (profile.isScreensaver && profile.lastGeneration == 0L)
+            if (due && !profile.generating && Sources.selected(profile).isNotEmpty()) GenerateWallpapersWorker.runNow(this, profile, replace = true)
+        }
     }
 }

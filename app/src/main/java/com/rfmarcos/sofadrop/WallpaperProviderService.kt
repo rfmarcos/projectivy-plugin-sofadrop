@@ -1,6 +1,7 @@
 package com.rfmarcos.sofadrop
 
 import android.app.Service
+import android.content.Context
 import android.content.Intent
 import android.os.IBinder
 import android.util.Log
@@ -31,14 +32,15 @@ class WallpaperProviderService : Service() {
             val current = store.current()
             // Settings changes wait for the next scheduled update (or "Update now"): only an empty
             // or expired set is regenerated from here, as a safety net for the periodic job
-            val stale = System.currentTimeMillis() - Settings.lastGeneration > Settings.refreshIntervalMillis
+            val stale = System.currentTimeMillis() - Profile.WALLPAPER.lastGeneration > Settings.refreshIntervalMillis
             if (current.isEmpty() || stale) {
                 GenerateWallpapersWorker.runNow(this@WallpaperProviderService)
             }
             GenerateWallpapersWorker.schedule(this@WallpaperProviderService)
 
-            Log.i(TAG, "getWallpapers: ${current.size} wallpapers, stale=$stale, pendingChanges=${Settings.hasPendingChanges}")
+            Log.i(TAG, "getWallpapers: ${current.size} wallpapers, stale=$stale, pendingChanges=${Profile.WALLPAPER.hasPendingChanges}")
             store.markServed()
+            val apps = ClickTargets.Apps(this@WallpaperProviderService)
             return (if (Settings.mixLists) current.shuffled() else current).mapNotNull { wallpaper ->
                 val uri = store.uriOf(wallpaper) ?: return@mapNotNull null
                 Wallpaper(
@@ -48,6 +50,8 @@ class WallpaperProviderService : Service() {
                     title = wallpaper.title,
                     source = "https://www.themoviedb.org/${wallpaper.type}/${wallpaper.tmdbId}",
                     author = "TMDB",
+                    // "Watch" in Projectivy's "About this wallpaper" and a play button on its status bar
+                    actionUri = actionUri(this@WallpaperProviderService, wallpaper, apps),
                 )
             }
         }
@@ -62,5 +66,12 @@ class WallpaperProviderService : Service() {
 
     companion object {
         private const val TAG = "SofadropService"
+
+        /**
+         * What Projectivy opens from [wallpaper] (see [ClickTargets]); applied when served, without
+         * regenerating (except the platforms' pages).
+         */
+        fun actionUri(context: Context, wallpaper: StoredWallpaper, apps: ClickTargets.Apps = ClickTargets.Apps(context)): String? =
+            ClickTargets.candidates(context, wallpaper, apps).firstOrNull()?.toUri(Intent.URI_INTENT_SCHEME)
     }
 }

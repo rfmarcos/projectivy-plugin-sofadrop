@@ -3,6 +3,7 @@
 Three tilted panels (new backdrops) drop onto a white sofa, on a near-black tile.
   python tools/gen_icon.py app/src/main/res build/icon-preview      # write resources + previews
   python tools/gen_icon.py - build/icon-preview                       # previews only
+  python tools/gen_icon.py --export docs/icon                         # SVG + PNG for others (icon packs)
 
 The cards were fitted and the sofa traced on the chosen concept (its tile = the 72 dp a launcher
 shows of the 108 dp adaptive icon).
@@ -143,10 +144,12 @@ def mask(paths, sc, size):
     return m
 
 
-def artwork(S):
-    """Background + foreground of the full 108 viewport at S px."""
+def artwork(S, transparent=False):
+    """Background + foreground of the full 108 viewport at S px; transparent: no tile, its margins cut out."""
     sc = S / 108
     bg = linear((S, S), [BG_A, BG_B], 0, 0, 108, 108).convert("RGBA")
+    if transparent:
+        bg = Image.new("RGBA", (S, S), (0, 0, 0, 0))
     img = bg.copy()
     panels = linear((S, S), [PANEL_A, PANEL_M, PANEL_B], *GRAD).convert("RGBA")
     clip = Image.new("L", (S, S), 0); ImageDraw.Draw(clip).polygon([(x * sc, y * sc) for x, y in clip_points()], fill=255)
@@ -168,10 +171,10 @@ def artwork(S):
     return img
 
 
-def render_icon(px, shape="square"):
+def render_icon(px, shape="square", transparent=False, ss=4):
     """What a launcher shows: the central 72x72 of the viewport, masked to a shape."""
-    ss = 4; S = px * ss * 3 // 2
-    img = artwork(S).crop((S // 6, S // 6, S - S // 6, S - S // 6)).resize((px * ss, px * ss), Image.LANCZOS)
+    S = px * ss * 3 // 2
+    img = artwork(S, transparent).crop((S // 6, S // 6, S - S // 6, S - S // 6)).resize((px * ss, px * ss), Image.LANCZOS)
     if shape != "square":
         T = px * ss
         m = Image.new("L", (T, T), 0); d = ImageDraw.Draw(m)
@@ -229,7 +232,56 @@ def vector_xml(foreground):
     return head + body + '</vector>\n'
 
 
+def svg(background):
+    """The icon as SVG: the 72 a launcher shows; without background, the tile's margins are cut out (masks)."""
+    def gradient(gid, colors, x0, y0, x1, y1, opacities=None):
+        opacities = opacities or [1] * len(colors)
+        stops = "".join(f'<stop offset="{i / (len(colors) - 1):g}" stop-color="{c}" stop-opacity="{o:g}"/>'
+                        for i, (c, o) in enumerate(zip(colors, opacities)))
+        return (f'<linearGradient id="{gid}" gradientUnits="userSpaceOnUse" x1="{x0:.3f}" y1="{y0:.3f}" x2="{x1:.3f}" y2="{y1:.3f}">'
+                f'{stops}</linearGradient>')
+
+    def cut_out(mid, paths):
+        """White keeps, black cuts: the margins the vector fills with the tile."""
+        holes = "".join(f'<path d="{p}" fill="#000"/>' for p in paths)
+        return f'<mask id="{mid}" maskUnits="userSpaceOnUse" x="0" y="0" width="108" height="108"><rect width="108" height="108" fill="#fff"/>{holes}</mask>'
+
+    defs = [gradient("tile", [BG_A, BG_B], 0, 0, 108, 108), gradient("panel", [PANEL_A, PANEL_M, PANEL_B], *GRAD),
+            gradient("fade", [FADE_COLOR, FADE_COLOR], 54, FADE_TOP, 54, CLIP, [0, FADE_ALPHA]),
+            '<clipPath id="cut"><path d="M' + " L".join(f"{x:.3f},{y:.3f}" for x, y in clip_points()) + ' Z"/></clipPath>',
+            cut_out("sofa-gap", SOFA_GAP_PATHS)]
+    body = []
+    if background:
+        body.append('<rect width="108" height="108" fill="url(#tile)"/>')
+    body.append('<g clip-path="url(#cut)">')
+    for i in range(len(PANELS)):
+        fronts = [panel_path(j, GAP) for j in range(i + 1, len(PANELS))]
+        if fronts:
+            defs.append(cut_out(f"gap{i}", fronts))
+        masked = f' mask="url(#gap{i})"' if fronts else ""
+        body.append(f'<g{masked}><path d="{panel_path(i)}" fill="url(#panel)"/><path d="{panel_path(i)}" fill="url(#fade)"/></g>')
+    body.append("</g>")
+    body.append(f'<path d="{SOFA_BACK_PATH}" fill="{SOFA}" mask="url(#sofa-gap)"/>')
+    body.append(f'<path d="{" ".join(SOFA_BASE_PATHS)}" fill="{SOFA}"/>')
+    return ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="18 18 72 72" width="1024" height="1024">\n'
+            "<title>Sofadrop</title>\n<defs>\n" + "\n".join(defs) + "\n</defs>\n" + "\n".join(body) + "\n</svg>\n")
+
+
+def export(out):
+    """Files for others (icon packs, a transparent icon): SVG and big PNG, with and without the tile, and the banner."""
+    os.makedirs(out, exist_ok=True)
+    font = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "app", "src", "main", "res", "font", "nunito_extrabold.ttf")
+    for name, background in (("sofadrop-icon", True), ("sofadrop-icon-transparent", False)):
+        with open(os.path.join(out, f"{name}.svg"), "w", newline="\n") as f:
+            f.write(svg(background))
+        render_icon(1024, transparent=not background, ss=3).save(os.path.join(out, f"{name}.png"), optimize=True)
+    render_banner(1280, 720, font).save(os.path.join(out, "sofadrop-banner.png"), optimize=True)
+
+
 if __name__ == "__main__":
+    if sys.argv[1] == "--export":
+        export(sys.argv[2])
+        sys.exit()
     res, out = sys.argv[1], sys.argv[2]
     os.makedirs(out, exist_ok=True)
     pts = [(x, min(y, CLIP)) for d in [panel_path(i) for i in range(len(PANELS))] + SOFA_BASE_PATHS for poly in flatten(d) for x, y in poly]

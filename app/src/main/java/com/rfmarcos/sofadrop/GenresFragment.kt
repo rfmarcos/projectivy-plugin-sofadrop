@@ -18,14 +18,14 @@ class GenresFragment : BaseSettingsFragment() {
 
     /** This list's own filter, or null when it uses the default (always set for the default filter). */
     private var own: GenreFilter?
-        get() = if (listKey == null) Settings.genreFilter else Settings.listFilters[listKey]?.genres
+        get() = if (listKey == null) profile.genreFilter else profile.listFilters[listKey]?.genres
         set(value) {
             val key = listKey
-            if (key == null) Settings.genreFilter = value ?: GenreFilter()
-            else Settings.listFilters = Settings.listFilters + (key to (Settings.listFilters[key] ?: ListFilters()).copy(genres = value))
+            if (key == null) profile.genreFilter = value ?: GenreFilter()
+            else profile.listFilters = profile.listFilters + (key to (profile.listFilters[key] ?: ListFilters()).copy(genres = value))
         }
 
-    private val default get() = source?.let { Settings.defaultGenres(it) } ?: GenreFilter()
+    private val default get() = source?.let { profile.defaultGenres(it) } ?: GenreFilter()
 
     override fun onCreateGuidance(savedInstanceState: Bundle?) = Guidance(
         getString(R.string.genres_title),
@@ -79,7 +79,7 @@ class GenresFragment : BaseSettingsFragment() {
         val index = (action.id % SUB_ID_BASE).toInt()
         // A list's own filter starts from the default's genres
         own = if (labels.size == 3 && index == 0) null else (own ?: default).copy(only = index == labels.size - 1)
-        refreshActions(rows()) { newInstance(listKey) }
+        refreshActions(rows())
         return true
     }
 

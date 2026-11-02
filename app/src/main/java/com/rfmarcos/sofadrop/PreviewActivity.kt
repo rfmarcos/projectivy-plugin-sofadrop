@@ -1,7 +1,10 @@
 package com.rfmarcos.sofadrop
 
+import android.content.ActivityNotFoundException
+import android.content.Intent
 import android.graphics.BitmapFactory
 import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -9,6 +12,7 @@ import android.util.TypedValue
 import android.view.Gravity
 import android.view.KeyEvent
 import android.view.View
+import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -17,7 +21,8 @@ import androidx.appcompat.app.AppCompatActivity
 
 /**
  * Full-screen view of the generated wallpapers: ◀ ▶ browse, OK shows one in the settings preview,
- * and the info cluster fades out when idle so the wallpaper can be seen whole.
+ * ▲ opens what the wallpaper opens from Projectivy (to try "On wallpaper click"), ▼ blocks its title
+ * (see [Settings.blocked]), and the info cluster fades out when idle so the wallpaper can be seen whole.
  */
 class PreviewActivity : AppCompatActivity() {
 
@@ -41,7 +46,33 @@ class PreviewActivity : AppCompatActivity() {
         wallpapers = store.current()
         // Open on the pinned wallpaper so the user sees what they chose
         position = wallpapers.indexOfFirst { pinOf(it) == Settings.previewPin }.coerceAtLeast(0)
+        placeOverlay()
         show()
+    }
+
+    /**
+     * The cluster and its glow in the corner away from the wallpaper's text: bottom right, at the top when
+     * the text is at the bottom and on the left when it's on the right.
+     */
+    private fun placeOverlay() {
+        val profile = Profile.WALLPAPER
+        val textAt = if (profile.drawsLogo) profile.position else Settings.POSITION_TOP_LEFT
+        val top = textAt.startsWith("bottom")
+        val start = textAt.endsWith("_right")
+        fun dp(v: Int) = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, v.toFloat(), resources.displayMetrics)
+        val cluster = findViewById<LinearLayout>(R.id.viewer_cluster)
+        val side = if (start) Gravity.START else Gravity.END
+        cluster.gravity = side
+        cluster.layoutParams = (cluster.layoutParams as FrameLayout.LayoutParams).apply { gravity = side or if (top) Gravity.TOP else Gravity.BOTTOM }
+        overlay.setPaddingRelative(if (start) dp(56).toInt() else 0, if (top) dp(44).toInt() else 0,
+            if (start) 0 else dp(56).toInt(), if (top) 0 else dp(44).toInt())
+        overlay.background = GradientDrawable().apply {
+            gradientType = GradientDrawable.RADIAL_GRADIENT
+            colors = intArrayOf(Color.argb(140, 0, 0, 0), Color.TRANSPARENT)
+            gradientRadius = dp(520)
+            val rtl = overlay.layoutDirection == View.LAYOUT_DIRECTION_RTL
+            setGradientCenter(if (start != rtl) 0f else 1f, if (top) 0f else 1f)
+        }
     }
 
     private val overlayHidden get() = overlay.alpha < 0.5f
@@ -51,7 +82,7 @@ class PreviewActivity : AppCompatActivity() {
         overlay.alpha = 1f
         pinBadge.visibility = View.GONE
         handler.removeCallbacks(hideOverlay)
-        handler.postDelayed(hideOverlay, 4000)
+        handler.postDelayed(hideOverlay, 3000)
     }
 
     private fun updatePinBadge() {
@@ -78,12 +109,18 @@ class PreviewActivity : AppCompatActivity() {
 
         val pinned = pinOf(wallpaper) == Settings.previewPin
         findViewById<View>(R.id.viewer_pinned).visibility = if (pinned) View.VISIBLE else View.GONE
+        val blocked = refOf(wallpaper) in Settings.blockedTitles
+        findViewById<View>(R.id.viewer_blocked).visibility = if (blocked) View.VISIBLE else View.GONE
         title.text = wallpaper.title
+        // The wallpaper shows its title already, unless it's only the image
+        title.visibility = if (Profile.WALLPAPER.drawsLogo) View.GONE else View.VISIBLE
         val source = Sources.available().firstOrNull { it.key == wallpaper.source }?.let { Sources.label(this, it) }
         subtitle.text = listOfNotNull(getString(R.string.viewer_position, position + 1, wallpapers.size), source).joinToString("  ·  ")
         chips.removeAllViews()
         chips.addView(chip("◀ ▶", getString(R.string.viewer_browse)))
         chips.addView(chip("OK", getString(if (pinned && !picking) R.string.viewer_unpin else R.string.viewer_use)))
+        if (!picking) clickTarget(wallpaper)?.let { (_, label) -> chips.addView(chip("▲", label)) }
+        if (!picking) chips.addView(chip("▼", getString(if (blocked) R.string.viewer_unblock else R.string.viewer_block)))
         showOverlay()
     }
 
@@ -116,6 +153,42 @@ class PreviewActivity : AppCompatActivity() {
 
     private fun pinOf(wallpaper: StoredWallpaper) = "${wallpaper.type}:${wallpaper.tmdbId}"
 
+    private fun refOf(wallpaper: StoredWallpaper) =
+        TitleRef(if (wallpaper.type == MediaType.TV.path) MediaType.TV else MediaType.MOVIE, wallpaper.tmdbId)
+
+    /** Block or unblock the title shown; the current set keeps it until the next one is made. */
+    private fun toggleBlock() {
+        val wallpaper = wallpapers[position]
+        val block = refOf(wallpaper) !in Settings.blockedTitles
+        Settings.setBlocked(refOf(wallpaper), block, wallpaper.title)
+        // A blocked title can't stay the settings preview
+        if (block && Settings.previewPin == pinOf(wallpaper)) Settings.pinPreview("", "")
+        Toast.makeText(this, if (block) R.string.viewer_blocked_toast else R.string.viewer_unblocked_toast, Toast.LENGTH_LONG).show()
+    }
+
+    /**
+     * What the wallpaper opens from Projectivy, the same [ClickTargets] serves it with, and what it does:
+     * "Open in Apple TV", "Open in Nuvio" or "Watch the trailer"; null when it opens nothing.
+     */
+    private fun clickTarget(wallpaper: StoredWallpaper): Pair<Intent, String>? {
+        val intent = ClickTargets.candidates(this, wallpaper).firstOrNull() ?: return null
+        // The trailer may have no package (without YouTube for TV): not an app's
+        val app = intent.`package`?.let { app ->
+            Platform.entries.firstOrNull { it.installedPackage(this) == app }?.label
+                ?: TitleApp.entries.firstOrNull { it.installedPackage(this) == app }?.label
+        }
+        return intent to if (app != null) getString(R.string.click_open_app, app) else getString(R.string.click_trailer)
+    }
+
+    private fun openClickTarget() {
+        val intent = clickTarget(wallpapers[position])?.first ?: return
+        try {
+            startActivity(intent)
+        } catch (e: ActivityNotFoundException) {
+            Toast.makeText(this, R.string.viewer_open_failed, Toast.LENGTH_LONG).show()
+        }
+    }
+
     /** Opened from "Preview title" to pick one: OK keeps it and goes back there. */
     private val picking get() = intent.getBooleanExtra(EXTRA_PICK, false)
 
@@ -138,6 +211,9 @@ class PreviewActivity : AppCompatActivity() {
             KeyEvent.KEYCODE_DPAD_LEFT, KeyEvent.KEYCODE_MEDIA_PREVIOUS -> position = (position - 1 + wallpapers.size) % wallpapers.size
             // While the overlay is hidden, OK only brings it back: nothing gets pinned by accident
             KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER -> if (!overlayHidden) togglePin()
+            // Same as OK: only with the overlay shown, and not while picking the preview
+            KeyEvent.KEYCODE_DPAD_DOWN -> if (!overlayHidden && !picking) toggleBlock()
+            KeyEvent.KEYCODE_DPAD_UP -> if (!overlayHidden && !picking) openClickTarget()
             else -> return super.onKeyDown(keyCode, event)
         }
         show()

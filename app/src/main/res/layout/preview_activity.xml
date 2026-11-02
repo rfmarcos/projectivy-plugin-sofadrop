@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Full-screen viewer: the wallpaper and a compact info cluster at the
-     bottom right (the wallpaper's own text sits on the left) that fades out when idle. -->
+<!-- Full-screen viewer: the wallpaper and a compact info cluster in a corner away
+     from the wallpaper's own text (bottom right by default) that fades out when idle. -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -33,7 +33,9 @@
         android:paddingEnd="56dp"
         android:paddingBottom="44dp">
 
+        <!-- Moved to the corner away from the wallpaper's own text by PreviewActivity -->
         <LinearLayout
+            android:id="@+id/viewer_cluster"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom|end"
@@ -47,6 +49,15 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="10dp"
                 android:text="@string/viewer_pinned"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/viewer_blocked"
+                style="@style/Widget.Sofadrop.Pill.Accent"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:text="@string/viewer_blocked"
                 android:visibility="gone" />
 
             <TextView

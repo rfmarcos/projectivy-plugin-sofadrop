@@ -20,15 +20,25 @@ data class ListPlan(
 )
 
 /** Shared pipeline for the background generation, the settings preview and the list explorer. */
-class WallpaperFactory(context: Context, private val width: Int) {
+class WallpaperFactory(context: Context, val width: Int, val profile: Profile) {
 
     private val appContext = context.applicationContext
 
     val client = TmdbClient(Settings.token, context.cacheDir)
-    val catalog = TmdbCatalog(client, Settings.language, Settings.region, Settings.drawsDetails && Settings.showProviders,
-        Settings.partLanguages, Settings.drawsDetails && Settings.showCast)
-    private val renderer = WallpaperRenderer(context, width, Languages.texts(Settings.language), Settings.overviewLines,
-        Settings.headerOrder, Settings.minRatings, Settings.style)
+    val catalog = TmdbCatalog(client, Settings.language, Settings.region, profile.drawsDetails && profile.showProviders,
+        profile.partLanguages, profile.drawsDetails && profile.showCast, Settings.resolve(Settings.trailerLanguage), Settings.trailerFallback, profile)
+    /** Faces next to the cast names: only their images are downloaded, and only then. */
+    private val castPhotos = if (profile.drawsDetails) profile.castPhotos else Settings.CAST_PHOTOS_NONE
+    private val renderers = mutableMapOf<Int, WallpaperRenderer>()
+
+    /** Renderer of [width]-pixel wallpapers: this factory's width, or 1920 when 4K runs out of memory. */
+    private fun renderer(width: Int) = synchronized(renderers) {
+        renderers.getOrPut(width) {
+            WallpaperRenderer(appContext, width, Languages.texts(Settings.language), profile.overviewLines,
+                profile.headerOrder, profile.minRatings, profile.style, castPhotos,
+                profile.showProviders && !profile.sourceFallback && profile.sourceInline, profile.position, profile.shade == Settings.SHADE_BLACK)
+        }
+    }
 
     val trakt: TraktClient? = if (Settings.traktConfigured) TraktClient(Settings.traktClientId, Settings.traktClientSecret) else null
     val simkl = SimklClient(Settings.simklClientId, client)
@@ -42,16 +52,25 @@ class WallpaperFactory(context: Context, private val width: Int) {
      * previous list and the selection mode. [ListPlan.usable] is in the order they should be tried.
      */
     fun plan(source: ListSource, perList: Int, taken: Set<TitleRef> = emptySet()): ListPlan {
-        val random = Settings.selectionMode == Settings.SELECTION_RANDOM
-        val watchedMode = Settings.filtersFor(source).watched
+        val random = profile.selectionMode == Settings.SELECTION_RANDOM
+        val watchedMode = profile.filtersFor(source).watched
         val hideWatched = watchedMode == Settings.WATCHED_HIDE
         val statuses = mutableMapOf<TitleRef, WatchStatus>()
-        val candidates = catalog.candidates(source, perList * 2, trakt, simkl, mdbList, shuffle = random).map { candidate ->
-            if (candidate.exclusion != null) return@map candidate
-            if (Settings.skipDuplicates && candidate.ref in taken) return@map candidate.copy(exclusion = Exclusion.DUPLICATE)
-            // History is only loaded when some list shows or hides watched titles
-            val status = if (watchedMode == Settings.WATCHED_SHOW) null else watched?.status(candidate.ref)?.also { statuses[candidate.ref] = it }
-            if (hideWatched && status is WatchStatus.Watched) candidate.copy(exclusion = Exclusion.WATCHED) else candidate
+        val skipTaken = profile.skipDuplicates && taken.isNotEmpty()
+        // Titles an earlier list took and hidden watched ones are excluded inside the catalog's pool, so a
+        // list makes up for them instead of coming up short
+        val runExclusion = { ref: TitleRef ->
+            when {
+                skipTaken && ref in taken -> Exclusion.DUPLICATE
+                hideWatched && watched?.status(ref) is WatchStatus.Watched -> Exclusion.WATCHED
+                else -> null
+            }
+        }.takeIf { skipTaken || hideWatched }
+        // Twice as many as needed for titles that fail to draw, but the list is only read further for the ones needed
+        val candidates = catalog.candidates(source, perList * 2, trakt, simkl, mdbList, shuffle = random, runExclusion = runExclusion, enough = perList)
+        // History is only loaded when some list shows or hides watched titles
+        if (watchedMode != Settings.WATCHED_SHOW) candidates.forEach { candidate ->
+            if (candidate.exclusion == null) watched?.status(candidate.ref)?.let { statuses[candidate.ref] = it }
         }
         val usable = candidates.filter { it.exclusion == null }.map { it.ref }
         return ListPlan(candidates, usable, statuses, random, source, mdbListRatings(usable))
@@ -63,7 +82,7 @@ class WallpaperFactory(context: Context, private val width: Int) {
      */
     private fun mdbListRatings(refs: List<TitleRef>): Map<TitleRef, List<Rating>> {
         val client = mdbList ?: return emptyMap()
-        if (refs.isEmpty() || !Settings.drawsDetails || Settings.ratingSources.none { it.needsMdbList }) return emptyMap()
+        if (refs.isEmpty() || !profile.drawsDetails || profile.ratingSources.none { it.needsMdbList }) return emptyMap()
         return refs.groupBy { it.type }.flatMap { (type, group) ->
             runCatching { client.ratings(type, group.map { it.tmdbId }) }
                 .onFailure { Log.w(TAG, "MDBList ratings failed", it) }
@@ -74,32 +93,32 @@ class WallpaperFactory(context: Context, private val width: Int) {
 
     /** Wallpaper data of a title, with its source list and its watched badge when the user wants it marked. */
     fun build(ref: TitleRef, plan: ListPlan? = null, source: ListSource? = plan?.source): WallpaperInfo? {
-        val genres = source?.let { Settings.filtersFor(it).genres }?.takeIf { it.only }?.ids.orEmpty()
+        val genres = source?.let { profile.filtersFor(it).genres }?.takeIf { it.only }?.ids.orEmpty()
         // Logo or backdrop alone: no source line, badge or ratings (nor their requests)
-        if (!Settings.drawsDetails) return catalog.build(ref, genres)
+        if (!profile.drawsDetails) return catalog.build(ref, genres)
         val info = catalog.build(ref, genres)?.let { info ->
             // "Streaming, or list source": the source line only when no service has the title
-            if (source == null || !Settings.showSource || (Settings.sourceFallback && Settings.showProviders && info.providerLogoPaths.isNotEmpty())) info
+            if (source == null || !profile.showSource || (profile.sourceFallback && profile.showProviders && info.providerLogoPaths.isNotEmpty())) info
             else info.copy(sourceLabel = Languages.sourceLabel(Settings.language, source), sourceProvider = source.provider)
         } ?: return null
         val status = if (plan != null) plan.statuses[ref] else watched?.status(ref)
-        val mode = source?.let { Settings.filtersFor(it).watched } ?: Settings.watchedMode
+        val mode = source?.let { profile.filtersFor(it).watched } ?: profile.watchedMode
         val fromMdbList = if (plan != null) plan.ratings[ref] else mdbListRatings(listOf(ref))[ref]
-        val ratings = Rating.pick(Settings.ratingSources, fromMdbList ?: keylessRatings(ref, info), info.rating)
+        val ratings = Rating.pick(profile.ratingSources, fromMdbList ?: keylessRatings(ref, info), info.rating)
         // Header items the user hid are left empty, and the renderer skips empty ones
         return info.copy(
-            watchStatus = status?.takeIf { mode == Settings.WATCHED_MARK && Settings.showsInHeader(Settings.HEADER_WATCHED) },
+            watchStatus = status?.takeIf { mode == Settings.WATCHED_MARK && profile.showsInHeader(Settings.HEADER_WATCHED) },
             ratings = ratings,
-            year = info.year.takeIf { Settings.showsInHeader(Settings.HEADER_YEAR) }.orEmpty(),
-            extraInfo = info.extraInfo.takeIf { Settings.showsInHeader(Settings.HEADER_RUNTIME) }.orEmpty(),
-            genres = info.genres.takeIf { Settings.showsInHeader(Settings.HEADER_GENRES) }.orEmpty(),
-            certification = info.certification.takeIf { Settings.showsInHeader(Settings.HEADER_CERTIFICATION) },
+            year = info.year.takeIf { profile.showsInHeader(Settings.HEADER_YEAR) }.orEmpty(),
+            extraInfo = info.extraInfo.takeIf { profile.showsInHeader(Settings.HEADER_RUNTIME) }.orEmpty(),
+            genres = info.genres.takeIf { profile.showsInHeader(Settings.HEADER_GENRES) }.orEmpty(),
+            certification = info.certification.takeIf { profile.showsInHeader(Settings.HEADER_CERTIFICATION) },
         )
     }
 
     /** IMDb (its public dataset) and Trakt scores, for titles MDBList didn't give: no account needed. */
     private fun keylessRatings(ref: TitleRef, info: WallpaperInfo): List<Rating> {
-        val selected = Settings.ratingSources
+        val selected = profile.ratingSources
         val imdb = info.imdbId?.takeIf { RatingSource.IMDB in selected }
             ?.let { id -> runCatching { ImdbRatings.rating(appContext, id) }.getOrNull() }
         val trakt = trakt?.takeIf { RatingSource.TRAKT in selected }
@@ -108,25 +127,44 @@ class WallpaperFactory(context: Context, private val width: Int) {
     }
 
     /**
-     * Download the images of [info] and draw the wallpaper. Downloads overlap other titles; decoding and
-     * drawing go one at a time: in the background Android runs the app on a single core of the TV.
+     * Download the images of [info] and draw the wallpaper, [width] pixels wide. Downloads overlap other
+     * titles; decoding and drawing go one at a time: in the background Android runs the app on a single
+     * core of the TV.
      */
-    fun render(info: WallpaperInfo): Bitmap {
+    fun render(info: WallpaperInfo, width: Int = this.width): Bitmap {
         // Previews are 1280 px wide: TMDB's 1280 size instead of decoding the (often 4K) original
         val backdropBytes = client.image(info.backdropPath, if (width <= 1280) "w1280" else "original")
         val logoBytes = info.logoPath?.let { client.image(it, if (width > 1920) "original" else "w500") }
         val providerBytes = info.providerLogoPaths.mapNotNull { client.image(it, "w154") }
+        // Only the images (~10 KB each): the photo paths came with the credits. One at a time, as this
+        // already runs on the pool, alongside other titles
+        val faceBytes = if (castPhotos != Settings.CAST_PHOTOS_NONE) info.cast.take(WallpaperRenderer.MAX_CAST_PHOTOS).map { member ->
+            member.profilePath?.let { client.image(it, "w185") }
+        } else emptyList()
 
         synchronized(drawing) {
-            val backdrop = backdropBytes?.let { decode(it, width) } ?: error("No backdrop for ${info.title}")
-            val logo = logoBytes?.let { decode(it, 0) }?.let { WallpaperRenderer.brightenDarkLogo(WallpaperRenderer.trimTransparent(it)) }
-            val providers = providerBytes.mapNotNull { decode(it, 0) }
-            return try {
-                renderer.render(info, backdrop, logo, providers)
+            // Released even when one of them doesn't fit in memory: the next title (or 1920) still can
+            var backdrop: Bitmap? = null
+            var logo: Bitmap? = null
+            val providers = mutableListOf<Bitmap>()
+            val faces = mutableListOf<Bitmap?>()
+            try {
+                backdrop = backdropBytes?.let { decode(it, width, width * 9 / 16) } ?: error("No backdrop for ${info.title}")
+                // Originals can be several thousand pixels wide: no bigger than the box it's drawn in
+                val box = WallpaperRenderer.logoBox(width)
+                logo = logoBytes?.let { decode(it, box.width, box.height, fit = true) }?.let { decoded ->
+                    val trimmed = WallpaperRenderer.trimTransparent(decoded).also { if (it !== decoded) decoded.recycle() }
+                    WallpaperRenderer.brightenDarkLogo(trimmed).also { if (it !== trimmed) trimmed.recycle() }
+                }
+                providerBytes.mapNotNullTo(providers) { decode(it) }
+                val faceSize = WallpaperRenderer.castPhotoSize(width)
+                faceBytes.mapTo(faces) { bytes -> bytes?.let { decode(it, faceSize, faceSize) } }
+                return renderer(width).render(info, backdrop, logo, providers, faces)
             } finally {
-                backdrop.recycle()
+                backdrop?.recycle()
                 logo?.recycle()
                 providers.forEach { it.recycle() }
+                faces.forEach { it?.recycle() }
             }
         }
     }
@@ -153,14 +191,23 @@ class WallpaperFactory(context: Context, private val width: Int) {
             }
         }
 
-        /** Decode an image, subsampling large backdrops close to the target width to save memory. */
-        fun decode(bytes: ByteArray, targetWidth: Int): Bitmap? {
+        /**
+         * Decode an image, subsampled (by powers of two) to save memory while it still covers [minWidth] x
+         * [minHeight], like a backdrop filling the screen; with [fit], while either side still fills that box,
+         * like a logo drawn inside it.
+         */
+        fun decode(bytes: ByteArray, minWidth: Int = 0, minHeight: Int = 0, fit: Boolean = false): Bitmap? {
             val options = BitmapFactory.Options()
-            if (targetWidth > 0) {
+            if (minWidth > 0 && minHeight > 0) {
                 options.inJustDecodeBounds = true
                 BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)
+                fun fills(sample: Int): Boolean {
+                    val wide = options.outWidth / sample >= minWidth
+                    val tall = options.outHeight / sample >= minHeight
+                    return if (fit) wide || tall else wide && tall
+                }
                 var sample = 1
-                while (options.outWidth / (sample * 2) >= targetWidth) sample *= 2
+                while (fills(sample * 2)) sample *= 2
                 options.inJustDecodeBounds = false
                 options.inSampleSize = sample
             }

@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The setup wizard (Wizard.kt) and the steps to switch the screensaver on (ScreensaverSetupFragment) -->
+<resources>
+    <string name="wizard_title">Guided setup</string>
+    <string name="wizard_desc">The first-day questions, with the preview</string>
+    <string name="wizard_step">Step %1$d of %2$d</string>
+    <string name="wizard_next">Next</string>
+    <string name="wizard_more_options">More options</string>
+
+    <string name="wizard_welcome_title">Welcome</string>
+    <string name="wizard_welcome_text">Sofadrop makes wallpapers with the movies and shows you choose, for Projectivy and as a screensaver.\n\nA few questions, and you see how it looks at each one. You can change everything later in Settings.</string>
+    <string name="wizard_start">Start</string>
+    <string name="wizard_start_desc">About two minutes</string>
+    <string name="wizard_skip">Skip and use the default settings</string>
+    <string name="wizard_skip_desc">Trending on TMDB, the complete style and 1080p</string>
+
+    <string name="wizard_style_title">How should they look?</string>
+    <string name="wizard_style_text">Pick one and the preview shows it. Later, in Settings → Wallpaper details, you choose what each part shows, or hide it: ratings, synopsis, cast, footer, languages…</string>
+    <string name="wizard_style_full_desc">Logo, header, synopsis and footer; each part can be changed or hidden later</string>
+
+    <string name="wizard_lists_title">Which movies and shows?</string>
+    <string name="wizard_lists_text">Pick one or more. None of them needs an account, except your own list.</string>
+    <string name="wizard_lists_now">Selected now: %1$s</string>
+    <string name="wizard_lists_trending">Trending now</string>
+    <string name="wizard_lists_trending_desc">This week\'s most watched movies and shows</string>
+    <string name="wizard_lists_platform_desc">What\'s on %1$s (MDBList\'s public lists)</string>
+    <string name="wizard_lists_top_rated">Top rated</string>
+    <string name="wizard_lists_top_rated_desc">The best rated movies and shows on TMDB</string>
+    <string name="wizard_lists_upcoming">Coming soon</string>
+    <string name="wizard_lists_upcoming_desc">Movies about to be released</string>
+    <string name="wizard_lists_anime">Anime</string>
+    <string name="wizard_lists_anime_desc">Trending on Simkl</string>
+    <string name="wizard_lists_own">My list</string>
+    <string name="wizard_lists_connect">Connect Trakt or Simkl with your phone to use your watchlist</string>
+    <string name="wizard_lists_by_hand">Choose lists one by one</string>
+
+    <string name="wizard_amount_title">How many, how sharp?</string>
+    <string name="wizard_amount_total">%1$s × %2$s = %3$s</string>
+    <string name="wizard_amount_text">Up to 200 per update; Projectivy shows a random 100 of them at a time. 4K is sharper on a 4K TV, but slower to make and bigger.</string>
+    <string name="wizard_amount_count">Wallpapers per list</string>
+    <string name="wizard_amount_4k">This TV has enough memory for it</string>
+
+    <string name="wizard_click_title">What does a wallpaper open?</string>
+    <string name="wizard_click_platforms">The platform that has it</string>
+    <string name="wizard_click_platforms_desc">Installed on this TV: %1$s. The trailer if it\'s on none of them</string>
+    <string name="wizard_click_no_platforms">No streaming platform installed on this TV</string>
+    <string name="wizard_click_app">An app</string>
+    <string name="wizard_click_no_app">%1$s: none installed on this TV</string>
+
+    <string name="wizard_screensaver_title">As a screensaver too?</string>
+    <string name="wizard_screensaver_text">When the remote isn\'t touched, the TV shows the wallpapers full screen, with a clock.</string>
+    <string name="wizard_screensaver_google_tv">On Google TV it\'s switched on once from a computer: the last step shows how.</string>
+    <string name="wizard_screensaver_yes">Yes, with the same wallpapers</string>
+    <string name="wizard_screensaver_yes_desc">Lists and a look of its own, later in Settings → Screensaver</string>
+    <string name="wizard_screensaver_no">No</string>
+
+    <string name="wizard_done_title">Done</string>
+    <string name="wizard_done_lists">Lists: %1$s</string>
+    <string name="wizard_done_look">Look: %1$s</string>
+    <string name="wizard_done_click">A wallpaper opens: %1$s</string>
+    <string name="wizard_done_screensaver">Screensaver: %1$s</string>
+    <string name="wizard_done_yes">yes</string>
+    <string name="wizard_done_no">no</string>
+    <string name="wizard_done_switch_on">Switch the screensaver on</string>
+    <string name="wizard_done_wallpapers">Wallpapers</string>
+    <string name="wizard_finish">Finish</string>
+
+    <string name="setup_title">Switch it on once from a computer</string>
+    <string name="setup_text">Google TV doesn\'t list other apps\' screensavers in its settings: it takes a computer on the same Wi-Fi, once.\n\nThis TV\'s address: %1$s\n\nThe QR code opens these steps on your phone.</string>
+    <string name="setup_ip_unknown">not connected</string>
+    <string name="setup_developer_title">Turn on developer options</string>
+    <string name="setup_developer_desc">Settings → System → About → press OK 7 times on \"Android TV OS build\".</string>
+    <string name="setup_debugging_title">Turn on wireless debugging</string>
+    <string name="setup_debugging_desc">Settings → System → Developer options → Wireless debugging → \"Pair device with pairing code\". Leave that screen open.</string>
+    <string name="setup_adb_title">On the computer, with adb (Android\'s platform-tools)</string>
+    <string name="setup_adb_desc">adb pair %1$s:PORT CODE\nadb connect %1$s:PORT\nadb shell settings put secure screensaver_components %2$s\n\nThe pairing port and code are on the TV\'s screen; the port to connect to is under Wireless debugging.</string>
+    <string name="setup_undo_title">Back to Google\'s screensaver</string>
+    <string name="setup_undo_desc">adb shell settings put secure screensaver_components %1$s</string>
+    <string name="wizard_leave">Leave without changes</string>
+    <string name="wizard_amount_total_capped">%1$s × %2$s: %3$s, the most per update</string>
+</resources>

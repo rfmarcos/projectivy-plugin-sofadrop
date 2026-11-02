@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- De installatiehulp (Wizard.kt) en de stappen om de screensaver in te schakelen (ScreensaverSetupFragment) -->
+<resources>
+    <string name="wizard_title">Begeleide installatie</string>
+    <string name="wizard_desc">De vragen van de eerste dag, met het voorbeeld</string>
+    <string name="wizard_step">Stap %1$d van %2$d</string>
+    <string name="wizard_next">Volgende</string>
+    <string name="wizard_more_options">Meer opties</string>
+
+    <string name="wizard_welcome_title">Welkom</string>
+    <string name="wizard_welcome_text">Sofadrop maakt achtergronden met de films en series die je kiest, voor Projectivy en als screensaver.\n\nEen paar vragen, en bij elke vraag zie je hoe het eruitziet. Alles is later te wijzigen in Instellingen.</string>
+    <string name="wizard_start">Beginnen</string>
+    <string name="wizard_start_desc">Ongeveer twee minuten</string>
+    <string name="wizard_skip">Overslaan en de standaardinstellingen gebruiken</string>
+    <string name="wizard_skip_desc">Trending op TMDB, de volledige stijl en 1080p</string>
+
+    <string name="wizard_style_title">Hoe moeten ze eruitzien?</string>
+    <string name="wizard_style_text">Kies er een en het voorbeeld laat hem zien. Later kies je in Instellingen → Achtergronddetails wat elk deel toont, of verberg je het: beoordelingen, samenvatting, cast, voettekst, talen…</string>
+    <string name="wizard_style_full_desc">Logo, kopregel, samenvatting en voettekst; elk deel kun je later aanpassen of verbergen</string>
+
+    <string name="wizard_lists_title">Welke films en series?</string>
+    <string name="wizard_lists_text">Kies er één of meer. Geen ervan heeft een account nodig, behalve je eigen lijst.</string>
+    <string name="wizard_lists_now">Nu gekozen: %1$s</string>
+    <string name="wizard_lists_trending">Nu populair</string>
+    <string name="wizard_lists_trending_desc">De meest bekeken films en series van deze week</string>
+    <string name="wizard_lists_platform_desc">Wat er op %1$s staat (openbare lijsten van MDBList)</string>
+    <string name="wizard_lists_top_rated">Best beoordeeld</string>
+    <string name="wizard_lists_top_rated_desc">De best beoordeelde films en series op TMDB</string>
+    <string name="wizard_lists_upcoming">Binnenkort</string>
+    <string name="wizard_lists_upcoming_desc">Films die binnenkort uitkomen</string>
+    <string name="wizard_lists_anime">Anime</string>
+    <string name="wizard_lists_anime_desc">Trending op Simkl</string>
+    <string name="wizard_lists_own">Mijn lijst</string>
+    <string name="wizard_lists_connect">Koppel Trakt of Simkl met je telefoon om je watchlist te gebruiken</string>
+    <string name="wizard_lists_by_hand">Lijsten één voor één kiezen</string>
+
+    <string name="wizard_amount_title">Hoeveel en hoe scherp?</string>
+    <string name="wizard_amount_total">%1$s × %2$s = %3$s</string>
+    <string name="wizard_amount_text">Maximaal 200 per update; Projectivy toont er telkens 100 willekeurig van. 4K is scherper op een 4K-tv, maar duurt langer en neemt meer ruimte in.</string>
+    <string name="wizard_amount_count">Achtergronden per lijst</string>
+    <string name="wizard_amount_4k">Deze tv heeft er genoeg geheugen voor</string>
+
+    <string name="wizard_click_title">Wat opent een achtergrond?</string>
+    <string name="wizard_click_platforms">Het platform waar hij op staat</string>
+    <string name="wizard_click_platforms_desc">Geïnstalleerd op deze tv: %1$s. De trailer als hij op geen ervan staat</string>
+    <string name="wizard_click_no_platforms">Geen streamingplatform geïnstalleerd op deze tv</string>
+    <string name="wizard_click_app">Een app</string>
+    <string name="wizard_click_no_app">%1$s: geen ervan geïnstalleerd op deze tv</string>
+
+    <string name="wizard_screensaver_title">Ook als screensaver?</string>
+    <string name="wizard_screensaver_text">Als de afstandsbediening niet wordt aangeraakt, toont de tv de achtergronden schermvullend, met een klok.</string>
+    <string name="wizard_screensaver_google_tv">Op Google TV wordt hij eenmalig vanaf een computer ingeschakeld: de laatste stap legt uit hoe.</string>
+    <string name="wizard_screensaver_yes">Ja, met dezelfde achtergronden</string>
+    <string name="wizard_screensaver_yes_desc">Eigen lijsten en uiterlijk, later in Instellingen → Screensaver</string>
+    <string name="wizard_screensaver_no">Nee</string>
+
+    <string name="wizard_done_title">Klaar</string>
+    <string name="wizard_done_lists">Lijsten: %1$s</string>
+    <string name="wizard_done_look">Uiterlijk: %1$s</string>
+    <string name="wizard_done_click">Een achtergrond opent: %1$s</string>
+    <string name="wizard_done_screensaver">Screensaver: %1$s</string>
+    <string name="wizard_done_yes">ja</string>
+    <string name="wizard_done_no">nee</string>
+    <string name="wizard_done_switch_on">De screensaver inschakelen</string>
+    <string name="wizard_done_wallpapers">Achtergronden</string>
+    <string name="wizard_finish">Voltooien</string>
+
+    <string name="setup_title">Eenmalig inschakelen vanaf een computer</string>
+    <string name="setup_text">Google TV toont geen screensavers van andere apps in zijn instellingen: je hebt eenmalig een computer op hetzelfde wifi-netwerk nodig.\n\nHet adres van deze tv: %1$s\n\nDe QR-code opent deze stappen op je telefoon.</string>
+    <string name="setup_ip_unknown">niet verbonden</string>
+    <string name="setup_developer_title">Schakel de ontwikkelaarsopties in</string>
+    <string name="setup_developer_desc">Instellingen → Systeem → Over → druk 7 keer op OK bij \"Android TV OS-build\".</string>
+    <string name="setup_debugging_title">Schakel draadloze foutopsporing in</string>
+    <string name="setup_debugging_desc">Instellingen → Systeem → Ontwikkelaarsopties → Draadloze foutopsporing → \"Apparaat koppelen met koppelingscode\". Laat dat scherm open.</string>
+    <string name="setup_adb_title">Op de computer, met adb (de platform-tools van Android)</string>
+    <string name="setup_adb_desc">adb pair %1$s:POORT CODE\nadb connect %1$s:POORT\nadb shell settings put secure screensaver_components %2$s\n\nDe poort en code om te koppelen staan op het scherm van de tv; de poort om te verbinden staat onder Draadloze foutopsporing.</string>
+    <string name="setup_undo_title">Terug naar de screensaver van Google</string>
+    <string name="setup_undo_desc">adb shell settings put secure screensaver_components %1$s</string>
+    <string name="wizard_leave">Afsluiten zonder iets te wijzigen</string>
+    <string name="wizard_amount_total_capped">%1$s × %2$s: %3$s, het maximum per update</string>
+</resources>

@@ -14,15 +14,23 @@ import org.junit.runner.RunWith
 import java.io.File
 
 /**
- * Renders one title with combinations of the Wallpaper details parts (header line, synopsis length, cast,
- * footer) into files/layout_test/, plus contact sheets of the info area, to check the spacing between parts.
+ * Renders one title with combinations of the Wallpaper details parts (header line, synopsis length, cast and
+ * its photos, footer) into files/layout_test/, plus contact sheets of the info area, to check the spacing between parts.
  */
 @RunWith(AndroidJUnit4::class)
 class LayoutRenderTest {
 
-    /** [header]: "all", "ratings" or "none"; [footer]: "both", "providers", "source" or "none". */
-    private data class Combo(val header: String, val lines: Int, val cast: Boolean, val footer: String, val logo: Boolean = true) {
-        val label get() = "cab:$header · sinopsis:$lines · reparto:${if (cast) "sí" else "no"} · pie:$footer" + if (logo) "" else " · sin logo"
+    /**
+     * [header]: "all", "ratings" or "none"; [footer]: "both", "providers", "source", "none" or on one line "inline"
+     * (4 services and the list: "inline-trakt" and "inline-mdblist" with long names); [photos]: cast photos
+     * (see [Settings.CAST_PHOTO_MODES]), with the second actor's missing when [noPhoto].
+     */
+    private data class Combo(
+        val header: String, val lines: Int, val cast: Boolean, val footer: String, val logo: Boolean = true,
+        val photos: String = Settings.CAST_PHOTOS_NONE, val noPhoto: Boolean = false, val style: String = Settings.STYLE_FULL,
+    ) {
+        val label get() = "cab:$header · sinopsis:$lines · reparto:${if (!cast) "no" else if (photos == Settings.CAST_PHOTOS_NONE) "sí" else "fotos-$photos"} · pie:$footer" +
+            (if (logo) "" else " · sin logo") + (if (noPhoto) " · 2º sin foto" else "") + (if (style == Settings.STYLE_FULL) "" else " · estilo:$style")
     }
 
     @Test
@@ -31,10 +39,12 @@ class LayoutRenderTest {
         Settings.init(context)
         Settings.language = "es-ES"
         Settings.regionOverride = ""
-        Settings.style = Settings.STYLE_FULL
-        Settings.headerOrder = Settings.HEADER_BLOCKS
-        Settings.minRatings = 2
-        Settings.showCast = true
+        Profile.WALLPAPER.style = Settings.STYLE_FULL
+        Profile.WALLPAPER.headerOrder = Settings.HEADER_BLOCKS
+        Profile.WALLPAPER.minRatings = 2
+        Profile.WALLPAPER.showCast = true
+        Profile.WALLPAPER.showProviders = true
+        Profile.WALLPAPER.sourceFallback = false
         val dir = File(context.filesDir, "layout_test").apply { deleteRecursively(); mkdirs() }
 
         val combos = listOf(
@@ -62,13 +72,31 @@ class LayoutRenderTest {
             Combo("ratings", 0, false, "none"),
             Combo("all", 4, true, "both", logo = false),
             Combo("none", 0, true, "none", logo = false),
+            Combo("all", 4, true, "both", photos = Settings.CAST_PHOTOS_GROUPED),
+            Combo("all", 2, true, "both", photos = Settings.CAST_PHOTOS_GROUPED),
+            Combo("all", 0, true, "both", photos = Settings.CAST_PHOTOS_GROUPED),
+            Combo("none", 0, true, "none", photos = Settings.CAST_PHOTOS_GROUPED),
+            Combo("ratings", 4, true, "source", photos = Settings.CAST_PHOTOS_GROUPED),
+            Combo("all", 4, true, "both", photos = Settings.CAST_PHOTOS_GROUPED, noPhoto = true),
+            Combo("all", 4, true, "both", logo = false, photos = Settings.CAST_PHOTOS_GROUPED),
+            Combo("all", 4, true, "both", photos = Settings.CAST_PHOTOS_GROUPED, style = Settings.STYLE_LOGO),
+            Combo("all", 4, true, "both", photos = Settings.CAST_PHOTOS_EACH),
+            Combo("all", 4, true, "both", photos = Settings.CAST_PHOTOS_EACH, noPhoto = true),
+            Combo("all", 0, true, "both", photos = Settings.CAST_PHOTOS_EACH),
+            Combo("none", 0, true, "none", photos = Settings.CAST_PHOTOS_EACH),
+            Combo("ratings", 4, true, "source", photos = Settings.CAST_PHOTOS_EACH),
+            Combo("all", 4, true, "both", photos = Settings.CAST_PHOTOS_NONE, noPhoto = true),
+            Combo("all", 4, true, "inline", photos = Settings.CAST_PHOTOS_GROUPED),
+            Combo("all", 4, true, "inline-trakt", photos = Settings.CAST_PHOTOS_GROUPED),
+            Combo("all", 4, true, "inline-mdblist", photos = Settings.CAST_PHOTOS_GROUPED),
+            Combo("all", 0, false, "inline-trakt"),
         )
 
         try {
-            val base = WallpaperFactory(context, 1920).catalog.build(TitleRef(MediaType.TV, 1399))
+            val base = WallpaperFactory(context, 1920, Profile.WALLPAPER).catalog.build(TitleRef(MediaType.TV, 1399))
             assertNotNull(base)
             assertTrue("needs streaming services in Spain", base!!.providerLogoPaths.isNotEmpty())
-            assertTrue("needs cast", base.cast.isNotEmpty())
+            assertTrue("needs cast with photos", base.cast.size >= 3 && base.cast.take(3).all { it.profilePath != null })
             val ratings = listOf(Rating(RatingSource.IMDB, 9.2), Rating(RatingSource.TOMATOES, 89.0), Rating(RatingSource.POPCORN, 85.0))
 
             val crops = combos.mapIndexed { index, combo ->
@@ -78,14 +106,33 @@ class LayoutRenderTest {
                     extraInfo = base.extraInfo.takeIf { combo.header == "all" }.orEmpty(),
                     genres = base.genres.takeIf { combo.header == "all" }.orEmpty(),
                     certification = base.certification.takeIf { combo.header == "all" },
-                    cast = if (combo.cast) base.cast else emptyList(),
-                    providerLogoPaths = if (combo.footer == "both" || combo.footer == "providers") base.providerLogoPaths else emptyList(),
-                    sourceLabel = if (combo.footer == "both" || combo.footer == "source") "Tendencias" else null,
-                    sourceProvider = SourceProvider.TMDB,
+                    cast = if (!combo.cast) emptyList()
+                    else if (combo.noPhoto) base.cast.mapIndexed { i, member -> if (i == 1) member.copy(profilePath = null) else member }
+                    else base.cast,
+                    providerLogoPaths = when (combo.footer) {
+                        "both", "providers", "inline" -> base.providerLogoPaths
+                        // The widest row: four services
+                        "inline-trakt", "inline-mdblist" -> List(4) { base.providerLogoPaths }.flatten().take(4)
+                        else -> emptyList()
+                    },
+                    sourceLabel = when (combo.footer) {
+                        "both", "source", "inline" -> "Tendencias"
+                        // As long as Languages.sourceLabel leaves a list name
+                        "inline-trakt", "inline-mdblist" -> "Películas imprescindibles de los 90".take(27) + "…"
+                        else -> null
+                    },
+                    sourceProvider = when (combo.footer) {
+                        "inline-trakt" -> SourceProvider.TRAKT
+                        "inline-mdblist" -> SourceProvider.MDBLIST
+                        else -> SourceProvider.TMDB
+                    },
                     logoPath = base.logoPath.takeIf { combo.logo },
                 )
-                Settings.overviewLines = combo.lines
-                val bitmap = WallpaperFactory(context, 1920).render(info)
+                Profile.WALLPAPER.overviewLines = combo.lines
+                Profile.WALLPAPER.castPhotos = combo.photos
+                Profile.WALLPAPER.style = combo.style
+                Profile.WALLPAPER.sourceInline = combo.footer.startsWith("inline")
+                val bitmap = WallpaperFactory(context, 1920, Profile.WALLPAPER).render(info)
                 val name = "%02d".format(index + 1)
                 File(dir, "$name.jpg").outputStream().use { bitmap.compress(Bitmap.CompressFormat.JPEG, 90, it) }
                 // The info area: the left half, down to where the launcher rows start
@@ -111,8 +158,11 @@ class LayoutRenderTest {
                 File(dir, "sheet${sheetIndex + 1}.jpg").outputStream().use { sheet.compress(Bitmap.CompressFormat.JPEG, 90, it) }
             }
         } finally {
-            Settings.showCast = false
-            Settings.overviewLines = 4
+            Profile.WALLPAPER.showCast = false
+            Profile.WALLPAPER.castPhotos = Settings.CAST_PHOTOS_GROUPED
+            Profile.WALLPAPER.style = Settings.STYLE_FULL
+            Profile.WALLPAPER.overviewLines = 4
+            Profile.WALLPAPER.sourceInline = false
         }
     }
 }
