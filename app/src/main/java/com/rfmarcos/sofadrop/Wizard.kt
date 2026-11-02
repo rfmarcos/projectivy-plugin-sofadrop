@@ -165,7 +165,7 @@ class WizardWelcomeFragment : WizardStepFragment() {
         }
     }
 
-    private val pick = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri ->
+    private val pick = registerForActivityResult(SettingsFile.Pick()) { uri ->
         if (uri != null) open(SettingsImportFragment.newInstance(uri))
     }
 

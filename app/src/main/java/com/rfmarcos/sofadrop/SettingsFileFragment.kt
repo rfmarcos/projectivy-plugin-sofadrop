@@ -15,7 +15,7 @@ import androidx.leanback.widget.GuidedAction
 /** The settings to and from a file (see [SettingsFile]), to set up another TV the same way. */
 class SettingsFileFragment : BaseSettingsFragment() {
 
-    private val pick = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+    private val pick = registerForActivityResult(SettingsFile.Pick()) { uri ->
         if (uri != null) open(SettingsImportFragment.newInstance(uri))
     }
 

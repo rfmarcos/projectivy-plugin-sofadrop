@@ -1,13 +1,16 @@
 package com.rfmarcos.sofadrop
 
+import android.content.ComponentName
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.provider.OpenableColumns
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.FileProvider
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -89,10 +92,28 @@ object SettingsFile {
         return Intent.createChooser(send, null)
     }
 
-    /** Can this device pick a file to import (Google TV has no documents picker)? */
-    fun canPick(context: Context): Boolean =
-        Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("*/*")
-            .resolveActivity(context.packageManager) != null
+    /**
+     * The apps that can pick a file to import. Google TV has no documents picker: a stub answers
+     * instead and only says there's nothing to open, so it doesn't count.
+     */
+    fun pickers(context: Context): List<ComponentName> =
+        @Suppress("DEPRECATION")
+        context.packageManager.queryIntentActivities(pickIntent(), PackageManager.MATCH_DEFAULT_ONLY)
+            .map { it.activityInfo }
+            .filterNot { it.packageName == TV_STUBS }
+            .map { ComponentName(it.packageName, it.name) }
+
+    fun canPick(context: Context): Boolean = pickers(context).isNotEmpty()
+
+    private const val TV_STUBS = "com.android.tv.frameworkpackagestubs"
+
+    private fun pickIntent() = Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("*/*")
+
+    /** Picks the file to import; with one picker (a file manager on Google TV) it opens straight, without the stub next to it. */
+    class Pick : ActivityResultContracts.OpenDocument() {
+        override fun createIntent(context: Context, input: Array<String>): Intent =
+            super.createIntent(context, input).apply { pickers(context).singleOrNull()?.let { component = it } }
+    }
 
     /** The text of the file at [uri], or null when it can't be read (or is too big to be one). */
     fun read(context: Context, uri: Uri): String? = runCatching {
