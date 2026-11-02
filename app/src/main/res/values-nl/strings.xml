@@ -33,7 +33,7 @@
     <string name="setting_lists_title">Lijsten</string>
     <string name="setting_language_title">Taal</string>
     <string name="region_auto">Automatisch (%1$s)</string>
-    <string name="setting_count_title">Titels per lijst</string>
+    <string name="setting_count_title">Achtergronden per lijst</string>
     <string name="setting_refresh_title">Bijwerken elke</string>
     <string name="refresh_hours">%1$d uur</string>
     <string name="refresh_days">%1$d dagen</string>
@@ -192,7 +192,7 @@
     <string name="about_source">Broncode</string>
     <string name="about_source_scan">Scan met je telefoon om de projectpagina te openen.</string>
     <string name="about_credits">Vermeldingen</string>
-    <string name="about_credits_desc">Dit product gebruikt de TMDB API, maar is niet goedgekeurd of gecertificeerd door TMDB. Sofadrop gebruikt Trakt, maar is niet goedgekeurd of gecertificeerd door Trakt. Lijsten en kijkgeschiedenis van Simkl (simkl.com). De namen en logo\'s van Trakt, Simkl en MDBList zijn eigendom van hun eigenaars. Lijsten van MDBList. Achtergronden voor Projectivy Launcher. Scores van MDBList en Trakt. Informatie met dank aan IMDb (imdb.com), gebruikt met toestemming; de namen en logo\'s van IMDb, Rotten Tomatoes, Metacritic, Letterboxd en MyAnimeList zijn eigendom van hun eigenaars. Sofascreen, de screensaver, door schumi2004; weer van Open-Meteo (open-meteo.com); de tip over Projectivy naar Sofadrop Screensaver van ilee (itslee.nl).</string>
+    <string name="about_credits_desc">Dit product gebruikt de TMDB API, maar is niet goedgekeurd of gecertificeerd door TMDB. Sofadrop gebruikt Trakt, maar is niet goedgekeurd of gecertificeerd door Trakt. Lijsten en kijkgeschiedenis van Simkl (simkl.com). De namen en logo\'s van Trakt, Simkl en MDBList zijn eigendom van hun eigenaars. Lijsten van MDBList. Achtergronden voor Projectivy Launcher. Scores van MDBList en Trakt. Informatie met dank aan IMDb (imdb.com), gebruikt met toestemming; de namen en logo\'s van IMDb, Rotten Tomatoes, Metacritic, Letterboxd en MyAnimeList zijn eigendom van hun eigenaars. Sofascreen, de screensaver, door schumi2004; weer van Open-Meteo (open-meteo.com).</string>
     <string name="qr_link_hint">Scan de code met je telefoon</string>
     <string name="setting_accounts_title">Accounts</string>
     <string name="accounts_description">Verbind diensten door met je telefoon een QR-code te scannen. Geen enkele is verplicht: de TMDB-lijsten en de scores van TMDB, IMDb en Trakt werken zonder account. Als je de verbinding met een dienst verbreekt, worden ook de lijsten uitgevinkt die hem nodig hebben.</string>
@@ -212,11 +212,11 @@
     <string name="style_backdrop">Alleen afbeelding</string>
     <string name="style_full_desc">Logo, kopregel, samenvatting en voettekst, zoals hieronder ingesteld</string>
     <string name="style_logo_desc">Het logo (of de titel) over de afbeelding, verder niets</string>
-    <string name="style_backdrop_desc">Alleen de afbeelding</string>
+    <string name="style_backdrop_desc">Geen logo of tekst</string>
     <string name="style_hidden">Verborgen bij de stijl %1$s</string>
     <string name="position_title">Positie</string>
     <string name="shade_title">Schaduw</string>
-    <string name="shade_tint">Kleur van de achtergrond</string>
+    <string name="shade_tint">Kleur van de afbeelding</string>
     <string name="shade_tint_desc">Donker, in de kleur van elke afbeelding</string>
     <string name="shade_black">Zwart (OLED)</string>
     <string name="shade_black_desc">Puur zwart achter de tekst en onderaan: een OLED-scherm zet die pixels uit</string>
@@ -307,7 +307,7 @@
     <string name="cast_photos_disabled">Alleen gebruikt als de cast wordt getoond</string>
     <string name="cast_photos_each">Elk naast de eigen naam</string>
     <string name="cast_photos_each_desc">Elk gezicht vlak voor de naam. Er passen misschien minder namen op de regel.</string>
-    <string name="click_action_title">Bij klikken op de achtergrond</string>
+    <string name="click_action_title">Wat de achtergrond opent</string>
     <string name="click_trailer">Trailer bekijken</string>
     <string name="click_trailer_desc">Op YouTube</string>
     <string name="click_none">Niets</string>
@@ -316,7 +316,7 @@
     <string name="click_installed">Geïnstalleerd</string>
     <string name="click_not_installed_skipped">Niet geïnstalleerd: overgeslagen</string>
     <string name="click_not_installed">Niet geïnstalleerd</string>
-    <string name="click_platform_explanation">Staat de titel in je land op %1$s en hebben we de link naar de pagina, dan opent hij in die app. Anders wordt de volgende stap geprobeerd. Kies alleen waarvoor je betaalt.</string>
+    <string name="click_platform_explanation">Staat de titel in je land op %1$s en hebben we de link naar de pagina, dan opent hij in die app. Anders wordt de volgende stap geprobeerd. Kies alleen de diensten waarop je geabonneerd bent.</string>
     <string name="click_target_explanation">Wat de achtergrond opent als de titel niet op je platforms staat, of we de link naar de pagina niet hebben.</string>
     <string name="click_summary_trailer">de trailer</string>
     <string name="click_summary_more">%1$s en nog %2$d</string>
@@ -325,20 +325,20 @@
     <string name="click_if_none">Als hij op geen ervan staat</string>
     <string name="click_add_platform">Een platform toevoegen</string>
     <string name="click_add_none">Geen andere geïnstalleerd</string>
-    <string name="click_add_explanation">Wordt geprobeerd na de platforms hierboven. Kies alleen waarvoor je betaalt; installeer eerst de app om er een te kiezen die niet geïnstalleerd is.</string>
+    <string name="click_add_explanation">Kies alleen de diensten waarop je geabonneerd bent; installeer eerst de app om er een te kiezen die niet geïnstalleerd is.</string>
     <string name="click_app_missing_short">Niet geïnstalleerd: de trailer opent</string>
     <string name="click_summary_else">%1$s; anders %2$s</string>
     <string name="click_summary_only">Alleen %1$s</string>
     <string name="click_trailer_note">De trailer wordt gekozen als de achtergronden worden gemaakt: een nieuwe taal geldt vanaf de volgende update.</string>
     <string name="click_app_not_installed">Niet geïnstalleerd · %1$s</string>
     <string name="synopsis_cast_title">Samenvatting en cast</string>
-    <string name="synopsis_cast_desc">De tekst onder de kopregel. Een kortere samenvatting blijft uit de buurt van de rijen van de launcher; de castregel schuift de voettekst omlaag.</string>
+    <string name="synopsis_cast_desc">De tekst onder de kopregel. De app-rijen van Projectivy kunnen een lange samenvatting bedekken, afhankelijk van je indeling; de castregel schuift de voettekst omlaag.</string>
     <string name="synopsis_cast_summary">Samenvatting: %1$s</string>
     <string name="cast_summary_hidden">geen cast</string>
     <string name="cast_summary_names">cast</string>
     <string name="cast_summary_photos">cast met foto\'s</string>
     <string name="footer_desc">De onderste regel: de streamingdiensten die elke titel hebben, in het land dat je kiest, en de lijst waar hij vandaan komt.</string>
-    <string name="click_action_desc">Projectivy opent het via het pictogram in de statusbalk of via “Over deze achtergrond”.</string>
+    <string name="click_action_desc">In Projectivy opent het ▶-pictogram in de statusbalk (of “Over deze achtergrond”) de titel die je ziet.</string>
     <string name="click_target_title">Wat het opent</string>
     <string name="click_open_app">Openen in %1$s</string>
     <string name="click_app_missing">Openen in %1$s (niet geïnstalleerd: de trailer opent)</string>
@@ -506,7 +506,7 @@
     <string name="filters_age_from_year">Vanaf %1$d</string>
     <string name="filters_year_title">Vanaf jaar</string>
     <string name="filters_year_explain">Alleen titels vanaf dit jaar: vul een jaar in (zoals 2000), of laat het leeg om terug te gaan naar de maximale leeftijd hierboven. Anders dan de leeftijd schuift dit niet op: een serie telt vanaf de eerste aflevering, dus een serie uit 1963 die nog loopt is niet \"vanaf 2000\".</string>
-    <string name="filters_year_invalid">\"%1$s\" is geen jaartal</string>
+    <string name="filters_year_invalid">\"%1$s\" is geen jaartal: typ er een van 1900 tot en met %2$d</string>
     <string name="filters_blocked_title">Geblokkeerde titels</string>
     <plurals name="filters_blocked_count">
         <item quantity="one">%d titel geblokkeerd</item>
@@ -524,4 +524,14 @@
     <string name="viewer_blocked">GEBLOKKEERD</string>
     <string name="viewer_blocked_toast">Geblokkeerd: niet meer in de volgende set (die wordt gemaakt als je de instellingen verlaat)</string>
     <string name="viewer_unblocked_toast">Gedeblokkeerd: kan vanaf de volgende set weer verschijnen</string>
+    <string name="status_waiting_network">Wachten op een internetverbinding…</string>
+    <string name="general_language_shared">%1$s · gedeeld met de achtergronden, wijzig het in Achtergronddetails</string>
+    <string name="provider_summary_selected">%1$d gekozen</string>
+    <string name="filters_age_replaced">Vervangen door Vanaf jaar</string>
+    <string name="click_add_after">Wordt geprobeerd na de platforms hierboven.</string>
+    <string name="click_add_none_installed">Geen streaming-apps geïnstalleerd</string>
+    <plurals name="filters_blocked_clear_confirm">
+        <item quantity="one">Kies nog eens om %d titel te deblokkeren</item>
+        <item quantity="other">Kies nog eens om alle %d titels te deblokkeren</item>
+    </plurals>
 </resources>

@@ -4,6 +4,7 @@ import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.graphics.BitmapFactory
 import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -11,6 +12,7 @@ import android.util.TypedValue
 import android.view.Gravity
 import android.view.KeyEvent
 import android.view.View
+import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -44,7 +46,33 @@ class PreviewActivity : AppCompatActivity() {
         wallpapers = store.current()
         // Open on the pinned wallpaper so the user sees what they chose
         position = wallpapers.indexOfFirst { pinOf(it) == Settings.previewPin }.coerceAtLeast(0)
+        placeOverlay()
         show()
+    }
+
+    /**
+     * The cluster and its glow in the corner away from the wallpaper's text: bottom right, at the top when
+     * the text is at the bottom and on the left when it's on the right.
+     */
+    private fun placeOverlay() {
+        val profile = Profile.WALLPAPER
+        val textAt = if (profile.drawsLogo) profile.position else Settings.POSITION_TOP_LEFT
+        val top = textAt.startsWith("bottom")
+        val start = textAt.endsWith("_right")
+        fun dp(v: Int) = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, v.toFloat(), resources.displayMetrics)
+        val cluster = findViewById<LinearLayout>(R.id.viewer_cluster)
+        val side = if (start) Gravity.START else Gravity.END
+        cluster.gravity = side
+        cluster.layoutParams = (cluster.layoutParams as FrameLayout.LayoutParams).apply { gravity = side or if (top) Gravity.TOP else Gravity.BOTTOM }
+        overlay.setPaddingRelative(if (start) dp(56).toInt() else 0, if (top) dp(44).toInt() else 0,
+            if (start) 0 else dp(56).toInt(), if (top) 0 else dp(44).toInt())
+        overlay.background = GradientDrawable().apply {
+            gradientType = GradientDrawable.RADIAL_GRADIENT
+            colors = intArrayOf(Color.argb(140, 0, 0, 0), Color.TRANSPARENT)
+            gradientRadius = dp(520)
+            val rtl = overlay.layoutDirection == View.LAYOUT_DIRECTION_RTL
+            setGradientCenter(if (start != rtl) 0f else 1f, if (top) 0f else 1f)
+        }
     }
 
     private val overlayHidden get() = overlay.alpha < 0.5f
@@ -54,7 +82,7 @@ class PreviewActivity : AppCompatActivity() {
         overlay.alpha = 1f
         pinBadge.visibility = View.GONE
         handler.removeCallbacks(hideOverlay)
-        handler.postDelayed(hideOverlay, 4000)
+        handler.postDelayed(hideOverlay, 3000)
     }
 
     private fun updatePinBadge() {
@@ -84,6 +112,8 @@ class PreviewActivity : AppCompatActivity() {
         val blocked = refOf(wallpaper) in Settings.blockedTitles
         findViewById<View>(R.id.viewer_blocked).visibility = if (blocked) View.VISIBLE else View.GONE
         title.text = wallpaper.title
+        // The wallpaper shows its title already, unless it's only the image
+        title.visibility = if (Profile.WALLPAPER.drawsLogo) View.GONE else View.VISIBLE
         val source = Sources.available().firstOrNull { it.key == wallpaper.source }?.let { Sources.label(this, it) }
         subtitle.text = listOfNotNull(getString(R.string.viewer_position, position + 1, wallpapers.size), source).joinToString("  ·  ")
         chips.removeAllViews()

@@ -16,7 +16,6 @@
     <string name="screensaver_system_explain">Choose Sofascreen in Android\'s screensaver settings.</string>
     <string name="screensaver_system_explain_steps">Google TV doesn\'t list other apps\' screensavers in its settings: it\'s switched on once from a computer. Press OK for the steps.</string>
     <string name="screensaver_system_explain_path">In Android\'s settings, go to Device Preferences → Screen saver and choose Sofascreen. The names can change with the TV\'s brand.</string>
-    <string name="screensaver_projectivy_tip">With Projectivy, turn off Settings → Appearance → Launcher Idle Mode → \"Prevent system screensaver\", then restart the TV: otherwise Projectivy keeps any system screensaver from starting.</string>
     <string name="screensaver_set_header">Wallpapers</string>
     <string name="screensaver_lists_title">Lists</string>
     <string name="screensaver_look_title">Look</string>
@@ -25,7 +24,7 @@
     <string name="screensaver_own_lists">Its own</string>
     <string name="screensaver_own_look">Its own</string>
     <string name="screensaver_edit_lists">Screensaver lists</string>
-    <string name="screensaver_edit_look">Screensaver details</string>
+    <string name="screensaver_edit_look">Screensaver look</string>
     <string name="screensaver_own_explain">With lists or a look of its own, the screensaver gets a set of wallpapers of its own: it\'s made after the wallpapers\' one and takes about as much space and time again. Accounts, language and blocked titles stay shared.</string>
     <string name="screensaver_generate">Update the screensaver now</string>
     <string name="screensaver_slideshow_header">Slideshow</string>
@@ -82,4 +81,7 @@
     <string name="screensaver_summary_weather">weather</string>
     <string name="screensaver_only_title">Projectivy isn\'t installed</string>
     <string name="screensaver_only_hint">Sofadrop works as a screensaver: choose your lists, then switch it on here</string>
+    <string name="screensaver_own_lists_off_confirm">Choose again: its own lists are lost</string>
+    <string name="screensaver_own_look_off_confirm">Choose again: its own look is lost</string>
+    <string name="screensaver_try_none">Once its wallpapers are made</string>
 </resources>

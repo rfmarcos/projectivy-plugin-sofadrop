@@ -204,7 +204,7 @@ class HeaderFragment : PreviewSettingsFragment() {
                     Settings.HEADER_YEAR -> listOfNotNull(
                         blockTitle(context, block, short = true).takeIf { profile.showsInHeader(block) },
                         context.getString(R.string.header_certification_short).takeIf { profile.showsInHeader(Settings.HEADER_CERTIFICATION) },
-                    ).joinToString(" ").ifEmpty { null }
+                    ).joinToString(", ").ifEmpty { null }
                     else -> blockTitle(context, block, short = true).takeIf { profile.showsInHeader(block) }
                 }
             }

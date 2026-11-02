@@ -13,7 +13,7 @@ import androidx.leanback.widget.GuidedAction
 class DetailsFragment : PreviewSettingsFragment() {
 
     override fun onCreateGuidance(savedInstanceState: Bundle?) = Guidance(
-        getString(R.string.setting_details_title),
+        getString(if (profile.isScreensaver) R.string.screensaver_edit_look else R.string.setting_details_title),
         getString(R.string.details_description),
         getString(R.string.plugin_name),
         AppCompatResources.getDrawable(requireActivity(), R.mipmap.ic_launcher),
@@ -145,7 +145,7 @@ class DetailsFragment : PreviewSettingsFragment() {
                 2 -> context.getString(R.string.synopsis_summary_short)
                 else -> null
             }?.takeIf { profile.drawsDetails },
-            (if (profile.showProviders) context.getString(R.string.streaming_summary, Settings.region)
+            (if (profile.showProviders) context.getString(R.string.streaming_summary, Languages.countryName(Settings.region))
             else context.getString(R.string.streaming_summary_none)).takeIf { profile.drawsDetails },
             context.getString(if (profile.outputWidth > 1920) R.string.resolution_short_2160 else R.string.resolution_short_1080),
         ).joinToString(" · ")

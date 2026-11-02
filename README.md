@@ -15,7 +15,7 @@ Sofadrop is a wallpaper plugin for [Projectivy Launcher](https://github.com/spoc
 * 🖼️ **Clean, readable wallpapers**: textless backdrops with the title's logo, rating, year, runtime or seasons, genres, synopsis and cast (with their photos), kept clear of the launcher rows. Put the text in any corner, and use black shading on OLED screens.
 * ⭐ **The ratings you trust**: IMDb, Rotten Tomatoes (critics and audience), Metacritic, Letterboxd, TMDB, Trakt or MyAnimeList, with their logos, in the order you choose. IMDb, TMDB and Trakt work without any account; the others come from MDBList.
 * 📺 **Where to watch it**: the streaming services that have each title in your country, or the list it came from.
-* ▶️ **Open it from the wallpaper**: Projectivy's play button opens the title on your streaming platforms (Netflix, Prime Video, Disney+, HBO Max, Apple TV…), in Nuvio, Stremio or Jellyfin, or its trailer on YouTube.
+* ▶️ **Open it from the wallpaper**: the ▶ icon in Projectivy's status bar opens the title on your streaming platforms (Netflix, Prime Video, Disney+, HBO Max, Apple TV…), in Nuvio, Stremio or Jellyfin, or its trailer on YouTube.
 * ✅ **Watched titles**: with your Trakt or Simkl history, mark what you've seen ("✓ Watched", "▶ Watching · 3/8") or hide it.
 * 🎯 **Filters**: maximum age (or from a year on), minimum TMDB rating, age rating, global hits only, no adult content, no repeats, skip some genres (or use only some), and only titles with a logo or a synopsis in your language. Every list can have its own, and any title can be blocked.
 * 🔎 **Explore your lists**: see each list's titles in order and which ones are used or skipped, and why.
@@ -58,13 +58,13 @@ The left side of the settings shows a **live preview** of a wallpaper with your 
 * **Update now** also shows the status: how many wallpapers you have, when they were updated, or the progress while generating.
 * **View wallpapers** shows the current set full screen (◀ ▶ to browse, **OK** to use one in the preview, ▲ to open what the wallpaper opens from Projectivy, ▼ to block the title).
 * **Lists**
-  * *Titles per list*, *Title picking* (at random or the top of each list) and *Order in the launcher* (mixed or one list after another). An update makes at most 200 wallpapers, shared among the lists; Projectivy shows 100 of them at a time, a different 100 at random each time it reloads.
+  * *Wallpapers per list*, *Title picking* (at random or the top of each list) and *Order in the launcher* (mixed or one list after another). An update makes at most 200 wallpapers, shared among the lists; Projectivy shows 100 of them at a time, a different 100 at random each time it reloads.
   * One screen per service, **TMDB**, **Trakt**, **Simkl** and **MDBList**, to tick lists and connect your account. Trakt and MDBList also take any public list by its URL or `user/list`.
   * **Filters & explore lists**: the filters for every list, then your lists. Open one to see its titles, block one, or give the list its own filters. *Blocked titles* lists the ones you blocked, to unblock them.
 * **Wallpaper details**: style (complete, logo only or backdrop only), position of the text, shading (the backdrop's colour or black for OLED) and resolution (1080p or 4K); then by parts: the language of each part, the header under the title (which ratings, in what order, and whether to show the year, runtime, genres and watched badge; hiding details leaves room for more ratings), synopsis length and cast (names only or with their photos), and the footer (streaming services and/or the list source, and the streaming country).
-* **On wallpaper click**: what Projectivy's play button (or *About this wallpaper*) opens. Your streaming platforms in the order you pick, then, if the title is on none of them, its trailer (in the language you choose), Nuvio, Stremio or Jellyfin, or nothing.
-* **Accounts**: connect TMDB, Trakt, Simkl and MDBList with a QR code, see what each one adds, and update the IMDb ratings data.
+* **What the wallpaper opens**: what the ▶ icon in Projectivy's status bar (or *About this wallpaper*) opens. Your streaming platforms in the order you pick, then, if the title is on none of them, its trailer (in the language you choose), Nuvio, Stremio or Jellyfin, or nothing.
 * **Screensaver**: the same wallpapers, or lists and a look of its own; time per wallpaper, transition, slow zoom, clock, date, brightness and weather. See [Screensaver](#screensaver).
+* **Accounts**: connect TMDB, Trakt, Simkl and MDBList with a QR code, see what each one adds, and update the IMDb ratings data.
 * **Update every**: how often a new set is generated (6 hours to 7 days). How often the wallpaper *changes on screen* is set in Projectivy itself.
 * **About**: the guided setup again, the *Last generation log* (lists, failures and how long the last update took) and *Version*, which checks for updates.
 

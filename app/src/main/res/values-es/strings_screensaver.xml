@@ -15,7 +15,6 @@
     <string name="screensaver_system_explain">Elige Sofascreen en los ajustes de salvapantallas de Android.</string>
     <string name="screensaver_system_explain_steps">Google TV no deja elegir los salvapantallas de otras apps en sus ajustes: se activa una vez desde un ordenador. Pulsa OK para ver los pasos.</string>
     <string name="screensaver_system_explain_path">En los ajustes de Android, ve a Preferencias del dispositivo → Salvapantallas y elige Sofascreen. Los nombres pueden cambiar según la marca de la TV.</string>
-    <string name="screensaver_projectivy_tip">Con Projectivy, desactiva Ajustes → Apariencia → Modo inactivo del lanzador → \"Evitar el protector de pantalla del sistema\" y reinicia la TV: si no, Projectivy impide que arranque cualquier salvapantallas del sistema.</string>
     <string name="screensaver_set_header">Fondos</string>
     <string name="screensaver_lists_title">Listas</string>
     <string name="screensaver_look_title">Aspecto</string>
@@ -24,7 +23,7 @@
     <string name="screensaver_own_lists">Propias</string>
     <string name="screensaver_own_look">Propio</string>
     <string name="screensaver_edit_lists">Listas del salvapantallas</string>
-    <string name="screensaver_edit_look">Detalles del salvapantallas</string>
+    <string name="screensaver_edit_look">Aspecto del salvapantallas</string>
     <string name="screensaver_own_explain">Con listas o un aspecto propios, el salvapantallas tiene su propio conjunto de fondos: se crea después del de los fondos y ocupa y tarda más o menos lo mismo otra vez. Las cuentas, el idioma y los títulos bloqueados se comparten.</string>
     <string name="screensaver_generate">Actualizar el salvapantallas ahora</string>
     <string name="screensaver_slideshow_header">Presentación</string>
@@ -81,4 +80,7 @@
     <string name="screensaver_summary_weather">tiempo</string>
     <string name="screensaver_only_title">Projectivy no está instalado</string>
     <string name="screensaver_only_hint">Sofadrop funciona como salvapantallas: elige tus listas y actívalo aquí</string>
+    <string name="screensaver_own_lists_off_confirm">Elige otra vez: se pierden sus listas propias</string>
+    <string name="screensaver_own_look_off_confirm">Elige otra vez: se pierde su aspecto propio</string>
+    <string name="screensaver_try_none">Cuando estén hechos sus fondos</string>
 </resources>

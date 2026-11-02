@@ -44,11 +44,10 @@ class ScreensaverSetupFragment : BaseSettingsFragment() {
     override fun onCreateActions(actions: MutableList<GuidedAction>, savedInstanceState: Bundle?) {
         val context = requireContext()
         val ip = ipAddress(context) ?: "IP"
-        val steps = listOfNotNull(
+        val steps = listOf(
             getString(R.string.setup_developer_title) to getString(R.string.setup_developer_desc),
             getString(R.string.setup_debugging_title) to getString(R.string.setup_debugging_desc),
             getString(R.string.setup_adb_title) to getString(R.string.setup_adb_desc, ip, ScreensaverFragment.component(context)),
-            (getString(R.string.setup_projectivy_title) to getString(R.string.setup_projectivy_desc)).takeIf { Projectivy.isInstalled(context) },
         )
         actions += steps.mapIndexed { index, (title, description) -> row(index + 1L, getString(R.string.click_step, index + 1, title), description) }
         actions += row(ID_UNDO, getString(R.string.setup_undo_title), getString(R.string.setup_undo_desc, GOOGLE_SCREENSAVER))

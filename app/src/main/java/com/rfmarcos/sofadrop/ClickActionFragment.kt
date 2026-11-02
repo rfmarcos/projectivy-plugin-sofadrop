@@ -56,11 +56,12 @@ class ClickActionFragment : PreviewSettingsFragment() {
         val missing = Settings.clickApp(fallback)?.takeIf { it.installedPackage(context) == null }
         explain(ID_FALLBACK, getString(R.string.click_target_explanation))
         val label = clickLabel(context, fallback)
+        // Without platforms it's the only step: "What it opens", and what that is below, like other settings
         val description = listOfNotNull(
-            getString(if (order.isEmpty()) R.string.click_target_title else R.string.click_if_none),
+            if (order.isEmpty()) label else getString(R.string.click_if_none),
             getString(R.string.click_app_missing_short).takeIf { missing != null },
         ).joinToString(" · ")
-        rows += action(ID_FALLBACK, R.drawable.ic_act_play, if (order.isEmpty()) label else step(order.size + 1, label), description)
+        rows += action(ID_FALLBACK, if (fallback == Settings.CLICK_NONE) R.drawable.ic_act_block else R.drawable.ic_act_play, if (order.isEmpty()) getString(R.string.click_target_title) else step(order.size + 1, label), description)
             .subActions(options(ID_FALLBACK, fallbacks.map { clickLabel(context, it) }, label,
                 fallbacks.map { clickDescription(context, it) })).build()
         // The trailer's language only matters when the wallpaper can open it
@@ -105,10 +106,11 @@ class ClickActionFragment : PreviewSettingsFragment() {
     private fun addRow(order: List<Platform>): GuidedAction {
         val context = requireContext()
         val (installed, missing) = addable(context, order)
-        explain(ID_ADD, getString(R.string.click_add_explanation))
+        // "After the ones above" only when there are some
+        explain(ID_ADD, listOfNotNull(getString(R.string.click_add_after).takeIf { order.isNotEmpty() }, getString(R.string.click_add_explanation)).joinToString(" "))
         val names = installed.map { it.label }
         val description = when {
-            names.isEmpty() -> getString(R.string.click_add_none)
+            names.isEmpty() -> getString(if (order.isEmpty()) R.string.click_add_none_installed else R.string.click_add_none)
             names.size > 2 -> getString(R.string.click_summary_more, names.take(2).joinToString(", "), names.size - 2)
             else -> names.joinToString(", ")
         }

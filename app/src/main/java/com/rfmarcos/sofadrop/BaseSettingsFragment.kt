@@ -5,6 +5,8 @@ import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.LayerDrawable
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -60,6 +62,12 @@ abstract class BaseSettingsFragment : GuidedStepSupportFragment() {
 
         override fun onProvideItemLayoutId(viewType: Int) =
             if (viewType == VIEW_TYPE_HEADER) R.layout.settings_action_header else super.onProvideItemLayoutId(viewType)
+
+        override fun onBindViewHolder(vh: ViewHolder, action: GuidedAction) {
+            super.onBindViewHolder(vh, action)
+            vh.itemView.findViewById<View>(R.id.header_divider)?.visibility =
+                if (actions.firstOrNull()?.id == action.id) View.GONE else View.VISIBLE
+        }
 
         // Choices open on their current value instead of the first option
         override fun onUpdateExpandedViewHolder(avh: ViewHolder?) {
@@ -146,8 +154,11 @@ abstract class BaseSettingsFragment : GuidedStepSupportFragment() {
      */
     protected fun refreshActions(fresh: List<GuidedAction>) {
         if (!isAdded) return
+        confirming = null
         val current = actions
         fun GuidedAction.update(row: GuidedAction) = apply {
+            // The icon too: some follow the value ("Nothing" opens nothing)
+            icon = row.icon
             title = row.title
             description = row.description
             isEnabled = row.isEnabled
@@ -164,6 +175,26 @@ abstract class BaseSettingsFragment : GuidedStepSupportFragment() {
         }
     }
 
+    /** The option waiting for a second press (see [confirmed]); any refresh forgets it. */
+    private var confirming: Long? = null
+
+    /**
+     * True when the option [action], which loses something, is chosen a second time in a row. The first
+     * time it says [warning] and its row stays open (return false from onSubGuidedActionClicked then); a radio
+     * option gives its check back to the option at [inUse], the one still in use.
+     */
+    protected fun confirmed(action: GuidedAction, warning: CharSequence, inUse: Int = -1): Boolean {
+        if (confirming == action.id) return true
+        confirming = action.id
+        action.description = warning
+        val subActions = guidedActionsStylist.expandedAction?.subActions ?: return false
+        if (inUse >= 0) subActions.forEachIndexed { i, sub -> sub.isChecked = i == inUse }
+        val adapter = guidedActionsStylist.subActionsGridView?.adapter ?: return false
+        if (inUse >= 0) adapter.notifyItemRangeChanged(0, subActions.size)
+        else subActions.indexOf(action).takeIf { it >= 0 }?.let { adapter.notifyItemChanged(it) }
+        return false
+    }
+
     protected fun updateDescription(id: Long, description: CharSequence?) {
         val action = findActionById(id) ?: return
         if (action.description == description) return
@@ -177,7 +208,8 @@ abstract class BaseSettingsFragment : GuidedStepSupportFragment() {
         return when {
             profile.generating -> profile.generationProgress?.let { (done, list, lists) ->
                 getString(R.string.status_progress, resources.getQuantityString(R.plurals.wallpapers_count, done, done), list, lists)
-            } ?: getString(R.string.status_generating)
+            // Not started: the generation waits for the network (WorkManager's constraint)
+            } ?: getString(if (isOnline()) R.string.status_generating else R.string.status_waiting_network)
             Sources.selected(profile).isEmpty() -> getString(R.string.status_select_list)
             // A "no lists" error is stale once lists are picked again
             profile.lastError.isNotEmpty() && profile.lastError != getString(R.string.error_no_lists) ->
@@ -187,6 +219,11 @@ abstract class BaseSettingsFragment : GuidedStepSupportFragment() {
             else -> getString(R.string.status_ok, count, timeAgo(profile.lastGeneration)) +
                 profile.lastNotice.takeIf { it.isNotEmpty() }?.let { " · $it" }.orEmpty()
         }
+    }
+
+    private fun isOnline(): Boolean {
+        val connectivity = requireContext().getSystemService(ConnectivityManager::class.java)
+        return connectivity.getNetworkCapabilities(connectivity.activeNetwork)?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true
     }
 
     /** "just now" or "3 minutes ago", to go mid-sentence. */

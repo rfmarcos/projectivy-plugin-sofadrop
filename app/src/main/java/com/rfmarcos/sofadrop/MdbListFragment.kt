@@ -113,11 +113,13 @@ class MdbListFragment : BaseSettingsFragment() {
         private const val ID_OWN_BASE = 500L
 
         /** One-line summary for the main settings screen. */
-        fun summary(context: Context): String {
+        /** "2 selected · connected as X", like the other providers; public lists need no account. */
+        fun summary(context: Context, profile: Profile): String {
             val available = Sources.available().count { it.provider == SourceProvider.MDBLIST }
+            val selected = Sources.selected(profile).count { it.provider == SourceProvider.MDBLIST }
             return when {
-                Settings.mdbListConnected -> context.getString(R.string.mdblist_connected, Settings.mdbListUser.ifBlank { "MDBList" }, ListsFragment.listsCount(context, available))
-                available > 0 -> ListsFragment.listsCount(context, available)
+                Settings.mdbListConnected -> context.getString(R.string.provider_summary_connected, selected, Settings.mdbListUser.ifBlank { "MDBList" })
+                available > 0 -> context.getString(R.string.provider_summary_selected, selected)
                 else -> context.getString(R.string.mdblist_summary_empty)
             }
         }

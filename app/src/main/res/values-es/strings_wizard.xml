@@ -74,8 +74,8 @@
     <string name="setup_debugging_desc">Ajustes → Sistema → Opciones para desarrolladores → Depuración inalámbrica → \"Vincular dispositivo con código de sincronización\". Deja esa pantalla abierta.</string>
     <string name="setup_adb_title">En el ordenador, con adb (las platform-tools de Android)</string>
     <string name="setup_adb_desc">adb pair %1$s:PUERTO CÓDIGO\nadb connect %1$s:PUERTO\nadb shell settings put secure screensaver_components %2$s\n\nEl puerto y el código para vincular salen en la pantalla de la TV; el puerto para conectar, en Depuración inalámbrica.</string>
-    <string name="setup_projectivy_title">Si usas Projectivy</string>
-    <string name="setup_projectivy_desc">Projectivy → Ajustes → Apariencia → Modo inactivo del lanzador → desactiva \"Evitar el protector de pantalla del sistema\" y reinicia la TV.</string>
     <string name="setup_undo_title">Volver al salvapantallas de Google</string>
     <string name="setup_undo_desc">adb shell settings put secure screensaver_components %1$s</string>
+    <string name="wizard_leave">Salir sin cambiar nada</string>
+    <string name="wizard_amount_total_capped">%1$s × %2$s: %3$s, el máximo por actualización</string>
 </resources>

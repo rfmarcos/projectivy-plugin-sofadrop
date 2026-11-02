@@ -56,7 +56,8 @@ abstract class PreviewSettingsFragment : BaseSettingsFragment() {
     }
 
     protected fun refreshPending() {
-        val pending = profile.hasPendingChanges && !profile.generating && Sources.selected(profile).isNotEmpty()
+        // Not in the guided setup: its answers are applied when it ends, not "when you exit"
+        val pending = profile.hasPendingChanges && !profile.generating && Sources.selected(profile).isNotEmpty() && !Wizard.open
         pendingNotice?.visibility = if (pending) View.VISIBLE else View.GONE
     }
 

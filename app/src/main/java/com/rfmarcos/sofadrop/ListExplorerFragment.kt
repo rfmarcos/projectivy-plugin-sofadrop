@@ -78,7 +78,7 @@ class ListExplorerFragment : BaseSettingsFragment() {
         return rows
     }
 
-    /** "3 titles blocked"; expands into the blocked titles (choose one to unblock it) and "Clear all". */
+    /** "3 titles blocked"; expands into the blocked titles (choose one to unblock it) and "Clear all" (twice). */
     private fun blockedRow(): GuidedAction {
         val names = Settings.blocked
         blocked = names.keys.sortedBy { names[it].orEmpty().ifEmpty { "~${it.tmdbId}" }.lowercase() }
@@ -126,6 +126,10 @@ class ListExplorerFragment : BaseSettingsFragment() {
             ID_RATING_AGE -> profile.maxRatingAge = Settings.MAX_RATING_AGE_OPTIONS[index]
             ID_MIN_RATING -> profile.minRating = Settings.MIN_RATING_OPTIONS[index]
             ID_BLOCKED -> {
+                // All of them at once can't be undone: a second press
+                if (index == 0 && !confirmed(action, resources.getQuantityString(R.plurals.filters_blocked_clear_confirm, blocked.size, blocked.size))) {
+                    return false
+                }
                 // Close the expanded titles first: the last one gone, the row loses them and leanback would leave them drawn
                 collapseSubActions()
                 blocked.getOrNull(index - 1)?.let { Settings.setBlocked(it, false) } ?: Settings.clearBlocked()
@@ -163,13 +167,15 @@ class ListExplorerFragment : BaseSettingsFragment() {
             action.editDescription = ""
             if (text.isEmpty()) return if (current != null && Settings.isYear(current)) Result.success(null) else null
             val year = Settings.parseYear(text)
-            if (year == null) Toast.makeText(context, context.getString(R.string.filters_year_invalid, text), Toast.LENGTH_LONG).show()
+            if (year == null) Toast.makeText(context, context.getString(R.string.filters_year_invalid, text, Settings.lastYear), Toast.LENGTH_LONG).show()
             return year?.let { Result.success(it) }
         }
 
         /** Value of a default filter (what it does is shown in the left pane, see [filterExplanations]). */
         private fun describe(context: Context, profile: Profile, id: Long): String = when (id) {
-            ID_AGE -> Filters.ageLabel(context, profile.maxAgeMonths)
+            // A year typed below sets the limit: this row says so instead of repeating it
+            ID_AGE -> if (Settings.isYear(profile.maxAgeMonths)) context.getString(R.string.filters_age_replaced)
+                else Filters.ageLabel(context, profile.maxAgeMonths)
             ID_GLOBAL_HITS -> Filters.onOff(context)[if (profile.globalHitsOnly) 1 else 0]
             ID_RATING_AGE -> Filters.ratingAgeLabel(context, profile.maxRatingAge)
             ID_MIN_RATING -> Filters.ratingLabel(context, profile.minRating)
@@ -280,7 +286,8 @@ class ListContentsFragment : BaseSettingsFragment() {
         val rows = mutableListOf(
             filterRow(ID_AGE, R.drawable.ic_act_schedule, R.string.filters_age_title,
                 custom.maxAge?.let { Filters.ageLabel(context, it) } ?: default(defaultAge),
-                listOf(default(defaultAge)) + ListExplorerFragment.ageOptions(custom.maxAge).map { Filters.ageLabel(context, it) }),
+                listOf(default(defaultAge)) + ListExplorerFragment.ageOptions(custom.maxAge).map { Filters.ageLabel(context, it) })
+                .also { if (custom.maxAge?.let(Settings::isYear) == true) it.description = getString(R.string.filters_age_replaced) },
             yearRow(ID_FROM_YEAR, custom.maxAge),
         )
         // Global hits never applies to lists that are niche on purpose (anime)

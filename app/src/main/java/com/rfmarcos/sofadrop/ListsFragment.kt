@@ -31,7 +31,7 @@ class ListsFragment : BaseSettingsFragment() {
             ProviderListsFragment.summary(context, profile, SourceProvider.TRAKT))
         actions += provider(ID_SIMKL, R.drawable.badge_simkl, getString(R.string.setting_simkl_title),
             ProviderListsFragment.summary(context, profile, SourceProvider.SIMKL))
-        actions += provider(ID_MDBLIST, R.drawable.badge_mdblist, getString(R.string.setting_mdblist_title), MdbListFragment.summary(context))
+        actions += provider(ID_MDBLIST, R.drawable.badge_mdblist, getString(R.string.setting_mdblist_title), MdbListFragment.summary(context, profile))
         actions += action(ID_EXPLORE, R.drawable.ic_act_filter, getString(R.string.setting_explore_title),
             Filters.summary(context, profile)).hasNext(true).build()
     }
@@ -48,7 +48,7 @@ class ListsFragment : BaseSettingsFragment() {
         updateDescription(ID_TMDB, ProviderListsFragment.summary(context, profile, SourceProvider.TMDB))
         updateDescription(ID_TRAKT, ProviderListsFragment.summary(context, profile, SourceProvider.TRAKT))
         updateDescription(ID_SIMKL, ProviderListsFragment.summary(context, profile, SourceProvider.SIMKL))
-        updateDescription(ID_MDBLIST, MdbListFragment.summary(context))
+        updateDescription(ID_MDBLIST, MdbListFragment.summary(context, profile))
         updateDescription(ID_EXPLORE, Filters.summary(context, profile))
     }
 

@@ -74,8 +74,8 @@
     <string name="setup_debugging_desc">Instellingen → Systeem → Ontwikkelaarsopties → Draadloze foutopsporing → \"Apparaat koppelen met koppelingscode\". Laat dat scherm open.</string>
     <string name="setup_adb_title">Op de computer, met adb (de platform-tools van Android)</string>
     <string name="setup_adb_desc">adb pair %1$s:POORT CODE\nadb connect %1$s:POORT\nadb shell settings put secure screensaver_components %2$s\n\nDe poort en code om te koppelen staan op het scherm van de tv; de poort om te verbinden staat onder Draadloze foutopsporing.</string>
-    <string name="setup_projectivy_title">Als je Projectivy gebruikt</string>
-    <string name="setup_projectivy_desc">Projectivy → Instellingen → Weergave → Launcher inactieve modus → zet \"Voorkom dat het systeem de screensaver activeert\" uit en start de tv opnieuw op.</string>
     <string name="setup_undo_title">Terug naar de screensaver van Google</string>
     <string name="setup_undo_desc">adb shell settings put secure screensaver_components %1$s</string>
+    <string name="wizard_leave">Afsluiten zonder iets te wijzigen</string>
+    <string name="wizard_amount_total_capped">%1$s × %2$s: %3$s, het maximum per update</string>
 </resources>

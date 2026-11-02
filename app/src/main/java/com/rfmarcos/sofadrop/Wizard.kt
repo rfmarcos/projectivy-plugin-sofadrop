@@ -40,11 +40,16 @@ object Wizard {
     /** Whether the screensaver is wanted too (its step), for the last step. */
     var screensaver = true
 
-    /** A fresh install, the first time: someone updating already has a set. */
-    fun shouldOffer() = !Settings.wizardShown && Profile.WALLPAPER.lastGeneration == 0L
+    /** A fresh install, the first time (even when Projectivy already made a set with the defaults). */
+    fun shouldOffer() = !Settings.wizardShown && Settings.freshInstall
+
+    /** Opened again from About: skipping it leaves everything as it is. */
+    var reopened = false
+        private set
 
     fun start(manager: FragmentManager) {
         open = true
+        reopened = Settings.wizardShown
         Settings.wizardShown = true
         GuidedStepSupportFragment.add(manager, fragment(Step.WELCOME))
     }
@@ -142,8 +147,9 @@ class WizardWelcomeFragment : WizardStepFragment() {
         actions += action(ID_START, R.drawable.ic_act_play, getString(R.string.wizard_start), getString(R.string.wizard_start_desc)).build()
         actions += choice(ID_LANGUAGE, R.drawable.ic_act_language, R.string.general_language_title, Languages.displayName(Settings.language),
             Languages.OPTIONS.values.toList())
-        actions += action(ID_SKIP, R.drawable.ic_act_refresh, getString(R.string.wizard_skip), getString(R.string.wizard_skip_desc))
-            .multilineDescription(true).build()
+        actions += if (Wizard.reopened) action(ID_SKIP, R.drawable.ic_act_refresh, getString(R.string.wizard_leave), null).build()
+            else action(ID_SKIP, R.drawable.ic_act_refresh, getString(R.string.wizard_skip), getString(R.string.wizard_skip_desc))
+                .multilineDescription(true).build()
     }
 
     override fun onGuidedActionClicked(action: GuidedAction) {
@@ -222,8 +228,14 @@ class WizardStyleFragment : WizardStepFragment() {
 class WizardListsFragment : WizardStepFragment() {
     override val step = Wizard.Step.LISTS
     override val titleRes = R.string.wizard_lists_title
-    override fun text() = getString(R.string.wizard_lists_text) + "\n\n" +
-        getString(R.string.wizard_lists_now, ListsFragment.listsCount(requireContext(), Sources.selected(profile).size))
+    // The lists by name: "2 lists" after ticking one option reads like a mistake
+    override fun text(): String {
+        val context = requireContext()
+        val selected = Sources.selected(profile)
+        val now = if (selected.isEmpty() || selected.size > 4) ListsFragment.listsCount(context, selected.size)
+            else selected.joinToString(", ") { Sources.label(context, it) }
+        return getString(R.string.wizard_lists_text) + "\n\n" + getString(R.string.wizard_lists_now, now)
+    }
 
     private val presets by lazy { Wizard.listPresets(requireContext()) }
 
@@ -305,8 +317,11 @@ class WizardAmountFragment : WizardStepFragment() {
         val context = requireContext()
         val lists = Sources.selected(profile).size
         val total = minOf(lists * profile.titlesPerList, Settings.MAX_WALLPAPERS)
-        return getString(R.string.wizard_amount_total, ListsFragment.listsCount(context, lists), ListsFragment.countLabel(context, profile.titlesPerList),
-            resources.getQuantityString(R.plurals.wallpapers_count, total, total)) + "\n" + getString(R.string.wizard_amount_text)
+        // Over the most per update, the product isn't what's made: say it's the most
+        val capped = lists * profile.titlesPerList > Settings.MAX_WALLPAPERS
+        return getString(if (capped) R.string.wizard_amount_total_capped else R.string.wizard_amount_total, ListsFragment.listsCount(context, lists),
+            ListsFragment.countLabel(context, profile.titlesPerList), resources.getQuantityString(R.plurals.wallpapers_count, total, total)) +
+            "\n" + getString(R.string.wizard_amount_text)
     }
 
     override fun onCreateActions(actions: MutableList<GuidedAction>, savedInstanceState: Bundle?) {
@@ -495,7 +510,9 @@ class WizardDoneFragment : WizardStepFragment() {
         val context = requireContext()
         return listOfNotNull(
             getString(R.string.wizard_done_lists, ListsFragment.summary(context, profile)),
-            getString(R.string.wizard_done_look, DetailsFragment.summary(context, profile)),
+            // The summary leaves out the usual style; here it's one of the answers
+            getString(R.string.wizard_done_look, listOfNotNull(DetailsFragment.styleLabel(context, profile.style).takeIf { profile.drawsDetails },
+                DetailsFragment.summary(context, profile)).joinToString(" · ")),
             getString(R.string.wizard_done_click, ClickActionFragment.summary(context)).takeIf { Projectivy.isInstalled(context) },
             getString(R.string.wizard_done_screensaver, getString(if (Wizard.screensaver) R.string.wizard_done_yes else R.string.wizard_done_no)),
         ).joinToString("\n")
@@ -526,6 +543,12 @@ class WizardDoneFragment : WizardStepFragment() {
         actions += action(ID_STATUS, R.drawable.ic_act_refresh, getString(R.string.wizard_done_wallpapers), generationStatus())
             .multilineDescription(true).build()
         actions += action(ID_SETTINGS, R.drawable.ic_act_check, getString(R.string.wizard_finish), null).build()
+    }
+
+    // Finish first: the rows above are there to read, or for later
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        if (savedInstanceState == null) selectedActionPosition = findActionPositionById(ID_SETTINGS)
     }
 
     override fun onResume() {

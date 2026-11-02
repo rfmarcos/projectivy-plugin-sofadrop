@@ -38,7 +38,7 @@
     <string name="wizard_amount_total">%1$s × %2$s = %3$s</string>
     <string name="wizard_amount_text">Up to 200 per update; Projectivy shows a random 100 of them at a time. 4K is sharper on a 4K TV, but slower to make and bigger.</string>
     <string name="wizard_amount_count">Wallpapers per list</string>
-    <string name="wizard_amount_4k">This TV has memory enough for it</string>
+    <string name="wizard_amount_4k">This TV has enough memory for it</string>
 
     <string name="wizard_click_title">What does a wallpaper open?</string>
     <string name="wizard_click_platforms">The platform that has it</string>
@@ -74,8 +74,8 @@
     <string name="setup_debugging_desc">Settings → System → Developer options → Wireless debugging → \"Pair device with pairing code\". Leave that screen open.</string>
     <string name="setup_adb_title">On the computer, with adb (Android\'s platform-tools)</string>
     <string name="setup_adb_desc">adb pair %1$s:PORT CODE\nadb connect %1$s:PORT\nadb shell settings put secure screensaver_components %2$s\n\nThe pairing port and code are on the TV\'s screen; the port to connect to is under Wireless debugging.</string>
-    <string name="setup_projectivy_title">If you use Projectivy</string>
-    <string name="setup_projectivy_desc">Projectivy → Settings → Appearance → Launcher Idle Mode → turn off \"Prevent system screensaver\", then restart the TV.</string>
     <string name="setup_undo_title">Back to Google\'s screensaver</string>
     <string name="setup_undo_desc">adb shell settings put secure screensaver_components %1$s</string>
+    <string name="wizard_leave">Leave without changes</string>
+    <string name="wizard_amount_total_capped">%1$s × %2$s: %3$s, the most per update</string>
 </resources>

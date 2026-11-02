@@ -22,6 +22,7 @@ class ScreensaverFragment : BaseSettingsFragment() {
                 val enabled = WallpaperStore(requireContext(), profile).current().isNotEmpty()
                 if (it.isEnabled != enabled) {
                     it.isEnabled = enabled
+                    it.description = getString(if (enabled) R.string.screensaver_try_desc else R.string.screensaver_try_none)
                     notifyActionChanged(findActionPositionById(ID_TRY))
                 }
             }
@@ -39,16 +40,14 @@ class ScreensaverFragment : BaseSettingsFragment() {
     override fun onCreateActions(actions: MutableList<GuidedAction>, savedInstanceState: Bundle?) {
         actions += rows()
         val context = requireContext()
-        explanations[ID_SYSTEM] = listOfNotNull(
-            getString(
-                when (ScreensaverSetupFragment.route(context)) {
-                    ScreensaverSetupFragment.Route.PICKER -> R.string.screensaver_system_explain
-                    ScreensaverSetupFragment.Route.SETTINGS -> R.string.screensaver_system_explain_path
-                    ScreensaverSetupFragment.Route.COMPUTER -> R.string.screensaver_system_explain_steps
-                },
-            ),
-            getString(R.string.screensaver_projectivy_tip).takeIf { Projectivy.isInstalled(context) },
-        ).joinToString("\n\n")
+        // Projectivy's own setting that can hold the screensaver back is in the README's guide, not here
+        explanations[ID_SYSTEM] = getString(
+            when (ScreensaverSetupFragment.route(context)) {
+                ScreensaverSetupFragment.Route.PICKER -> R.string.screensaver_system_explain
+                ScreensaverSetupFragment.Route.SETTINGS -> R.string.screensaver_system_explain_path
+                ScreensaverSetupFragment.Route.COMPUTER -> R.string.screensaver_system_explain_steps
+            },
+        )
         for (id in listOf(ID_OWN_LISTS, ID_OWN_LOOK, ID_GENERATE)) explanations[id] = getString(R.string.screensaver_own_explain)
         explanations[ID_POSITION] = getString(R.string.screensaver_clock_explain)
         explanations[ID_WEATHER] = getString(R.string.screensaver_weather_explain)
@@ -62,8 +61,11 @@ class ScreensaverFragment : BaseSettingsFragment() {
         val ownLook = Settings.screensaverOwnLook
         return listOfNotNull(
             action(ID_SYSTEM, R.drawable.ic_act_tv, getString(R.string.screensaver_system_title), ScreensaverSetupFragment.status(context)).build(),
-            action(ID_TRY, R.drawable.ic_act_preview, getString(R.string.screensaver_try), getString(R.string.screensaver_try_desc))
-                .enabled(WallpaperStore(context, profile).current().isNotEmpty()).build(),
+            WallpaperStore(context, profile).current().isNotEmpty().let { ready ->
+                // Disabled until there's a set, and saying so
+                action(ID_TRY, R.drawable.ic_act_preview, getString(R.string.screensaver_try),
+                    getString(if (ready) R.string.screensaver_try_desc else R.string.screensaver_try_none)).enabled(ready).build()
+            },
 
             header(ID_HEADER_SET, getString(R.string.screensaver_set_header)),
             choice(ID_OWN_LISTS, R.drawable.ic_act_movie, R.string.screensaver_lists_title, ownLabel(context, ownLists, lists = true),
@@ -87,7 +89,7 @@ class ScreensaverFragment : BaseSettingsFragment() {
                 .checkSetId(GuidedAction.CHECKBOX_CHECK_SET_ID).checked(Settings.screensaverZoom).build(),
             choice(ID_ORDER, R.drawable.ic_act_shuffle, R.string.screensaver_order_title, orderLabel(context, Settings.screensaverShuffle),
                 listOf(true, false).map { orderLabel(context, it) }),
-            choice(ID_BRIGHTNESS, R.drawable.ic_act_status, R.string.screensaver_brightness_title,
+            choice(ID_BRIGHTNESS, R.drawable.ic_act_brightness, R.string.screensaver_brightness_title,
                 getString(R.string.screensaver_brightness, Settings.screensaverBrightness),
                 Settings.SCREENSAVER_BRIGHTNESS_OPTIONS.map { getString(R.string.screensaver_brightness, it) }),
 
@@ -100,7 +102,7 @@ class ScreensaverFragment : BaseSettingsFragment() {
                 Settings.CLOCK_FORMATS.map { formatLabel(context, it) }).also { it.isEnabled = clockOn },
             choice(ID_POSITION, R.drawable.ic_act_place, R.string.screensaver_clock_position_title, positionLabel(context, Settings.screensaverClockBottom),
                 listOf(false, true).map { positionLabel(context, it) }).also { it.isEnabled = clockOn },
-            action(ID_WEATHER, R.drawable.ic_act_status, getString(R.string.screensaver_weather_title),
+            action(ID_WEATHER, R.drawable.ic_act_weather, getString(R.string.screensaver_weather_title),
                 Settings.weatherPlace.ifEmpty { getString(R.string.screensaver_weather_no_place) })
                 .checkSetId(GuidedAction.CHECKBOX_CHECK_SET_ID).checked(Settings.screensaverWeather)
                 .enabled(clockOn && Settings.weatherPlace.isNotEmpty()).build(),
@@ -174,8 +176,15 @@ class ScreensaverFragment : BaseSettingsFragment() {
     override fun onSubGuidedActionClicked(action: GuidedAction): Boolean {
         val index = (action.id % SUB_ID_BASE).toInt()
         when (action.id / SUB_ID_BASE) {
-            ID_OWN_LISTS -> setOwn { Settings.screensaverOwnLists = index == 1 }
-            ID_OWN_LOOK -> setOwn { Settings.screensaverOwnLook = index == 1 }
+            // Back to the wallpapers' ones, its own are lost (they start as the wallpapers' when turned on again)
+            ID_OWN_LISTS -> {
+                if (index == 0 && Settings.screensaverOwnLists && !confirmed(action, getString(R.string.screensaver_own_lists_off_confirm), inUse = 1)) return false
+                setOwn { Settings.screensaverOwnLists = index == 1 }
+            }
+            ID_OWN_LOOK -> {
+                if (index == 0 && Settings.screensaverOwnLook && !confirmed(action, getString(R.string.screensaver_own_look_off_confirm), inUse = 1)) return false
+                setOwn { Settings.screensaverOwnLook = index == 1 }
+            }
             ID_SECONDS -> Settings.screensaverSeconds = Settings.SCREENSAVER_SECONDS_OPTIONS[index]
             ID_TRANSITION -> Settings.screensaverTransition = Settings.TRANSITIONS[index]
             ID_ORDER -> Settings.screensaverShuffle = index == 0
@@ -195,6 +204,8 @@ class ScreensaverFragment : BaseSettingsFragment() {
     private fun setOwn(change: () -> Unit) {
         change()
         if (!profile.separate) {
+            // A generation of its own still running would write into the folder deleted here
+            GenerateWallpapersWorker.cancel(requireContext(), profile)
             WallpaperStore.deleteScreensaverSet(requireContext())
             profile.lastGeneration = 0L
             profile.lastSignature = ""

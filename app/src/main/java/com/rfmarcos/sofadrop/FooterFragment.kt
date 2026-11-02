@@ -120,7 +120,7 @@ class FooterFragment : PreviewSettingsFragment() {
                 }
                 else -> null
             }
-            val parts = listOfNotNull(context.getString(R.string.footer_summary_services, Settings.region).takeIf { profile.showProviders }, source)
+            val parts = listOfNotNull(context.getString(R.string.footer_summary_services, Languages.countryName(Settings.region)).takeIf { profile.showProviders }, source)
             return parts.joinToString(" · ").replaceFirstChar { it.uppercase() }.ifEmpty { context.getString(R.string.footer_none) }
         }
     }

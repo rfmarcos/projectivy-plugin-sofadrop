@@ -66,7 +66,8 @@ class TraktListsFragment : BaseSettingsFragment() {
         val own = ownOptions.map { it.key }.toSet()
         publicOptions = (TraktClient.SUGGESTED + added).distinctBy { it.key }.filterNot { it.key in own }
         return publicOptions.mapIndexed { index, list ->
-            checkbox(ID_PUBLIC_BASE + index, list.name, list.path, added.any { it.key == list.key }).build()
+            // Long names ("Oscars Best Picture Winners") wrap instead of being cut
+            checkbox(ID_PUBLIC_BASE + index, list.name, list.path, added.any { it.key == list.key }).multilineDescription(true).build()
         }
     }
 
